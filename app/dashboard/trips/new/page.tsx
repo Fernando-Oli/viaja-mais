@@ -1,77 +1,67 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/context/auth-context";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function NewTripPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const { profile, trips, invitations, deleteTrip, refreshTrips, addTrip } =
+    useAuth();
+  const [loading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    title: "",
-    destination: "",
-    start_date: "",
-    end_date: "",
+    title: "Fernando de Noronha Trip",
+    destination: "Fernando de Noronha",
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: new Date().toISOString().split("T")[0],
     description: "",
-    budget: "",
+    budget: 0,
     currency: "BRL",
     status: "planning",
-  })
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      addTrip({
+        ...formData,
+      });
 
-      if (!user) {
-        throw new Error("Usuário não autenticado")
-      }
-
-      const { data, error } = await supabase
-        .from("trips")
-        .insert([
-          {
-            user_id: user.id,
-            title: formData.title,
-            destination: formData.destination,
-            start_date: formData.start_date,
-            end_date: formData.end_date,
-            description: formData.description || null,
-            budget: formData.budget ? Number.parseFloat(formData.budget) : null,
-            currency: formData.currency,
-            status: formData.status,
-          },
-        ])
-        .select()
-
-      if (error) throw error
-
-      router.push(`/dashboard/trips/${data[0].id}`)
-      router.refresh()
+      router.push("/dashboard/");
+      router.refresh();
     } catch (err: any) {
-      setError(err.message || "Erro ao criar viagem")
+      setError(err.message || "Erro ao criar viagem");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -83,13 +73,17 @@ export default function NewTripPage() {
           </Link>
         </Button>
         <h1 className="text-3xl font-bold text-slate-900">Nova Viagem</h1>
-        <p className="mt-2 text-slate-600">Preencha os detalhes da sua próxima aventura</p>
+        <p className="mt-2 text-slate-600">
+          Preencha os detalhes da sua próxima aventura
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Informações da Viagem</CardTitle>
-          <CardDescription>Adicione os detalhes básicos da sua viagem</CardDescription>
+          <CardDescription>
+            Adicione os detalhes básicos da sua viagem
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -101,7 +95,9 @@ export default function NewTripPage() {
                   placeholder="Ex: Férias em Paris"
                   required
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                 />
               </div>
 
@@ -112,7 +108,9 @@ export default function NewTripPage() {
                   placeholder="Ex: Paris, França"
                   required
                   value={formData.destination}
-                  onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, destination: e.target.value })
+                  }
                 />
               </div>
 
@@ -124,7 +122,9 @@ export default function NewTripPage() {
                   required
                   min={new Date().toISOString().split("T")[0]}
                   value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, start_date: e.target.value })
+                  }
                 />
               </div>
 
@@ -135,19 +135,21 @@ export default function NewTripPage() {
                   type="date"
                   required
                   value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, end_date: e.target.value })
+                  }
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="budget">Orçamento</Label>
                 <Input
-                  id="budget"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                  id="number"
+                  type="text"
+                  value={Number(formData.budget)}
+                  onChange={(e) =>
+                    setFormData({ ...formData, budget: Number(e.target.value) })
+                  }
                 />
               </div>
 
@@ -155,7 +157,28 @@ export default function NewTripPage() {
                 <Label htmlFor="currency">Moeda</Label>
                 <Select
                   value={formData.currency}
-                  onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, currency: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">BRL - Real Brasileiro</SelectItem>
+                    <SelectItem value="USD">USD - Dólar Americano</SelectItem>
+                    <SelectItem value="EUR">EUR - Euro</SelectItem>
+                    <SelectItem value="GBP">GBP - Libra Esterlina</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currency">Moeda</Label>
+                <Select
+                  value={formData.currency}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, currency: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -177,13 +200,20 @@ export default function NewTripPage() {
                 placeholder="Adicione uma descrição sobre sua viagem..."
                 rows={4}
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <Select
+                value={formData.status}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, status: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -194,11 +224,15 @@ export default function NewTripPage() {
               </Select>
             </div>
 
-            {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+            {error && (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Criando..." : "Criar Viagem"}
+              <Button type="submit" disabled={loading}>
+                {loading ? "Criando..." : "Criar Viagem"}
               </Button>
               <Button type="button" variant="outline" asChild>
                 <Link href="/dashboard/trips">Cancelar</Link>
@@ -208,5 +242,5 @@ export default function NewTripPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -1,31 +1,15 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+"use client";
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { Plus, Calendar, MapPin, DollarSign } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
-export default async function TripsPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error || !user) {
-    redirect("/auth/login")
-  }
-
-  const { data: trips } = await supabase
-    .from("trips")
-    .select(`
-      *,
-      trip_members!inner(user_id)
-    `)
-    .eq("trip_members.user_id", user.id)
-    .order("start_date", { ascending: false })
+export default function TripsPage() {
+  const { trips, user } = useAuth();
 
   const upcomingTrips = trips?.filter((trip) => new Date(trip.end_date) >= new Date()) || []
   const pastTrips = trips?.filter((trip) => new Date(trip.end_date) < new Date()) || []
@@ -64,7 +48,7 @@ export default async function TripsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {upcomingTrips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} userId={user.id} />
+                <TripCard key={trip.id} trip={trip} userId={user?.id || ""} />
               ))}
             </div>
           )}
@@ -82,7 +66,7 @@ export default async function TripsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {pastTrips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} userId={user.id} />
+                <TripCard key={trip.id} trip={trip} userId={user?.id || ""} />
               ))}
             </div>
           )}
@@ -106,7 +90,7 @@ export default async function TripsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {trips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} userId={user.id} />
+                <TripCard key={trip.id} trip={trip} userId={user?.id || ""} />
               ))}
             </div>
           )}

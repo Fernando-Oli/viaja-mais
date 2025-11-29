@@ -1,51 +1,70 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Plane, Mail, Lock, User } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plane, Mail, Lock, User } from "lucide-react";
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    if (password !== confirmPassword) {
-      alert("As senhas não coincidem")
-      return
-    }
+  const v = validatePassword(password)
 
-    setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      // Store mock auth token
-      localStorage.setItem("auth_token", "mock_token_" + Date.now())
-      localStorage.setItem("user_email", email)
-      localStorage.setItem("user_name", name)
-      router.push("/dashboard")
-    }, 1000)
+  if (!v.length || !v.upper || !v.number || !v.special) {
+    alert("A senha não atende aos requisitos mínimos.")
+    return
   }
+
+  if (password !== confirmPassword) {
+    alert("As senhas não coincidem")
+    return
+  }
+
+  setIsLoading(true)
+
+  setTimeout(() => {
+    localStorage.setItem("auth_token", "mock_token_" + Date.now())
+    localStorage.setItem("user_email", email)
+    localStorage.setItem("user_name", name)
+    router.push("/dashboard")
+  }, 1000)
+}
+
+  const validatePassword = (password: string) => {
+    return {
+      length: password.length >= 6,
+      upper: /[A-Z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password),
+    };
+  };
+
+  const passwordValidation = validatePassword(password);
 
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Image/Illustration */}
       <div className="hidden lg:flex flex-1 bg-linear-to-br from-primary to-sky-600 p-12 items-center justify-center">
         <div className="max-w-lg text-white">
-          <h2 className="text-4xl font-display font-bold mb-6">Comece sua jornada hoje</h2>
+          <h2 className="text-4xl font-display font-bold mb-6">
+            Comece sua jornada hoje
+          </h2>
           <p className="text-xl opacity-90 leading-relaxed">
-            Junte-se a milhares de viajantes que já simplificaram o planejamento de suas aventuras.
+            Junte-se a milhares de viajantes que já simplificaram o planejamento
+            de suas aventuras.
           </p>
         </div>
       </div>
@@ -57,12 +76,18 @@ export default function RegisterPage() {
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Plane className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-display font-bold text-primary">TravelHub</span>
+            <span className="text-2xl font-display font-bold text-primary">
+              TravelHub
+            </span>
           </Link>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-display font-bold mb-2">Criar sua conta</h1>
-            <p className="text-muted-foreground">Comece a planejar suas viagens gratuitamente</p>
+            <h1 className="text-3xl font-display font-bold mb-2">
+              Criar sua conta
+            </h1>
+            <p className="text-muted-foreground">
+              Comece a planejar suas viagens gratuitamente
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -113,6 +138,43 @@ export default function RegisterPage() {
                   minLength={6}
                 />
               </div>
+              <div className="text-sm space-y-1 mt-2">
+                <p
+                  className={
+                    passwordValidation.length
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                >
+                  • Mínimo de 6 caracteres
+                </p>
+                <p
+                  className={
+                    passwordValidation.upper ? "text-green-600" : "text-red-600"
+                  }
+                >
+                  • Pelo menos 1 letra maiúscula
+                </p>
+                <p
+                  className={
+                    passwordValidation.number
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                >
+                  • Pelo menos 1 número
+                </p>
+                <p
+                  className={
+                    passwordValidation.special
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                >
+                  • Pelo menos 1 caractere especial
+                </p>
+              </div>
+              <p></p>
             </div>
 
             <div className="space-y-2">
@@ -132,7 +194,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary-dark" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary-dark"
+              disabled={isLoading}
+            >
               {isLoading ? "Criando conta..." : "Criar conta"}
             </Button>
           </form>
@@ -140,7 +206,10 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Já tem uma conta?{" "}
-              <Link href="/login" className="text-primary font-medium hover:underline">
+              <Link
+                href="/login"
+                className="text-primary font-medium hover:underline"
+              >
                 Fazer login
               </Link>
             </p>
@@ -148,5 +217,5 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

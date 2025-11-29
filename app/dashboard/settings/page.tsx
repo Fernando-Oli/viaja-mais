@@ -53,11 +53,9 @@ export default async function SettingsPage() {
                   name="avatar_url"
                   defaultValue={profile?.avatar_url || ""}
                   placeholder="https://exemplo.com/avatar.jpg"
-                  className="select-none pointer-events-none"
-                  disabled
                 />
               </div>
-              <Button type="submit" className="bg-viaja-orange hover:bg-viaja-orange/90">
+              <Button type="button" className="bg-viaja-orange hover:bg-viaja-orange/90">
                 Salvar Alterações
               </Button>
             </form>

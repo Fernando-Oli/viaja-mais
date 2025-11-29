@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { tripId: string } }) {
+// <CHANGE> Added await for params in Next.js 16
+export async function GET(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
   try {
+    const { tripId } = await params
     const supabase = await createClient()
 
     const {
@@ -19,7 +21,7 @@ export async function GET(request: Request, { params }: { params: { tripId: stri
         *,
         trip_members(user_id, role)
       `)
-      .eq("id", params.tripId)
+      .eq("id", tripId)
       .single()
 
     if (error) {
@@ -32,8 +34,10 @@ export async function GET(request: Request, { params }: { params: { tripId: stri
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { tripId: string } }) {
+// <CHANGE> Added await for params in Next.js 16
+export async function PATCH(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
   try {
+    const { tripId } = await params
     const supabase = await createClient()
     const body = await request.json()
 
@@ -45,7 +49,7 @@ export async function PATCH(request: Request, { params }: { params: { tripId: st
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data: trip, error } = await supabase.from("trips").update(body).eq("id", params.tripId).select().single()
+    const { data: trip, error } = await supabase.from("trips").update(body).eq("id", tripId).select().single()
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })
@@ -57,8 +61,10 @@ export async function PATCH(request: Request, { params }: { params: { tripId: st
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { tripId: string } }) {
+// <CHANGE> Added await for params in Next.js 16
+export async function DELETE(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
   try {
+    const { tripId } = await params
     const supabase = await createClient()
 
     const {
@@ -69,7 +75,7 @@ export async function DELETE(request: Request, { params }: { params: { tripId: s
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { error } = await supabase.from("trips").delete().eq("id", params.tripId)
+    const { error } = await supabase.from("trips").delete().eq("id", tripId)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })

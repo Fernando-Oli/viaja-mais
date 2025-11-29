@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Users, Mail, UserPlus, X, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
 
 interface Member {
   id: string
@@ -29,73 +30,44 @@ interface TripMembersProps {
 }
 
 export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
+  const {user} = useAuth();
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
+    // <CHANGE> Added addTrip function to update local state without refetching
+  const sendInvite = async () => {
+    try {
+      const res = await fetch("/api/invitations/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, tripId, inviterId: user?.id }),
+      })
+  
+      console.log(res);
+  
+      if (!res.ok) {
+        const err = await res.json()
+        console.error("Erro da API:", err)
+        return
+      }
+      setEmail("");
+    } catch (error) {
+      console.error("Erro on create trip", error)
+    }
+  }
+
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
-
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error("Não autenticado")
-
-      const isMember = members.some((m) => m.profiles?.email === email)
-      if (isMember) {
-        setError("Este usuário já é membro da viagem")
-        setIsLoading(false)
-        return
-      }
-
-      // Check if user exists
-      const { data: inviteeProfile } = await supabase
-        .from("profiles")
-        .select("id, email, full_name")
-        .eq("email", email)
-        .single()
-
-      if (!inviteeProfile) {
-        // For users that don't exist, invite them to sign up
-        const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-          data: {
-            invited_to_trip: tripId,
-          },
-          redirectTo: `${window.location.origin}/dashboard`,
-        })
-
-        if (inviteError) {
-          console.error("Invite error:", inviteError)
-          // Continue anyway - create invitation record
-        }
-      }
-
-      // Create invitation record
-      const { error: inviteError } = await supabase.from("trip_invitations").insert({
-        trip_id: tripId,
-        inviter_id: user.id,
-        invitee_email: email,
-        invitee_id: inviteeProfile?.id || null,
-        status: "pending",
-      })
-
-      if (inviteError) throw inviteError
-
-      alert(
-        inviteeProfile
-          ? "Convite enviado! O usuário verá o convite no dashboard."
-          : "Convite enviado por email! A pessoa precisará criar uma conta para aceitar.",
-      )
-
-      setEmail("")
-      router.refresh()
+      await sendInvite()
     } catch (err: any) {
-      console.error("Error inviting:", err)
       setError(err.message || "Erro ao enviar convite")
     } finally {
       setIsLoading(false)

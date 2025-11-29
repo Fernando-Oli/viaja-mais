@@ -1,78 +1,88 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Bell, Check, X, MapPin, Calendar } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Bell, Check, X, MapPin, Calendar } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
 
 interface Invitation {
-  id: string
-  trip_id: string
-  status: string
-  created_at: string
-  trips: {
-    id: string
-    title: string
-    destination: string
-    start_date: string
-    end_date: string
-  }
+  id: string;
+  trip_id: string;
+  status: string;
+  created_at: string;
+  trip: {
+    id: string;
+    title: string;
+    destination: string;
+    start_date: string;
+    end_date: string;
+  };
   profiles: {
-    full_name: string
-  }
+    full_name: string;
+  };
 }
 
 interface TripInvitationsProps {
-  invitations: Invitation[]
+  invitations: Invitation[];
 }
 
 export function TripInvitations({ invitations }: TripInvitationsProps) {
-  const router = useRouter()
-  const supabase = createClient()
+  const context = useAuth();
+  const { addTrip, setTripsLoading } = context;
+  const router = useRouter();
 
-  const handleAccept = async (invitationId: string, tripId: string) => {
+  const handleAccept = async (invitationId: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error("Não autenticado")
+      console.log("[v0] Accepting invitation with ID:", invitationId);
+      setTripsLoading(true);
 
-      // Update invitation status
-      const { error: updateError } = await supabase
-        .from("trip_invitations")
-        .update({ status: "accepted" })
-        .eq("id", invitationId)
+      const response = await fetch(`/api/invitations/${invitationId}/accept`, {
+        method: "POST",
+      });
 
-      if (updateError) throw updateError
+      const { data, error } = await response.json();
 
-      // Add user as member
-      const { error: memberError } = await supabase.from("trip_members").insert({
-        trip_id: tripId,
-        user_id: user.id,
-        role: "member",
-      })
 
-      if (memberError) throw memberError
-
+      console.log("[v0] Invitation accepted, data received:", data);
       router.refresh()
-    } catch (err: any) {
-      alert("Erro ao aceitar convite: " + err.message)
+      if (!response.ok) {
+        throw new Error(error);
+      }
+    } finally {
+      setTripsLoading(false);
     }
-  }
+  };
 
   const handleDecline = async (invitationId: string) => {
     try {
-      const { error } = await supabase.from("trip_invitations").update({ status: "declined" }).eq("id", invitationId)
+      console.log("[v0] Accepting invitation with ID:", invitationId);
+      setTripsLoading(true);
 
-      if (error) throw error
-      router.refresh()
-    } catch (err: any) {
-      alert("Erro ao recusar convite: " + err.message)
+      const response = await fetch(`/api/invitations/${invitationId}/decline`, {
+        method: "POST",
+      });
+
+      const { data, error } = await response.json();
+
+
+      console.log("[v0] Invitation accepted, data received:", data);
+      router.refresh();
+      if (!response.ok) {
+        throw new Error(error);
+      }
+    } finally {
+      setTripsLoading(false);
     }
-  }
+  };
 
-  if (invitations.length === 0) return null
+  if (invitations.length === 0) return null;
 
   return (
     <Card className="border-viaja-orange/20 bg-orange-50/50">
@@ -82,33 +92,44 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
           Convites Pendentes
         </CardTitle>
         <CardDescription>
-          Você tem {invitations.length} {invitations.length === 1 ? "convite" : "convites"} para viagens
+          Você tem {invitations.length}{" "}
+          {invitations.length === 1 ? "convite" : "convites"} para viagens
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {invitations.map((invitation) => (
-          <div key={invitation.id} className="rounded-lg border border-viaja-orange/20 bg-white p-4">
+          <div
+            key={invitation.id}
+            className="rounded-lg border border-viaja-orange/20 bg-white p-4"
+          >
             <div className="mb-3">
-              <h4 className="font-semibold text-viaja-navy">{invitation.trips.title}</h4>
-              <p className="text-sm text-gray-600">Convite de {invitation.profiles.full_name}</p>
+              <h4 className="font-semibold text-viaja-navy">
+                {invitation.trip.title}
+              </h4>
+              {/* <p className="text-sm text-gray-600">Convite de {invitation.profiles.full_name}</p> */}
             </div>
             <div className="mb-4 space-y-1 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                <span>{invitation.trips.destination}</span>
+                <span>{invitation.trip.destination}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <span>
-                  {new Date(invitation.trips.start_date).toLocaleDateString("pt-BR")} -{" "}
-                  {new Date(invitation.trips.end_date).toLocaleDateString("pt-BR")}
+                  {new Date(invitation.trip.start_date).toLocaleDateString(
+                    "pt-BR"
+                  )}{" "}
+                  -{" "}
+                  {new Date(invitation.trip.end_date).toLocaleDateString(
+                    "pt-BR"
+                  )}
                 </span>
               </div>
             </div>
             <div className="flex gap-2">
               <Button
                 size="sm"
-                onClick={() => handleAccept(invitation.id, invitation.trip_id)}
+                onClick={() => handleAccept(invitation.id)}
                 className="flex-1 bg-viaja-green hover:bg-viaja-green/90"
               >
                 <Check className="mr-2 h-4 w-4" />
@@ -128,5 +149,5 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
         ))}
       </CardContent>
     </Card>
-  )
+  );
 }
