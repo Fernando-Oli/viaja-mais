@@ -28,21 +28,27 @@ import { Textarea } from "@/components/ui/textarea";
 import {PlaceAutocomplete} from "@/components/place-autocomplete";
 export default function NewTripPage() {
   const router = useRouter();
-  const { profile, trips, invitations, deleteTrip, refreshTrips, addTrip } =
+  const { addTrip } =
     useAuth();
   const [loading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    title: "Fernando de Noronha Trip",
-    destination: "Fernando de Noronha",
+    title: "",
+    destination: "",
     start_date: new Date().toISOString().split("T")[0],
-    end_date: new Date().toISOString().split("T")[0],
+    end_date: "",
     description: "",
     budget: 0,
     currency: "BRL",
     status: "planning",
   });
+
+
+  const handleInputChangeAutocomplete = (value: string) => {
+    setFormData({ ...formData, destination: value });
+  }
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,16 +109,7 @@ export default function NewTripPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="destination">Destino *</Label>
-                {/* <Input
-                  id="destination"
-                  placeholder="Ex: Paris, França"
-                  required
-                  value={formData.destination}
-                  onChange={(e) =>
-                    setFormData({ ...formData, destination: e.target.value })
-                  }
-                /> */}
-                <PlaceAutocomplete query={formData.destination} setQuery={(query) => setFormData({ ...formData, destination: query })} />
+                <PlaceAutocomplete handleInputChangeAutocomplete={handleInputChangeAutocomplete} query={formData.destination} />
               </div>
 
               <div className="space-y-2">
