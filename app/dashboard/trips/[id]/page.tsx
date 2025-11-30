@@ -178,7 +178,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
           <CardContent>
             <div className="text-2xl font-bold">
               {Math.ceil(
-                (new Date(trip.end_date).getTime() - new Date(trip.start_date).getTime()) / (1000 * 60 * 60 * 24),
+                (new Date(parseLocalDate(trip.end_date)).getTime() - new Date(parseLocalDate(trip.start_date)).getTime()) / (1000 * 60 * 60 * 24),
               )}
             </div>
             <p className="text-xs text-gray-600">dias</p>
@@ -251,7 +251,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
                       <div>
                         <h4 className="font-medium text-viaja-navy">{expense.title}</h4>
                         <p className="text-sm text-gray-600">
-                          {expense.category} • {new Date(expense.date).toLocaleDateString("pt-BR")}
+                          {expense.category} • {new Date(`${expense.date}T00:00`).toLocaleDateString("pt-BR")}
                         </p>
                       </div>
                       <div className="text-right">

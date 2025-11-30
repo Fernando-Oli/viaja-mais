@@ -5,6 +5,11 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin } from "lucide-react"
 import Link from "next/link"
 
+function parseLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day); // <-- interpreta como data local
+}
+
 export default async function ItineraryPage() {
   const supabase = await createClient()
 
@@ -24,6 +29,9 @@ export default async function ItineraryPage() {
     .order("date", { ascending: true })
     .order("start_time", { ascending: true })
     .limit(20)
+
+
+    console.log("[v0] Itinerary items fetched:", itineraryItems);
 
   const categoryColors: Record<string, string> = {
     accommodation: "bg-purple-100 text-purple-800",
@@ -59,7 +67,7 @@ export default async function ItineraryPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 flex flex-col">
           {itineraryItems.map((item) => (
             <Link key={item.id} href={`/dashboard/trips/${item.trip_id}`}>
               <Card className="transition-all hover:shadow-lg">
@@ -86,7 +94,7 @@ export default async function ItineraryPage() {
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {new Date(item.date).toLocaleDateString("pt-BR", {
+                          {new Date(parseLocalDate(item.date)).toLocaleDateString("pt-BR", {
                             weekday: "long",
                             year: "numeric",
                             month: "long",
@@ -98,8 +106,15 @@ export default async function ItineraryPage() {
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
                           <span>
-                            {item.start_time.slice(0, 5)}
+                            {item.start_time}
                             {item.end_time && ` - ${item.end_time.slice(0, 5)}`}
+                            {/* {parseLocalDate(item.start_time).toLocaleDateString(
+                            "pt-BR"
+                          )}{" "}
+                          -{" "}
+                          {parseLocalDate(item.end_time).toLocaleDateString(
+                            "pt-BR"
+                          )} */}
                           </span>
                         </div>
                       )}

@@ -214,7 +214,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Past Trips */}
+      Past Trips
       {pastTrips.length > 0 && (
         <div>
           <h2 className="mb-4 text-2xl font-bold text-viaja-navy">

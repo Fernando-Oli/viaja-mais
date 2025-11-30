@@ -189,7 +189,7 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
             {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-viaja-orange">
                 {isLoading ? "Salvando..." : "Salvar Atividade"}
               </Button>
               <Button type="button" variant="outline" asChild>

@@ -20,6 +20,12 @@ interface ItineraryListProps {
   tripId: string
 }
 
+function parseLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day); // <-- interpreta como data local
+}
+
+
 export function ItineraryList({ items, tripId }: ItineraryListProps) {
   if (items.length === 0) {
     return (
@@ -68,8 +74,8 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
         <div key={date}>
           <div className="mb-4 flex items-center gap-2">
             <Calendar className="h-5 w-5 text-sky-600" />
-            <h3 className="text-lg font-semibold text-slate-900">
-              {new Date(date).toLocaleDateString("pt-BR", {
+            <h3 className="text-lg font-semibold text-slate-900 capitalize">
+              {new Date(parseLocalDate(date)).toLocaleDateString("pt-BR", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
