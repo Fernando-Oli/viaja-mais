@@ -1,20 +1,11 @@
 "use client"
 
 import type React from "react"
-
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -26,9 +17,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [isResetting, setIsResetting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -50,38 +38,6 @@ export default function LoginPage() {
       setError(error instanceof Error ? error.message : "Erro ao fazer login");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const supabase = createClient();
-    setIsResetting(true);
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Email enviado!",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
-      });
-      setShowForgotPassword(false);
-      setResetEmail("");
-    } catch (error: unknown) {
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Erro ao enviar email de recuperação",
-        variant: "destructive",
-      });
-    } finally {
-      setIsResetting(false);
     }
   };
 
@@ -133,13 +89,12 @@ export default function LoginPage() {
                   />
                   <div className="flex items-center justify-end">
                     
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotPassword(true)}
-                      className="text-sm text-navy hover:text-navy/40 cursor-pointer hover:underline"
+                    <Link
+                      href="/auth/reset-password"
+                      className="text-sm text-sky-600 hover:text-sky-700 hover:underline"
                     >
                       Esqueceu a senha?
-                    </button>
+                    </Link>
                   </div>
                 </div>
                     
@@ -169,37 +124,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Esqueceu sua senha?</DialogTitle>
-            <DialogDescription>Digite seu email e enviaremos um link para redefinir sua senha.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleForgotPassword}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="reset-email">Email</Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  required
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowForgotPassword(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isResetting}>
-                {isResetting ? "Enviando..." : "Enviar link"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
