@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, MapPin, Star, Loader2, Trash2 } from "lucide-react"
 import Link from "next/link"
-import { PlaceAutocomplete } from "@/components/place-autocomplete"
+import { PlaceAutocompleteMap } from "@/components/place-autcomplete-map"
 
 export default function TripPlacesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -116,7 +116,7 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
               <CardDescription>Encontre atrações, restaurantes e pontos turísticos</CardDescription>
             </CardHeader>
             <CardContent>
-              <PlaceAutocomplete
+              <PlaceAutocompleteMap
                 onPlaceSelect={handlePlaceSelect}
                 defaultLocation={
                   trip?.destination

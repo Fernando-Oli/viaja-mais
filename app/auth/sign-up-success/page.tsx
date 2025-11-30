@@ -16,10 +16,7 @@ export default function SignUpSuccessPage() {
         <div className="mb-8 text-center">
           <div className="flex items-center gap-2 justify-center">
             <div className="w-10 h-10 bg-viaja-green rounded-xl flex items-center justify-center relative">
-              <Plane
-                className="w-5 h-5 text-white absolute"
-                style={{ transform: "rotate(-45deg)" }}
-              />
+              <Plane className="h-5 w-5 text-gray-300" />
             </div>
             <span className="text-2xl font-bold text-viaja-navy">Viaja+</span>
           </div>
@@ -38,8 +35,7 @@ export default function SignUpSuccessPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-sky-50 p-4 text-sm text-sky-800">
-              <p className="font-medium mb-1">Não recebeu o email?</p>
-              <p>Verifique sua caixa de spam ou aguarde alguns minutos.</p>
+              <p className="font-medium mb-1">Mesmo sem a confirmação você já pode acessar sua conta normalmente, mas sua validade será temporária.</p>
             </div>
             <Button asChild className="w-full">
               <Link href="/auth/login">Voltar para o login</Link>

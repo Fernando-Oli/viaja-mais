@@ -1,41 +1,20 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
-import { MapPin, Loader2 } from "lucide-react"
-
-interface PlaceResult {
-  place_id: string
-  name: string
-  formatted_address: string
-  geometry: {
-    location: {
-      lat: number
-      lng: number
-    }
-  }
-  rating?: number
-  types?: string[]
-}
+import { useState, useEffect, useCallback } from "react";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { MapPin, Loader2 } from "lucide-react";
 
 interface PlaceAutocompleteProps {
-  onPlaceSelect: (place: {
-    place_id: string
-    name: string
-    address: string
-    latitude: number
-    longitude: number
-    rating?: number
-    category?: string
-  }) => void
-  defaultLocation?: { lat: number; lng: number }
-  placeholder?: string
+  defaultLocation?: { lat: number; lng: number };
+  placeholder?: string;
+  query?: string;
+  setQuery: (query: string) => void;
 }
 
 declare global {
   interface Window {
-    google: any
+    google: any;
   }
 }
 
@@ -63,98 +42,97 @@ declare global {
  */
 
 export function PlaceAutocomplete({
-  onPlaceSelect,
-  defaultLocation,
   placeholder = "Buscar lugares, atrações, restaurantes...",
+  query = "",
+  setQuery,
 }: PlaceAutocompleteProps) {
-  const [query, setQuery] = useState("")
-  const [predictions, setPredictions] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false)
-  const [autocompleteService, setAutocompleteService] = useState<any>(null)
-  const [placesService, setPlacesService] = useState<any>(null)
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [autocompleteService, setAutocompleteService] = useState<any>(null);
+  const [placesService, setPlacesService] = useState<any>(null);
 
   useEffect(() => {
     const loadGoogleMaps = () => {
       if (window.google && window.google.maps) {
-        setAutocompleteService(new window.google.maps.places.AutocompleteService())
-        const mapDiv = document.createElement("div")
-        const map = new window.google.maps.Map(mapDiv)
-        setPlacesService(new window.google.maps.places.PlacesService(map))
-        setIsScriptLoaded(true)
-        return
+        setAutocompleteService(
+          new window.google.maps.places.AutocompleteService()
+        );
+        const mapDiv = document.createElement("div");
+        const map = new window.google.maps.Map(mapDiv);
+        setPlacesService(new window.google.maps.places.PlacesService(map));
+        setIsScriptLoaded(true);
+        return;
       }
 
-      const script = document.createElement("script")
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`
-      script.async = true
-      script.defer = true
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
       script.onload = () => {
-        setAutocompleteService(new window.google.maps.places.AutocompleteService())
-        const mapDiv = document.createElement("div")
-        const map = new window.google.maps.Map(mapDiv)
-        setPlacesService(new window.google.maps.places.PlacesService(map))
-        setIsScriptLoaded(true)
-      }
-      document.head.appendChild(script)
-    }
+        setAutocompleteService(
+          new window.google.maps.places.AutocompleteService()
+        );
+        const mapDiv = document.createElement("div");
+        const map = new window.google.maps.Map(mapDiv);
+        setPlacesService(new window.google.maps.places.PlacesService(map));
+        setIsScriptLoaded(true);
+      };
+      document.head.appendChild(script);
+    };
 
-    loadGoogleMaps()
-  }, [])
+    loadGoogleMaps();
+  }, []);
 
   const handleInputChange = useCallback(
     (value: string) => {
-      setQuery(value)
+      setQuery(value);
 
       if (!value.trim() || !autocompleteService || !isScriptLoaded) {
-        setPredictions([])
-        return
+        setPredictions([]);
+        return;
       }
 
-      setIsLoading(true)
+      setIsLoading(true);
 
       const request: any = {
         input: value,
         types: ["establishment", "geocode"],
-      }
+      };
 
-      if (defaultLocation) {
-        request.location = new window.google.maps.LatLng(defaultLocation.lat, defaultLocation.lng)
-        request.radius = 50000
-      }
-
-      autocompleteService.getPlacePredictions(request, (results: any, status: any) => {
-        setIsLoading(false)
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          setPredictions(results)
-        } else {
-          setPredictions([])
+      autocompleteService.getPlacePredictions(
+        request,
+        (results: any, status: any) => {
+          setIsLoading(false);
+          if (
+            status === window.google.maps.places.PlacesServiceStatus.OK &&
+            results
+          ) {
+            setPredictions(results);
+          } else {
+            setPredictions([]);
+          }
         }
-      })
+      );
     },
-    [autocompleteService, isScriptLoaded, defaultLocation],
-  )
+    [autocompleteService, isScriptLoaded]
+  );
 
-  const handlePlaceSelect = (placeId: string) => {
-    if (!placesService) return
+  const handlePlaceSelect = (e: React.MouseEvent, placeId: string) => {
+    e.preventDefault();
+
+    if (!placesService) return;
 
     placesService.getDetails({ placeId }, (place: any, status: any) => {
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-        const category = place.types?.[0] || "other"
-        onPlaceSelect({
-          place_id: place.place_id,
-          name: place.name,
-          address: place.formatted_address,
-          latitude: place.geometry.location.lat(),
-          longitude: place.geometry.location.lng(),
-          rating: place.rating,
-          category,
-        })
-        setQuery("")
-        setPredictions([])
+      if (
+        status === window.google.maps.places.PlacesServiceStatus.OK &&
+        place
+      ) {
+        setQuery(place.name);
+        setPredictions([]);
       }
-    })
-  }
+    });
+  };
 
   return (
     <div className="relative space-y-2">
@@ -177,16 +155,18 @@ export function PlaceAutocomplete({
             {predictions.map((prediction: any) => (
               <button
                 key={prediction.place_id}
-                onClick={() => handlePlaceSelect(prediction.place_id)}
+                onClick={(e) => handlePlaceSelect(e, prediction.place_id)}
                 className="w-full rounded-lg p-3 text-left transition-colors hover:bg-gray-100"
               >
                 <div className="flex items-start gap-3">
-                  <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-viaja-orange" />
+                  <MapPin className="mt-1 h-5 w-5 shrink-0 text-viaja-orange" />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-viaja-navy truncate">
                       {prediction.structured_formatting.main_text}
                     </h4>
-                    <p className="text-sm text-gray-600 truncate">{prediction.structured_formatting.secondary_text}</p>
+                    <p className="text-sm text-gray-600 truncate">
+                      {prediction.structured_formatting.secondary_text}
+                    </p>
                   </div>
                 </div>
               </button>
@@ -195,5 +175,5 @@ export function PlaceAutocomplete({
         </Card>
       )}
     </div>
-  )
+  );
 }

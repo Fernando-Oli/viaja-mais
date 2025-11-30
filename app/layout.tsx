@@ -12,7 +12,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "Viaja+ - Planejamento Inteligente de Viagens",
+  title: "Viaja +",
   description: "Centralize todo o planejamento da sua viagem em um só lugar",
 }
 

@@ -68,13 +68,7 @@ export default function DashboardLayout({
           {/* Logo */}
           <div className="flex h-16 items-center gap-2 border-b border-white/10 px-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-viaja-green relative">
-              <Plane className="h-5 w-5 text-white absolute" style={{ transform: "rotate(-45deg)" }} />
-              <span
-                className="text-white text-lg font-bold absolute"
-                style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
-              >
-                +
-              </span>
+              <Plane className="h-5 w-5 text-gray-300" />
             </div>
             <span className="text-xl font-bold text-white">Viaja+</span>
           </div>

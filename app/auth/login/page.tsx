@@ -53,27 +53,24 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-viaja-green rounded-xl flex items-center justify-center relative">
-                <Plane
-                  className="w-5 h-5 text-white absolute"
-                  style={{ transform: "rotate(-45deg)" }}
-                />
+                <Plane className="h-5 w-5 text-white" />
               </div>
               <span className="text-2xl font-bold text-viaja-navy">Viaja+</span>
             </div>
           </div>
-          <p className="mt-2 text-slate-600">Bem-vindo de volta!</p>
+          <p className="mt-2 text-viaja-navy">Bem-vindo de volta!</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Entrar</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl text-viaja-green">Entrar</CardTitle>
+            <CardDescription className="text-viaja-navy">
               Digite seu email e senha para acessar sua conta
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin}>
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6 text-viaja-navy">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -85,7 +82,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid gap-2 ">
                   <Label htmlFor="password">Senha</Label>
                   <Input
                     id="password"
@@ -100,7 +97,7 @@ export default function LoginPage() {
                     {error}
                   </div>
                 )}
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-viaja-orange hover:bg-viaja-orange/90" disabled={isLoading}>
                   {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
               </div>
@@ -108,7 +105,7 @@ export default function LoginPage() {
                 Não tem uma conta?{" "}
                 <Link
                   href="/auth/sign-up"
-                  className="font-medium text-sky-600 hover:text-sky-700 underline-offset-4 hover:underline"
+                  className="font-medium text-viaja-green hover:text-viaja-green/80 underline-offset-4 hover:underline"
                 >
                   Criar conta
                 </Link>

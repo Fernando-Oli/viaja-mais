@@ -10,7 +10,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-viaja-green rounded-xl flex items-center justify-center relative">
-              <Plane className="w-5 h-5 text-white absolute" style={{ transform: "rotate(-45deg)" }} />
+              <Plane className="h-5 w-5 text-white" />
             </div>
             <span className="text-2xl font-bold text-viaja-navy">Viaja+</span>
           </div>

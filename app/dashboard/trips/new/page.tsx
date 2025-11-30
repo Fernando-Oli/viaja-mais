@@ -25,7 +25,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { Textarea } from "@/components/ui/textarea";
-
+import {PlaceAutocomplete} from "@/components/place-autocomplete";
 export default function NewTripPage() {
   const router = useRouter();
   const { profile, trips, invitations, deleteTrip, refreshTrips, addTrip } =
@@ -103,7 +103,7 @@ export default function NewTripPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="destination">Destino *</Label>
-                <Input
+                {/* <Input
                   id="destination"
                   placeholder="Ex: Paris, França"
                   required
@@ -111,7 +111,8 @@ export default function NewTripPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, destination: e.target.value })
                   }
-                />
+                /> */}
+                <PlaceAutocomplete query={formData.destination} setQuery={(query) => setFormData({ ...formData, destination: query })} />
               </div>
 
               <div className="space-y-2">
