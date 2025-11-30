@@ -9,6 +9,11 @@ import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned } from 
 import { ItineraryList } from "@/components/itinerary-list"
 import { TripMembers } from "@/components/trip-members"
 
+function parseLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day); // <-- interpreta como data local
+}
+
 export default async function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -103,8 +108,8 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <span>
-                  {new Date(trip.start_date).toLocaleDateString("pt-BR")} -{" "}
-                  {new Date(trip.end_date).toLocaleDateString("pt-BR")}
+                  {parseLocalDate(trip.start_date).toLocaleDateString("pt-BR")} -{" "}
+                {parseLocalDate(trip.end_date).toLocaleDateString("pt-BR")}
                 </span>
               </div>
               {trip.budget && (

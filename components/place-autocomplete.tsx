@@ -8,7 +8,7 @@ import { MapPin, Loader2 } from "lucide-react";
 interface PlaceAutocompleteProps {
   defaultLocation?: { lat: number; lng: number };
   placeholder?: string;
-  handleInputChangeAutocomplete: (value: string) => void;
+  handleInputChangeAutocomplete: (e: React.ChangeEvent<HTMLInputElement>) => void;
   query: string;
 }
 
@@ -85,8 +85,9 @@ export function PlaceAutocomplete({
   }, []);
 
   const handleInputChange = useCallback(
-    (value: string) => {
-      handleInputChangeAutocomplete(value);
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value  = e.target.value;
+      handleInputChangeAutocomplete(e);
       
 
       if (!value.trim() || !autocompleteService || !isScriptLoaded) {
@@ -129,7 +130,9 @@ export function PlaceAutocomplete({
         status === window.google.maps.places.PlacesServiceStatus.OK &&
         place
       ) {
-        handleInputChangeAutocomplete(place.formatted_address);
+        handleInputChangeAutocomplete({
+          target: { value: place.formatted_address, name: "destination" },
+        } as React.ChangeEvent<HTMLInputElement>);
         setPredictions([]);
       }
     });
@@ -141,9 +144,10 @@ export function PlaceAutocomplete({
         <Input
           placeholder={placeholder}
           value={query}
-          onChange={(e) => handleInputChange(e.target.value)}
+          onChange={(e) => handleInputChange(e)}
           disabled={!isScriptLoaded}
           className="pr-10"
+          name="destination"
         />
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400" />

@@ -29,6 +29,11 @@ export default function DashboardPage() {
   const [openModal, setModal] = useState(false);
   const [tripSelect, setTripSelect] = useState("");
 
+  function parseLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day); // <-- interpreta como data local
+}
+
   const upcomingTrips =
     trips?.filter((trip) => new Date(trip.start_date) >= new Date()) || [];
   const pastTrips =
@@ -44,8 +49,8 @@ export default function DashboardPage() {
           description="Essa ação é irreversível."
           onConfirm={() => deleteTrip(tripSelect)}
           onOpenChange={() => {
-             setModal(false);
-             setTripSelect("");
+            setModal(false);
+            setTripSelect("");
           }}
         />
       )}
@@ -148,7 +153,7 @@ export default function DashboardPage() {
                   }}
                   size="sm"
                   variant="ghost"
-                  className="absolute right-2 top-2 z-10 hover:bg-red-600"
+                  className="absolute right-2 bottom-2 z-10 hover:bg-red-600 cursor-pointer hover:text-white transition-colors duration-200"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -180,11 +185,13 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {new Date(trip.start_date).toLocaleDateString(
+                          {parseLocalDate(trip.start_date).toLocaleDateString(
                             "pt-BR"
                           )}{" "}
                           -{" "}
-                          {new Date(trip.end_date).toLocaleDateString("pt-BR")}
+                          {parseLocalDate(trip.end_date).toLocaleDateString(
+                            "pt-BR"
+                          )}
                         </span>
                       </div>
                       {trip.budget && (
@@ -226,7 +233,7 @@ export default function DashboardPage() {
                   }}
                   size="sm"
                   variant="ghost"
-                  className="absolute right-2 top-2 z-10 hover:bg-red-600 cursor-pointer hover:text-white transition-colors duration-200"
+                  className="absolute right-2 bottom-2 z-10 hover:bg-red-600 cursor-pointer hover:text-white transition-colors duration-200"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -242,7 +249,13 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {new Date(trip.start_date).toLocaleDateString("pt-BR")}
+                        {parseLocalDate(trip.start_date).toLocaleDateString(
+                            "pt-BR"
+                          )}{" "}
+                          -{" "}
+                          {parseLocalDate(trip.end_date).toLocaleDateString(
+                            "pt-BR"
+                          )}
                       </span>
                     </div>
                   </CardContent>

@@ -25,11 +25,10 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { Textarea } from "@/components/ui/textarea";
-import {PlaceAutocomplete} from "@/components/place-autocomplete";
+import { PlaceAutocomplete } from "@/components/place-autocomplete";
 export default function NewTripPage() {
   const router = useRouter();
-  const { addTrip } =
-    useAuth();
+  const { addTrip } = useAuth();
   const [loading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,18 +36,20 @@ export default function NewTripPage() {
     title: "",
     destination: "",
     start_date: new Date().toISOString().split("T")[0],
-    end_date: "",
+    end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     description: "",
     budget: 0,
     currency: "BRL",
     status: "planning",
   });
 
-
-  const handleInputChangeAutocomplete = (value: string) => {
-    setFormData({ ...formData, destination: value });
-  }
-  
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,18 +99,20 @@ export default function NewTripPage() {
                 <Label htmlFor="title">Título da Viagem *</Label>
                 <Input
                   id="title"
+                  name="title"
                   placeholder="Ex: Férias em Paris"
                   required
                   value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
+                  onChange={(e) => handleInputChange(e)}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="destination">Destino *</Label>
-                <PlaceAutocomplete handleInputChangeAutocomplete={handleInputChangeAutocomplete} query={formData.destination} />
+                <PlaceAutocomplete
+                  handleInputChangeAutocomplete={handleInputChange}
+                  query={formData.destination}
+                />
               </div>
 
               <div className="space-y-2">
@@ -117,12 +120,11 @@ export default function NewTripPage() {
                 <Input
                   id="start_date"
                   type="date"
+                  name="start_date"
                   required
                   min={new Date().toISOString().split("T")[0]}
                   value={formData.start_date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, start_date: e.target.value })
-                  }
+                  onChange={(e) => handleInputChange(e)}
                 />
               </div>
 
@@ -131,11 +133,11 @@ export default function NewTripPage() {
                 <Input
                   id="end_date"
                   type="date"
+                  name="end_date"
+                  min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
                   required
                   value={formData.end_date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, end_date: e.target.value })
-                  }
+                  onChange={(e) => handleInputChange(e)}
                 />
               </div>
 
@@ -144,10 +146,9 @@ export default function NewTripPage() {
                 <Input
                   id="number"
                   type="text"
+                  name="budget"
                   value={Number(formData.budget)}
-                  onChange={(e) =>
-                    setFormData({ ...formData, budget: Number(e.target.value) })
-                  }
+                  onChange={(e) => handleInputChange(e)}
                 />
               </div>
 
@@ -155,27 +156,9 @@ export default function NewTripPage() {
                 <Label htmlFor="currency">Moeda</Label>
                 <Select
                   value={formData.currency}
+                  name="currency"
                   onValueChange={(value) =>
-                    setFormData({ ...formData, currency: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BRL">BRL - Real Brasileiro</SelectItem>
-                    <SelectItem value="USD">USD - Dólar Americano</SelectItem>
-                    <SelectItem value="EUR">EUR - Euro</SelectItem>
-                    <SelectItem value="GBP">GBP - Libra Esterlina</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">Moeda</Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, currency: value })
+                    setFormData((prev) => ({ ...prev, currency: value }))
                   }
                 >
                   <SelectTrigger>
@@ -195,21 +178,21 @@ export default function NewTripPage() {
               <Label htmlFor="description">Descrição</Label>
               <Textarea
                 id="description"
+                name="description"
                 placeholder="Adicione uma descrição sobre sua viagem..."
                 rows={4}
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={(e) => handleInputChange(e)}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select
+                name="status"
                 value={formData.status}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, status: value })
+                  setFormData((prev) => ({ ...prev, status: value }))
                 }
               >
                 <SelectTrigger>
