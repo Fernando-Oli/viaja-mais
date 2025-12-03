@@ -73,14 +73,14 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <aside className="hidden w-64 border-r border-gray-200 bg-viaja-navy lg:block">
+      <aside className="w-20 md:w-64 lg:64  border-r border-gray-200 bg-viaja-navy lg:block">
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center gap-2 border-b border-white/10 px-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-viaja-green relative">
               <Plane className="h-5 w-5 text-gray-300" />
             </div>
-            <span className="text-xl font-bold text-white">Viaja+</span>
+            <span className="text-xl font-bold text-white hidden md:block lg:block">Viaja+</span>
           </div>
 
           {/* Navigation */}
@@ -92,7 +92,7 @@ export default function DashboardLayout({
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <item.icon className="h-5 w-5" />
-                {item.name}
+                <p className="hidden md:block lg:block">{item.name}</p>
               </Link>
             ))}
           </nav>
