@@ -1,6 +1,25 @@
 node_modules
 /node_modules
-/next
+
+# build
 /.next
-/.env.local
-/scripts
+/out
+/build
+
+# variáveis de ambiente — .env.example é versionado, o resto não
+.env
+.env.local
+.env*.local
+
+# testes e evidências geradas
+/coverage
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+
+# build do documento do PFC (gerado por `npm run pfc:build`)
+/docs/pfc/build
+
+# gerado pelo tsc
+*.tsbuildinfo
