@@ -1,0 +1,46 @@
+name: Evidências
+
+# Gera o material datado das seções 24 e 25 do documento do PFC. Roda toda
+# segunda de manhã e sob demanda, para que a evolução ao longo do semestre fique
+# registrada em vez de ser reconstruída na véspera da entrega.
+on:
+  schedule:
+    # Segunda de manhã (11:17 UTC = 08:17 em Brasília)
+    - cron: "17 11 * * 1"
+  workflow_dispatch:
+
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'placeholder-maps-key' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Testes com cobertura
+        run: npm run test:cov
+        continue-on-error: true
+
+      - name: Rastreabilidade
+        run: npm run pfc:rastreabilidade
+        continue-on-error: true
+
+      - name: Checklist do documento
+        run: npm run pfc:check
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evidencias-${{ github.run_number }}
+          path: |
+            coverage/
+            docs/pfc/rastreabilidade.md
+          retention-days: 90

@@ -1,0 +1,57 @@
+name: Banco de dados
+
+on:
+  pull_request:
+    paths: ["supabase/**", "tests/rls/**", ".github/workflows/db.yml"]
+  push:
+    branches: [main]
+    paths: ["supabase/**", "tests/rls/**"]
+
+jobs:
+  migrations:
+    name: Migrations e RLS
+    runs-on: ubuntu-latest
+
+    # Postgres efêmero: prova que o banco é reproduzível **só a partir do
+    # repositório**. Foi exatamente o que faltou no início do projeto, quando o
+    # schema existia apenas dentro do painel do Supabase.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: viaja_mais_teste
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/viaja_mais_teste
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Aplicar migrations em ordem
+        run: |
+          set -e
+          shopt -s nullglob
+          arquivos=(supabase/migrations/*.sql)
+          if [ ${#arquivos[@]} -eq 0 ]; then
+            echo "::error::Nenhuma migration em supabase/migrations/. O schema precisa estar versionado."
+            exit 1
+          fi
+          for f in "${arquivos[@]}"; do
+            echo "==> $f"
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Testes de RLS
+        run: npm run test:rls
