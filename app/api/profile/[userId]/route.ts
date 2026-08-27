@@ -30,7 +30,6 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    console.log("[v0] Profile fetched successfully:", profile?.id);
     return NextResponse.json({ profile });
   } catch (error) {
     console.error("[v0] Profile route error:", error);
@@ -42,8 +41,10 @@ export async function GET(
 }
 export async function PATCH(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
+  const { userId } = await params;
+
   try {
     const supabase = await createClient();
     const body = await request.json();
@@ -52,14 +53,17 @@ export async function PATCH(
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user || user.id !== params.userId) {
+    if (!user || user.id !== userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Mass-assignment: `body` vem do cliente e vai inteiro para o UPDATE, o que
+    // permite reescrever colunas que não deveriam ser editáveis.
+    // TODO(S02/T1): validar com zod e extrair campo a campo — ver CLAUDE.md.
     const { data: profile, error } = await supabase
       .from("profiles")
       .update(body)
-      .eq("id", params.userId)
+      .eq("id", userId)
       .select()
       .single();
 

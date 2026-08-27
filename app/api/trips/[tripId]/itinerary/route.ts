@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { tripId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await params
   try {
     const supabase = await createClient()
 
@@ -16,7 +17,7 @@ export async function GET(request: Request, { params }: { params: { tripId: stri
     const { data: itinerary, error } = await supabase
       .from("itinerary_items")
       .select("*")
-      .eq("trip_id", params.tripId)
+      .eq("trip_id", tripId)
       .order("date", { ascending: true })
       .order("start_time", { ascending: true })
 
@@ -30,7 +31,8 @@ export async function GET(request: Request, { params }: { params: { tripId: stri
   }
 }
 
-export async function POST(request: Request, { params }: { params: { tripId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await params
   try {
     const supabase = await createClient()
     const body = await request.json()
@@ -47,7 +49,7 @@ export async function POST(request: Request, { params }: { params: { tripId: str
       .from("itinerary_items")
       .insert({
         ...body,
-        trip_id: params.tripId,
+        trip_id: tripId,
       })
       .select()
       .single()
