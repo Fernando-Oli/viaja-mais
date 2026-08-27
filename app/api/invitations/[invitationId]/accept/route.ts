@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request, { params }: { params: Promise<{ invitationId: string }> }) {
-  console.log("[v0] Accept invitation route called")
   try {
     const { invitationId } = await params
     const supabase = await createClient()
@@ -15,7 +14,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ inv
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    console.log("[v0] Accepting invitation:", invitationId, "for user:", user.id, user.email)
 
     const { data: invitation, error: invitationError } = await supabase
       .from("trip_invitations")
@@ -40,7 +38,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ inv
       return NextResponse.json({ error: "Convite não encontrado ou já processado" }, { status: 404 })
     }
 
-    console.log("[v0] Found invitation:", invitation)
 
     const { data: existingMember } = await supabase
       .from("trip_members")
@@ -50,7 +47,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ inv
       .maybeSingle()
 
     if (!existingMember) {
-      console.log("[v0] Adding user as member")
       const { error: memberError } = await supabase.from("trip_members").insert({
         trip_id: invitation.trip_id,
         user_id: user.id,
@@ -61,12 +57,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ inv
         console.error("[v0] Member error:", memberError)
         return NextResponse.json({ error: "Erro ao adicionar membro" }, { status: 400 })
       }
-      console.log("[v0] User added as member successfully")
     } else {
-      console.log("[v0] User is already a member, skipping insert")
     }
 
-    console.log("[v0] Updating invitation status")
     const { error: updateError } = await supabase
       .from("trip_invitations")
       .update({
@@ -81,7 +74,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ inv
       return NextResponse.json({ error: updateError }, { status: 400 })
     }
 
-    console.log("[v0] Invitation accepted successfully")
 
     return NextResponse.json({
       success: true,

@@ -48,7 +48,6 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
         body: JSON.stringify({ email, tripId, inviterId: user?.id }),
       })
   
-      console.log(res);
   
       if (!res.ok) {
         const err = await res.json()

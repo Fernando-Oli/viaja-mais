@@ -46,7 +46,6 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    console.log("Creating trip with data:", body);
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
