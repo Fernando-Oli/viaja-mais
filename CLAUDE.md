@@ -16,6 +16,20 @@ Equipe e domínios — cada pessoa é dona de uma fatia **vertical** (migration 
 
 **Não consulte tabela de outro domínio direto.** O dono expõe um helper em `lib/`; os outros consomem.
 
+Grupos de requisito por dono, para o catálogo das seções 14 e 15:
+
+| Dono | Grupos |
+|---|---|
+| Fernando | RF01 autenticação · RF04 viagens em grupo · RNF01 performance · RNF02 segurança · RNF04 confiabilidade · RNF06 escalabilidade |
+| Audrey | RF03 viagens · RF05 itinerário · RF07 reservas · RF08 lugares · RNF03 usabilidade · RNF05 manutenibilidade |
+| Micael | RF06 controle financeiro |
+| Abner | **RF02 gestão de perfil** |
+
+Os 84 requisitos herdados do `docs/ARCHITECTURE.md` descrevem o sistema **como ele
+existe hoje** — por isso concentram-se em autenticação, viagens e itinerário. Os
+requisitos de rateio, rede social e IA ainda não existem: escrevê-los é a
+atividade de S01 do Micael e do Abner.
+
 ## Regras não negociáveis
 
 1. **Nenhuma escrita no banco a partir do browser.** Todo write passa por route handler em `app/api/**`,
