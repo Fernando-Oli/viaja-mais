@@ -1,23 +1,23 @@
 ---
-id: S13-M-conferencia-req
-titulo: Conferência: catálogo de requisitos versus implementado
+id: S01-Ab-catalogo-financeiro
+titulo: Catálogo de requisitos: Financeiro e modelo do rateio
 trilha: T5
-responsavel: micael
+responsavel: abner
 revisor: fernando
-semana: S13
+semana: S01
 requisitos: []
-secoes_doc: [14, 15]
-branch: docs/S13-M-conferencia-req
+secoes_doc: [14, 15, 18]
+branch: docs/S01-Ab-catalogo-financeiro
 tipo: [documentacao]
 status: backlog
 ---
-# Conferência: catálogo de requisitos versus implementado
+# Catálogo de requisitos: Financeiro e modelo do rateio
 
-> **Micael** · semana **S13** (18 a 24/11) · marco da semana: _Congelamento de funcionalidades em 20/11_
+> **Abner** · semana **S01** (26/08 a 01/09) · marco da semana: _Base mergeada e backlog inteiro no quadro_
 
 ## 1. Contexto
 
-Nenhum requisito pode estar marcado como implementado sem teste associado.
+RF e RNF de despesas, mais o modelo entidade-relacionamento da divisão de custos, que e o diferencial do produto.
 
 ## 2. Arquivos afetados
 
@@ -31,6 +31,8 @@ _A preencher._
 
 Obrigatórios pelo tipo (`documentacao`):
 
+- [ ] Cada requisito tem ID, descrição, status e prioridade
+- [ ] O modelo cobre: quem pagou, quem deve, e quanto
 - [ ] `npm run pfc:check` sem bloqueio novo
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
@@ -43,6 +45,8 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
+- [ ] O rateio contempla divisão igual, por peso e por valor exato
+- [ ] Arredondamento de centavo esta decidido (R$ 10 entre 3 pessoas)
 - [ ] Extensao respeita o limite da seção em `docs/pfc/_regras.md`
 - [ ] Nenhuma afirmação sem evidência no repositório
 - [ ] Parte 00 atualizada com o que mudou

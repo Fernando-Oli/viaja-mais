@@ -1,19 +1,19 @@
 ---
-id: S03-Ab-migration-social
+id: S03-M-migration-social
 titulo: Migration do social: perfil público e follows
 trilha: T1
-responsavel: abner
+responsavel: micael
 revisor: fernando
 semana: S03
 requisitos: []
 secoes_doc: [18, 25]
-branch: feat/S03-Ab-migration-social
+branch: feat/S03-M-migration-social
 tipo: [migration, rls]
 status: backlog
 ---
 # Migration do social: perfil público e follows
 
-> **Abner** · semana **S03** (09 a 15/09) · marco da semana: _Convite chega no e-mail de verdade_
+> **Micael** · semana **S03** (09 a 15/09) · marco da semana: _Convite chega no e-mail de verdade_
 
 ## 1. Contexto
 

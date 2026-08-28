@@ -1,23 +1,23 @@
 ---
-id: S03-M-editar-despesa
-titulo: Editar e excluir despesa
+id: S05-M-seguir
+titulo: Seguir e deixar de seguir
 trilha: T1
 responsavel: micael
 revisor: fernando
-semana: S03
-requisitos: [RF06]
+semana: S05
+requisitos: []
 secoes_doc: [22.1]
-branch: feat/S03-M-editar-despesa
+branch: feat/S05-M-seguir
 tipo: [route-handler, tela]
 status: backlog
 ---
-# Editar e excluir despesa
+# Seguir e deixar de seguir
 
-> **Micael** · semana **S03** (09 a 15/09) · marco da semana: _Convite chega no e-mail de verdade_
+> **Micael** · semana **S05** (23 a 29/09) · marco da semana: _Zero escrita no banco a partir do navegador_
 
 ## 1. Contexto
 
-Despesas só podem ser criadas. Erro de digitação em valor e permanente.
+Base do feed.
 
 ## 2. Arquivos afetados
 
@@ -31,6 +31,7 @@ _A preencher._
 
 Obrigatórios pelo tipo (`route-handler, tela`):
 
+- [ ] Não e possível seguir a si mesmo
 - [ ] Integração cobrindo os 4 caminhos: 200 feliz, 401 sem sessão, 403 não-membro, 400 payload invalido
 - [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
 
@@ -44,8 +45,8 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] So quem registrou a despesa, ou o dono da viagem, pode altera-la
-- [ ] Exclusao pede confirmação pelo ConfirmModal
+- [ ] Contadores conferem após seguir e deixar de seguir
+- [ ] Seguir perfil privado exige aprovação ou e recusado — decidir e registrar em Decisões
 - [ ] `await params` (nesta versão do Next, params e Promise)
 - [ ] Corpo validado por zod, com campos extraidos um a um — nunca `...body`
 - [ ] Autorização checada no servidor via `exigirMembro` / `exigirDono`

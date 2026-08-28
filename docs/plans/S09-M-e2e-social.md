@@ -1,23 +1,23 @@
 ---
-id: S05-M-balances
-titulo: Cálculo de saldos em lib/finance
+id: S09-M-e2e-social
+titulo: E2E do fluxo social
 trilha: T1
 responsavel: micael
 revisor: fernando
-semana: S05
-requisitos: [RF06]
-secoes_doc: [22.2]
-branch: feat/S05-M-balances
-tipo: [regra-de-negocio]
+semana: S09
+requisitos: []
+secoes_doc: [24]
+branch: feat/S09-M-e2e-social
+tipo: [tela]
 status: backlog
 ---
-# Cálculo de saldos em lib/finance
+# E2E do fluxo social
 
-> **Micael** · semana **S05** (23 a 29/09) · marco da semana: _Zero escrita no banco a partir do navegador_
+> **Micael** · semana **S09** (21 a 27/10) · marco da semana: _Rede social ponta a ponta_
 
 ## 1. Contexto
 
-Funções puras de saldo e de minimização de transferências. É a peça mais testável do projeto e o melhor exemplo para a seção 24.
+_A preencher por quem assumir a atividade._
 
 ## 2. Arquivos afetados
 
@@ -29,11 +29,9 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`regra-de-negocio`):
+Obrigatórios pelo tipo (`tela`):
 
-- [ ] Casos de borda: zero, negativo, R$ 10 entre 3 pessoas
-- [ ] Unit com casos de borda
-- [ ] Cobertura de ao menos 70% no arquivo
+- [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -45,9 +43,9 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] Soma dos saldos e sempre zero
-- [ ] Função pura, sem I/O
-- [ ] Casos de arredondamento cobertos
+- [ ] Funciona em mobile e desktop
+- [ ] Feedback por `toast()`; sem `alert()` nem `confirm()`
+- [ ] Estado de erro e de carregamento tratados
 
 ## 6. Evidência
 

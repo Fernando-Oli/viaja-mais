@@ -1,23 +1,23 @@
 ---
-id: S07-Ab-feed
-titulo: Feed com paginação por cursor
+id: S08-M-curtir-comentar
+titulo: Curtir e comentar
 trilha: T1
-responsavel: abner
+responsavel: micael
 revisor: fernando
-semana: S07
+semana: S08
 requisitos: []
-secoes_doc: [22.2]
-branch: feat/S07-Ab-feed
+secoes_doc: []
+branch: feat/S08-M-curtir-comentar
 tipo: [route-handler, tela]
 status: backlog
 ---
-# Feed com paginação por cursor
+# Curtir e comentar
 
-> **Abner** · semana **S07** (07 a 13/10) · marco da semana: _Primeiro E2E verde no CI_
+> **Micael** · semana **S08** (14 a 20/10) · marco da semana: _Acerto de contas funcional_
 
 ## 1. Contexto
 
-Cursor e não offset: com offset, um item duplica quando alguém pública durante a rolagem.
+Interação no feed.
 
 ## 2. Arquivos afetados
 

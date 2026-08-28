@@ -1,19 +1,19 @@
 ---
-id: S12-M-doc-req
-titulo: Seções 22.2, 13, 14 e 15
+id: S11-Ab-polimento-financeiro
+titulo: Polimento financeiro e seção 18
 trilha: T5
-responsavel: micael
+responsavel: abner
 revisor: fernando
-semana: S12
+semana: S11
 requisitos: []
-secoes_doc: [22.2, 13, 14, 15]
-branch: docs/S12-M-doc-req
+secoes_doc: [18]
+branch: docs/S11-Ab-polimento-financeiro
 tipo: [documentacao]
 status: backlog
 ---
-# Seções 22.2, 13, 14 e 15
+# Polimento financeiro e seção 18
 
-> **Micael** · semana **S12** (11 a 17/11) · marco da semana: _Evidencias datadas geradas_
+> **Abner** · semana **S11** (04 a 10/11) · marco da semana: _IA ponta a ponta com provider fake no CI_
 
 ## 1. Contexto
 

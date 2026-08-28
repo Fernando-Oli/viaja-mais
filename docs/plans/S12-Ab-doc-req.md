@@ -1,23 +1,23 @@
 ---
-id: S06-M-rateio-ui
-titulo: Rateio na criação da despesa
-trilha: T1
-responsavel: micael
+id: S12-Ab-doc-req
+titulo: Seções 22.2, 13, 14 e 15
+trilha: T5
+responsavel: abner
 revisor: fernando
-semana: S06
-requisitos: [RF06]
-secoes_doc: [22.1]
-branch: feat/S06-M-rateio-ui
-tipo: [tela]
+semana: S12
+requisitos: []
+secoes_doc: [22.2, 13, 14, 15]
+branch: docs/S12-Ab-doc-req
+tipo: [documentacao]
 status: backlog
 ---
-# Rateio na criação da despesa
+# Seções 22.2, 13, 14 e 15
 
-> **Micael** · semana **S06** (30/09 a 06/10) · marco da semana: _Fluxo de grupo ponta a ponta_
+> **Abner** · semana **S12** (11 a 17/11) · marco da semana: _Evidencias datadas geradas_
 
 ## 1. Contexto
 
-Interface para escolher entre divisão igual, por peso ou por valor exato.
+_A preencher por quem assumir a atividade._
 
 ## 2. Arquivos afetados
 
@@ -29,10 +29,9 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`tela`):
+Obrigatórios pelo tipo (`documentacao`):
 
-- [ ] E2E das três formas de divisão
-- [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
+- [ ] `npm run pfc:check` sem bloqueio novo
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -44,10 +43,9 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] Soma sempre fecha com o total, inclusive com centavo quebrado
-- [ ] Funciona em mobile e desktop
-- [ ] Feedback por `toast()`; sem `alert()` nem `confirm()`
-- [ ] Estado de erro e de carregamento tratados
+- [ ] Extensao respeita o limite da seção em `docs/pfc/_regras.md`
+- [ ] Nenhuma afirmação sem evidência no repositório
+- [ ] Parte 00 atualizada com o que mudou
 
 ## 6. Evidência
 

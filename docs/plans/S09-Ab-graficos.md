@@ -1,23 +1,23 @@
 ---
-id: S04-Ab-perfil-publico
-titulo: Perfil público em /u/[username]
+id: S09-Ab-graficos
+titulo: Gráficos com recharts e relatório por categoria
 trilha: T1
 responsavel: abner
 revisor: fernando
-semana: S04
-requisitos: []
+semana: S09
+requisitos: [RF06]
 secoes_doc: [22.1]
-branch: feat/S04-Ab-perfil-publico
-tipo: [tela, route-handler]
+branch: feat/S09-Ab-graficos
+tipo: [tela]
 status: backlog
 ---
-# Perfil público em /u/[username]
+# Gráficos com recharts e relatório por categoria
 
-> **Abner** · semana **S04** (16 a 22/09) · marco da semana: _RLS provada por teste_
+> **Abner** · semana **S09** (21 a 27/10) · marco da semana: _Rede social ponta a ponta_
 
 ## 1. Contexto
 
-Primeira superficie pública do produto.
+Hoje os gráficos são barras de CSS; recharts esta instalado e nunca foi importado.
 
 ## 2. Arquivos afetados
 
@@ -29,11 +29,9 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`tela, route-handler`):
+Obrigatórios pelo tipo (`tela`):
 
-- [ ] E2E: visitante anônimo ve perfil público e não ve o privado
 - [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
-- [ ] Integração cobrindo os 4 caminhos: 200 feliz, 401 sem sessão, 403 não-membro, 400 payload invalido
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -45,14 +43,9 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] Perfil privado devolve 404 para quem não segue
-- [ ] Nenhuma despesa ou dado de outro membro aparece
 - [ ] Funciona em mobile e desktop
 - [ ] Feedback por `toast()`; sem `alert()` nem `confirm()`
 - [ ] Estado de erro e de carregamento tratados
-- [ ] `await params` (nesta versão do Next, params e Promise)
-- [ ] Corpo validado por zod, com campos extraidos um a um — nunca `...body`
-- [ ] Autorização checada no servidor via `exigirMembro` / `exigirDono`
 
 ## 6. Evidência
 

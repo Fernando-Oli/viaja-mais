@@ -1,23 +1,23 @@
 ---
-id: S12-Ab-doc-16-26
-titulo: Seções 16 e 26 e vídeo de demonstração
-trilha: T5
+id: S10-Ab-multi-moeda
+titulo: Multi-moeda e conversão
+trilha: T1
 responsavel: abner
 revisor: fernando
-semana: S12
-requisitos: []
-secoes_doc: [16, 26]
-branch: docs/S12-Ab-doc-16-26
-tipo: [documentacao]
+semana: S10
+requisitos: [RF06]
+secoes_doc: []
+branch: feat/S10-Ab-multi-moeda
+tipo: [regra-de-negocio]
 status: backlog
 ---
-# Seções 16 e 26 e vídeo de demonstração
+# Multi-moeda e conversão
 
-> **Abner** · semana **S12** (11 a 17/11) · marco da semana: _Evidencias datadas geradas_
+> **Abner** · semana **S10** (28/10 a 03/11) · marco da semana: _Cobertura de 70% em lib/_
 
 ## 1. Contexto
 
-_A preencher por quem assumir a atividade._
+A landing promete converter moedas em tempo real; hoje o somatório e ingênuo por moeda.
 
 ## 2. Arquivos afetados
 
@@ -29,9 +29,10 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`documentacao`):
+Obrigatórios pelo tipo (`regra-de-negocio`):
 
-- [ ] `npm run pfc:check` sem bloqueio novo
+- [ ] Unit com casos de borda
+- [ ] Cobertura de ao menos 70% no arquivo
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -43,9 +44,8 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] Extensao respeita o limite da seção em `docs/pfc/_regras.md`
-- [ ] Nenhuma afirmação sem evidência no repositório
-- [ ] Parte 00 atualizada com o que mudou
+- [ ] Função pura, sem I/O
+- [ ] Casos de arredondamento cobertos
 
 ## 6. Evidência
 

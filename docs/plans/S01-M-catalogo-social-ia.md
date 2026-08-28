@@ -1,23 +1,23 @@
 ---
-id: S01-M-catalogo-financeiro
-titulo: Catálogo de requisitos: Financeiro e modelo do rateio
+id: S01-M-catalogo-social-ia
+titulo: Catálogo de requisitos: Social e IA, e fluxo de navegação
 trilha: T5
 responsavel: micael
 revisor: fernando
 semana: S01
 requisitos: []
-secoes_doc: [14, 15, 18]
-branch: docs/S01-M-catalogo-financeiro
+secoes_doc: [14, 15, 16]
+branch: docs/S01-M-catalogo-social-ia
 tipo: [documentacao]
 status: backlog
 ---
-# Catálogo de requisitos: Financeiro e modelo do rateio
+# Catálogo de requisitos: Social e IA, e fluxo de navegação
 
 > **Micael** · semana **S01** (26/08 a 01/09) · marco da semana: _Base mergeada e backlog inteiro no quadro_
 
 ## 1. Contexto
 
-RF e RNF de despesas, mais o modelo entidade-relacionamento da divisão de custos, que e o diferencial do produto.
+RF e RNF de perfil, feed, seguir e avaliações, mais a tela de roteiro por IA. Inclui o fluxo de navegação da seção 16.1.
 
 ## 2. Arquivos afetados
 
@@ -32,7 +32,7 @@ _A preencher._
 Obrigatórios pelo tipo (`documentacao`):
 
 - [ ] Cada requisito tem ID, descrição, status e prioridade
-- [ ] O modelo cobre: quem pagou, quem deve, e quanto
+- [ ] O fluxo cobre da entrada ate cada funcionalidade principal
 - [ ] `npm run pfc:check` sem bloqueio novo
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
@@ -45,8 +45,8 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] O rateio contempla divisão igual, por peso e por valor exato
-- [ ] Arredondamento de centavo esta decidido (R$ 10 entre 3 pessoas)
+- [ ] Esta claro o que e público e o que e privado em cada tela: e o que define a RLS depois
+- [ ] A landing page promete recomendações e avaliações que não existem — ou vira requisito, ou sai da página
 - [ ] Extensao respeita o limite da seção em `docs/pfc/_regras.md`
 - [ ] Nenhuma afirmação sem evidência no repositório
 - [ ] Parte 00 atualizada com o que mudou

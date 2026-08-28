@@ -1,23 +1,23 @@
 ---
-id: S05-Ab-seguir
-titulo: Seguir e deixar de seguir
+id: S07-M-feed
+titulo: Feed com paginação por cursor
 trilha: T1
-responsavel: abner
+responsavel: micael
 revisor: fernando
-semana: S05
+semana: S07
 requisitos: []
-secoes_doc: [22.1]
-branch: feat/S05-Ab-seguir
+secoes_doc: [22.2]
+branch: feat/S07-M-feed
 tipo: [route-handler, tela]
 status: backlog
 ---
-# Seguir e deixar de seguir
+# Feed com paginação por cursor
 
-> **Abner** · semana **S05** (23 a 29/09) · marco da semana: _Zero escrita no banco a partir do navegador_
+> **Micael** · semana **S07** (07 a 13/10) · marco da semana: _Primeiro E2E verde no CI_
 
 ## 1. Contexto
 
-Base do feed.
+Cursor e não offset: com offset, um item duplica quando alguém pública durante a rolagem.
 
 ## 2. Arquivos afetados
 
@@ -31,7 +31,6 @@ _A preencher._
 
 Obrigatórios pelo tipo (`route-handler, tela`):
 
-- [ ] Não e possível seguir a si mesmo
 - [ ] Integração cobrindo os 4 caminhos: 200 feliz, 401 sem sessão, 403 não-membro, 400 payload invalido
 - [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
 
@@ -45,8 +44,6 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] Contadores conferem após seguir e deixar de seguir
-- [ ] Seguir perfil privado exige aprovação ou e recusado — decidir e registrar em Decisões
 - [ ] `await params` (nesta versão do Next, params e Promise)
 - [ ] Corpo validado por zod, com campos extraidos um a um — nunca `...body`
 - [ ] Autorização checada no servidor via `exigirMembro` / `exigirDono`

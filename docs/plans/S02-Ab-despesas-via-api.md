@@ -1,19 +1,19 @@
 ---
-id: S02-M-despesas-via-api
+id: S02-Ab-despesas-via-api
 titulo: Despesas passam a escrever por route handler
 trilha: T1
-responsavel: micael
+responsavel: abner
 revisor: fernando
 semana: S02
 requisitos: [RF06]
 secoes_doc: [22.2]
-branch: feat/S02-M-despesas-via-api
+branch: feat/S02-Ab-despesas-via-api
 tipo: [route-handler]
 status: backlog
 ---
 # Despesas passam a escrever por route handler
 
-> **Micael** · semana **S02** (02 a 08/09) · marco da semana: _Quadro do Notion vivo, movido pelo CI_
+> **Abner** · semana **S02** (02 a 08/09) · marco da semana: _Quadro do Notion vivo, movido pelo CI_
 
 ## 1. Contexto
 

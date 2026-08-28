@@ -1,23 +1,23 @@
 ---
-id: S08-M-e2e-financeiro
-titulo: E2E do fluxo financeiro
+id: S03-Ab-editar-despesa
+titulo: Editar e excluir despesa
 trilha: T1
-responsavel: micael
+responsavel: abner
 revisor: fernando
-semana: S08
-requisitos: []
-secoes_doc: [24]
-branch: feat/S08-M-e2e-financeiro
-tipo: [tela]
+semana: S03
+requisitos: [RF06]
+secoes_doc: [22.1]
+branch: feat/S03-Ab-editar-despesa
+tipo: [route-handler, tela]
 status: backlog
 ---
-# E2E do fluxo financeiro
+# Editar e excluir despesa
 
-> **Micael** · semana **S08** (14 a 20/10) · marco da semana: _Acerto de contas funcional_
+> **Abner** · semana **S03** (09 a 15/09) · marco da semana: _Convite chega no e-mail de verdade_
 
 ## 1. Contexto
 
-Despesa, rateio e acerto.
+Despesas só podem ser criadas. Erro de digitação em valor e permanente.
 
 ## 2. Arquivos afetados
 
@@ -29,8 +29,9 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`tela`):
+Obrigatórios pelo tipo (`route-handler, tela`):
 
+- [ ] Integração cobrindo os 4 caminhos: 200 feliz, 401 sem sessão, 403 não-membro, 400 payload invalido
 - [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
@@ -43,6 +44,11 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
+- [ ] So quem registrou a despesa, ou o dono da viagem, pode altera-la
+- [ ] Exclusao pede confirmação pelo ConfirmModal
+- [ ] `await params` (nesta versão do Next, params e Promise)
+- [ ] Corpo validado por zod, com campos extraidos um a um — nunca `...body`
+- [ ] Autorização checada no servidor via `exigirMembro` / `exigirDono`
 - [ ] Funciona em mobile e desktop
 - [ ] Feedback por `toast()`; sem `alert()` nem `confirm()`
 - [ ] Estado de erro e de carregamento tratados

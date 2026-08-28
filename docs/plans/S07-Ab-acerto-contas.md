@@ -1,23 +1,23 @@
 ---
-id: S08-Ab-curtir-comentar
-titulo: Curtir e comentar
+id: S07-Ab-acerto-contas
+titulo: Tela de acerto de contas
 trilha: T1
 responsavel: abner
 revisor: fernando
-semana: S08
-requisitos: []
-secoes_doc: []
-branch: feat/S08-Ab-curtir-comentar
-tipo: [route-handler, tela]
+semana: S07
+requisitos: [RF06]
+secoes_doc: [22.1]
+branch: feat/S07-Ab-acerto-contas
+tipo: [tela]
 status: backlog
 ---
-# Curtir e comentar
+# Tela de acerto de contas
 
-> **Abner** · semana **S08** (14 a 20/10) · marco da semana: _Acerto de contas funcional_
+> **Abner** · semana **S07** (07 a 13/10) · marco da semana: _Primeiro E2E verde no CI_
 
 ## 1. Contexto
 
-Interação no feed.
+Saldo por membro e transferências sugeridas.
 
 ## 2. Arquivos afetados
 
@@ -29,9 +29,8 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`route-handler, tela`):
+Obrigatórios pelo tipo (`tela`):
 
-- [ ] Integração cobrindo os 4 caminhos: 200 feliz, 401 sem sessão, 403 não-membro, 400 payload invalido
 - [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
@@ -44,9 +43,6 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] `await params` (nesta versão do Next, params e Promise)
-- [ ] Corpo validado por zod, com campos extraidos um a um — nunca `...body`
-- [ ] Autorização checada no servidor via `exigirMembro` / `exigirDono`
 - [ ] Funciona em mobile e desktop
 - [ ] Feedback por `toast()`; sem `alert()` nem `confirm()`
 - [ ] Estado de erro e de carregamento tratados

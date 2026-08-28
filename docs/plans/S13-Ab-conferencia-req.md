@@ -1,23 +1,23 @@
 ---
-id: S07-M-acerto-contas
-titulo: Tela de acerto de contas
-trilha: T1
-responsavel: micael
+id: S13-Ab-conferencia-req
+titulo: Conferência: catálogo de requisitos versus implementado
+trilha: T5
+responsavel: abner
 revisor: fernando
-semana: S07
-requisitos: [RF06]
-secoes_doc: [22.1]
-branch: feat/S07-M-acerto-contas
-tipo: [tela]
+semana: S13
+requisitos: []
+secoes_doc: [14, 15]
+branch: docs/S13-Ab-conferencia-req
+tipo: [documentacao]
 status: backlog
 ---
-# Tela de acerto de contas
+# Conferência: catálogo de requisitos versus implementado
 
-> **Micael** · semana **S07** (07 a 13/10) · marco da semana: _Primeiro E2E verde no CI_
+> **Abner** · semana **S13** (18 a 24/11) · marco da semana: _Congelamento de funcionalidades em 20/11_
 
 ## 1. Contexto
 
-Saldo por membro e transferências sugeridas.
+Nenhum requisito pode estar marcado como implementado sem teste associado.
 
 ## 2. Arquivos afetados
 
@@ -29,9 +29,9 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`tela`):
+Obrigatórios pelo tipo (`documentacao`):
 
-- [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
+- [ ] `npm run pfc:check` sem bloqueio novo
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -43,9 +43,9 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] Funciona em mobile e desktop
-- [ ] Feedback por `toast()`; sem `alert()` nem `confirm()`
-- [ ] Estado de erro e de carregamento tratados
+- [ ] Extensao respeita o limite da seção em `docs/pfc/_regras.md`
+- [ ] Nenhuma afirmação sem evidência no repositório
+- [ ] Parte 00 atualizada com o que mudou
 
 ## 6. Evidência
 

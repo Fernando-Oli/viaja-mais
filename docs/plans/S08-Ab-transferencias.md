@@ -1,19 +1,19 @@
 ---
-id: S08-M-transferencias
+id: S08-Ab-transferencias
 titulo: Minimizar transferências e marcar quitado
 trilha: T1
-responsavel: micael
+responsavel: abner
 revisor: fernando
 semana: S08
 requisitos: [RF06]
 secoes_doc: []
-branch: feat/S08-M-transferencias
+branch: feat/S08-Ab-transferencias
 tipo: [regra-de-negocio, tela]
 status: backlog
 ---
 # Minimizar transferências e marcar quitado
 
-> **Micael** · semana **S08** (14 a 20/10) · marco da semana: _Acerto de contas funcional_
+> **Abner** · semana **S08** (14 a 20/10) · marco da semana: _Acerto de contas funcional_
 
 ## 1. Contexto
 

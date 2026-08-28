@@ -1,23 +1,23 @@
 ---
-id: S10-M-multi-moeda
-titulo: Multi-moeda e conversão
+id: S06-Ab-rateio-ui
+titulo: Rateio na criação da despesa
 trilha: T1
-responsavel: micael
+responsavel: abner
 revisor: fernando
-semana: S10
+semana: S06
 requisitos: [RF06]
-secoes_doc: []
-branch: feat/S10-M-multi-moeda
-tipo: [regra-de-negocio]
+secoes_doc: [22.1]
+branch: feat/S06-Ab-rateio-ui
+tipo: [tela]
 status: backlog
 ---
-# Multi-moeda e conversão
+# Rateio na criação da despesa
 
-> **Micael** · semana **S10** (28/10 a 03/11) · marco da semana: _Cobertura de 70% em lib/_
+> **Abner** · semana **S06** (30/09 a 06/10) · marco da semana: _Fluxo de grupo ponta a ponta_
 
 ## 1. Contexto
 
-A landing promete converter moedas em tempo real; hoje o somatório e ingênuo por moeda.
+Interface para escolher entre divisão igual, por peso ou por valor exato.
 
 ## 2. Arquivos afetados
 
@@ -29,10 +29,10 @@ _A preencher._
 
 ## 4. O que testar
 
-Obrigatórios pelo tipo (`regra-de-negocio`):
+Obrigatórios pelo tipo (`tela`):
 
-- [ ] Unit com casos de borda
-- [ ] Cobertura de ao menos 70% no arquivo
+- [ ] E2E das três formas de divisão
+- [ ] E2E do fluxo com screenshot arquivado em `docs/pfc/evidências/`
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -44,8 +44,10 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-- [ ] Função pura, sem I/O
-- [ ] Casos de arredondamento cobertos
+- [ ] Soma sempre fecha com o total, inclusive com centavo quebrado
+- [ ] Funciona em mobile e desktop
+- [ ] Feedback por `toast()`; sem `alert()` nem `confirm()`
+- [ ] Estado de erro e de carregamento tratados
 
 ## 6. Evidência
 

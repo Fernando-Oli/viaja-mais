@@ -11,10 +11,16 @@ Equipe e domínios — cada pessoa é dona de uma fatia **vertical** (migration 
 |---|---|---|
 | Fernando | Plataforma | `supabase/migrations/`, `lib/supabase/`, `lib/authz/`, `lib/env.ts`, `proxy.ts`, `.github/` |
 | Audrey | Viagem & Itinerário + qualidade | `trips`, `itinerary_items`, `bookings`, `places`, `place_reviews`; `app/api/trips/**`; `app/dashboard/trips/**`; `vitest.config.mts`, `e2e/` |
-| Micael | Financeiro **e IA de roteiros** | `expenses`, `expense_shares`, `settlements`; `app/api/**/expenses`, `app/api/acertos`, `app/api/roteiros/**`; `lib/finance/`, `lib/ai/`; `app/dashboard/finances` |
-| Abner | Social & Descoberta | `profiles`, `follows`, `trip_posts`, `post_likes`, `post_comments`; `app/u/**`, `app/feed`, `app/api/social/**` |
+| Micael | Social & Descoberta **e IA de roteiros** | `profiles`, `follows`, `trip_posts`, `post_likes`, `post_comments`; `app/u/**`, `app/feed`, `app/api/social/**`, `app/api/roteiros/**`; `lib/ai/` |
+| Abner | Financeiro | `expenses`, `expense_shares`, `settlements`; `app/api/**/expenses`, `app/api/acertos`; `lib/finance/`; `app/dashboard/finances` |
 
 **Não consulte tabela de outro domínio direto.** O dono expõe um helper em `lib/`; os outros consomem.
+
+**Migration e política de RLS são sempre do Fernando**, em qualquer domínio. O dono
+da funcionalidade escreve a rota, a tela e o teste; o schema e a policy vêm dele.
+O motivo é o modo de falha: policy errada não quebra nada — ela vaza dado ou
+devolve vazio, sem stack trace e sem tela de erro. E é o material avaliado na
+seção 25.
 
 Grupos de requisito por dono, para o catálogo das seções 14 e 15:
 
@@ -22,8 +28,8 @@ Grupos de requisito por dono, para o catálogo das seções 14 e 15:
 |---|---|
 | Fernando | RF01 autenticação · RF04 viagens em grupo · RNF01 performance · RNF02 segurança · RNF04 confiabilidade · RNF06 escalabilidade |
 | Audrey | RF03 viagens · RF05 itinerário · RF07 reservas · RF08 lugares · RNF03 usabilidade · RNF05 manutenibilidade |
-| Micael | RF06 controle financeiro |
-| Abner | **RF02 gestão de perfil** |
+| Micael | RF02 gestão de perfil |
+| Abner | RF06 controle financeiro |
 
 Os 84 requisitos herdados do `docs/ARCHITECTURE.md` descrevem o sistema **como ele
 existe hoje** — por isso concentram-se em autenticação, viagens e itinerário. Os
