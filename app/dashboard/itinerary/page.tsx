@@ -31,7 +31,6 @@ export default async function ItineraryPage() {
     .limit(20)
 
 
-    console.log("[v0] Itinerary items fetched:", itineraryItems);
 
   const categoryColors: Record<string, string> = {
     accommodation: "bg-purple-100 text-purple-800",

@@ -165,7 +165,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(trip),
       });
 
-      console.log(res);
 
       if (!res.ok) {
         const err = await res.json();

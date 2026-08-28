@@ -1,0 +1,73 @@
+name: Banco de dados
+
+on:
+  pull_request:
+    paths: ["supabase/**", "tests/rls/**", ".github/workflows/db.yml"]
+  push:
+    branches: [main]
+    paths: ["supabase/**", "tests/rls/**"]
+
+jobs:
+  migrations:
+    name: Migrations e RLS
+    runs-on: ubuntu-latest
+
+    # Postgres efêmero: prova que o banco é reproduzível **só a partir do
+    # repositório**. Foi exatamente o que faltou no início do projeto, quando o
+    # schema existia apenas dentro do painel do Supabase.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: viaja_mais_teste
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/viaja_mais_teste
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Enquanto o schema não for extraído do projeto hospedado, a pasta está
+      # vazia e não há o que aplicar. Isso é aviso, não erro: barrar aqui
+      # bloquearia justamente o PR que introduz a capacidade de versionar o
+      # schema. Assim que a primeira migration entrar, o job passa a ser
+      # estrito — e é o que prova que o banco é reproduzível só a partir do
+      # repositório.
+      - name: Há migrations?
+        id: mig
+        run: |
+          shopt -s nullglob
+          arquivos=(supabase/migrations/*.sql)
+          if [ ${#arquivos[@]} -eq 0 ]; then
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Schema ainda não versionado::supabase/migrations/ está vazio. O banco só existe no painel do Supabase e o projeto não é reproduzível a partir do repositório. Ver supabase/README.md."
+          else
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+            echo "${#arquivos[@]} migration(s) encontrada(s)."
+          fi
+
+      - name: Aplicar migrations em ordem
+        if: steps.mig.outputs.existe == 'true'
+        run: |
+          set -e
+          shopt -s nullglob
+          for f in supabase/migrations/*.sql; do
+            echo "==> $f"
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Testes de RLS
+        if: steps.mig.outputs.existe == 'true'
+        run: npm run test:rls

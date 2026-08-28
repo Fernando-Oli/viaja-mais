@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { tripId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await params
   try {
     const supabase = await createClient()
 
@@ -19,7 +20,7 @@ export async function GET(request: Request, { params }: { params: { tripId: stri
         *,
         profiles(id, full_name, avatar_url)
       `)
-      .eq("trip_id", params.tripId)
+      .eq("trip_id", tripId)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })
@@ -31,7 +32,8 @@ export async function GET(request: Request, { params }: { params: { tripId: stri
   }
 }
 
-export async function POST(request: Request, { params }: { params: { tripId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await params
   try {
     const supabase = await createClient()
     const body = await request.json()
@@ -57,7 +59,7 @@ export async function POST(request: Request, { params }: { params: { tripId: str
     const { data: invitation, error } = await supabase
       .from("trip_invitations")
       .insert({
-        trip_id: params.tripId,
+        trip_id: tripId,
         inviter_id: user.id,
         invitee_email: inviteeEmail,
         status: "pending",
@@ -75,7 +77,8 @@ export async function POST(request: Request, { params }: { params: { tripId: str
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { tripId: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await params
   try {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
@@ -93,7 +96,7 @@ export async function DELETE(request: Request, { params }: { params: { tripId: s
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { error } = await supabase.from("trip_members").delete().eq("trip_id", params.tripId).eq("user_id", userId)
+    const { error } = await supabase.from("trip_members").delete().eq("trip_id", tripId).eq("user_id", userId)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })

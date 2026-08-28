@@ -1,0 +1,33 @@
+name: Notion
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  sync:
+    name: Espelhar estado no quadro
+    runs-on: ubuntu-latest
+    # O quadro é espelho; o repositório é a fonte da verdade. Se o sync falhar,
+    # o trabalho não pode parar — por isso o job inteiro é tolerante a falha.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Sincronizar
+        run: node scripts/notion/sync.mjs --pr "${{ github.event.pull_request.number }}"
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ATIVIDADES: ${{ secrets.NOTION_DB_ATIVIDADES }}
+          PR_ESTADO: ${{ github.event.pull_request.state }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          REVIEW_ESTADO: ${{ github.event.review.state }}

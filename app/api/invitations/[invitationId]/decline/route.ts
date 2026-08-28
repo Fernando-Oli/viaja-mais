@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function POST(request: Request, { params }: { params: { invitationId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ invitationId: string }> }) {
+  const { invitationId } = await params
   try {
     const supabase = await createClient()
 
@@ -16,7 +17,7 @@ export async function POST(request: Request, { params }: { params: { invitationI
     const { error } = await supabase
       .from("trip_invitations")
       .update({ status: "declined" })
-      .eq("id", params.invitationId)
+      .eq("id", invitationId)
       .eq("invitee_email", user.email)
 
     if (error) {

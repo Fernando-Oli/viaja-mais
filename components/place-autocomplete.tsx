@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { MapPin, Loader2 } from "lucide-react";
+import { env } from "@/lib/env";
 
 interface PlaceAutocompleteProps {
   defaultLocation?: { lat: number; lng: number };
@@ -12,11 +13,7 @@ interface PlaceAutocompleteProps {
   query: string;
 }
 
-declare global {
-  interface Window {
-    google: any;
-  }
-}
+// Window.google é tipado em types/global.d.ts via @types/google.maps.
 
 /**
  * SECURITY NOTE: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
@@ -66,7 +63,7 @@ export function PlaceAutocomplete({
       }
 
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = () => {

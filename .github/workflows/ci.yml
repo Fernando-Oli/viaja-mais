@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # O build embute as variáveis NEXT_PUBLIC_* no bundle do navegador, então elas
+  # precisam existir aqui. Usamos os secrets quando houver e caem para
+  # placeholders quando não — o artefato do CI não é publicado, só verificamos
+  # que o build compila.
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+  NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'placeholder-maps-key' }}
+
+jobs:
+  verify:
+    name: Lint, tipos e testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # O teto de avisos do `lint` é o baseline da dívida herdada: ele só pode
+      # cair. Um PR que introduz aviso novo estoura o teto e falha aqui.
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm run test -- --reporter=verbose
+
+      - name: Cobertura
+        run: npm run test:cov
+        continue-on-error: true
+
+      - name: Arquivar cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: coverage/
+          retention-days: 30
+
+  build:
+    name: Build de produção
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    # Sem um Supabase de teste configurado o E2E não tem como logar. Enquanto os
+    # secrets não existirem, o job é pulado em vez de falhar em vermelho todo dia
+    # — vermelho permanente é ruído e a equipe para de olhar.
+    if: ${{ github.event_name == 'push' || github.event.pull_request.draft == false }}
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Verificar se há Supabase de teste
+        id: cfg
+        run: echo "pronto=${{ secrets.E2E_USER_A_PASSWORD != '' }}" >> "$GITHUB_OUTPUT"
+
+      - if: steps.cfg.outputs.pronto == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - if: steps.cfg.outputs.pronto == 'true'
+        run: npm run build
+
+      - if: steps.cfg.outputs.pronto == 'true'
+        run: npm run e2e
+        env:
+          E2E_USER_A_EMAIL: ${{ secrets.E2E_USER_A_EMAIL }}
+          E2E_USER_A_PASSWORD: ${{ secrets.E2E_USER_A_PASSWORD }}
+          E2E_USER_B_EMAIL: ${{ secrets.E2E_USER_B_EMAIL }}
+          E2E_USER_B_PASSWORD: ${{ secrets.E2E_USER_B_PASSWORD }}
+
+      - if: steps.cfg.outputs.pronto != 'true'
+        run: echo "::notice::E2E pulado — configure os secrets E2E_USER_* para habilitar."
+
+      - name: Arquivar relatório
+        if: always() && steps.cfg.outputs.pronto == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

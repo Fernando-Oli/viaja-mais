@@ -2,7 +2,9 @@ declare module "*.css";
 
 declare global {
   interface Window {
-    google: any
+    // Tipado por @types/google.maps (devDependency). Antes era `any`, o que
+    // anulava a checagem em todos os componentes de mapa.
+    google: typeof google
   }
   interface Trip {
     id: string

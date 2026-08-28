@@ -1,6 +1,39 @@
 node_modules
 /node_modules
-/next
+
+# build
 /.next
-/.env.local
-/scripts
+/out
+/build
+
+# variáveis de ambiente — .env.example é versionado, o resto não
+.env
+.env.local
+.env*.local
+
+# testes e evidências geradas
+/coverage
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+
+# build do documento do PFC (gerado por `npm run pfc:build`)
+/docs/pfc/build
+
+# gerado pelo tsc
+*.tsbuildinfo
+
+# Cache do instalador de skills. As skills da Supabase ficam versionadas
+# direto em .claude/skills/, como arquivos reais — é o caminho que o Claude
+# Code lê, e evita guardar os mesmos bytes duas vezes.
+#
+# Atenção: rodar o instalador de novo recria .agents/ e volta a transformar
+# .claude/skills/supabase* em symlinks apontando para lá. Se isso acontecer,
+# materialize de novo (cp -rL) antes de commitar. A origem e a versão de cada
+# skill estão em skills-lock.json.
+/.agents/
+
+# Espelho do quadro do Notion, gerado por `npm run notion:sync`/pull.
+# Os planos em docs/plans/*.md são a fonte da verdade; este arquivo envelhece.
+/docs/plans/_board.json

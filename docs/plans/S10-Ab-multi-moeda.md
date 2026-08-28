@@ -1,0 +1,54 @@
+---
+id: S10-Ab-multi-moeda
+titulo: Multi-moeda e conversão
+trilha: T1
+responsavel: abner
+revisor: fernando
+semana: S10
+requisitos: [RF06]
+secoes_doc: []
+branch: feat/S10-Ab-multi-moeda
+tipo: [regra-de-negocio]
+status: backlog
+---
+# Multi-moeda e conversão
+
+> **Abner** · semana **S10** (28/10 a 03/11) · marco da semana: _Cobertura de 70% em lib/_
+
+## 1. Contexto
+
+A landing promete converter moedas em tempo real; hoje o somatório e ingênuo por moeda.
+
+## 2. Arquivos afetados
+
+_A preencher antes de comecar: caminhos concretos, incluindo migration se houver dado novo._
+
+## 3. Passos
+
+_A preencher._
+
+## 4. O que testar
+
+Obrigatórios pelo tipo (`regra-de-negocio`):
+
+- [ ] Unit com casos de borda
+- [ ] Cobertura de ao menos 70% no arquivo
+
+**Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
+de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
+
+1. _A preencher._
+
+## 5. O que validar
+
+Critérios objetivos e binarios. Escritos **antes** da implementação, de propósito:
+critério combinado depois que já existe código para defender deixa de ser critério.
+
+- [ ] Função pura, sem I/O
+- [ ] Casos de arredondamento cobertos
+
+## 6. Evidência
+
+- [ ] Saida dos testes
+- [ ] Screenshot ou gravação do fluxo (se houver tela)
+- [ ] Delta de cobertura (se mexeu em `lib/`)

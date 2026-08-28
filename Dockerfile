@@ -1,60 +1,59 @@
-# Dockerfile para Viaja+
-FROM oven/bun:1 AS base
+# Imagem de produção do ViajaMais.
+#
+# Três coisas que estavam quebradas na versão anterior e que este arquivo resolve:
+#   1. copiava `bun.lockb`, que não existe no repositório — o lockfile é o do npm;
+#   2. esperava `.next/standalone` sem que `next.config.mjs` tivesse
+#      `output: "standalone"`;
+#   3. não recebia as variáveis NEXT_PUBLIC_*, que o Next embute no bundle
+#      **durante o build**. Passá-las só como `environment` no runtime resultava
+#      em um cliente compilado com credenciais `undefined`.
 
-# Instalar dependências apenas quando necessário
+FROM node:22-alpine AS base
+RUN apk add --no-cache libc6-compat
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# ---------------------------------------------------------------- dependências
 FROM base AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copiar arquivos de dependências
-COPY package.json bun.lockb ./
-
-# Instalar dependências
-RUN bun install --frozen-lockfile
-
-# Rebuild do código fonte apenas quando necessário
+# ---------------------------------------------------------------------- build
 FROM base AS builder
 WORKDIR /app
-
-# Copiar dependências instaladas
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copiar código fonte
 COPY . .
 
-# Variáveis de ambiente para build
-# Nota: Adicione suas variáveis de ambiente aqui ou via docker-compose
-ENV NEXT_TELEMETRY_DISABLED 1
+# Precisam existir no build: o Next as substitui por texto no bundle do
+# navegador. Chegam por --build-arg (ver docker-compose.yml).
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
+    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
-# Build da aplicação
-RUN bun run build
+# Liga o modo standalone só aqui: o runner abaixo depende de .next/standalone.
+ENV BUILD_STANDALONE=1
+RUN npm run build
 
-# Imagem de produção
+# --------------------------------------------------------------------- runtime
 FROM base AS runner
 WORKDIR /app
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
-# Criar usuário não-root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# O build standalone já traz apenas as dependências efetivamente usadas.
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copiar arquivos necessários
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-# Mudar ownership dos arquivos
-RUN chown -R nextjs:nodejs /app
-
-# Mudar para usuário não-root
 USER nextjs
-
-# Expor porta
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
-# Comando para iniciar a aplicação
-CMD ["bun", "server.js"]
+# A chave service role e as demais variáveis de servidor entram só aqui, no
+# runtime: não devem ficar gravadas em nenhuma camada da imagem.
+CMD ["node", "server.js"]

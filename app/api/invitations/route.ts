@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { env } from "@/lib/env"
 
 export async function GET() {
   try {
@@ -20,7 +21,6 @@ export async function GET() {
       .eq("status", "pending")
 
     if (error) {
-      console.log("[v0] Error fetching invitations:", error)
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
@@ -42,7 +42,6 @@ export async function GET() {
 
     return NextResponse.json({ invitations: invitationsWithTrips })
   } catch (error) {
-    console.log("[v0] Internal server error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -75,7 +74,7 @@ export async function POST(request: Request) {
           invited_to_trip: tripId,
           inviter: inviterId,
         },
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+        redirectTo: `${env.NEXT_PUBLIC_APP_URL}/dashboard`,
       }
     )
 

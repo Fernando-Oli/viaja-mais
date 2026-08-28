@@ -22,30 +22,20 @@ export default async function FinancesPage() {
     .select("*, trips(title, currency)")
     .eq("user_id", user.id)
 
-  // Calculate totals by currency
-  const totalsByCurrency = allExpenses?.reduce(
-    (acc, expense) => {
-      const currency = expense.trips?.currency || "BRL"
-      if (!acc[currency]) {
-        acc[currency] = 0
-      }
-      acc[currency] += Number(expense.amount)
-      return acc
-    },
-    {} as Record<string, number>,
-  )
+  // Somatórios por moeda. O reduce é tipado explicitamente e parte de [] em vez
+  // de `allExpenses?`: sem isso o resultado é `Record<string, number> | undefined`,
+  // e todo `Object.entries` mais abaixo devolve `unknown`.
+  const totalsByCurrency = (allExpenses ?? []).reduce<Record<string, number>>((acc, expense) => {
+    const currency = expense.trips?.currency || "BRL"
+    acc[currency] = (acc[currency] ?? 0) + Number(expense.amount)
+    return acc
+  }, {})
 
-  // Calculate by category
-  const byCategory = allExpenses?.reduce(
-    (acc, expense) => {
-      if (!acc[expense.category]) {
-        acc[expense.category] = 0
-      }
-      acc[expense.category] += Number(expense.amount)
-      return acc
-    },
-    {} as Record<string, number>,
-  )
+  // Somatórios por categoria — mesmo motivo do bloco acima.
+  const byCategory = (allExpenses ?? []).reduce<Record<string, number>>((acc, expense) => {
+    acc[expense.category] = (acc[expense.category] ?? 0) + Number(expense.amount)
+    return acc
+  }, {})
 
   const categoryLabels: Record<string, string> = {
     accommodation: "Hospedagem",
@@ -72,7 +62,7 @@ export default async function FinancesPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {Object.entries(totalsByCurrency || {}).map(([currency, total]) => (
+              {Object.entries(totalsByCurrency).map(([currency, total]) => (
                 <div key={currency} className="text-2xl font-bold">
                   {new Intl.NumberFormat("pt-BR", {
                     style: "currency",
@@ -80,7 +70,7 @@ export default async function FinancesPage() {
                   }).format(total)}
                 </div>
               ))}
-              {(!totalsByCurrency || Object.keys(totalsByCurrency).length === 0) && (
+              {Object.keys(totalsByCurrency).length === 0 && (
                 <div className="text-2xl font-bold">R$ 0,00</div>
               )}
             </div>
@@ -108,7 +98,7 @@ export default async function FinancesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {byCategory && Object.keys(byCategory).length > 0
+              {Object.keys(byCategory).length > 0
                 ? categoryLabels[Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0][0]]
                 : "-"}
             </div>

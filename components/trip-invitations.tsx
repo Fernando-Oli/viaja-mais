@@ -40,7 +40,6 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
 
   const handleAccept = async (invitationId: string) => {
     try {
-      console.log("[v0] Accepting invitation with ID:", invitationId);
       setTripsLoading(true);
 
       const response = await fetch(`/api/invitations/${invitationId}/accept`, {
@@ -50,7 +49,6 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
       const { data, error } = await response.json();
 
 
-      console.log("[v0] Invitation accepted, data received:", data);
       router.refresh()
       if (!response.ok) {
         throw new Error(error);
@@ -62,7 +60,6 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
 
   const handleDecline = async (invitationId: string) => {
     try {
-      console.log("[v0] Accepting invitation with ID:", invitationId);
       setTripsLoading(true);
 
       const response = await fetch(`/api/invitations/${invitationId}/decline`, {
@@ -72,7 +69,6 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
       const { data, error } = await response.json();
 
 
-      console.log("[v0] Invitation accepted, data received:", data);
       router.refresh();
       if (!response.ok) {
         throw new Error(error);
