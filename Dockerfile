@@ -35,6 +35,8 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
     NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
+# Liga o modo standalone só aqui: o runner abaixo depende de .next/standalone.
+ENV BUILD_STANDALONE=1
 RUN npm run build
 
 # --------------------------------------------------------------------- runtime

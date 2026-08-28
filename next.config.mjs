@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Necessário para a imagem Docker: o runner copia .next/standalone e roda
-  // server.js. Sem isto, o build multi-stage do Dockerfile falha.
-  output: "standalone",
+  // Só para a imagem Docker, que copia .next/standalone e roda server.js.
+  //
+  // Na Vercel isto NÃO pode estar ligado: a plataforma monta a saída por conta
+  // própria, e o rastreamento de arquivos do modo standalone falha lá com
+  // "ENOENT: .next/next-server.js.nft.json". O Dockerfile define
+  // BUILD_STANDALONE=1 no estágio de build; nenhum outro ambiente define.
+  output: process.env.BUILD_STANDALONE === "1" ? "standalone" : undefined,
 
   images: {
     // Sem otimização de imagem no servidor: as capas de viagem e as fotos de
