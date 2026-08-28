@@ -10,6 +10,8 @@ Sistema completo de planejamento e gestão de viagens em grupo.
 - [Pré-requisitos](#pré-requisitos)
 - [Instalação e Configuração](#instalação-e-configuração)
 - [Execução](#execução)
+- [Comandos](#comandos)
+- [Docker](#docker-produção)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Documentação Adicional](#documentação-adicional)
 
@@ -101,115 +103,78 @@ O Viaja+ integra todas as funcionalidades necessárias em uma única plataforma:
 - **Google Places API** - Autocomplete de lugares
 
 ### Ferramentas de Desenvolvimento
-- **Bun** - Runtime e package manager
+- **npm** - Gerenciador de pacotes (o lockfile do repositório é o `package-lock.json`)
 - **ESLint** - Linting
 - **PostCSS** - Processamento CSS
 
 ## 📦 Pré-requisitos
 
-- **Node.js** 18+ ou **Bun** 1.0+
-- **Conta Supabase** (gratuita)
-- **Google Cloud Account** com Maps API habilitada
+- **Node.js 22+**
+- **Docker Desktop** — o Supabase local (Postgres, Auth, Storage, Studio) roda em
+  contêineres. Sem ele dá para mexer em tela e regra de negócio, mas não dá para
+  rodar migrations, testes de RLS nem E2E.
+- Uma chave da **Google Maps JavaScript API** (peça ao Fernando)
 
 ## ⚙️ Instalação e Configuração
 
-### 1. Clone o Repositório
+```bash
+git clone https://github.com/Fernando-Oli/viaja-mais.git
+cd viaja-mais
+npm ci
+npm run setup
+```
 
-\`\`\`bash
-git clone <repository-url>
-cd viaja-plus
-\`\`\`
+O `setup` sobe o Supabase local, aplica as migrations, roda o seed e **escreve o
+`.env.local` sozinho**, com as credenciais que o próprio stack gerou.
 
-### 2. Instale as Dependências
-
-\`\`\`bash
-# Usando Bun (recomendado)
-bun install
-
-# Ou usando npm
-npm install
-\`\`\`
-
-### 3. Configure o Supabase
-
-#### 3.1. Crie um Projeto no Supabase
-1. Acesse [supabase.com](https://supabase.com)
-2. Crie um novo projeto
-3. Anote a URL e as chaves de API
-
-#### 3.2. Execute os Scripts SQL
-1. Acesse o SQL Editor no Supabase Dashboard
-2. Execute o script `scripts/001_create_tables.sql`
-3. Execute o script `scripts/002_add_group_travel.sql`
-
-### 4. Configure o Google Maps API
-
-#### 4.1. Crie um Projeto no Google Cloud
-1. Acesse [console.cloud.google.com](https://console.cloud.google.com)
-2. Crie um novo projeto
-3. Habilite as APIs:
-   - Maps JavaScript API
-   - Places API
-   - Geocoding API
-
-#### 4.2. Crie uma API Key
-1. Vá para "Credentials"
-2. Crie uma API Key
-3. Configure restrições:
-   - **HTTP referrers**: `localhost:3000/*`, `*.vercel.app/*`
-   - **API restrictions**: Apenas as APIs listadas acima
-
-### 5. Configure as Variáveis de Ambiente
-
-Crie um arquivo `.env.local` na raiz do projeto:
-
-\`\`\`env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anon_supabase
-SUPABASE_SERVICE_ROLE_KEY=sua_chave_service_role
-
-# Google Maps
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=sua_chave_google_maps
-
-# Site URL (para redirects de email)
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000
-\`\`\`
+Nenhuma credencial de banco precisa ser enviada por mensagem: cada pessoa tem o
+próprio Postgres, com as próprias chaves, válidas só na máquina dela. A única
+variável que vem de fora é a `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — acrescente ao
+`.env.local` e rode `npm run dev`.
 
 ## 🚀 Execução
 
-### Desenvolvimento
+```bash
+npm run dev              # http://localhost:3000
+npm run verify           # lint + tipos + testes + build (o mesmo gate do CI)
+```
 
-\`\`\`bash
-# Usando Bun
-bun dev
+| Serviço | Endereço |
+|---|---|
+| Aplicação | http://localhost:3000 |
+| Studio (SQL, tabelas) | http://localhost:54323 |
+| E-mails de teste | http://localhost:54324 |
 
-# Ou usando npm
-npm run dev
-\`\`\`
+O último é o Inbucket: confirmação de cadastro, reset de senha e convite caem ali,
+sem sair da máquina.
 
-Acesse: [http://localhost:3000](http://localhost:3000)
+**Login de teste:** `teste.a@viajamais.local` / `viajamais123`
+(existe também `teste.b@`, para provar isolamento entre usuários nos testes.)
 
-### Produção
+## 🧰 Comandos
 
-\`\`\`bash
-# Build
-bun run build
+| Comando | O que faz |
+|---|---|
+| `npm run setup` | Sobe o ambiente e gera o `.env.local`. Idempotente. |
+| `npm run db:reset` | Recria o banco: migrations + seed |
+| `npm run db:diff -- nome` | Gera migration a partir do que você mudou no Studio |
+| `npm run db:types` | Regenera `types/database.ts` |
+| `npm run db:stop` | Derruba o stack local |
+| `npm run test` | Testes unitários |
+| `npm run test:rls` | Isolamento por RLS, com dois usuários |
+| `npm run e2e` | Playwright |
+| `npm run lint` | ESLint (com teto de avisos herdados) |
 
-# Start
-bun start
-\`\`\`
+## 🐳 Docker (produção)
 
-### Docker (Opcional)
+```bash
+docker compose up --build
+```
 
-\`\`\`bash
-# Build da imagem
-docker build -t viaja-plus .
+As variáveis `NEXT_PUBLIC_*` precisam existir no **build**, não só no runtime: o
+Next as embute no bundle do navegador. O `docker-compose.yml` já as passa como
+build args a partir do seu `.env.local`.
 
-# Executar container
-docker run -p 3000:3000 --env-file .env.local viaja-plus
-\`\`\`
 
 ## 📁 Estrutura do Projeto
 

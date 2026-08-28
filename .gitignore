@@ -23,3 +23,8 @@ node_modules
 
 # gerado pelo tsc
 *.tsbuildinfo
+
+# Cache local do instalador de skills (skills-lock.json).
+# O conteúdo versionado fica em .claude/skills/, que é o caminho que o
+# Claude Code lê — versionar os dois guardaria os mesmos bytes duas vezes.
+/.agents/

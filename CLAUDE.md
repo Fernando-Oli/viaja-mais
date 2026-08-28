@@ -37,6 +37,36 @@ Equipe e domínios — cada pessoa é dona de uma fatia **vertical** (migration 
 8. **Toda atividade tem plano** em `docs/plans/<ID>-<slug>.md`, com os blocos "O que testar" e
    "O que validar" preenchidos **antes** de começar a implementar. Use `/atividade`.
 
+## Ambiente local
+
+Cada pessoa roda o próprio Supabase em Docker — ninguém compartilha credencial de
+banco. `npm run setup` sobe o stack, aplica as migrations, roda o seed e escreve o
+`.env.local` sozinho.
+
+| Comando | O que faz |
+|---|---|
+| `npm run setup` | Sobe tudo e gera o `.env.local`. Idempotente. |
+| `npm run db:reset` | Recria o banco: migrations + seed. Rode ao puxar migration nova. |
+| `npm run db:diff -- nome` | Gera migration a partir do que você mudou no Studio |
+| `npm run db:types` | Regenera `types/database.ts` |
+
+Studio em http://localhost:54323 · e-mails de teste em http://localhost:54324
+(confirmação, reset de senha e convite caem ali, sem sair da máquina).
+
+Usuários do seed: `teste.a@viajamais.local` e `teste.b@viajamais.local`,
+senha `viajamais123`. São dois porque metade do valor da suíte está em provar que
+B **não** vê o que é de A.
+
+## Skills obrigatórias
+
+- Antes de escrever **qualquer SQL** (tabela, coluna, índice, policy, migration):
+  carregue `supabase-postgres-best-practices`.
+- Para CLI, Auth, `@supabase/ssr` ou erro inesperado do Supabase: `supabase`.
+
+Elas são as skills oficiais da Supabase, instaladas no repositório. São a
+autoridade sobre Postgres; `.claude/agents/schema-db.md` cobre só o que é
+específico deste projeto.
+
 ## Testes obrigatórios por tipo de mudança
 
 | Mudou | Teste obrigatório |
