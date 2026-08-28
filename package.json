@@ -29,7 +29,10 @@
     "pfc:build": "node scripts/pfc/build.mjs",
     "pfc:rastreabilidade": "node scripts/pfc/rastreabilidade.mjs",
     "notion:seed": "node scripts/notion/seed.mjs",
-    "notion:sync": "node scripts/notion/sync.mjs"
+    "notion:sync": "node scripts/notion/sync.mjs",
+    "notion:pull": "node scripts/notion/pull.mjs",
+    "notion:cronograma": "node scripts/notion/cronograma.mjs",
+    "notion:requisitos": "node scripts/notion/requisitos.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

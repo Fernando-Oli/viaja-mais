@@ -15,13 +15,21 @@ skill quando o CI não rodou, ao montar o quadro pela primeira vez, ou para conf
 
 | Situação | Comando |
 |---|---|
-| Primeira vez — criar as 4 databases | `node scripts/notion/seed.mjs` |
-| Empurrar um plano | `node scripts/notion/sync.mjs --plan docs/plans/<ID>-<slug>.md` |
-| Empurrar tudo | `node scripts/notion/sync.mjs --all` |
-| Trazer o board para o repo | `node scripts/notion/pull.mjs` → `docs/plans/_board.json` |
+| Primeira vez — criar as 4 databases | `npm run notion:seed` |
+| Empurrar um plano | `npm run notion:sync -- --plan docs/plans/<ID>-<slug>.md` |
+| Empurrar tudo | `npm run notion:sync -- --all` |
+| Trazer o board para o repo | `npm run notion:pull` → `docs/plans/_board.json` |
+| Preencher as datas das 14 semanas | `npm run notion:cronograma` |
+| Definir prioridade dos requisitos | `npm run notion:requisitos` |
 
-Precisa de `NOTION_TOKEN` e `NOTION_PARENT_PAGE_ID` no ambiente. Sem eles, os scripts avisam e saem sem
-erro — **nunca trave trabalho por causa do Notion.**
+Os dois últimos aceitam `-- --dry`, que mostra o que mudaria sem escrever.
+
+Os scripts leem o `.env.local` sozinhos (`node` não faz isso por conta própria — só o `next dev` faz).
+Sem `NOTION_TOKEN`, avisam e saem sem erro — **nunca trave trabalho por causa do Notion.**
+
+O `notion()` espaça as chamadas em 350 ms e respeita o `Retry-After`: o Notion limita a integração a
+~3 req/s, e o `--all` faz duas chamadas por plano. Sem isso ele leva 429 no meio e o quadro fica
+pela metade. Um `--all` completo leva cerca de um minuto — é esperado, não é travamento.
 
 Depois do `seed.mjs`, guarde os IDs impressos em `.env.local` e nos secrets do GitHub
 (`NOTION_DB_ATIVIDADES`, `NOTION_DB_REQUISITOS`, `NOTION_DB_CRONOGRAMA`, `NOTION_DB_DECISOES`).
@@ -48,3 +56,14 @@ frontmatter do plano — não o Notion.
 
 A fila de revisão é a que mais importa: PR parado há mais de 24h é o gargalo mais provável deste projeto,
 e ele só aparece se estiver visível.
+
+A API do Notion **não configura view** — filtro, agrupamento e tipo de view são clique, não script.
+Duas armadilhas que já custaram tempo:
+
+- **"Por pessoa" agrupa por `Responsável`, não por `Revisor`.** Agrupado por revisor o quadro parece ter
+  só duas pessoas — Audrey com as 16 atividades do Fernando, Fernando com as 41 dos outros três — e dá a
+  impressão de que os cards de Micael e Abner não foram criados. Antes de suspeitar do sync, confira o
+  campo de agrupamento; `npm run notion:pull` mostra a distribuição real por responsável.
+- **A view de calendário precisa da propriedade `Data`** (tipo date), preenchida por
+  `npm run notion:cronograma`. A coluna de texto com "26/08 a 01/09" é legível para humano e invisível
+  para o calendário.
