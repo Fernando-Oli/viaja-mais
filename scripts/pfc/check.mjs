@@ -19,9 +19,11 @@ const ler = (rel) => {
 }
 
 // Um arquivo com só um título e nada abaixo conta como vazio.
+// O split é por /\r?\n/ e não por "\n": os arquivos podem chegar com CRLF, e
+// em JavaScript o "." não casa \r — regex terminada em (.+)$ falha em silêncio.
 const temConteudo = (txt) =>
   txt
-    .split("\n")
+    .split(/\r?\n/)
     .filter((l) => l.trim() && !l.trim().startsWith("#") && !l.trim().startsWith(">"))
     .join("").length > 80
 

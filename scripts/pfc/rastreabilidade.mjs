@@ -53,7 +53,9 @@ function lerCatalogo() {
   const requisitos = new Map()
   for (const arquivo of CATALOGO) {
     if (!fs.existsSync(arquivo)) continue
-    for (const linha of fs.readFileSync(arquivo, "utf8").split("\n")) {
+    // /\r?\n/ e não "\n": com CRLF, o \r final entra na última coluna capturada
+    // e o Status vem com espaço invisível — o requisito nunca casa "Implementado".
+    for (const linha of fs.readFileSync(arquivo, "utf8").split(/\r?\n/)) {
       const m = linha.match(/^\|\s*(RF|RNF|RNE)[-\s]?(\d+(?:\.\d+)?)\s*\|([^|]*)\|([^|]*)\|/)
       if (!m) continue
       requisitos.set(`${m[1]}${m[2]}`, {

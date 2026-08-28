@@ -1,0 +1,20 @@
+# Normaliza a quebra de linha para LF dentro do repositório.
+#
+# Motivo concreto: em JavaScript o "." não casa \r, porque \r é terminador de
+# linha. Um arquivo com CRLF faz qualquer regex terminada em (.+)$ falhar em
+# toda linha, sem erro nenhum — só resultado vazio. Isso já custou uma sessão
+# de depuração nos scripts que leem docs/ e supabase/.
+#
+# A equipe toda usa Windows; sem isto, o mesmo arquivo tem final de linha
+# diferente em cada máquina e todo diff fica poluído.
+* text=auto eol=lf
+
+# Binários: nunca converter.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.docx binary
