@@ -1,5 +1,5 @@
 ---
-id: RF00-slug-da-atividade
+id: S00-F-slug-da-atividade   # S<semana>-<inicial>-<slug>; Abner = Ab (Audrey já usa A)
 titulo: Título curto e verbal
 trilha: T1
 responsavel: fernando        # fernando | audrey | micael | abner
@@ -7,7 +7,7 @@ revisor: fernando            # sempre fernando, salvo nos PRs dele
 semana: S00
 requisitos: [RF00.0]
 secoes_doc: []               # seções do documento afetadas, ex.: [22.1, 14]
-branch: feat/RF00-slug-da-atividade
+branch: feat/S00-F-slug-da-atividade
 tipo: [route-handler]        # migration | rls | route-handler | regra-de-negocio
                              # tela | componente | correcao-de-bug | seguranca
                              # documentacao | infra

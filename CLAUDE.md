@@ -82,9 +82,14 @@ específico deste projeto.
 `/atividade <ID>` → implementa → `npm run verify` → PR (cola os critérios de validação) → CI verde →
 revisão do Fernando → merge → `/pfc-secao` das seções tocadas.
 
-Branches: `feat/`, `fix/`, `chore/`, `docs/` + ID do requisito → `feat/RF03-editar-viagem`.
-Commits: Conventional Commits com o ID no escopo → `feat(RF03): permite editar viagem`.
-Esse ID é o que alimenta a matriz de rastreabilidade e a seção 23 do documento.
+**ID de atividade**: `S<semana>-<inicial>-<slug>` — `S03-A-editar-viagem`.
+Iniciais: **F**ernando, **A**udrey, **M**icael, **Ab**ner (Abner leva duas letras porque
+Audrey já ocupa o A).
+
+Branches: `feat/`, `fix/`, `chore/` ou `docs/` + o ID → `feat/S03-A-editar-viagem`.
+Commits: Conventional Commits com o requisito no escopo quando houver um →
+`feat(RF03): permite editar viagem`. É esse ID que alimenta a matriz de
+rastreabilidade e a seção 23 do documento.
 
 ## Rastreabilidade
 

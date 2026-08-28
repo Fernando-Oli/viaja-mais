@@ -5,7 +5,12 @@ description: Abre uma nova atividade do PFC — cria o plano em docs/plans/, a b
 
 # Abrir uma atividade
 
-Uso: `/atividade RF03-editar-viagem` — ou sem argumento, e você pergunta o que é.
+Uso: `/atividade S03-A-editar-viagem` — ou sem argumento, e você pergunta o que é.
+
+ID no formato `S<semana>-<inicial>-<slug>`. Iniciais: **F**ernando, **A**udrey,
+**M**icael, **Ab**ner — Abner leva duas letras porque Audrey já ocupa o A.
+O ID e o nome do arquivo precisam ser idênticos e sem acento: são chave de
+casamento do card no Notion e nome de branch.
 
 Nada de código começa sem passar por aqui. O motivo é o processo acordado pela equipe: quem implementa
 precisa saber **o que vai ter que provar** antes de começar, e quem revisa precisa de critérios objetivos
@@ -45,7 +50,7 @@ em trip_members retorna 403 e não vaza o título da viagem" é um critério.
 
 ### 3. Crie a branch
 
-`git checkout -b feat/<ID>-<slug>` — prefixo `feat/`, `fix/`, `chore/` ou `docs/` conforme o caso.
+`git checkout -b feat/<ID>` — prefixo `feat/`, `fix/`, `chore/` ou `docs/` conforme o caso.
 Se houver trabalho não commitado na branch atual, avise antes de trocar.
 
 ### 4. Registre no Notion

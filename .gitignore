@@ -33,3 +33,7 @@ node_modules
 # materialize de novo (cp -rL) antes de commitar. A origem e a versão de cada
 # skill estão em skills-lock.json.
 /.agents/
+
+# Espelho do quadro do Notion, gerado por `npm run notion:sync`/pull.
+# Os planos em docs/plans/*.md são a fonte da verdade; este arquivo envelhece.
+/docs/plans/_board.json
