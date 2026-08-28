@@ -1,19 +1,19 @@
 ---
-id: S08-A-e2e-financeiro
+id: S08-M-e2e-financeiro
 titulo: E2E do fluxo financeiro
 trilha: T1
-responsavel: audrey
+responsavel: micael
 revisor: fernando
 semana: S08
 requisitos: []
 secoes_doc: [24]
-branch: feat/S08-A-e2e-financeiro
+branch: feat/S08-M-e2e-financeiro
 tipo: [tela]
 status: backlog
 ---
 # E2E do fluxo financeiro
 
-> **Audrey** · semana **S08** (14 a 20/10) · marco da semana: _Acerto de contas funcional_
+> **Micael** · semana **S08** (14 a 20/10) · marco da semana: _Acerto de contas funcional_
 
 ## 1. Contexto
 

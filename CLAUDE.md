@@ -10,9 +10,9 @@ Equipe e domínios — cada pessoa é dona de uma fatia **vertical** (migration 
 | Pessoa | Domínio | É dono de |
 |---|---|---|
 | Fernando | Plataforma | `supabase/migrations/`, `lib/supabase/`, `lib/authz/`, `lib/env.ts`, `proxy.ts`, `.github/` |
-| Audrey | Viagem & Itinerário + qualidade | `trips`, `itinerary_items`, `bookings`, `places`; `app/api/trips/**`; `app/dashboard/trips/**`; `vitest.config.mts`, `e2e/` |
-| Micael | Financeiro | `expenses`, `expense_shares`, `settlements`; `app/api/**/expenses`, `app/api/acertos`; `lib/finance/`; `app/dashboard/finances` |
-| Abner | Social & IA | `profiles`, `follows`, `trip_posts`, `post_likes`, `post_comments`, `place_reviews`; `app/u/**`, `app/feed`, `app/api/social/**`, `app/api/roteiros/**`; `lib/ai/` |
+| Audrey | Viagem & Itinerário + qualidade | `trips`, `itinerary_items`, `bookings`, `places`, `place_reviews`; `app/api/trips/**`; `app/dashboard/trips/**`; `vitest.config.mts`, `e2e/` |
+| Micael | Financeiro **e IA de roteiros** | `expenses`, `expense_shares`, `settlements`; `app/api/**/expenses`, `app/api/acertos`, `app/api/roteiros/**`; `lib/finance/`, `lib/ai/`; `app/dashboard/finances` |
+| Abner | Social & Descoberta | `profiles`, `follows`, `trip_posts`, `post_likes`, `post_comments`; `app/u/**`, `app/feed`, `app/api/social/**` |
 
 **Não consulte tabela de outro domínio direto.** O dono expõe um helper em `lib/`; os outros consomem.
 
@@ -88,7 +88,7 @@ específico deste projeto.
 | migration / RLS | aplicação limpa do zero + teste de RLS com dois usuários provando isolamento |
 | route handler | integração cobrindo 4 caminhos: **200** feliz · **401** sem sessão · **403** não-membro · **400** payload inválido |
 | regra de negócio em `lib/` | unit com casos de borda; cobertura ≥70% no arquivo |
-| tela / componente | E2E do fluxo com screenshot arquivado |
+| tela / componente | E2E do fluxo com screenshot arquivado — **escrito por quem construiu a funcionalidade**, não pela pessoa de qualidade: quem implementou sabe onde ela quebra |
 | correção de bug | teste de regressão que **falha antes** e passa depois |
 
 ## Fluxo

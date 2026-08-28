@@ -1,19 +1,19 @@
 ---
-id: S11-Ab-tela-roteiro-ia
+id: S11-M-tela-roteiro-ia
 titulo: Tela de roteiro por IA
 trilha: T1
-responsavel: abner
+responsavel: micael
 revisor: fernando
 semana: S11
 requisitos: []
 secoes_doc: [26]
-branch: feat/S11-Ab-tela-roteiro-ia
+branch: feat/S11-M-tela-roteiro-ia
 tipo: [tela]
 status: backlog
 ---
 # Tela de roteiro por IA
 
-> **Abner** · semana **S11** (04 a 10/11) · marco da semana: _IA ponta a ponta com provider fake no CI_
+> **Micael** · semana **S11** (04 a 10/11) · marco da semana: _IA ponta a ponta com provider fake no CI_
 
 ## 1. Contexto
 

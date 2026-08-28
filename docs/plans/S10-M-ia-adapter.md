@@ -1,19 +1,19 @@
 ---
-id: S10-Ab-ia-adapter
+id: S10-M-ia-adapter
 titulo: Adapter de IA e rota de geração de roteiro
 trilha: T1
-responsavel: abner
+responsavel: micael
 revisor: fernando
 semana: S10
 requisitos: []
 secoes_doc: [26]
-branch: feat/S10-Ab-ia-adapter
+branch: feat/S10-M-ia-adapter
 tipo: [route-handler, regra-de-negocio]
 status: backlog
 ---
 # Adapter de IA e rota de geração de roteiro
 
-> **Abner** · semana **S10** (28/10 a 03/11) · marco da semana: _Cobertura de 70% em lib/_
+> **Micael** · semana **S10** (28/10 a 03/11) · marco da semana: _Cobertura de 70% em lib/_
 
 ## 1. Contexto
 
