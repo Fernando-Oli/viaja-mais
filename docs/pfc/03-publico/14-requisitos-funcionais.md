@@ -164,4 +164,60 @@ volume que gerariam. Como decisão de dado a cargo da plataforma, cria-se a tabe
 `notifications`, com usuário destino, tipo, ator, referência, marcação de lida e
 data de criação.
 
-> [!] PENDENTE: grupos de outros domínios — RF01 (autenticação), RF03 (viagens), RF04 (grupo), RF05 (itinerário), RF06 (financeiro), RF07 (reservas), RF08 (lugares); RNF01–RNF06 — a cargo de seus respectivos donos.
+## RF03 — Gestão de Viagens
+
+ID | Descrição | Status | Prioridade
+--- | --- | --- | ---
+| RF03.1 | O usuário deve poder criar nova viagem | Parcial | Alta
+| RF03.2 | O usuário deve poder editar viagem | Parcial | Alta
+| RF03.3 | O usuário deve poder excluir viagem | Parcial | Média
+| RF03.4 | O usuário deve poder visualizar lista de viagens | Parcial | Alta
+| RF03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | Alta
+| RF03.6 | O usuário deve poder definir orçamento | Parcial | Média
+| RF03.7 | O usuário deve poder adicionar imagem de capa | Parcial | Baixa
+| RF03.8 | O usuário deve poder alterar status da viagem | Parcial | Média
+
+Detalhamento: o domínio de viagens possui implementação existente, mas ainda apresenta lacunas que impedem classificá-lo integralmente como implementado. A criação de uma viagem possui um defeito conhecido relacionado ao vínculo do proprietário com os membros da viagem, e a tela de edição ainda não existe apesar de haver suporte parcial no backend. Por esse motivo, os requisitos permanecem classificados de forma conservadora como parciais.
+
+## RF05 — Itinerário
+
+ID | Descrição | Status | Prioridade
+--- | --- | --- | ---
+| RF05.1 | O usuário deve poder adicionar atividade ao itinerário | Parcial | Alta
+| RF05.2 | O usuário deve poder editar atividade | Não iniciado | Alta
+| RF05.3 | O usuário deve poder excluir atividade | Não iniciado | Média
+| RF05.4 | O usuário deve poder visualizar itinerário por data | Parcial | Alta
+| RF05.5 | O usuário deve poder categorizar atividades | Parcial | Média
+| RF05.6 | O usuário deve poder definir horários | Parcial | Média
+| RF05.7 | O usuário deve poder adicionar localização | Parcial | Média
+
+Detalhamento: já existem estruturas para criação e visualização de itens do itinerário, porém há um defeito conhecido no filtro que define quais itens pertencem às viagens do usuário. As operações de edição e exclusão ainda estão previstas para implementação posterior. Assim, funcionalidades existentes permanecem como parciais e as operações ainda ausentes são classificadas como não iniciadas.
+
+## RF07 — Reservas
+
+ID | Descrição | Status | Prioridade
+--- | --- | --- | ---
+| RF07.1 | O usuário deve poder adicionar reserva de voo | Parcial | Alta
+| RF07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | Alta
+| RF07.3 | O usuário deve poder adicionar reserva de carro | Parcial | Média
+| RF07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | Média
+| RF07.5 | O usuário deve poder editar reserva | Não iniciado | Alta
+| RF07.6 | O usuário deve poder excluir reserva | Não iniciado | Média
+| RF07.7 | O usuário deve poder visualizar todas as reservas | Parcial | Alta
+
+Detalhamento: existe uma tela de criação de reservas, mas ela ainda não possui um ponto de entrada no fluxo normal da aplicação. As operações de edição e exclusão também permanecem previstas para uma atividade posterior. Por isso, a criação e visualização são classificadas como parciais, enquanto edição e exclusão permanecem não iniciadas.
+
+## RF08 — Lugares e Mapas
+
+ID | Descrição | Status | Prioridade
+--- | --- | --- | ---
+| RF08.1 | O usuário deve poder buscar lugares | Parcial | Alta
+| RF08.2 | O usuário deve poder salvar lugares favoritos | Parcial | Alta
+| RF08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | Média
+| RF08.4 | O usuário deve poder marcar lugares como visitados | Parcial | Média
+| RF08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | Média
+| RF08.6 | O usuário deve poder excluir lugares salvos | Parcial | Média
+
+Detalhamento: o domínio de lugares possui implementação existente, porém ainda há funcionalidades incompletas. O estado de lugar visitado já é exibido, mas atualmente não existe uma interface que permita alterá-lo e persistir essa mudança. Por isso, os requisitos permanecem classificados de forma conservadora como parciais.
+
+> [!] PENDENTE: grupos de outros domínios — RF01 (autenticação), RF04 (grupo), RF06 (financeiro); RNF01–RNF06 — a cargo de seus respectivos donos.
