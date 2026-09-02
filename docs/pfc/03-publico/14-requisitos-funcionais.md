@@ -32,6 +32,35 @@ cascata o perfil, os vínculos de seguir, as publicações e as curtidas. Como
 decisão de dado a cargo da plataforma, a tabela `profiles` recebe as colunas
 `username` (única), `bio` e `is_public`.
 
+## 14.1 Existentes (reaproveitados de `docs/ARCHITECTURE.md` §6, status corrigido)
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RF06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | Alta |
+| RF06.2 | Usuário deve poder editar despesa | Planejado | Média |
+| RF06.3 | Usuário deve poder excluir despesa | Planejado | Média |
+| RF06.4 | Usuário deve poder visualizar total de gastos | Existente | Alta |
+| RF06.5 | Usuário deve poder visualizar gastos por categoria | Existente | Média |
+| RF06.6 | Usuário deve poder comparar gastos com orçamento | A confirmar | Baixa |
+| RF06.7 | Sistema deve alertar quando gastos ultrapassarem 80% do orçamento | A confirmar | Baixa |
+
+**Detalhamento:** RF06.1, RF06.4 e RF06.5 têm evidência direta em `app/dashboard/finances/page.tsx`. RF06.2 e RF06.3 estão listados em `docs/plans/00-plano-norte.md` §T1 como CRUD faltando ("editar/excluir despesa") — a documentação anterior os apresentava como prontos, o que o `_regras.md` já identificou como erro a não repetir. RF06.6 e RF06.7 não têm menção nem a favor nem contra no material disponível; ficam "A confirmar" até alguém checar o código, em vez de herdar um status não verificado.
+
+## 14.2 Novos — Roteio de Despesas
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RF-06.8 | Usuário deve poder indicar quem pagou a despesa (`paid_by`) | Planejado | Alta |
+| RF-06.9 | Usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Planejado | Alta |
+| RF-06.10 | Sistema deve calcular o valor devido por membro (`expense_shares`), conforme o tipo de rateio | Planejado | Alta |
+| RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | Alta |
+| RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | Média |
+| RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | Baixa |
+
+**Detalhamento:** estes requisitos ainda não têm nenhuma evidência no código — são o escopo da trilha T2, que corre da S02 à S10. Os nomes de tabela e função (`expense_shares`, `settlements`, `paid_by`, `calcularSaldos()`, `minimizarTransferencias()`) já foram decididos em `plano-norte.md` §T2 e devem ser usados como estão, para não haver dois nomes diferentes para a mesma coisa entre a documentação e o código quando o Micael implementar. Os IDs `RF-NOVO` precisam ser substituídos pelo próximo número livre da sequência global antes do merge.
+
+
+
 ## RF09 — Rede Social
 
 | ID | Descrição | Status | Prioridade |
