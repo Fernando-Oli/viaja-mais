@@ -19,14 +19,55 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [hasToken, setHasToken] = useState(true)
-  const [checkingToken, setCheckingToken] = useState(false)
+  const [hasToken, setHasToken] = useState(false)
+  const [checkingToken, setCheckingToken] = useState(true)
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
-    // Verifica se há um token de recuperação válido na URL
-    setCheckingToken(false)
+    // A tela tem dois modos: pedir o e-mail de recuperação e definir a nova
+    // senha. Antes `hasToken` era fixo em `true` e o efeito ignorava a URL, então
+    // qualquer visita caía direto no formulário de nova senha — que falha porque
+    // não há sessão de recuperação.
+    //
+    // O link do e-mail volta como `?code=` (fluxo PKCE do @supabase/ssr) ou com
+    // `type=recovery` no hash (fluxo implícito). Nos dois casos o cliente do
+    // navegador processa a URL e dispara o evento PASSWORD_RECOVERY.
+    const supabase = createClient()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setHasToken(true)
+        setCheckingToken(false)
+      }
+    })
+
+    const params = new URLSearchParams(window.location.search)
+    const veioDeLinkDeRecuperacao =
+      params.has("code") ||
+      params.get("type") === "recovery" ||
+      window.location.hash.includes("type=recovery")
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (veioDeLinkDeRecuperacao && session) {
+        // Código já trocado por sessão antes de o efeito rodar.
+        setHasToken(true)
+        setCheckingToken(false)
+      } else if (!veioDeLinkDeRecuperacao) {
+        setCheckingToken(false)
+      }
+      // veio de link mas ainda sem sessão: aguarda o PASSWORD_RECOVERY acima.
+    })
+
+    // Link expirado nunca dispara o evento — não deixa a tela presa no spinner.
+    const timeout = setTimeout(() => setCheckingToken(false), 4000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const handleRequestReset = async (e: React.FormEvent) => {

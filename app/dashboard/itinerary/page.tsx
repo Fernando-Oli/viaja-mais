@@ -21,9 +21,12 @@ export default async function ItineraryPage() {
     redirect("/auth/login")
   }
 
+  // `trips!inner`: sem o inner o PostgREST trata o embed como LEFT JOIN e o
+  // `.eq("trips.user_id", ...)` não filtra nada — a tela mostrava itinerário de
+  // viagem de qualquer usuário. Com inner, item sem viagem do usuário some.
   const { data: itineraryItems } = await supabase
     .from("itinerary_items")
-    .select("*, trips(title, destination)")
+    .select("*, trips!inner(title, destination)")
     .eq("trips.user_id", user.id)
     .gte("date", new Date().toISOString().split("T")[0])
     .order("date", { ascending: true })

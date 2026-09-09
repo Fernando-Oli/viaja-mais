@@ -34,8 +34,7 @@ interface TripInvitationsProps {
 }
 
 export function TripInvitations({ invitations }: TripInvitationsProps) {
-  const context = useAuth();
-  const { addTrip, setTripsLoading } = context;
+  const { setTripsLoading, refreshTrips, refreshInvitations } = useAuth();
   const router = useRouter();
 
   const handleAccept = async (invitationId: string) => {
@@ -46,13 +45,16 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
         method: "POST",
       });
 
-      const { data, error } = await response.json();
-
-
-      router.refresh()
+      const { error } = await response.json();
       if (!response.ok) {
         throw new Error(error);
       }
+
+      // O estado das viagens e dos convites vive no contexto, não no cache do
+      // servidor. Sem estes dois refreshes a viagem aceita só aparecia depois de
+      // um reload manual; `router.refresh()` sozinho não recarrega o contexto.
+      await Promise.all([refreshTrips(), refreshInvitations()]);
+      router.refresh();
     } finally {
       setTripsLoading(false);
     }
@@ -66,13 +68,13 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
         method: "POST",
       });
 
-      const { data, error } = await response.json();
-
-
-      router.refresh();
+      const { error } = await response.json();
       if (!response.ok) {
         throw new Error(error);
       }
+
+      await refreshInvitations();
+      router.refresh();
     } finally {
       setTripsLoading(false);
     }
