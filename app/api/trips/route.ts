@@ -73,16 +73,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    const tripId = data?.[0]?.id;
+
+    if (!tripId) {
+      return NextResponse.json(
+        { error: "Trip could not be created" },
+        { status: 500 }
+      );
+    }
+
     // Registra o criador como membro dono. Sem isto a viagem some da própria
     // lista: o GET acima faz `trip_members!inner` e filtra por participação, então
     // uma viagem sem linha em trip_members nunca volta para ninguém.
     const { error: memberError } = await supabase.from("trip_members").insert({
-      trip_id: data[0].id,
+      trip_id: tripId,
       user_id: user.id,
       role: "owner",
     });
 
     if (memberError) {
+      const { error: rollbackError } = await supabase
+        .from("trips")
+        .delete()
+        .eq("id", tripId);
+
+      if (rollbackError) {
+        return NextResponse.json({ error: rollbackError.message }, { status: 500 });
+      }
+
       return NextResponse.json({ error: memberError.message }, { status: 400 });
     }
 

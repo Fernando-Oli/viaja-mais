@@ -12,6 +12,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 const h = vi.hoisted(() => ({
   getUser: vi.fn(),
   inserts: [] as Array<{ tabela: string; valores: unknown }>,
+  tripInsertResult: { data: [{ id: "trip-1" }], error: null as { message: string } | null },
+  tripMembersInsertResult: { data: null, error: null as { message: string } | null },
+  deletes: [] as Array<{ tabela: string; coluna: string; valor: unknown }>,
+  deleteResult: { error: null as { message: string } | null },
 }))
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -22,11 +26,17 @@ vi.mock("@/lib/supabase/server", () => ({
         insert(valores: unknown) {
           h.inserts.push({ tabela, valores })
           const resultado =
-            tabela === "trips"
-              ? { data: [{ id: "trip-1" }], error: null }
-              : { data: null, error: null }
+            tabela === "trips" ? h.tripInsertResult : h.tripMembersInsertResult
           const promessa = Promise.resolve(resultado)
           return Object.assign(promessa, { select: () => Promise.resolve(resultado) })
+        },
+        delete() {
+          return {
+            eq(coluna: string, valor: unknown) {
+              h.deletes.push({ tabela, coluna, valor })
+              return Promise.resolve(h.deleteResult)
+            },
+          }
         },
       }
     },
@@ -54,7 +64,11 @@ function requisicao(body: unknown) {
 
 beforeEach(() => {
   h.inserts.length = 0
+  h.deletes.length = 0
   h.getUser.mockReset()
+  h.tripInsertResult = { data: [{ id: "trip-1" }], error: null }
+  h.tripMembersInsertResult = { data: null, error: null }
+  h.deleteResult = { error: null }
 })
 
 describe("POST /api/trips", () => {
@@ -75,5 +89,25 @@ describe("POST /api/trips", () => {
 
     expect(resposta.status).toBe(401)
     expect(h.inserts).toHaveLength(0)
+  })
+
+  it("responde 500 quando o insert da viagem não retorna id", async () => {
+    h.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } })
+    h.tripInsertResult = { data: [], error: null }
+
+    const resposta = await POST(requisicao(CORPO_VALIDO))
+
+    expect(resposta.status).toBe(500)
+    expect(h.inserts.find((i) => i.tabela === "trip_members")).toBeUndefined()
+  })
+
+  it("remove a viagem se falhar ao registrar o membro dono", async () => {
+    h.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } })
+    h.tripMembersInsertResult = { data: null, error: { message: "falhou" } }
+
+    const resposta = await POST(requisicao(CORPO_VALIDO))
+
+    expect(resposta.status).toBe(400)
+    expect(h.deletes).toContainEqual({ tabela: "trips", coluna: "id", valor: "trip-1" })
   })
 })
