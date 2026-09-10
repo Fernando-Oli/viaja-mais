@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from "vitest"
  * a tabela aninhada — a consulta devolvia itens de viagem de qualquer usuário.
  */
 
-const h = vi.hoisted(() => ({ selects: [] as string[] }))
+const h = vi.hoisted(() => ({ selects: [] as string[], eqs: [] as Array<[string, unknown]> }))
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -18,7 +18,10 @@ vi.mock("@/lib/supabase/server", () => ({
           h.selects.push(String(colunas))
           return chain
         },
-        eq: () => chain,
+        eq: (coluna: unknown, valor: unknown) => {
+          h.eqs.push([String(coluna), valor])
+          return chain
+        },
         gte: () => chain,
         order: () => chain,
         limit: () => Promise.resolve({ data: [], error: null }),
@@ -33,9 +36,10 @@ vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
 import ItineraryPage from "@/app/dashboard/itinerary/page"
 
 describe("ItineraryPage", () => {
-  it("filtra o itinerário por viagem do usuário com trips!inner", async () => {
+  it("filtra o itinerário por participação em trip_members", async () => {
     await ItineraryPage()
 
-    expect(h.selects.some((s) => s.includes("trips!inner"))).toBe(true)
+    expect(h.selects.some((s) => s.includes("trip_members!inner"))).toBe(true)
+    expect(h.eqs).toContainEqual(["trips.trip_members.user_id", "user-1"])
   })
 })
