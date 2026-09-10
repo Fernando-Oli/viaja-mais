@@ -146,8 +146,7 @@ de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
    que o INSERT tente forçar `'accepted'` (o trigger sobrepõe).
 5. Como usuário B, tentar `insert into follows` com `follower_id = A` (forjando
    outro solicitante) → esperado: bloqueado pela RLS (`with check` de INSERT).
-6. Como usuário A, tentar `update follows set username`/aprovar uma solicitação de
-   que A **não** é o `followee` → esperado: 0 linhas afetadas (RLS de UPDATE).
+6. Como usuário A, tentar `update follows set status = 'accepted'` em uma solicitação em que A **não** é o `followee` → esperado: 0 linhas afetadas (RLS de UPDATE).
 7. Definir `username` duplicado em dois perfis → esperado: erro de unicidade;
    `username` fora de `^[a-z0-9_]{3,30}$` → esperado: erro de check.
 
