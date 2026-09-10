@@ -20,9 +20,7 @@ import { criarDespesaSchema } from "@/lib/schemas/despesa"
  *                           deixava o cliente injetar `user_id` e roubar o registro.
  *   5. `respostaDeErro`   — status certo para erro conhecido, 500 genérico para o
  *                           resto, sem vazar a mensagem crua do Postgres.
- *
- * @RF06.1 adicionar despesa · RF04.6 membros podem adicionar despesas
- */
+ * @RF06.1 adicionar despesa · @RF04.6 membros podem adicionar despesas
 
 async function usuarioAtual(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
