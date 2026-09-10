@@ -5,7 +5,7 @@ trilha: T1
 responsavel: micael
 revisor: fernando
 semana: S03
-requisitos: [RF02.5, RF02.6, RF02.7, RF09.1, RF09.2, RF09.3, RF09.4, RF09.5, RF09.9]
+requisitos: [RF02.5, RF02.6, RF02.7, RF09.1, RF09.2, RF09.3, RF09.4, RF09.5, RF09.6, RF09.9, RF13.2]
 secoes_doc: [18, 25]
 branch: feat/S03-M-migration-social
 tipo: [migration, rls]
