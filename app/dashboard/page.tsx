@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -214,7 +213,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      Past Trips
       {pastTrips.length > 0 && (
         <div>
           <h2 className="mb-4 text-2xl font-bold text-viaja-navy">
