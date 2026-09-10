@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { Users, Mail, UserPlus, X, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/auth-context"
 
 interface Member {
   id: string
@@ -30,7 +29,6 @@ interface TripMembersProps {
 }
 
 export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
-  const {user} = useAuth();
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +43,8 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, tripId, inviterId: user?.id }),
+        // `inviterId` não vai mais: quem convida sai da sessão no servidor.
+        body: JSON.stringify({ email, tripId }),
       })
   
   
