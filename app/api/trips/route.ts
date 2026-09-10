@@ -73,37 +73,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    const tripId = data?.[0]?.id;
-
-    if (!tripId) {
+    if (!data || data.length === 0) {
       return NextResponse.json(
         { error: "Trip could not be created" },
         { status: 500 }
       );
     }
 
-    // Registra o criador como membro dono. Sem isto a viagem some da própria
-    // lista: o GET acima faz `trip_members!inner` e filtra por participação, então
-    // uma viagem sem linha em trip_members nunca volta para ninguém.
-    const { error: memberError } = await supabase.from("trip_members").insert({
-      trip_id: tripId,
-      user_id: user.id,
-      role: "owner",
-    });
-
-    if (memberError) {
-      const { error: rollbackError } = await supabase
-        .from("trips")
-        .delete()
-        .eq("id", tripId);
-
-      if (rollbackError) {
-        return NextResponse.json({ error: rollbackError.message }, { status: 500 });
-      }
-
-      return NextResponse.json({ error: memberError.message }, { status: 400 });
-    }
-
+    // O trigger `on_trip_created` (supabase/migrations/) já insere o criador
+    // em trip_members como owner, na mesma transação do insert acima — inserir
+    // de novo aqui colide com a constraint única trip_members_trip_id_user_id_key.
     return NextResponse.json({ data });
   } catch (_error) {
     return NextResponse.json(
