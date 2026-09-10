@@ -194,16 +194,16 @@ Secrets: `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID`, `NOTION_DB_*`.
 seus PRs (detalhe abaixo).
 
 **Cada um é dono de um domínio, ponta a ponta** — migration, route handler, tela e teste. Não é "o
-Micael faz o backend e o Abner o frontend"; é "o financeiro inteiro é do Micael". Isso é o que permite as
+Micael faz o backend e o Abner o frontend"; é "o financeiro inteiro é do Abner". Isso é o que permite as
 quatro pessoas produzirem **toda semana, em paralelo, sem esperar ninguém**: os domínios quase não
 compartilham arquivo.
 
 | Pessoa | Domínio que possui | Tabelas / rotas que são suas | Seções do documento |
 |---|---|---|---|
-| **Fernando** | **Plataforma** — schema, RLS, autorização, CI, segurança, e revisão de todos os PRs | `supabase/migrations/` (schema base), `lib/supabase/*`, `lib/authz/*`, `lib/env.ts`, `middleware.ts`, `.github/` | 1, 2, 3, 4, 19, 20, 21, 22.3, 23, **25**, + Parte 00 e Parte 02 toda semana |
-| **Audrey** | **Viagem & Itinerário** + infraestrutura de qualidade | `trips`, `itinerary_items`, `bookings`, `places`; `/api/trips/**`; `/dashboard/trips/**`; `vitest.config`, `playwright/` | 17, 22.1, **24** |
-| **Micael** | **Financeiro** — despesa, rateio, saldo, acerto | `expenses`, `expense_shares`, `settlements`; `/api/trips/[id]/expenses`, `/api/acertos`; `lib/finance/`; `/dashboard/finances` | 13, 14, 15, 18, 22.2 |
-| **Abner** | **Social & Descoberta** + IA de roteiros | `profiles`, `follows`, `trip_posts`, `post_likes`, `post_comments`, `place_reviews`; `/u/**`, `/feed`, `/api/social/**`, `/api/roteiros/**`; `lib/ai/` | 8, 9, 10, 11, 12, 16, **26** |
+| **Fernando** | **Plataforma** — schema, RLS, autorização, CI, segurança, e revisão de todos os PRs | `supabase/migrations/` (schema base), `lib/supabase/*`, `lib/authz/*`, `lib/env.ts`, `proxy.ts`, `.github/` | 1, 2, 3, 4, 19, 20, 21, 22.3, 23, **25**, + Parte 00 e Parte 02 toda semana |
+| **Audrey** | **Viagem & Itinerário** + infraestrutura de qualidade | `trips`, `itinerary_items`, `bookings`, `places`, `place_reviews`; `/api/trips/**`; `/dashboard/trips/**`; `vitest.config`, `e2e/` | 17, 22.1, **24** |
+| **Micael** | **Social & Descoberta** + IA de roteiros | `profiles`, `follows`, `trip_posts`, `post_likes`, `post_comments`; `/u/**`, `/feed`, `/api/social/**`, `/api/roteiros/**`; `lib/ai/` | 14, 15, 16, **26** |
+| **Abner** | **Financeiro** — despesa, rateio, saldo, acerto | `expenses`, `expense_shares`, `settlements`; `/api/trips/[id]/expenses`, `/api/acertos`; `lib/finance/`; `/dashboard/finances` | 8–15, 18, 22.2 |
 
 **Revisão.** Todo PR é revisado por você. Para você não virar gargalo, duas regras: **PR de no máximo
 ~400 linhas** (atividade grande vira duas) e **revisão em até 24h** — passou disso, o autor cobra no
@@ -301,9 +301,9 @@ via a tabela de testes por tipo em §1.5.
 |---|---|---|
 | T0 Fundação | Fernando | S01 (bloqueante) |
 | T1 Consolidação e segurança | Fernando (authz) + Audrey (bugs e CRUDs) | S02–S06, paralelo |
-| T2 Divisão de custos | Micael | S02–S10, paralelo |
-| T3 Rede social | Abner | S03–S09, paralelo |
-| T4 IA de roteiros | Abner | S10–S11, paralelo |
+| T2 Divisão de custos | Abner | S02–S10, paralelo |
+| T3 Rede social | Micael | S03–S09, paralelo |
+| T4 IA de roteiros | Micael | S10–S11, paralelo |
 | T5 Qualidade e segurança | todos, em toda atividade | contínuo |
 
 ### T0 — Fundação (bloqueante)
@@ -547,22 +547,22 @@ catálogo de requisitos, que não depende de código nenhum.
 
 A coluna do Fernando mostra só o que ele **produz** — a revisão de todos os PRs é em todas as semanas.
 
-| Sem | Fernando · Plataforma | Audrey · Viagem & Itinerário | Micael · Financeiro | Abner · Social & IA | Marco da semana |
+| Sem | Fernando · Plataforma | Audrey · Viagem & Itinerário | Micael · Social & IA | Abner · Financeiro | Marco da semana |
 |---|---|---|---|---|---|
-| **S01**<br>26/08 | **BASE SÓLIDA**: migrations + RLS + tipos, rota de referência, Vitest/Playwright, CI, `.claude/`, faxina | Catálogo RF/RNF de viagem, itinerário, reservas, lugares | Catálogo RF/RNF financeiro + modelo ER do rateio | Catálogo RF/RNF social e IA + fluxo de navegação (16.1) | **Base mergeada + backlog inteiro no Notion** |
-| **S02**<br>02/09 | Authz nas rotas existentes (dono/membro) + fim do mass-assignment | Bugs P0: texto solto, query do itinerário, owner em `trip_members`, `refreshTrips` | Writes de despesa → route handler + zod | `scripts/notion/` + seed + `notion.yml` | Quadro do Notion vivo, movido pelo CI |
-| **S03**<br>09/09 | Convite autenticado + service role + e-mail real | Editar viagem + writes de itinerário → API | Editar/excluir despesa | Migration social (`username`, `is_public`, `follows`) + RLS de visibilidade | Convite chega no e-mail de verdade |
-| **S04**<br>16/09 | Testes de RLS com 2 usuários + `db.yml` | Editar/excluir/concluir itinerário | Migration `expense_shares` + `paid_by` | Perfil público `/u/[username]` + editar perfil | **RLS provada por teste** |
-| **S05**<br>23/09 | `lib/authz/trip.ts` (escopo de grupo) + doc 20, 21 | Reservas: aba, entradas, editar/excluir | `lib/finance/balances.ts` + unit tests | Seguir / deixar de seguir + contadores | **Zero write client-side no app** |
-| **S06**<br>30/09 | Rate limiting + headers de segurança | Lugares (`visited`) + escopo de grupo nas telas | UI de rateio na despesa | `trip_posts` + publicar viagem sem vazar despesa | Fluxo de grupo ponta a ponta |
-| **S07**<br>07/10 | Doc 19, 23 + `error.tsx` / `not-found.tsx` / `loading.tsx` | Fixtures + E2E cadastro→viagem→convite→aceite | Tela de acerto de contas (saldos) | Feed com paginação por cursor | 1º E2E verde no CI |
-| **S08**<br>14/10 | Revisão da RLS do social + doc 22.3 | E2E do fluxo financeiro | Minimizar transferências + marcar quitado | Curtir + comentar | Acerto de contas funcional |
-| **S09**<br>21/10 | Performance + observabilidade | E2E do fluxo social | Recharts + relatório por categoria | `place_reviews` + avaliações de lugares | Rede social ponta a ponta |
-| **S10**<br>28/10 | `/security-review` completo + correções | Cobertura global + acessibilidade | Multi-moeda / conversão | `lib/ai/provider.ts` + `/api/roteiros/gerar` com validação de saída | **Cobertura ≥70% em `lib/`** |
-| **S11**<br>04/11 | Correções de segurança + evidências | E2E completo do fluxo inteiro, com screenshots | Polimento financeiro + doc 18 | Tela `/roteiro-ia`: preview, aceitar/editar antes de gravar | IA ponta a ponta com provider fake no CI |
-| **S12**<br>11/11 | **Doc 25** + evidências de segurança | **Doc 24** + relatório de testes | Doc 22.2, 13, 14, 15 | Doc 16, 26 + vídeo de demonstração | **Evidências datadas geradas** |
-| **S13**<br>18/11 | Monta o documento, Parte 00/02, revisão cruzada | Doc 17, 22.1 | Catálogo de requisitos × implementado | Doc 8–12 | **Congelamento em 20/11** |
-| **S14**<br>25/11 | Build DOCX/PDF, deploy estável, ensaio | Só bug fix + ensaio | Só bug fix + ensaio | Só bug fix + ensaio | **Entrega 01/12** |
+| **S01**<br>26/08–01/09 | **BASE SÓLIDA**: migrations + RLS + tipos, rota de referência, Vitest/Playwright, CI, `.claude/`, faxina + ambiente local em um comando | Catálogo RF/RNF de viagem, itinerário, reservas, lugares | Catálogo RF/RNF social e IA + fluxo de navegação (16.1) | Catálogo RF/RNF financeiro + modelo ER do rateio | **Base mergeada + backlog inteiro no Notion** |
+| **S02**<br>02/09–08/09 | Authz nas rotas existentes (dono/membro) + fim do mass-assignment | Bugs P0: texto solto, query do itinerário, owner em `trip_members`, `refreshTrips` | — | Writes de despesa → route handler + zod · `scripts/notion/` + seed + `notion.yml` | Quadro do Notion vivo, movido pelo CI |
+| **S03**<br>09/09–15/09 | Convite autenticado + service role + e-mail real | Editar viagem + writes de itinerário → API | Migration social (`username`, `is_public`, `follows`) + RLS de visibilidade | Editar/excluir despesa | Convite chega no e-mail de verdade |
+| **S04**<br>16/09–22/09 | Testes de RLS com 2 usuários + `db.yml` · migration `expense_shares` + `paid_by` | Editar/excluir/concluir itinerário | Perfil público `/u/[username]` + editar perfil | — | **RLS provada por teste** |
+| **S05**<br>23/09–29/09 | `lib/authz/trip.ts` (escopo de grupo) + doc 20, 21 | Reservas: aba, entradas, editar/excluir | Seguir / deixar de seguir + contadores | `lib/finance/balances.ts` + unit tests | **Zero write client-side no app** |
+| **S06**<br>30/09–06/10 | Rate limiting + headers de segurança | Lugares (`visited`) + escopo de grupo nas telas | `trip_posts` + publicar viagem sem vazar despesa | UI de rateio na despesa | Fluxo de grupo ponta a ponta |
+| **S07**<br>07/10–13/10 | Doc 19, 23 + `error.tsx` / `not-found.tsx` / `loading.tsx` | Fixtures + E2E cadastro→viagem→convite→aceite | Feed com paginação por cursor | Tela de acerto de contas (saldos) | 1º E2E verde no CI |
+| **S08**<br>14/10–20/10 | Revisão da RLS do social + doc 22.3 | — | Curtir + comentar | Minimizar transferências + marcar quitado · E2E do fluxo financeiro | Acerto de contas funcional |
+| **S09**<br>21/10–27/10 | Performance + observabilidade | `place_reviews` + avaliações de lugares | E2E do fluxo social | Recharts + relatório por categoria | Rede social ponta a ponta |
+| **S10**<br>28/10–03/11 | `/security-review` completo + correções | Cobertura global + acessibilidade | `lib/ai/provider.ts` + `/api/roteiros/gerar` com validação de saída | Multi-moeda / conversão | **Cobertura ≥70% em `lib/`** |
+| **S11**<br>04/11–10/11 | Correções de segurança + evidências | E2E completo do fluxo inteiro, com screenshots | Tela `/roteiro-ia`: preview, aceitar/editar antes de gravar | Polimento financeiro + doc 18 | IA ponta a ponta com provider fake no CI |
+| **S12**<br>11/11–17/11 | **Doc 25** + evidências de segurança | **Doc 24** + relatório de testes | Doc 16, 26 + vídeo de demonstração | Doc 22.2, 13, 14, 15 | **Evidências datadas geradas** |
+| **S13**<br>18/11–24/11 | Monta o documento, Parte 00/02, revisão cruzada | Doc 17, 22.1 | — | Catálogo de requisitos × implementado · doc 8–12 | **Congelamento em 20/11** |
+| **S14**<br>25/11–01/12 | Build DOCX/PDF, deploy estável, ensaio | Só bug fix + ensaio | Só bug fix + ensaio | Só bug fix + ensaio | **Entrega 01/12** |
 
 ---
 
@@ -605,8 +605,9 @@ São exatamente esses os itens que a Fase 02 do 7º período avalia.
 2. **Confirmação da divisão de domínios** (§1.5 e §4) — montei por senioridade e área, mas *quem tem
    mais tempo livre pesa mais do que quem sabe mais*. Se alguém está com semestre pesado, me diga e eu
    reequilibro: o domínio mais fácil de mover é o Social, o mais difícil é a Plataforma (é o seu).
-   O domínio do Abner é o mais carregado da grade (social **e** IA) — se ele não tiver folga, a IA
-   passa para você ou para o Micael a partir da S10.
+   O domínio do Micael é o mais carregado da grade (social **e** IA) — se ele não tiver folga, a IA
+   passa para você a partir da S10. Não passe para o Abner: ele é o menos experiente do grupo e o
+   financeiro já é dele inteiro.
 3. **Acesso ao projeto Supabase** para extrair o schema real (dump ou credenciais de CLI)
 4. **Matrículas dos 4 integrantes e nome dos orientadores** (seção 3, obrigatória)
 5. **Notion**: workspace + integração criada (para o `NOTION_TOKEN`) e a página-mãe onde criar as databases

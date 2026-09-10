@@ -78,7 +78,12 @@ const databases = {
     nome: "Cronograma",
     propriedades: {
       Semana: { title: {} },
-      Datas: { rich_text: {} },
+      // date, e uma só coluna de data. A visualização calendário do Notion só
+      // posiciona linha em propriedade de data — com texto ("26/08 a 01/09") ela
+      // não tem onde colocar nada, por melhor formatada que a string esteja.
+      // Preenchida por `node scripts/notion/cronograma.mjs`, com início e fim,
+      // para cada semana virar uma barra em vez de um ponto.
+      Data: { date: {} },
       Objetivo: { rich_text: {} },
       Entregáveis: { rich_text: {} },
       Responsáveis: { multi_select: { options: PESSOAS.map((name) => ({ name })) } },
