@@ -80,8 +80,8 @@ existir. A RLS de visibilidade definida aqui é o estudo de caso da seção 25.
      constraint follows_sem_auto check (follower_id <> followee_id)
    );
    ```
-   - A PK composta `(follower_id, followee_id)` garante unicidade e torna
-     "solicitar duas vezes" idempotente (RF09.2). A `check` proíbe seguir a si mesmo.
+   - A PK composta `(follower_id, followee_id)` garante unicidade. Para tornar “solicitar duas vezes” idempotente (RF09.2), o route handler deve usar `INSERT ... ON CONFLICT (follower_id, followee_id) DO NOTHING` (ou tratar o erro 23505).
+   - A `check` proíbe seguir a si mesmo.
 
 3. **Trigger de estado inicial (segurança).** `before insert` em `follows` que
    **força** `status` conforme o alvo: `accepted` se `profiles.is_public` do
