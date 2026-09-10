@@ -60,9 +60,9 @@ existir. A RLS de visibilidade definida aqui é o estudo de caso da seção 25.
 > doc) são de Micael.
 
 1. **`profiles` — colunas novas.**
-   - `username citext unique` (nulo por ora, pois as linhas existentes não têm),
-     com `check (username ~ '^[a-z0-9_]{3,30}$')`. `citext` dá unicidade
-     case-insensitive sem depender de `lower(username)` espalhado nas queries.
+  - `username citext unique` (nulo por ora, pois as linhas existentes não têm),
+    com `check (username ~ '^[a-z0-9_]{3,30}$')`. **Pré-requisito:** `create extension if not exists citext;`.
+    `citext` dá unicidade case-insensitive sem depender de `lower(username)` espalhado nas queries.
    - `bio text check (char_length(bio) <= 280)`.
    - `is_public boolean not null default true` — **decisão a confirmar**: default
      público alinha com o produto de descoberta; se a equipe preferir privacidade
