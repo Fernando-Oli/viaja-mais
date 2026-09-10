@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 
 /**
+ * @RF03.1 criar viagem.
+ *
  * Regressão do bug P0 (S02-A): o `POST /api/trips` criava a viagem mas o insert
  * do criador em `trip_members` estava comentado. Como o `GET` usa
  * `trip_members!inner` e filtra por participação, a viagem criada nunca voltava
