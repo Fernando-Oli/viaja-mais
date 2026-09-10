@@ -49,6 +49,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tri
     if (error) throw new ErroHttp(400, "Não foi possível carregar as despesas")
     return NextResponse.json({ expenses })
   } catch (erro) {
+    // `respostaDeErro` preserva a mensagem de `ErroHttp`; para 5xx, responda sempre genérico.
+    if (erro instanceof ErroHttp && erro.status >= 500) {
+      return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    }
     return respostaDeErro(erro)
   }
 }
