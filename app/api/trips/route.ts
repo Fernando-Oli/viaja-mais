@@ -80,8 +80,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // O trigger `on_trip_created` (supabase/migrations/) já insere o criador
-    // em trip_members como owner, na mesma transação do insert acima — inserir
+    // @RF03.1 criar viagem. O trigger `on_trip_created` (supabase/migrations/)
+    // já insere o criador em trip_members como owner, na mesma transação do
+    // insert acima — inserir
     // de novo aqui colide com a constraint única trip_members_trip_id_user_id_key.
     return NextResponse.json({ data });
   } catch (_error) {
