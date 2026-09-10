@@ -102,7 +102,7 @@ existir. A RLS de visibilidade definida aqui é o estudo de caso da seção 25.
    - `follows` INSERT → `with check ((select auth.uid()) = follower_id)`: só dá
      para criar vínculo em nome de si mesmo. O `status` correto quem impõe é o trigger.
    - `follows` UPDATE → `using ((select auth.uid()) = followee_id) with check (status = 'accepted')`:
-     só o dono aprova (pendente→aceito) — RF09.4.
+     só o dono aprova (pendente→aceito) — RF09.4. **Importante:** restringir UPDATE a `status`/`updated_at` (REVOKE/GRANT), para evitar alteração de `follower_id`/`followee_id` via UPDATE.
    - `follows` DELETE → `using ((select auth.uid()) in (follower_id, followee_id))`:
      cobre deixar de seguir e cancelar (follower), e recusar e remover seguidor
      (followee) — RF09.5 e RF09.9.
