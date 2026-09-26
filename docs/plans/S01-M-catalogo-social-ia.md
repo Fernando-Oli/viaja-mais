@@ -10,7 +10,7 @@ secoes_doc: [14, 15, 16]
 branch: docs/S01-M-catalogo-social-ia
 tipo: [documentacao]
 depende_de: []
-status: em-desenvolvimento
+status: concluido
 ---
 # Catálogo de requisitos: Social e IA, e fluxo de navegação
 

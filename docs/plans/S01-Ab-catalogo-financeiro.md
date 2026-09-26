@@ -10,7 +10,7 @@ secoes_doc: [14, 15, 18]
 branch: docs/S01-Ab-catalogo-financeiro
 tipo: [documentacao]
 depende_de: []
-status: em-desenvolvimento
+status: concluido
 ---
 
 # Catálogo de requisitos: Financeiro e modelo do rateio

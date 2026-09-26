@@ -10,7 +10,7 @@ secoes_doc: [14, 15]
 branch: docs/S01-A-catalogo-viagem
 tipo: [documentacao]
 depende_de: []
-status: em-desenvolvimento
+status: concluido
 ---
 # Catálogo de requisitos: Viagem e Itinerário
 
