@@ -99,6 +99,47 @@ export type Database = {
           },
         ]
       }
+      expense_shares: {
+        Row: {
+          amount: number
+          created_at: string
+          expense_id: string
+          id: string
+          settled_at: string | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          expense_id: string
+          id?: string
+          settled_at?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expense_id?: string
+          id?: string
+          settled_at?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_shares_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -108,7 +149,9 @@ export type Database = {
           date: string
           id: string
           notes: string | null
+          paid_by: string
           payment_method: string | null
+          split_type: string
           title: string
           trip_id: string
           updated_at: string
@@ -122,7 +165,9 @@ export type Database = {
           date: string
           id?: string
           notes?: string | null
+          paid_by: string
           payment_method?: string | null
+          split_type?: string
           title: string
           trip_id: string
           updated_at?: string
@@ -136,7 +181,9 @@ export type Database = {
           date?: string
           id?: string
           notes?: string | null
+          paid_by?: string
           payment_method?: string | null
+          split_type?: string
           title?: string
           trip_id?: string
           updated_at?: string
@@ -433,6 +480,7 @@ export type Database = {
         Args: { trip_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      pode_acessar_despesa: { Args: { expense_uuid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
