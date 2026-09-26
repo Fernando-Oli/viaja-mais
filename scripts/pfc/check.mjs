@@ -57,7 +57,10 @@ for (const s of SECOES) {
   for (const p of pendentes) {
     avisos.push(`${rotulo} — pendência: ${p[1].trim().slice(0, 90)}`)
   }
-  if (/\bTODO\b|\bTBD\b|\bXXX\b|lorem ipsum/i.test(txt)) {
+  // Sem a flag `i` nos acrônimos, de propósito: "todo" é palavra corrente em
+  // português ("todo corpo de requisição deve ser validado") e com /i qualquer
+  // seção bem escrita era acusada de conter marcador de rascunho.
+  if (/\bTODO\b|\bTBD\b|\bXXX\b/.test(txt) || /lorem ipsum/i.test(txt)) {
     erros.push(`${rotulo} — contém marcador de rascunho (TODO/TBD/XXX/lorem ipsum)`)
   }
 }
