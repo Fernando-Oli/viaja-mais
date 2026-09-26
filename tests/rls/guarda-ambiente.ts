@@ -5,11 +5,12 @@
  * para provar que um usuário não alcança o dado do outro. Rodar isso contra o
  * projeto hospedado encheria produção de lixo.
  *
- * O risco é concreto, não hipotético: o `.env.local` deste repositório costuma
- * ter a `DATABASE_URL` do projeto hospedado, porque é ela que o
- * `supabase db pull` usa. Por isso os testes de RLS **não** carregam
- * `.env.local` e a checagem de alvo local é explícita, em vez de confiar em
- * convenção.
+ * A convenção do projeto é que `.env.local` aponte sempre para o stack local, e
+ * é de lá que `preparar-ambiente.ts` lê as credenciais. A checagem abaixo é
+ * defesa em profundidade, não desconfiança da convenção: um `supabase db pull`
+ * mal parametrizado, uma variável exportada no shell ou um arquivo copiado de
+ * outra máquina bastam para o alvo deixar de ser local, e o preço do engano é
+ * escrita em produção.
  */
 
 const HOSTS_LOCAIS = new Set(["localhost", "127.0.0.1", "::1"])
