@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [00, 5, 6, 7]
 branch: docs/S13-F-montar-documento
 tipo: [documentacao]
+depende_de: [S12-A-doc-24, S12-Ab-doc-req, S12-M-doc-16-26, S13-A-doc-17-22, S13-Ab-doc-8-12, S13-Ab-conferencia-req]
 status: backlog
 ---
 # Montagem do documento e Partes 00 e 02

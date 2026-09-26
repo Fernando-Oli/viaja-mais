@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [23]
 branch: chore/S01-F-base-solida
 tipo: [infra]
+depende_de: []
 status: concluido
 ---
 # Base sólida do repositório

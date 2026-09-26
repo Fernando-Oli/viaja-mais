@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [23]
 branch: chore/S01-F-ambiente-local
 tipo: [infra]
+depende_de: []
 status: concluido
 ---
 # Ambiente local em um comando

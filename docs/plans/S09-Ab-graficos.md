@@ -9,6 +9,7 @@ requisitos: [RF06]
 secoes_doc: [22.1]
 branch: feat/S09-Ab-graficos
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # Gráficos com recharts e relatório por categoria

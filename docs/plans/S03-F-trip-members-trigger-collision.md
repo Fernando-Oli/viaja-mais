@@ -9,7 +9,8 @@ requisitos: [RF03.1]
 secoes_doc: [22.2]
 branch: fix/S03-F-trip-members-trigger-collision
 tipo: [correcao-de-bug]
-status: em-revisao
+depende_de: []
+status: concluido
 ---
 # Corrige colisão entre trigger e insert manual em `trip_members`
 

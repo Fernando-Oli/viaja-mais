@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: []
 branch: fix/S14-M-congelamento-m
 tipo: [correcao-de-bug]
+depende_de: []
 status: backlog
 ---
 # Correção de bugs e ensaio da apresentação

@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [26]
 branch: feat/S11-M-tela-roteiro-ia
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # Tela de roteiro por IA

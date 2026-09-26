@@ -9,6 +9,7 @@ requisitos: [RF05]
 secoes_doc: [22.1]
 branch: feat/S04-A-itinerario-crud
 tipo: [route-handler, tela]
+depende_de: []
 status: backlog
 ---
 # Editar, excluir e concluir item de itinerário

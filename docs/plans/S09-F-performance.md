@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [20]
 branch: chore/S09-F-performance
 tipo: [infra]
+depende_de: [S05-F-escopo-grupo]
 status: backlog
 ---
 # Performance e observabilidade

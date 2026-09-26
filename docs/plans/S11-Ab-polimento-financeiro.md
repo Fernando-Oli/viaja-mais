@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [18]
 branch: docs/S11-Ab-polimento-financeiro
 tipo: [documentacao]
+depende_de: []
 status: backlog
 ---
 # Polimento financeiro e seção 18

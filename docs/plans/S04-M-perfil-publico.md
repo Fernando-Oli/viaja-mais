@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [22.1]
 branch: feat/S04-M-perfil-publico
 tipo: [tela, route-handler]
+depende_de: []
 status: backlog
 ---
 # Perfil público em /u/[username]

@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: []
 branch: feat/S08-M-curtir-comentar
 tipo: [route-handler, tela]
+depende_de: []
 status: backlog
 ---
 # Curtir e comentar

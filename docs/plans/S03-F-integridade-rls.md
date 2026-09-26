@@ -9,7 +9,8 @@ requisitos: [RNF02, RNF04]
 secoes_doc: [25]
 branch: fix/S03-F-integridade-rls
 tipo: [migration, rls, seguranca]
-status: em-desenvolvimento
+depende_de: []
+status: concluido
 ---
 # CI aplica o schema de verdade e a RLS passa a ser provada
 

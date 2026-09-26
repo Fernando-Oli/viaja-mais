@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [25]
 branch: feat/S10-F-revisao-seguranca
 tipo: [seguranca]
+depende_de: [S06-F-rate-limit-csp, S08-F-revisao-rls-social]
 status: backlog
 ---
 # Revisão de segurança completa

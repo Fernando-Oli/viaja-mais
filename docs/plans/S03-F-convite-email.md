@@ -9,7 +9,8 @@ requisitos: [RF04]
 secoes_doc: [22.2, 25]
 branch: feat/S03-F-convite-email
 tipo: [route-handler, seguranca]
-status: em-revisao
+depende_de: []
+status: concluido
 ---
 # Convite por e-mail funcionando
 

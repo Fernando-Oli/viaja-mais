@@ -9,7 +9,8 @@ requisitos: [RNF02, RNF04]
 secoes_doc: [18, 25]
 branch: chore/S03-F-schema-base
 tipo: [migration]
-status: em-revisao
+depende_de: []
+status: concluido
 ---
 # Trazer o schema real para `supabase/migrations/`
 

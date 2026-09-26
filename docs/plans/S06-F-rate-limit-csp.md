@@ -9,6 +9,7 @@ requisitos: [RNF02]
 secoes_doc: [25]
 branch: feat/S06-F-rate-limit-csp
 tipo: [seguranca]
+depende_de: []
 status: backlog
 ---
 # Rate limiting e Content-Security-Policy

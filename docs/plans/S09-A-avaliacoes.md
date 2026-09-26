@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [18]
 branch: feat/S09-A-avaliacoes
 tipo: [migration, rls, tela]
+depende_de: []
 status: backlog
 ---
 # Avaliações de lugares

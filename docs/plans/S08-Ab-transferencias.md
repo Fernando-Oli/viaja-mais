@@ -9,6 +9,7 @@ requisitos: [RF06]
 secoes_doc: []
 branch: feat/S08-Ab-transferencias
 tipo: [regra-de-negocio, tela]
+depende_de: []
 status: backlog
 ---
 # Minimizar transferências e marcar quitado

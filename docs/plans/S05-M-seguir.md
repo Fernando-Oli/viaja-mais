@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [22.1]
 branch: feat/S05-M-seguir
 tipo: [route-handler, tela]
+depende_de: []
 status: backlog
 ---
 # Seguir e deixar de seguir

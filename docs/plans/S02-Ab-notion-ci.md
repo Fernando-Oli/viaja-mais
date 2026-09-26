@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: []
 branch: chore/S02-Ab-notion-ci
 tipo: [infra]
+depende_de: []
 status: concluido
 ---
 # Espelho do quadro no Notion pelo CI

@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [8, 9, 10, 11, 12]
 branch: docs/S13-Ab-doc-8-12
 tipo: [documentacao]
+depende_de: []
 status: backlog
 ---
 # Seções 8 a 12

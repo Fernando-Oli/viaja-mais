@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [00]
 branch: docs/S14-F-entrega
 tipo: [documentacao]
+depende_de: [S13-F-montar-documento, S14-A-congelamento-a, S14-Ab-congelamento-ab, S14-M-congelamento-m]
 status: backlog
 ---
 # Build do documento, deploy estável e ensaio

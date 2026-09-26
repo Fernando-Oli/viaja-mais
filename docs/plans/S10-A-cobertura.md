@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [24]
 branch: chore/S10-A-cobertura
 tipo: [infra]
+depende_de: []
 status: backlog
 ---
 # Cobertura global e acessibilidade

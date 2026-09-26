@@ -9,7 +9,8 @@ requisitos: []
 secoes_doc: [18]
 branch: feat/S04-F-migration-rateio
 tipo: [migration, rls]
-status: em-revisao
+depende_de: []
+status: concluido
 ---
 # Migration do rateio: expense_shares e paid_by
 
