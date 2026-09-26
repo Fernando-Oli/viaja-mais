@@ -10,7 +10,7 @@ secoes_doc: [25]
 branch: feat/S04-F-testes-rls
 tipo: [rls, seguranca]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Testes de RLS com dois usuários
 
