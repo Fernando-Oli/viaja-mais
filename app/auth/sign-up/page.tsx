@@ -19,6 +19,12 @@ import { useState } from "react";
 import { Plane } from "lucide-react";
 import { env } from "@/lib/env";
 
+/**
+ * Cadastro de nova conta.
+ *
+ * @RF01.1 o usuário se registra com e-mail e senha
+ * @RF01.2 a confirmação por e-mail, quando habilitada, decide o destino
+ */
 export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -47,7 +53,7 @@ export default function SignUpPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -58,7 +64,14 @@ export default function SignUpPage() {
         },
       });
       if (error) throw error;
-      router.push("/auth/sign-up-success");
+
+      // O destino depende do que o GoTrue respondeu, não de suposição. Com
+      // `enable_confirmations = false` (padrão de `supabase/config.toml`) a
+      // conta já nasce confirmada e com sessão: mandar essa pessoa para a tela
+      // de "confirme seu e-mail" é pedir que ela espere uma mensagem que nunca
+      // será enviada — e ela já está logada. Sem sessão, a confirmação está
+      // ligada e o e-mail é real.
+      router.push(data.session ? "/dashboard" : "/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Erro ao criar conta");
     } finally {
