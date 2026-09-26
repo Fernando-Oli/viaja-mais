@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { selecaoPorViagem, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Star } from "lucide-react"
@@ -15,10 +16,12 @@ export default async function PlacesPage() {
     redirect("/auth/login")
   }
 
+  // Participação, não propriedade: o lugar que um membro salvou interessa ao
+  // grupo inteiro — é para isso que a viagem é compartilhada.
   const { data: places } = await supabase
     .from("places")
-    .select("*, trips(title, destination)")
-    .eq("user_id", user.id)
+    .select(selecaoPorViagem("title, destination"))
+    .eq(FILTRO_POR_VIAGEM, user.id)
     .order("created_at", { ascending: false })
 
   return (

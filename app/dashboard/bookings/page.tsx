@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { selecaoPorViagem, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -16,10 +17,12 @@ export default async function BookingsPage() {
     redirect("/auth/login")
   }
 
+  // Participação, não propriedade: quem foi convidado precisa ver as reservas
+  // que o grupo fez, não só as que ele mesmo cadastrou.
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("*, trips(title, destination)")
-    .eq("user_id", user.id)
+    .select(selecaoPorViagem("title, destination"))
+    .eq(FILTRO_POR_VIAGEM, user.id)
     .order("start_date", { ascending: true })
 
   const upcomingBookings = bookings?.filter((b) => new Date(b.start_date) >= new Date()) || []

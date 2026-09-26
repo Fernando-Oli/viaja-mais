@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { selecaoPorViagem, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin } from "lucide-react"
@@ -21,13 +22,10 @@ export default async function ItineraryPage() {
     redirect("/auth/login")
   }
 
-  // `trips!inner` + `trip_members!inner`: sem os inner joins o PostgREST trata
-  // os embeds como LEFT JOIN e ignora o filtro da relação aninhada. Assim a
-  // tela mostra apenas itens de viagens em que o usuário participa.
   const { data: itineraryItems } = await supabase
     .from("itinerary_items")
-    .select("*, trips!inner(title, destination, trip_members!inner(user_id))")
-    .eq("trips.trip_members.user_id", user.id)
+    .select(selecaoPorViagem("title, destination"))
+    .eq(FILTRO_POR_VIAGEM, user.id)
     .gte("date", new Date().toISOString().split("T")[0])
     .order("date", { ascending: true })
     .order("start_time", { ascending: true })
