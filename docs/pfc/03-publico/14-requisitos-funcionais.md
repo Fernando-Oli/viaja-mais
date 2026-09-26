@@ -1,11 +1,13 @@
 # 14 — Requisitos Funcionais
 
-Esta seção cataloga os requisitos funcionais do domínio Social & Descoberta e IA
-de roteiros. Cada grupo é apresentado em tabela própria, um requisito por linha,
+Esta seção cataloga os requisitos funcionais do produto, organizados por grupo de
+domínio. Cada grupo é apresentado em tabela própria, um requisito por linha,
 seguida do respectivo bloco de detalhamento. Onde um requisito envolve dados de
 pessoas ou publicações, distinguimos explicitamente o que é público e o que é
 privado, pois é essa distinção que fundamenta as políticas de acesso definidas
-posteriormente.
+posteriormente. O status de cada requisito reflete evidência verificável no
+repositório, e não intenção: o critério adotado está enunciado no detalhamento do
+grupo RF01.
 
 ## RF02 — Gestão de Perfil
 
@@ -220,4 +222,77 @@ ID | Descrição | Status | Prioridade
 
 Detalhamento: o domínio de lugares possui implementação existente, porém ainda há funcionalidades incompletas. O estado de lugar visitado já é exibido, mas atualmente não existe uma interface que permita alterá-lo e persistir essa mudança. Por isso, os requisitos permanecem classificados de forma conservadora como parciais.
 
-> [!] PENDENTE: grupos de outros domínios — RF01 (autenticação), RF04 (grupo), RF06 (financeiro); RNF01–RNF06 — a cargo de seus respectivos donos.
+## RF01 — Autenticação e Acesso
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RF01.1 | O usuário deve poder registrar-se com e-mail e senha | Parcial | Alta |
+| RF01.2 | O sistema deve enviar e-mail de confirmação após o registro | Parcial | Alta |
+| RF01.3 | O usuário deve poder autenticar-se com e-mail e senha | Parcial | Alta |
+| RF01.4 | O usuário deve poder encerrar a sessão | Parcial | Alta |
+| RF01.5 | O sistema deve manter e renovar a sessão entre requisições | Existente | Alta |
+| RF01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Existente | Alta |
+| RF01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Existente | Média |
+| RF01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | Média |
+
+**Detalhamento:** adotamos nestes dois grupos um critério explícito de status,
+para não repetir o erro que o arquivo `_regras.md` identifica na documentação
+anterior. Classificamos como **Existente** apenas o requisito que possui
+implementação no repositório **e** teste automatizado que a exercita; como
+**Parcial**, aquele cuja implementação existe mas ainda não é coberta por teste;
+e como **Não iniciado**, o que não tem código correspondente. O status, portanto,
+mede evidência verificável, e não intenção.
+
+Os requisitos RF01.1 a RF01.4 têm tela ou rota implementada — respectivamente
+`app/auth/sign-up/page.tsx`, o fluxo de confirmação do Supabase com retorno em
+`app/auth/sign-up-success`, `app/auth/login/page.tsx` e `app/auth/signout/route.ts`
+—, mas nenhum deles é hoje coberto por teste. O RF01.5 e o RF01.6 são atendidos
+por `proxy.ts` e `lib/supabase/proxy.ts`, que renovam a sessão e aplicam uma
+lista de rotas públicas: requisição não autenticada a uma rota de `/api` recebe
+401 em JSON, e a requisição de página é redirecionada para `/auth/login`. A
+validação usa `getUser()`, que confere o token no servidor de autenticação, e não
+`getSession()`, que apenas decodifica o cookie e por isso não serve para decidir
+acesso. O RF01.7 conta com teste de regressão em `tests/auth/reset-password.test.tsx`.
+O RF01.8 é implementado por `app/api/auth/change-password/route.ts`, que exige a
+senha atual antes de aceitar a nova, impedindo que uma sessão sequestrada altere
+a credencial sem conhecê-la.
+
+## RF04 — Viagens em Grupo
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RF04.1 | O dono da viagem deve poder convidar pessoas por e-mail | Parcial | Alta |
+| RF04.2 | O convidado deve receber notificação do convite por e-mail | Não iniciado | Alta |
+| RF04.3 | O convidado deve poder aceitar ou recusar o convite | Parcial | Alta |
+| RF04.4 | Os membros devem poder visualizar a viagem e seus dados | Parcial | Alta |
+| RF04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | Alta |
+| RF04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | Alta |
+| RF04.7 | O dono deve poder remover membros da viagem | Existente | Média |
+| RF04.8 | O membro deve poder sair da viagem por vontade própria | Existente | Média |
+| RF04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Existente | Alta |
+
+**Detalhamento:** o RF04.1 permanece Parcial por um motivo preciso, e não por
+cautela genérica: a rota `app/api/invitations/route.ts` já exige sessão, valida o
+corpo com `zod` e chama `exigirDono()` antes de gravar, mas o envio do e-mail
+ainda falha. A chamada `auth.admin.inviteUserByEmail` exige a chave de serviço, e
+o cliente utilizado é o anônimo; o convite é registrado na tabela
+`trip_invitations` e o erro de envio é apenas registrado em log. Enquanto isso
+não for corrigido pela atividade `S03-F-convite-email`, o RF04.2 não tem como ser
+atendido e permanece Não iniciado — o convidado só descobre o convite se abrir a
+aplicação por conta própria, o que `app/api/invitations` (GET) já permite.
+
+Os requisitos RF04.7 e RF04.8 são atendidos por
+`app/api/trips/[tripId]/members/route.ts` e cobertos por
+`tests/api/members-route.test.ts`, que exercita os quatro caminhos exigidos pelo
+`CLAUDE.md`: resposta bem-sucedida, ausência de sessão, requisitante sem
+permissão e corpo inválido. O RF04.9 não consta do levantamento herdado de
+`docs/ARCHITECTURE.md`, mas descreve comportamento já implementado e testado, em
+`lib/authz/trip.ts` (`exigirMembro()` e `exigirDono()`) com teste em
+`tests/lib/authz-trip.test.ts`; registramo-lo como requisito porque é ele que
+sustenta a distinção entre dono e membro em todos os demais itens deste grupo, e
+porque sem enunciá-lo a seção 25 discutiria uma medida de segurança que nenhum
+requisito pede. Os requisitos RF04.4 a RF04.6 dependem do escopo de grupo nas
+consultas, hoje ainda filtradas por proprietário em parte das telas, o que é
+objeto da atividade `S05-F-escopo-grupo`.
+
+> [!] PENDENTE: grupos de outros domínios — RF06 (financeiro, parcial); RNF03 (usabilidade) e RNF05 (manutenibilidade) — a cargo de seus respectivos donos.

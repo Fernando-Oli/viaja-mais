@@ -1,7 +1,7 @@
 # Matriz de Rastreabilidade
 
 > Gerado por `npm run pfc:rastreabilidade`. Não edite à mão.
-> Última geração: 2026-09-11
+> Última geração: 2026-09-26
 
 Requisitos são marcados no código e nos testes com uma tag em comentário
 (`// @RF03.4 — permite editar viagem`). Este arquivo cruza essas tags com o
@@ -9,6 +9,14 @@ catálogo das seções 14 e 15.
 
 | Requisito | Descrição | Status | Implementação | Teste | Último commit |
 |---|---|---|---|---|---|
+| RF-01.1 | O usuário deve poder registrar-se com e-mail e senha | Parcial | — | — | — |
+| RF-01.2 | O sistema deve enviar e-mail de confirmação após o registro | Parcial | — | — | — |
+| RF-01.3 | O usuário deve poder autenticar-se com e-mail e senha | Parcial | — | — | — |
+| RF-01.4 | O usuário deve poder encerrar a sessão | Parcial | — | — | — |
+| RF-01.5 | O sistema deve manter e renovar a sessão entre requisições | Existente | — | — | — |
+| RF-01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Existente | — | — | — |
+| RF-01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Existente | — | — | — |
+| RF-01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | — | — | — |
 | RF-02.1 | O usuário deve poder visualizar seu perfil | Parcial | — | — | — |
 | RF-02.2 | O usuário deve poder editar nome e avatar | Parcial | — | — | — |
 | RF-02.3 | O usuário deve poder alterar a senha | Parcial | — | — | — |
@@ -24,10 +32,15 @@ catálogo das seções 14 e 15.
 | RF-03.6 | O usuário deve poder definir orçamento | Parcial | — | — | — |
 | RF-03.7 | O usuário deve poder adicionar imagem de capa | Parcial | — | — | — |
 | RF-03.8 | O usuário deve poder alterar status da viagem | Parcial | — | — | — |
-| RF04.1 | _(fora do catálogo)_ | — | `app/api/invitations/route.ts` | `tests/api/invitations-post.test.ts` | 5d603af |
-| RF04.6 | _(fora do catálogo)_ | — | `app/api/trips/[tripId]/expenses/route.ts` | — | 1ead84a |
-| RF04.7 | _(fora do catálogo)_ | — | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
-| RF04.8 | _(fora do catálogo)_ | — | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
+| RF-04.1 | O dono da viagem deve poder convidar pessoas por e-mail | Parcial | `app/api/invitations/route.ts` | `tests/api/invitations-post.test.ts` | 5d603af |
+| RF-04.2 | O convidado deve receber notificação do convite por e-mail | Não iniciado | — | — | — |
+| RF-04.3 | O convidado deve poder aceitar ou recusar o convite | Parcial | — | — | — |
+| RF-04.4 | Os membros devem poder visualizar a viagem e seus dados | Parcial | — | — | — |
+| RF-04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | — | — | — |
+| RF-04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | `app/api/trips/[tripId]/expenses/route.ts` | — | 1ead84a |
+| RF-04.7 | O dono deve poder remover membros da viagem | Existente | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
+| RF-04.8 | O membro deve poder sair da viagem por vontade própria | Existente | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
+| RF-04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Existente | — | — | — |
 | RF-05.1 | O usuário deve poder adicionar atividade ao itinerário | Parcial | — | — | — |
 | RF-05.2 | O usuário deve poder editar atividade | Não iniciado | — | — | — |
 | RF-05.3 | O usuário deve poder excluir atividade | Não iniciado | — | — | — |
@@ -84,8 +97,32 @@ catálogo das seções 14 e 15.
 | RF-13.2 | O usuário deve receber notificação acionável de nova solicitação de seguidor (perfil privado), que permanece visível até ser aceita ou recusada | Não iniciado | — | — | — |
 | RF-13.3 | O usuário deve receber notificação informativa quando sua solicitação de seguir é aceita | Não iniciado | — | — | — |
 | RF-13.4 | O usuário deve poder ver a central de notificações, com contador de não-lidas e marcação de lidas | Não iniciado | — | — | — |
-| RNF02 | _(fora do catálogo)_ | — | — | `tests/rls/01-isolamento.test.ts` | — |
+| RNF-01.1 | O carregamento inicial do painel deve completar em menos de 3 segundos no percentil 95 | Planejado | — | — | — |
+| RNF-01.2 | Toda operação de escrita via rota de API deve responder em menos de 1 segundo no percentil 95 | Planejado | — | — | — |
+| RNF-01.3 | O sistema deve sustentar 1.000 usuários simultâneos sem degradação superior a 20% no tempo de resposta | Planejado | — | — | — |
+| RNF-01.4 | Toda listagem que possa crescer sem limite deve paginar, no máximo 20 registros por página | Planejado | — | — | — |
+| RNF-01.5 | Toda coluna usada em filtro de consulta frequente deve ter índice, verificável no plano de execução | Planejado | — | — | — |
+| RNF-02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | — | — | — |
+| RNF-02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | — | — | — |
+| RNF-02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | — | — | — |
+| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts` | — |
+| RNF-02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | — | — | — |
+| RNF-02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | — | — | — |
+| RNF-02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | — | — | — |
+| RNF-02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Planejado | — | — | — |
 | RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | — | — | — |
+| RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | — | — |
+| RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | — | — | — |
+| RNF-02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | — | — | — |
+| RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | — | — | — |
+| RNF-04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Planejado | — | — | — |
+| RNF-04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | — | — | — |
+| RNF-04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Parcial | — | — | — |
+| RNF-04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | — | — | — |
+| RNF-06.1 | A aplicação deve executar sem estado no servidor, permitindo múltiplas instâncias simultâneas | Atendido | — | — | — |
+| RNF-06.2 | Os arquivos estáticos devem ser servidos por rede de distribuição de conteúdo | Atendido | — | — | — |
+| RNF-06.3 | O acesso ao banco deve usar pool de conexões, sem abrir conexão por requisição | Atendido | — | — | — |
+| RNF-06.4 | Toda consulta de listagem deve ter limite explícito de registros, sem depender do volume atual de dados | Planejado | — | — | — |
 | RNF-07.1 | O feed deve carregar a primeira página (20 publicações) em menos de 2 segundos no percentil 95 | Não iniciado | — | — | — |
 | RNF-07.2 | O feed deve paginar por cursor, sem carregar todas as publicações de uma vez | Não iniciado | — | — | — |
 | RNF-07.3 | A geração de roteiro por IA deve responder em até 15 segundos, ou informar erro claro ao usuário | Não iniciado | — | — | — |
@@ -95,14 +132,8 @@ catálogo das seções 14 e 15.
 
 ## Resumo
 
-- Requisitos no catálogo: **78**
+- Requisitos no catálogo: **120**
 - Com implementação marcada: **9**
 - Com teste marcado: **6**
 
-## Inconsistências
-
-- RF04.1 aparece no código mas não existe no catálogo de requisitos (tag órfã).
-- RF04.6 aparece no código mas não existe no catálogo de requisitos (tag órfã).
-- RF04.7 aparece no código mas não existe no catálogo de requisitos (tag órfã).
-- RF04.8 aparece no código mas não existe no catálogo de requisitos (tag órfã).
-- RNF02 aparece no código mas não existe no catálogo de requisitos (tag órfã).
+_Nenhuma inconsistência._

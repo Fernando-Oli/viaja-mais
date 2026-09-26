@@ -14,7 +14,7 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
  * O bloco de escrita é o que costuma faltar: `SELECT` vazio não prova nada se
  * o `INSERT` passa. Existe policy de leitura e não existe de escrita.
  *
- * @RNF02
+ * @RNF02.4 RLS habilitada e policy por operação em toda tabela
  */
 
 const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
