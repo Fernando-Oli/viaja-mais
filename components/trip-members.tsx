@@ -9,9 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Users, Mail, UserPlus, X, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/auth-context"
 
 interface Member {
   id: string
@@ -30,12 +28,10 @@ interface TripMembersProps {
 }
 
 export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
-  const {user} = useAuth();
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
 
     // <CHANGE> Added addTrip function to update local state without refetching
   const sendInvite = async () => {
@@ -45,7 +41,8 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, tripId, inviterId: user?.id }),
+        // `inviterId` não vai mais: quem convida sai da sessão no servidor.
+        body: JSON.stringify({ email, tripId }),
       })
   
   
@@ -73,13 +70,22 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
     }
   }
 
-  const handleRemoveMember = async (memberId: string) => {
+  // Passa pela rota, e não por `supabase.from(...).delete()` daqui: escrita no
+  // banco a partir do navegador se apoia só na RLS, sem checagem explícita de
+  // autorização no servidor. Ver regra 1 do CLAUDE.md.
+  const handleRemoveMember = async (userId: string) => {
     if (!confirm("Tem certeza que deseja remover este membro?")) return
 
     try {
-      const { error } = await supabase.from("trip_members").delete().eq("id", memberId)
+      const res = await fetch(`/api/trips/${tripId}/members?userId=${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+      })
 
-      if (error) throw error
+      if (!res.ok) {
+        const corpo = await res.json()
+        throw new Error(corpo.error ?? "Erro ao remover membro")
+      }
+
       router.refresh()
     } catch (err: any) {
       alert("Erro ao remover membro: " + err.message)
@@ -125,7 +131,7 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
                     {member.role === "owner" ? "Dono" : "Membro"}
                   </Badge>
                   {isOwner && member.role !== "owner" && (
-                    <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(member.id)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(member.user_id)}>
                       <X className="h-4 w-4 text-red-600" />
                     </Button>
                   )}
