@@ -42,6 +42,10 @@ const databases = {
       Semana: { select: { options: SEMANAS } },
       Tipo: { multi_select: {} },
       Requisitos: { multi_select: {} },
+      // IDs das atividades que precisam estar na main antes desta. multi_select
+      // em vez de relation de propósito: aparece como etiqueta, filtra na view
+      // de bloqueados e não exige resolver page_id de cada dependência.
+      "Depende de": { multi_select: {} },
       "Seções do doc": { multi_select: {} },
       // Os dois campos que fazem o processo funcionar: o autor declara o que vai
       // testar antes de codar, e o revisor confere o que validar item a item.
