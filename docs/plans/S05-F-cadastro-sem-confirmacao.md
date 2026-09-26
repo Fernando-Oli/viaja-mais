@@ -10,7 +10,7 @@ secoes_doc: [22.1]
 branch: fix/S05-F-cadastro-sem-confirmacao
 tipo: [correcao-de-bug, tela]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Cadastro não manda esperar e-mail que não vai chegar
 
