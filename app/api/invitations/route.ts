@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { exigirDono } from "@/lib/authz/trip"
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
 import { criarConviteSchema } from "@/lib/schemas/convite"
@@ -21,6 +22,7 @@ import { env } from "@/lib/env"
  *     pessoa.
  *
  * @RF04.1 o dono convida pessoas por e-mail
+ * @RF04.2 o convidado recebe notificação do convite por e-mail
  */
 
 async function usuarioAtual(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -63,6 +65,53 @@ export async function GET() {
   }
 }
 
+/**
+ * Desfecho do envio. Interessa ao cliente porque muda o que dizer ao usuário:
+ * quem já tem conta não recebe e-mail, e ainda assim foi convidado.
+ */
+type DesfechoEnvio = "enviado" | "ja-cadastrado" | "falhou"
+
+/**
+ * Códigos em que o GoTrue recusa o convite porque o e-mail já pertence a uma
+ * conta. Não é falha nossa: o convite continua válido e aparece na aplicação
+ * assim que a pessoa entrar.
+ */
+const JA_CADASTRADO = new Set(["email_exists", "user_already_exists"])
+
+/**
+ * Envia o convite pela API administrativa do GoTrue, que **exige a chave de
+ * serviço** — daí o cliente admin. Era exatamente isto que faltava: a chamada
+ * era feita com o cliente anon e falhava em silêncio.
+ *
+ * Nunca lança. O convite já está gravado quando esta função roda, e falha de
+ * e-mail não pode desfazer um convite válido nem virar erro para quem convidou.
+ *
+ * @RF04.2 o convidado recebe notificação do convite por e-mail
+ */
+async function enviarConvite(email: string): Promise<DesfechoEnvio> {
+  try {
+    const admin = criarClienteAdmin()
+
+    // `options.data` não é usado de propósito: ele vai para
+    // `auth.users.user_metadata`, que o próprio usuário pode editar. Nada que
+    // se pareça com autorização pode morar ali — o vínculo com a viagem está em
+    // `trip_invitations`, sob RLS.
+    const { error } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${env.NEXT_PUBLIC_APP_URL}/dashboard`,
+    })
+
+    if (!error) return "enviado"
+    if (error.code && JA_CADASTRADO.has(error.code)) return "ja-cadastrado"
+
+    console.warn("[convite] envio de e-mail falhou:", error.message)
+    return "falhou"
+  } catch (erro) {
+    // Chave de serviço ausente cai aqui. O convite continua de pé.
+    console.warn("[convite] cliente admin indisponível:", erro instanceof Error ? erro.message : erro)
+    return "falhou"
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -77,17 +126,11 @@ export async function POST(request: Request) {
 
     await exigirDono(supabase, tripId, user.id)
 
-    // O e-mail ainda não sai: este cliente usa a chave anon e
-    // `auth.admin.inviteUserByEmail` exige a service role, então a chamada
-    // falha com 403 e o convite fica só no banco. Consertar é a atividade
-    // S03-F-convite-email; aqui o escopo é autorização, e misturar as duas
-    // coisas faria o PR perder revisibilidade.
-    const { error: erroEnvio } = await supabase.auth.admin.inviteUserByEmail(email, {
-      data: { invited_to_trip: tripId, inviter: user.id },
-      redirectTo: `${env.NEXT_PUBLIC_APP_URL}/dashboard`,
-    })
-    if (erroEnvio) console.warn("[convite] envio de e-mail falhou:", erroEnvio.message)
-
+    // A linha vem antes do e-mail, de propósito. Ela é a fonte da verdade: é por
+    // ela que o convidado vê o convite na aplicação, e é ela que a RLS protege.
+    // Na ordem inversa, um insert que falhasse deixaria um e-mail já enviado
+    // apontando para um convite que não existe.
+    //
     // Campo a campo. `inviter_id` sai da sessão e `status` é fixo aqui, então
     // nem um nem outro têm como chegar pelo corpo da requisição.
     const { error } = await supabase.from("trip_invitations").insert({
@@ -99,7 +142,9 @@ export async function POST(request: Request) {
 
     if (error) throw new ErroHttp(400, "Não foi possível criar o convite")
 
-    return NextResponse.json({ success: true })
+    const envio = await enviarConvite(email)
+
+    return NextResponse.json({ success: true, envio })
   } catch (erro) {
     return respostaDeErro(erro)
   }
