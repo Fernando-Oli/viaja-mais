@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { selecaoDeViagens, FILTRO_EM_VIAGENS } from "@/lib/trips/escopo";
 
 export async function GET() {
   try {
@@ -15,13 +16,8 @@ export async function GET() {
 
     const { data: trips, error } = await supabase
       .from("trips")
-      .select(
-        `
-        *,
-        trip_members!inner(user_id, role)
-      `
-      )
-      .eq("trip_members.user_id", user.id)
+      .select(selecaoDeViagens("*", "user_id, role"))
+      .eq(FILTRO_EM_VIAGENS, user.id)
       .order("start_date", { ascending: false });
 
     if (error) {

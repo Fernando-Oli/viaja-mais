@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { selecaoDeViagens, selecaoPorViagem, FILTRO_EM_VIAGENS, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, TrendingUp, TrendingDown, PieChart } from "lucide-react"
@@ -15,12 +16,17 @@ export default async function FinancesPage() {
     redirect("/auth/login")
   }
 
-  const { data: trips } = await supabase.from("trips").select("*").eq("user_id", user.id)
+  const { data: trips } = await supabase
+    .from("trips")
+    .select(selecaoDeViagens())
+    .eq(FILTRO_EM_VIAGENS, user.id)
 
+  // A despesa do grupo é do grupo. Filtrar por `user_id` mostrava ao convidado
+  // só o que ele mesmo lançou, e o total da viagem saía errado para ele.
   const { data: allExpenses } = await supabase
     .from("expenses")
-    .select("*, trips(title, currency)")
-    .eq("user_id", user.id)
+    .select(selecaoPorViagem("title, currency"))
+    .eq(FILTRO_POR_VIAGEM, user.id)
 
   // Somatórios por moeda. O reduce é tipado explicitamente e parte de [] em vez
   // de `allExpenses?`: sem isso o resultado é `Record<string, number> | undefined`,
