@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [24]
 branch: feat/S08-Ab-e2e-financeiro
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # E2E do fluxo financeiro

@@ -9,7 +9,8 @@ requisitos: []
 secoes_doc: [25]
 branch: feat/S04-F-testes-rls
 tipo: [rls, seguranca]
-status: em-revisao
+depende_de: []
+status: concluido
 ---
 # Testes de RLS com dois usuários
 

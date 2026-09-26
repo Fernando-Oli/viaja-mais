@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [14, 15]
 branch: docs/S13-Ab-conferencia-req
 tipo: [documentacao]
+depende_de: []
 status: backlog
 ---
 # Conferência: catálogo de requisitos versus implementado

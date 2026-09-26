@@ -9,7 +9,8 @@ requisitos: [RF03, RF05, RF07, RF08]
 secoes_doc: [14, 15]
 branch: docs/S01-A-catalogo-viagem
 tipo: [documentacao]
-status: em-desenvolvimento
+depende_de: []
+status: concluido
 ---
 # Catálogo de requisitos: Viagem e Itinerário
 

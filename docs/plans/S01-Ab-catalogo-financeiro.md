@@ -9,7 +9,8 @@ requisitos: [RF06.1, RF06.2, RF06.3, RF06.4, RF06.5, RF06.6, RF06.7, RF06.8, RF0
 secoes_doc: [14, 15, 18]
 branch: docs/S01-Ab-catalogo-financeiro
 tipo: [documentacao]
-status: em-desenvolvimento
+depende_de: []
+status: concluido
 ---
 
 # Catálogo de requisitos: Financeiro e modelo do rateio

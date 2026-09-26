@@ -9,6 +9,7 @@ requisitos: [RF06]
 secoes_doc: [22.1]
 branch: feat/S03-Ab-editar-despesa
 tipo: [route-handler, tela]
+depende_de: []
 status: backlog
 ---
 # Editar e excluir despesa

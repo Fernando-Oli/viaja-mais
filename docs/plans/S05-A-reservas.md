@@ -9,6 +9,7 @@ requisitos: [RF07]
 secoes_doc: [22.1]
 branch: feat/S05-A-reservas
 tipo: [tela, route-handler]
+depende_de: []
 status: backlog
 ---
 # Reservas: aba, entradas e edição

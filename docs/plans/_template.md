@@ -11,6 +11,7 @@ branch: feat/S00-F-slug-da-atividade
 tipo: [route-handler]        # migration | rls | route-handler | regra-de-negocio
                              # tela | componente | correcao-de-bug | seguranca
                              # documentacao | infra
+depende_de: []             # IDs de atividades que precisam estar na main antes desta
 status: backlog              # backlog | em-desenvolvimento | em-revisao
                              # ajustes | validacao | concluido
 ---

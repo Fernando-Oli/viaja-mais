@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [24]
 branch: feat/S09-M-e2e-social
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # E2E do fluxo social

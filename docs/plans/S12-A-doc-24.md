@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [24]
 branch: docs/S12-A-doc-24
 tipo: [documentacao]
+depende_de: []
 status: backlog
 ---
 # Seção 24: Qualidade do Software e Testes

@@ -9,7 +9,8 @@ requisitos: [RF02.5, RF02.6, RF02.7, RF09.1, RF09.2, RF09.3, RF09.4, RF09.5, RF0
 secoes_doc: [18, 25]
 branch: feat/S03-M-migration-social
 tipo: [migration, rls]
-status: backlog
+depende_de: [S03-F-schema-base]
+status: concluido
 ---
 # Migration do social: perfil público e follows
 

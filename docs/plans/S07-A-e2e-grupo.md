@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [24]
 branch: feat/S07-A-e2e-grupo
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # Fixtures e E2E do fluxo de grupo

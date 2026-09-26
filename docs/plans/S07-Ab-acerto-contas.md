@@ -9,6 +9,7 @@ requisitos: [RF06]
 secoes_doc: [22.1]
 branch: feat/S07-Ab-acerto-contas
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # Tela de acerto de contas

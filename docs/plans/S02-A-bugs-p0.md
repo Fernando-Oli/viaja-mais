@@ -9,7 +9,8 @@ requisitos: []
 secoes_doc: [22.1]
 branch: fix/S02-A-bugs-p0
 tipo: [correcao-de-bug]
-status: em-revisao
+depende_de: []
+status: concluido
 ---
 # Correção dos bugs P0 herdados
 

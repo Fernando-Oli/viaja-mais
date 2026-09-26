@@ -9,7 +9,8 @@ requisitos: [RF06]
 secoes_doc: [22.2]
 branch: feat/S02-Ab-despesas-via-api
 tipo: [route-handler]
-status: em-desenvolvimento
+depende_de: [S03-F-schema-base]
+status: concluido
 ---
 # Despesas passam a escrever por route handler
 

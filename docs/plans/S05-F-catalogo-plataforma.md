@@ -10,7 +10,7 @@ secoes_doc: [14, 15]
 branch: docs/S05-F-catalogo-plataforma
 tipo: [documentacao]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Catálogo de requisitos da plataforma: RF01, RF04, RNF01, RNF02, RNF04 e RNF06
 

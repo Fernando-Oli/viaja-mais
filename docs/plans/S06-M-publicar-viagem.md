@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [25]
 branch: feat/S06-M-publicar-viagem
 tipo: [migration, rls, tela]
+depende_de: []
 status: backlog
 ---
 # Publicar viagem sem vazar despesas

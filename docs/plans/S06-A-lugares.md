@@ -9,6 +9,7 @@ requisitos: [RF08]
 secoes_doc: [22.1]
 branch: feat/S06-A-lugares
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # Lugares: marcar visitado e escopo de grupo

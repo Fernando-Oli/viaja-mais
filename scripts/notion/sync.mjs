@@ -71,6 +71,7 @@ async function espelhar(plano) {
     Semana: selecao(meta.semana),
     Tipo: multi(meta.tipo),
     Requisitos: multi(meta.requisitos),
+    "Depende de": multi(meta.depende_de),
     "Seções do doc": multi(meta.secoes_doc),
     "O que testar": texto(bloco(corpo, 4)),
     "O que validar": texto(bloco(corpo, 5)),

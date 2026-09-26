@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [19, 23]
 branch: chore/S07-F-estados-erro
 tipo: [tela, infra]
+depende_de: []
 status: backlog
 ---
 # Estados de erro, 404 e carregamento

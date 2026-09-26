@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [22.2]
 branch: feat/S07-M-feed
 tipo: [route-handler, tela]
+depende_de: []
 status: backlog
 ---
 # Feed com paginação por cursor

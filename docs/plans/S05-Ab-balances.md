@@ -9,6 +9,7 @@ requisitos: [RF06]
 secoes_doc: [22.2]
 branch: feat/S05-Ab-balances
 tipo: [regra-de-negocio]
+depende_de: []
 status: backlog
 ---
 # Cálculo de saldos em lib/finance

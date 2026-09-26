@@ -9,6 +9,7 @@ requisitos: [RF06]
 secoes_doc: []
 branch: feat/S10-Ab-multi-moeda
 tipo: [regra-de-negocio]
+depende_de: []
 status: backlog
 ---
 # Multi-moeda e conversão

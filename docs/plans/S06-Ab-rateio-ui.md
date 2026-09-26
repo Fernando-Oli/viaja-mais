@@ -9,6 +9,7 @@ requisitos: [RF06]
 secoes_doc: [22.1]
 branch: feat/S06-Ab-rateio-ui
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # Rateio na criação da despesa

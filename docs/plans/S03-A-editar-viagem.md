@@ -9,6 +9,7 @@ requisitos: [RF03, RF05]
 secoes_doc: [22.1]
 branch: feat/S03-A-editar-viagem
 tipo: [route-handler, tela]
+depende_de: []
 status: backlog
 ---
 # Editar viagem e itinerário pela API

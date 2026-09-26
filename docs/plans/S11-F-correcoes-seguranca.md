@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [25]
 branch: docs/S11-F-correcoes-seguranca
 tipo: [seguranca, documentacao]
+depende_de: [S10-F-revisao-seguranca]
 status: backlog
 ---
 # Correções de segurança e evidências

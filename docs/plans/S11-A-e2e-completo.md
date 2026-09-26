@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [24]
 branch: feat/S11-A-e2e-completo
 tipo: [tela]
+depende_de: []
 status: backlog
 ---
 # E2E completo com screenshots

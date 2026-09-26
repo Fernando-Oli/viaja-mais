@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [25]
 branch: docs/S12-F-doc-25
 tipo: [documentacao]
+depende_de: [S10-F-revisao-seguranca, S11-F-correcoes-seguranca]
 status: backlog
 ---
 # Seção 25: Segurança da Informação

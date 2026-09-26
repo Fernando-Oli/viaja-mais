@@ -9,7 +9,8 @@ requisitos: [RNF02]
 secoes_doc: [22.2, 25]
 branch: feat/S02-F-authz-rotas
 tipo: [route-handler, seguranca]
-status: em-desenvolvimento
+depende_de: []
+status: concluido
 ---
 # Autorização em todas as rotas e fim do mass-assignment
 

@@ -9,6 +9,7 @@ requisitos: []
 secoes_doc: [22.3, 25]
 branch: docs/S08-F-revisao-rls-social
 tipo: [seguranca, documentacao]
+depende_de: [S04-M-perfil-publico, S05-M-seguir, S06-M-publicar-viagem, S07-M-feed]
 status: backlog
 ---
 # Revisão da RLS do social e integração
