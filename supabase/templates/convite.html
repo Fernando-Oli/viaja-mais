@@ -1,0 +1,51 @@
+<!--
+  Modelo do e-mail de convite para uma viagem.
+
+  Variáveis disponíveis no GoTrue: {{ .ConfirmationURL }}, {{ .SiteURL }},
+  {{ .Email }} e {{ .Token }}. Usamos só as duas primeiras — o convite não
+  carrega qual é a viagem porque esse vínculo mora em `trip_invitations`, sob
+  RLS, e não em metadado que o próprio usuário possa editar.
+
+  HTML de e-mail não é HTML de página: estilo vai em atributo `style`, porque
+  cliente de e-mail ignora folha externa e boa parte ignora <style> no <head>.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:24px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:12px;padding:32px">
+        <tr>
+          <td>
+            <p style="margin:0 0 4px;font-size:14px;color:#71717a">ViajaMais</p>
+            <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#18181b">Você foi convidado para uma viagem</h1>
+
+            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#3f3f46">
+              Alguém convidou <strong>{{ .Email }}</strong> para participar de uma viagem no
+              ViajaMais. Crie sua senha para aceitar o convite e ver o itinerário, as
+              reservas e as despesas do grupo.
+            </p>
+
+            <p style="margin:0 0 24px">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;background-color:#18181b;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px;font-weight:600">
+                Aceitar convite
+              </a>
+            </p>
+
+            <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#71717a">
+              Se o botão não funcionar, copie e cole este endereço no navegador:
+            </p>
+            <p style="margin:0 0 24px;font-size:13px;line-height:1.6;color:#3f3f46;word-break:break-all">
+              {{ .ConfirmationURL }}
+            </p>
+
+            <hr style="border:none;border-top:1px solid #e4e4e7;margin:0 0 16px" />
+
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#71717a">
+              Não esperava este convite? Pode ignorar esta mensagem — nenhuma conta é
+              criada enquanto você não definir uma senha.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

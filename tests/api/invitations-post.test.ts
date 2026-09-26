@@ -7,17 +7,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
  * então a autorização real (`exigirDono` → `papelNaViagem`) roda de verdade
  * contra ele.
  *
- * O que ISTO prova: os quatro caminhos (200/401/403/400) e que `inviter_id`
- * nunca vem do corpo. O que NÃO prova: isolamento por RLS — isso é
- * `tests/rls/01-isolamento.test.ts`, contra Postgres real.
+ * O que ISTO prova: os quatro caminhos (200/401/403/400), que `inviter_id`
+ * nunca vem do corpo, e que o e-mail só sai depois de o convite existir. O que
+ * NÃO prova: isolamento por RLS — isso é `tests/rls/01-isolamento.test.ts`,
+ * contra Postgres real; nem que a mensagem chega de fato, o que é o roteiro
+ * manual no Inbucket.
  *
- * @RF04.1
+ * @RF04.1 @RF04.2
  */
 
 import { createClient } from "@/lib/supabase/server"
+import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { POST } from "@/app/api/invitations/route"
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }))
+vi.mock("@/lib/supabase/admin", () => ({ criarClienteAdmin: vi.fn() }))
 
 const VIAGEM = "11111111-1111-4111-8111-111111111111"
 const DONO = "22222222-2222-4222-8222-222222222222"
@@ -37,11 +41,6 @@ function supabaseFalso(opcoes: Opcoes = {}) {
   return {
     auth: {
       getUser: async () => ({ data: { user }, error: null }),
-      admin: {
-        // Existe para o handler não estourar. Devolve erro de propósito: é o
-        // que a API responde hoje com a chave anon.
-        inviteUserByEmail: async () => ({ error: { message: "not_admin" } }),
-      },
     },
     from(tabela: string) {
       if (tabela === "trip_members") {
@@ -70,6 +69,22 @@ function supabaseFalso(opcoes: Opcoes = {}) {
   }
 }
 
+/** Registra o que o cliente admin recebeu, e na ordem em que recebeu. */
+type Envio = { email: string; erro?: { code?: string; message: string } }
+
+function adminFalso(convidados: Envio[], erro?: { code?: string; message: string }) {
+  return {
+    auth: {
+      admin: {
+        inviteUserByEmail: async (email: string) => {
+          convidados.push({ email, erro })
+          return { error: erro ?? null }
+        },
+      },
+    },
+  }
+}
+
 function requisicao(body: unknown) {
   return new Request("http://localhost/api/invitations", {
     method: "POST",
@@ -80,25 +95,80 @@ function requisicao(body: unknown) {
 
 beforeEach(() => {
   vi.mocked(createClient).mockReset()
+  vi.mocked(criarClienteAdmin).mockReset()
+  vi.mocked(criarClienteAdmin).mockReturnValue(adminFalso([]) as never)
   vi.spyOn(console, "warn").mockImplementation(() => {})
 })
 
 describe("POST /api/invitations", () => {
-  it("200: o dono convida e o convite é gravado", async () => {
+  it("200: o dono convida, o convite é gravado e o e-mail sai", async () => {
     const inseridos: Record<string, unknown>[] = []
+    const convidados: Envio[] = []
     vi.mocked(createClient).mockResolvedValue(
       supabaseFalso({ aoInserir: (p) => inseridos.push(p) }) as never,
     )
+    vi.mocked(criarClienteAdmin).mockReturnValue(adminFalso(convidados) as never)
 
     const resposta = await POST(requisicao(corpoValido))
 
     expect(resposta.status).toBe(200)
+    expect(await resposta.json()).toMatchObject({ success: true, envio: "enviado" })
     expect(inseridos).toHaveLength(1)
     expect(inseridos[0]).toMatchObject({
       trip_id: VIAGEM,
       invitee_email: "convidado@viajamais.local",
       status: "pending",
     })
+    // O e-mail vai para o endereço normalizado pelo zod, não para o que veio cru.
+    expect(convidados).toEqual([{ email: "convidado@viajamais.local", erro: undefined }])
+  })
+
+  it("o envio usa o cliente admin, nunca o cliente da sessão", async () => {
+    // O bug original: `supabaseAdmin` era o cliente anon, e
+    // `auth.admin.inviteUserByEmail` exige a chave de serviço. O cliente da
+    // sessão não expõe mais `auth.admin` nenhum — se o handler tentasse usá-lo,
+    // este teste quebraria com TypeError em vez de passar em silêncio.
+    const convidados: Envio[] = []
+    vi.mocked(createClient).mockResolvedValue(supabaseFalso() as never)
+    vi.mocked(criarClienteAdmin).mockReturnValue(adminFalso(convidados) as never)
+
+    await POST(requisicao(corpoValido))
+
+    expect(criarClienteAdmin).toHaveBeenCalledTimes(1)
+    expect(convidados).toHaveLength(1)
+  })
+
+  it("200: convidado que já tem conta não recebe e-mail, mas o convite vale", async () => {
+    const inseridos: Record<string, unknown>[] = []
+    vi.mocked(createClient).mockResolvedValue(
+      supabaseFalso({ aoInserir: (p) => inseridos.push(p) }) as never,
+    )
+    vi.mocked(criarClienteAdmin).mockReturnValue(
+      adminFalso([], { code: "email_exists", message: "A user with this email address has already been registered" }) as never,
+    )
+
+    const resposta = await POST(requisicao(corpoValido))
+
+    expect(resposta.status).toBe(200)
+    expect(await resposta.json()).toMatchObject({ envio: "ja-cadastrado" })
+    // O que importa: a linha existe, então a pessoa vê o convite na aplicação.
+    expect(inseridos).toHaveLength(1)
+  })
+
+  it("200: falha no envio não derruba o convite já gravado", async () => {
+    const inseridos: Record<string, unknown>[] = []
+    vi.mocked(createClient).mockResolvedValue(
+      supabaseFalso({ aoInserir: (p) => inseridos.push(p) }) as never,
+    )
+    vi.mocked(criarClienteAdmin).mockImplementation(() => {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY não configurada")
+    })
+
+    const resposta = await POST(requisicao(corpoValido))
+
+    expect(resposta.status).toBe(200)
+    expect(await resposta.json()).toMatchObject({ envio: "falhou" })
+    expect(inseridos).toHaveLength(1)
   })
 
   it("401: sem sessão", async () => {
@@ -163,5 +233,33 @@ describe("POST /api/invitations", () => {
 
     expect(resposta.status).toBe(400)
     expect(JSON.stringify(corpo)).not.toContain("trip_invitations_pkey")
+  })
+
+  it("não envia e-mail se o convite não chegou a ser gravado", async () => {
+    // A ordem importa: e-mail de um convite que não existe manda a pessoa para
+    // uma viagem à qual ela não foi convidada.
+    const convidados: Envio[] = []
+    vi.mocked(createClient).mockResolvedValue(
+      supabaseFalso({ erroInsert: { message: "violates foreign key constraint" } }) as never,
+    )
+    vi.mocked(criarClienteAdmin).mockReturnValue(adminFalso(convidados) as never)
+
+    const resposta = await POST(requisicao(corpoValido))
+
+    expect(resposta.status).toBe(400)
+    expect(convidados).toHaveLength(0)
+  })
+
+  it("não envia e-mail para quem não é dono da viagem", async () => {
+    // Enumeração de e-mail: se o envio acontecesse antes da autorização, um
+    // não-membro conseguiria disparar mensagem em nome da plataforma.
+    const convidados: Envio[] = []
+    vi.mocked(createClient).mockResolvedValue(supabaseFalso({ papel: "member" }) as never)
+    vi.mocked(criarClienteAdmin).mockReturnValue(adminFalso(convidados) as never)
+
+    const resposta = await POST(requisicao(corpoValido))
+
+    expect(resposta.status).toBe(403)
+    expect(convidados).toHaveLength(0)
   })
 })
