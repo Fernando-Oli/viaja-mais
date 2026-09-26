@@ -20,8 +20,25 @@ O segundo é o que costuma ser esquecido. Um `SELECT` vazio não prova nada se o
 ## Como rodar
 
 ```bash
-DATABASE_URL=postgresql://... npm run test:rls
+npm run db:start      # se o stack ainda não estiver de pé
+npm run test:rls
 ```
+
+Só isso. A suíte lê `API_URL`, `ANON_KEY` e `DATABASE_URL` do `.env.local`
+sozinha, via `tests/rls/preparar-ambiente.ts`. O que já estiver no ambiente tem
+precedência, então exportar uma variável para um teste pontual continua
+funcionando — é assim que o CI faz.
+
+Antes era preciso exportar as três à mão, e quem não exportasse via os testes
+estruturais — "toda tabela tem RLS", "toda tabela com RLS tem policy" — serem
+**pulados em silêncio**, com a suíte dizendo "passou". Nenhum teste aqui pula:
+falta de variável é erro, com instrução de conserto.
+
+`guarda-ambiente.ts` recusa qualquer alvo que não seja local, tanto para a API
+quanto para a conexão direta. É defesa em profundidade, não desconfiança do
+`.env.local`: estes testes **escrevem** no banco, e um arquivo copiado de outra
+máquina ou uma variável esquecida no shell bastam para o alvo deixar de ser o
+que se espera.
 
 No CI isso roda em `db.yml`, contra um Postgres efêmero com as migrations
 aplicadas do zero — o que também prova que o banco é reproduzível só a partir do

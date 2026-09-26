@@ -14,6 +14,10 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    // Preenche API_URL, ANON_KEY e DATABASE_URL a partir do `.env.local` quando
+    // não vierem do ambiente. Sem isso, os testes estruturais eram pulados em
+    // silêncio na máquina de quem não exportasse as variáveis à mão.
+    setupFiles: ["./tests/rls/preparar-ambiente.ts"],
     include: ["tests/rls/**/*.test.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
