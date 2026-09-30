@@ -23,7 +23,7 @@ import { atualizarViagemSchema } from "@/lib/schemas/viagem"
  * Os quatro testes que toda rota precisa ter: 200 feliz, 401 sem sessão,
  * 403 para quem não participa, 400 para payload inválido.
  *
- * @RF03.2 visualizar viagem · @RF03.4 editar viagem · @RF03.5 excluir viagem
+ * @RF03.5 visualizar detalhes da viagem · @RF03.2 editar viagem · @RF03.3 excluir viagem
  */
 
 async function usuarioAtual(supabase: Awaited<ReturnType<typeof createClient>>) {

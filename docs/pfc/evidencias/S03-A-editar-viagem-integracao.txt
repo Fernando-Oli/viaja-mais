@@ -1,0 +1,13 @@
+﻿
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+ ✓ tests/api/trips-patch.test.ts > PATCH /api/trips/[tripId] > 200: dono edita e recebe a viagem atualizada 11ms
+ ✓ tests/api/trips-patch.test.ts > PATCH /api/trips/[tripId] > 401: sem sessão não chega a atualizar 2ms
+ ✓ tests/api/trips-patch.test.ts > PATCH /api/trips/[tripId] > 403: membro comum (não dono) não edita 2ms
+ ✓ tests/api/trips-patch.test.ts > PATCH /api/trips/[tripId] > 400: payload inválido (data de fim antes da de início) 2ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  09:53:38
+   Duration  928ms (transform 123ms, setup 285ms, import 190ms, tests 22ms, environment 0ms)
+
