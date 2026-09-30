@@ -207,7 +207,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
         <TabsContent value="itinerary" className="mt-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <CardTitle>Itinerário</CardTitle>
                   <CardDescription>Organize suas atividades dia a dia</CardDescription>

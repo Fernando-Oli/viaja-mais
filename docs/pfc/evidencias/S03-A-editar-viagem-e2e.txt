@@ -1,24 +1,17 @@
-﻿◇ injected env (11) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]
-node.exe : [WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\HOME because it is outside the current 
-Git repository (C:\Users\HOME\Desktop\viaja-mais).
-No linha:1 caractere:1
-+ & "C:\Program Files\nodejs/node.exe" "C:\Users\HOME\AppData\Roaming\n ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ([WebServer] ⚠ W...op\viaja-mais).:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
+◇ injected env (11) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\HOME because it is outside the current Git repository (C:\Users\HOME\Desktop\viaja-mais).
 [WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
 [WebServer] 
 
 Running 2 tests using 1 worker
 
-(node:17848) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:19124) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from .env.local // tip: ⌘ override existing { override: true }
+  ✓  1 [chromium] › e2e\editar-viagem.spec.ts:5:5 › dono edita título e destino da viagem (6.2s)
+(node:18088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
 ◇ injected env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
-  ✓  1 [chromium] › e2e\editar-viagem.spec.ts:5:5 › dono edita título e destino da viagem (6.7s)
-(node:14040) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-(Use `node --trace-warnings ...` to show where the warning was created)
-◇ injected env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
-  ✓  2 [mobile] › e2e\editar-viagem.spec.ts:5:5 › dono edita título e destino da viagem (5.9s)
+  ✓  2 [mobile] › e2e\editar-viagem.spec.ts:5:5 › dono edita título e destino da viagem (6.2s)
 
-  2 passed (17.5s)
+  2 passed (17.6s)
