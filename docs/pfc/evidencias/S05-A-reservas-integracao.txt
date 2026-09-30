@@ -1,0 +1,33 @@
+
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > 200: membro edita título e status 11ms
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > 401: sem sessão não chega a atualizar 3ms
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > 403: quem não participa da viagem não altera 2ms
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > 400: payload inválido (término antes do início) 3ms
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > 400: status fora da lista permitida 3ms
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > 400: corpo vazio 2ms
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > 404: reserva que não pertence a esta viagem 2ms
+ ✓ tests/api/booking-item-route.test.ts > PATCH /api/trips/[tripId]/bookings/[bookingId] > filtra por trip_id e id, e descarta trip_id/user_id/id do corpo (sem mass-assignment) 3ms
+ ✓ tests/api/booking-item-route.test.ts > DELETE /api/trips/[tripId]/bookings/[bookingId] > 200: membro exclui a reserva 3ms
+ ✓ tests/api/booking-item-route.test.ts > DELETE /api/trips/[tripId]/bookings/[bookingId] > 401: sem sessão não chega a excluir 1ms
+ ✓ tests/api/booking-item-route.test.ts > DELETE /api/trips/[tripId]/bookings/[bookingId] > 403: quem não participa da viagem não exclui 1ms
+ ✓ tests/api/booking-item-route.test.ts > DELETE /api/trips/[tripId]/bookings/[bookingId] > 404: reserva que não pertence a esta viagem 1ms
+ ✓ tests/api/booking-item-route.test.ts > GET /api/trips/[tripId]/bookings/[bookingId] > 200: membro carrega a reserva para editar 1ms
+ ✓ tests/api/booking-item-route.test.ts > GET /api/trips/[tripId]/bookings/[bookingId] > 403: quem não participa não carrega 1ms
+ ✓ tests/api/booking-item-route.test.ts > GET /api/trips/[tripId]/bookings/[bookingId] > 404: reserva que não pertence a esta viagem 1ms
+ ✓ tests/api/bookings-route.test.ts > POST /api/trips/[tripId]/bookings > 200: membro da viagem adiciona reserva 12ms
+ ✓ tests/api/bookings-route.test.ts > POST /api/trips/[tripId]/bookings > 401: sem sessão não chega a inserir 2ms
+ ✓ tests/api/bookings-route.test.ts > POST /api/trips/[tripId]/bookings > 403: quem não participa da viagem não adiciona 1ms
+ ✓ tests/api/bookings-route.test.ts > POST /api/trips/[tripId]/bookings > 400: payload inválido (término antes do início) 2ms
+ ✓ tests/api/bookings-route.test.ts > POST /api/trips/[tripId]/bookings > 400: tipo fora da lista permitida 2ms
+ ✓ tests/api/bookings-route.test.ts > POST /api/trips/[tripId]/bookings > 400: preço negativo 1ms
+ ✓ tests/api/bookings-route.test.ts > POST /api/trips/[tripId]/bookings > autor vem da sessão e viagem da URL, mesmo que o corpo tente outros (sem mass-assignment) 2ms
+ ✓ tests/api/bookings-route.test.ts > GET /api/trips/[tripId]/bookings > 200: membro lista as reservas 1ms
+ ✓ tests/api/bookings-route.test.ts > GET /api/trips/[tripId]/bookings > 403: quem não participa não lista 1ms
+
+ Test Files  2 passed (2)
+      Tests  24 passed (24)
+   Start at  13:03:25
+   Duration  1.26s (transform 172ms, setup 600ms, import 380ms, tests 68ms, environment 0ms)
+

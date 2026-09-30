@@ -171,7 +171,7 @@ data de criação.
 ID | Descrição | Status | Prioridade
 --- | --- | --- | ---
 | RF03.1 | O usuário deve poder criar nova viagem | Parcial | Alta
-| RF03.2 | O usuário deve poder editar viagem | Parcial | Alta
+| RF03.2 | O usuário deve poder editar viagem | Existente | Alta
 | RF03.3 | O usuário deve poder excluir viagem | Parcial | Média
 | RF03.4 | O usuário deve poder visualizar lista de viagens | Parcial | Alta
 | RF03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | Alta
@@ -179,35 +179,35 @@ ID | Descrição | Status | Prioridade
 | RF03.7 | O usuário deve poder adicionar imagem de capa | Parcial | Baixa
 | RF03.8 | O usuário deve poder alterar status da viagem | Parcial | Média
 
-Detalhamento: o domínio de viagens possui implementação existente, mas ainda apresenta lacunas que impedem classificá-lo integralmente como implementado. A criação de uma viagem possui um defeito conhecido relacionado ao vínculo do proprietário com os membros da viagem, e a tela de edição ainda não existe apesar de haver suporte parcial no backend. Por esse motivo, os requisitos permanecem classificados de forma conservadora como parciais.
+Detalhamento: aplicamos a este grupo o mesmo critério de status descrito em RF01 e RF04 — **Existente** exige implementação e teste automatizado que a exercite. O RF03.2 passou a atendê-lo com a tela `app/dashboard/trips/[id]/edit`, que usa a rota de atualização restrita ao dono da viagem e é coberta por teste de integração (`tests/api/trips-patch.test.ts`) e por teste ponta a ponta em navegador de computador e de celular (`e2e/editar-viagem.spec.ts`). Os demais requisitos têm implementação, mas ainda não têm teste que os exercite por completo — o RF03.1, por exemplo, tem a rota testada, mas não a tela —, e por isso permanecem como parciais. O defeito de vínculo do proprietário com os membros da viagem, antes citado aqui, foi corrigido na correção dos defeitos P0 (versão 2.4 da Parte 00).
 
 ## RF05 — Itinerário
 
 ID | Descrição | Status | Prioridade
 --- | --- | --- | ---
-| RF05.1 | O usuário deve poder adicionar atividade ao itinerário | Parcial | Alta
-| RF05.2 | O usuário deve poder editar atividade | Não iniciado | Alta
-| RF05.3 | O usuário deve poder excluir atividade | Não iniciado | Média
+| RF05.1 | O usuário deve poder adicionar atividade ao itinerário | Existente | Alta
+| RF05.2 | O usuário deve poder editar atividade | Existente | Alta
+| RF05.3 | O usuário deve poder excluir atividade | Existente | Média
 | RF05.4 | O usuário deve poder visualizar itinerário por data | Parcial | Alta
 | RF05.5 | O usuário deve poder categorizar atividades | Parcial | Média
-| RF05.6 | O usuário deve poder definir horários | Parcial | Média
-| RF05.7 | O usuário deve poder adicionar localização | Parcial | Média
+| RF05.6 | O usuário deve poder definir horários | Existente | Média
+| RF05.7 | O usuário deve poder adicionar localização | Existente | Média
 
-Detalhamento: já existem estruturas para criação e visualização de itens do itinerário, porém há um defeito conhecido no filtro que define quais itens pertencem às viagens do usuário. As operações de edição e exclusão ainda estão previstas para implementação posterior. Assim, funcionalidades existentes permanecem como parciais e as operações ainda ausentes são classificadas como não iniciadas.
+Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. Incluir, editar, concluir e excluir atividade passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/itinerary/` e `.../[itemId]/`), que validam os dados e gravam apenas os campos previstos; estão cobertas por testes de integração (`tests/api/itinerary-route.test.ts` e `tests/api/itinerary-item-route.test.ts`) e por testes ponta a ponta (`e2e/adicionar-atividade.spec.ts` e `e2e/itinerario-crud.spec.ts`), o que classifica RF05.1, RF05.2 e RF05.3 como existentes. A conclusão de uma atividade é tratada como edição do seu status (RF05.2). O RF05.6 é existente porque os testes exercitam a regra de horário — término anterior ao início é recusado —, e o RF05.7 porque o teste ponta a ponta altera o local e confere o novo valor na tela. O RF05.4 e o RF05.5 permanecem parciais: a lista agrupa por data e exibe a categoria, mas nenhum teste verifica o agrupamento nem a recusa de categoria inválida. O defeito no filtro que exibia itens de viagens alheias, antes citado aqui, foi corrigido na versão 2.4 da Parte 00.
 
 ## RF07 — Reservas
 
 ID | Descrição | Status | Prioridade
 --- | --- | --- | ---
-| RF07.1 | O usuário deve poder adicionar reserva de voo | Parcial | Alta
+| RF07.1 | O usuário deve poder adicionar reserva de voo | Existente | Alta
 | RF07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | Alta
 | RF07.3 | O usuário deve poder adicionar reserva de carro | Parcial | Média
 | RF07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | Média
-| RF07.5 | O usuário deve poder editar reserva | Não iniciado | Alta
-| RF07.6 | O usuário deve poder excluir reserva | Não iniciado | Média
+| RF07.5 | O usuário deve poder editar reserva | Existente | Alta
+| RF07.6 | O usuário deve poder excluir reserva | Existente | Média
 | RF07.7 | O usuário deve poder visualizar todas as reservas | Parcial | Alta
 
-Detalhamento: existe uma tela de criação de reservas, mas ela ainda não possui um ponto de entrada no fluxo normal da aplicação. As operações de edição e exclusão também permanecem previstas para uma atividade posterior. Por isso, a criação e visualização são classificadas como parciais, enquanto edição e exclusão permanecem não iniciadas.
+Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. A criação, a edição e a exclusão de reservas passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/bookings/` e `.../[bookingId]/`), que validam os dados, gravam apenas os campos previstos e tomam o autor da sessão; o ponto de entrada é a aba Reservas do detalhe da viagem. Essas operações estão cobertas por testes de integração (`tests/api/bookings-route.test.ts` e `tests/api/booking-item-route.test.ts`) e por teste ponta a ponta (`e2e/reservas.spec.ts`), que cria uma reserva de voo pela interface, a edita e a exclui — o que classifica RF07.1, RF07.5 e RF07.6 como existentes. Os tipos hotel, carro e atividade (RF07.2 a RF07.4) usam o mesmo formulário e a mesma rota, mas nenhum teste cria uma reserva desses tipos, e por isso permanecem parciais. O RF07.7 também permanece parcial: a listagem por viagem é testada, mas a tela geral `/dashboard/bookings` não é coberta por teste.
 
 ## RF08 — Lugares e Mapas
 

@@ -1,7 +1,7 @@
 # Matriz de Rastreabilidade
 
 > Gerado por `npm run pfc:rastreabilidade`. Não edite à mão.
-> Última geração: 2026-09-26
+> Última geração: 2026-09-30
 
 Requisitos são marcados no código e nos testes com uma tag em comentário
 (`// @RF03.4 — permite editar viagem`). Este arquivo cruza essas tags com o
@@ -9,8 +9,8 @@ catálogo das seções 14 e 15.
 
 | Requisito | Descrição | Status | Implementação | Teste | Último commit |
 |---|---|---|---|---|---|
-| RF-01.1 | O usuário deve poder registrar-se com e-mail e senha | Parcial | — | — | — |
-| RF-01.2 | O sistema deve enviar e-mail de confirmação após o registro | Parcial | — | — | — |
+| RF-01.1 | O usuário deve poder registrar-se com e-mail e senha | Parcial | `app/auth/sign-up/page.tsx` | `tests/auth/sign-up.test.tsx` | 39f1705 |
+| RF-01.2 | O sistema deve enviar e-mail de confirmação após o registro | Parcial | `app/auth/sign-up/page.tsx` | `tests/auth/sign-up.test.tsx` | 39f1705 |
 | RF-01.3 | O usuário deve poder autenticar-se com e-mail e senha | Parcial | — | — | — |
 | RF-01.4 | O usuário deve poder encerrar a sessão | Parcial | — | — | — |
 | RF-01.5 | O sistema deve manter e renovar a sessão entre requisições | Existente | — | — | — |
@@ -24,30 +24,30 @@ catálogo das seções 14 e 15.
 | RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | — | — | — |
 | RF-02.6 | O usuário deve poder escrever uma biografia | Não iniciado | — | — | — |
 | RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | — | — | — |
-| RF-03.1 | O usuário deve poder criar nova viagem | Parcial | `app/api/trips/route.ts` | `tests/api/trips-post.test.ts` | 55cdfc3 |
-| RF-03.2 | O usuário deve poder editar viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | e747b44 |
-| RF-03.3 | O usuário deve poder excluir viagem | Parcial | — | — | — |
-| RF-03.4 | O usuário deve poder visualizar lista de viagens | Parcial | `app/api/trips/[tripId]/route.ts` | — | e747b44 |
-| RF-03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | e747b44 |
+| RF-03.1 | O usuário deve poder criar nova viagem | Parcial | `app/api/trips/route.ts` | `tests/api/trips-post.test.ts` | 47dbca9 |
+| RF-03.2 | O usuário deve poder editar viagem | Existente | `app/api/trips/[tripId]/route.ts` | `tests/api/trips-patch.test.ts`<br>`e2e/editar-viagem.spec.ts` | 6d9496d |
+| RF-03.3 | O usuário deve poder excluir viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
+| RF-03.4 | O usuário deve poder visualizar lista de viagens | Parcial | — | — | — |
+| RF-03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
 | RF-03.6 | O usuário deve poder definir orçamento | Parcial | — | — | — |
 | RF-03.7 | O usuário deve poder adicionar imagem de capa | Parcial | — | — | — |
 | RF-03.8 | O usuário deve poder alterar status da viagem | Parcial | — | — | — |
-| RF-04.1 | O dono da viagem deve poder convidar pessoas por e-mail | Parcial | `app/api/invitations/route.ts` | `tests/api/invitations-post.test.ts` | 5d603af |
-| RF-04.2 | O convidado deve receber notificação do convite por e-mail | Não iniciado | — | — | — |
+| RF-04.1 | O dono da viagem deve poder convidar pessoas por e-mail | Parcial | `app/api/invitations/route.ts` | `tests/api/invitations-post.test.ts` | 214970c |
+| RF-04.2 | O convidado deve receber notificação do convite por e-mail | Não iniciado | `app/api/invitations/route.ts` | `tests/api/invitations-post.test.ts` | 214970c |
 | RF-04.3 | O convidado deve poder aceitar ou recusar o convite | Parcial | — | — | — |
-| RF-04.4 | Os membros devem poder visualizar a viagem e seus dados | Parcial | — | — | — |
+| RF-04.4 | Os membros devem poder visualizar a viagem e seus dados | Parcial | `lib/trips/escopo.ts` | `tests/lib/escopo-grupo.test.ts`<br>`tests/rls/03-escopo-grupo.test.ts` | 47dbca9 |
 | RF-04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | — | — | — |
 | RF-04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | `app/api/trips/[tripId]/expenses/route.ts` | — | 1ead84a |
 | RF-04.7 | O dono deve poder remover membros da viagem | Existente | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
 | RF-04.8 | O membro deve poder sair da viagem por vontade própria | Existente | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
 | RF-04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Existente | — | — | — |
-| RF-05.1 | O usuário deve poder adicionar atividade ao itinerário | Parcial | — | — | — |
-| RF-05.2 | O usuário deve poder editar atividade | Não iniciado | — | — | — |
-| RF-05.3 | O usuário deve poder excluir atividade | Não iniciado | — | — | — |
-| RF-05.4 | O usuário deve poder visualizar itinerário por data | Parcial | — | — | — |
-| RF-05.5 | O usuário deve poder categorizar atividades | Parcial | — | — | — |
-| RF-05.6 | O usuário deve poder definir horários | Parcial | — | — | — |
-| RF-05.7 | O usuário deve poder adicionar localização | Parcial | — | — | — |
+| RF-05.1 | O usuário deve poder adicionar atividade ao itinerário | Existente | `app/api/trips/[tripId]/itinerary/route.ts`<br>`lib/schemas/itinerario.ts` | `tests/api/itinerary-route.test.ts`<br>`e2e/adicionar-atividade.spec.ts` | 9fb0cfc |
+| RF-05.2 | O usuário deve poder editar atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`lib/schemas/itinerario.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | ad9d35b |
+| RF-05.3 | O usuário deve poder excluir atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | ad9d35b |
+| RF-05.4 | O usuário deve poder visualizar itinerário por data | Parcial | `app/api/trips/[tripId]/itinerary/route.ts` | `tests/api/itinerary-route.test.ts` | 9fb0cfc |
+| RF-05.5 | O usuário deve poder categorizar atividades | Parcial | `lib/schemas/itinerario.ts` | — | ad9d35b |
+| RF-05.6 | O usuário deve poder definir horários | Existente | `lib/schemas/itinerario.ts` | — | ad9d35b |
+| RF-05.7 | O usuário deve poder adicionar localização | Existente | `lib/schemas/itinerario.ts` | — | ad9d35b |
 | RF-06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/schemas/despesa.ts` | `tests/lib/despesa-schema.test.ts`<br>`tests/lib/expenses-route.test.ts` | 1ead84a |
 | RF-06.2 | Usuário deve poder editar despesa | Planejado | — | — | — |
 | RF-06.3 | Usuário deve poder excluir despesa | Planejado | — | — | — |
@@ -61,13 +61,13 @@ catálogo das seções 14 e 15.
 | RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | — | — | — |
 | RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | — | — | — |
 | RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | — | — | — |
-| RF-07.1 | O usuário deve poder adicionar reserva de voo | Parcial | — | — | — |
-| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | — | — | — |
-| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | — | — | — |
-| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | — | — | — |
-| RF-07.5 | O usuário deve poder editar reserva | Não iniciado | — | — | — |
-| RF-07.6 | O usuário deve poder excluir reserva | Não iniciado | — | — | — |
-| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | — | — | — |
+| RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
+| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
+| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
+| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
+| RF-07.5 | O usuário deve poder editar reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`lib/schemas/reserva.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
+| RF-07.6 | O usuário deve poder excluir reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
+| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`components/booking-list.tsx` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
 | RF-08.1 | O usuário deve poder buscar lugares | Parcial | — | — | — |
 | RF-08.2 | O usuário deve poder salvar lugares favoritos | Parcial | — | — | — |
 | RF-08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | — | — | — |
@@ -105,13 +105,13 @@ catálogo das seções 14 e 15.
 | RNF-02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | — | — | — |
 | RNF-02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | — | — | — |
 | RNF-02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | — | — | — |
-| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts` | — |
+| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts` | — |
 | RNF-02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | — | — | — |
 | RNF-02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | — | — | — |
 | RNF-02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | — | — | — |
 | RNF-02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Planejado | — | — | — |
 | RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | — | — | — |
-| RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | — | — |
+| RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | `tests/lib/supabase-admin.test.ts` | — |
 | RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | — | — | — |
 | RNF-02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | — | — | — |
 | RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | — | — | — |
@@ -128,12 +128,12 @@ catálogo das seções 14 e 15.
 | RNF-07.3 | A geração de roteiro por IA deve responder em até 15 segundos, ou informar erro claro ao usuário | Não iniciado | — | — | — |
 | RNF-07.4 | A geração de roteiro deve ser limitada a no máximo 10 requisições por usuário por hora | Não iniciado | — | — | — |
 | RNF-07.5 | A central de notificações deve carregar as 20 mais recentes em menos de 2 segundos no percentil 95, e o contador de não-lidas deve ser calculado em menos de 500 milissegundos | Não iniciado | — | — | — |
-| RNF-08.1 | O cálculo do roteio deve ser determinístico: a soma das partes de `expense_shares` deve sempre igualar o valor total da despesa | Planejado | — | — | — |
+| RNF-08.1 | O cálculo do roteio deve ser determinístico: a soma das partes de `expense_shares` deve sempre igualar o valor total da despesa | Planejado | — | `tests/rls/02-rateio.test.ts` | — |
 
 ## Resumo
 
 - Requisitos no catálogo: **120**
-- Com implementação marcada: **9**
-- Com teste marcado: **6**
+- Com implementação marcada: **27**
+- Com teste marcado: **21**
 
 _Nenhuma inconsistência._

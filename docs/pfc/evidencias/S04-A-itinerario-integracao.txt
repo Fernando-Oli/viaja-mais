@@ -1,0 +1,25 @@
+
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 200: membro conclui a atividade 11ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 200: membro edita título e horários 3ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 401: sem sessão não chega a atualizar 2ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 403: quem não participa da viagem não altera 2ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 400: payload inválido (término antes do início) 4ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 400: status fora da lista permitida 2ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 400: corpo vazio 1ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > 404: item que não pertence a esta viagem 1ms
+ ✓ tests/api/itinerary-item-route.test.ts > PATCH /api/trips/[tripId]/itinerary/[itemId] > filtra por trip_id e id, e descarta trip_id/id vindos do corpo (sem mass-assignment) 2ms
+ ✓ tests/api/itinerary-item-route.test.ts > DELETE /api/trips/[tripId]/itinerary/[itemId] > 200: membro exclui a atividade 1ms
+ ✓ tests/api/itinerary-item-route.test.ts > DELETE /api/trips/[tripId]/itinerary/[itemId] > 401: sem sessão não chega a excluir 1ms
+ ✓ tests/api/itinerary-item-route.test.ts > DELETE /api/trips/[tripId]/itinerary/[itemId] > 403: quem não participa da viagem não exclui 1ms
+ ✓ tests/api/itinerary-item-route.test.ts > DELETE /api/trips/[tripId]/itinerary/[itemId] > 404: item que não pertence a esta viagem 0ms
+ ✓ tests/api/itinerary-item-route.test.ts > GET /api/trips/[tripId]/itinerary/[itemId] > 200: membro carrega a atividade para editar 1ms
+ ✓ tests/api/itinerary-item-route.test.ts > GET /api/trips/[tripId]/itinerary/[itemId] > 403: quem não participa não carrega 0ms
+ ✓ tests/api/itinerary-item-route.test.ts > GET /api/trips/[tripId]/itinerary/[itemId] > 404: item que não pertence a esta viagem 0ms
+
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  11:55:00
+   Duration  807ms (transform 125ms, setup 281ms, import 226ms, tests 36ms, environment 0ms)
+

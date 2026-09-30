@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
-import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned } from "lucide-react"
+import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned, Pencil } from "lucide-react"
 import { ItineraryList } from "@/components/itinerary-list"
+import { BookingList } from "@/components/booking-list"
 import { TripMembers } from "@/components/trip-members"
 
 function parseLocalDate(dateString: string) {
@@ -14,8 +15,27 @@ function parseLocalDate(dateString: string) {
   return new Date(year, month - 1, day); // <-- interpreta como data local
 }
 
-export default async function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
+const ABAS = ["itinerary", "expenses", "places", "bookings"] as const
+
+// `?aba=reservas` abre direto na aba de reservas: é para onde voltam as telas de
+// criar e editar reserva, senão a pessoa cairia no itinerário sem ver o que salvou.
+const ABA_POR_PARAMETRO: Record<string, (typeof ABAS)[number]> = {
+  itinerario: "itinerary",
+  despesas: "expenses",
+  lugares: "places",
+  reservas: "bookings",
+}
+
+export default async function TripDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ aba?: string }>
+}) {
   const { id } = await params
+  const { aba } = await searchParams
+  const abaInicial = (aba && ABA_POR_PARAMETRO[aba]) || "itinerary"
 
   if (id === "new") {
     redirect("/dashboard/trips/new")
@@ -74,6 +94,12 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
     .eq("trip_id", id)
     .order("created_at", { ascending: false })
 
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("trip_id", id)
+    .order("start_date", { ascending: true })
+
   const totalExpenses = expenses?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0
 
   const statusLabels: Record<string, string> = {
@@ -94,10 +120,10 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
           </Link>
         </Button>
 
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-viaja-navy">{trip.title}</h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="break-words text-3xl font-bold text-viaja-navy">{trip.title}</h1>
               <Badge variant={trip.status === "confirmed" ? "default" : "secondary"}>{statusLabels[trip.status]}</Badge>
             </div>
             <div className="mt-2 flex flex-wrap gap-4 text-gray-600">
@@ -112,7 +138,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
                 {parseLocalDate(trip.end_date).toLocaleDateString("pt-BR")}
                 </span>
               </div>
-              {trip.budget && (
+              {Number(trip.budget) > 0 && (
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
                   <span>
@@ -127,6 +153,14 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
             </div>
             {trip.description && <p className="mt-4 text-gray-600">{trip.description}</p>}
           </div>
+          {isOwner && (
+            <Button asChild variant="outline" className="shrink-0 self-start">
+              <Link href={`/dashboard/trips/${id}/edit`}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -189,17 +223,19 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
       <TripMembers tripId={id} members={members || []} isOwner={isOwner} />
 
       {/* Tabs */}
-      <Tabs defaultValue="itinerary" className="w-full">
-        <TabsList>
+      <Tabs defaultValue={abaInicial} className="w-full">
+        {/* Quatro abas não cabem numa linha no celular: a lista quebra em vez de estourar. */}
+        <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="itinerary">Itinerário</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
           <TabsTrigger value="places">Lugares</TabsTrigger>
+          <TabsTrigger value="bookings">Reservas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="itinerary" className="mt-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <CardTitle>Itinerário</CardTitle>
                   <CardDescription>Organize suas atividades dia a dia</CardDescription>
@@ -318,6 +354,28 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bookings" className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Reservas</CardTitle>
+                  <CardDescription>Voos, hospedagens e demais reservas da viagem</CardDescription>
+                </div>
+                <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+                  <Link href={`/dashboard/trips/${id}/bookings/new`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Reserva
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <BookingList bookings={bookings || []} tripId={id} />
             </CardContent>
           </Card>
         </TabsContent>
