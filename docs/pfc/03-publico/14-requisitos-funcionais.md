@@ -199,15 +199,15 @@ Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. Incluir, edi
 
 ID | Descrição | Status | Prioridade
 --- | --- | --- | ---
-| RF07.1 | O usuário deve poder adicionar reserva de voo | Parcial | Alta
+| RF07.1 | O usuário deve poder adicionar reserva de voo | Existente | Alta
 | RF07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | Alta
 | RF07.3 | O usuário deve poder adicionar reserva de carro | Parcial | Média
 | RF07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | Média
-| RF07.5 | O usuário deve poder editar reserva | Não iniciado | Alta
-| RF07.6 | O usuário deve poder excluir reserva | Não iniciado | Média
+| RF07.5 | O usuário deve poder editar reserva | Existente | Alta
+| RF07.6 | O usuário deve poder excluir reserva | Existente | Média
 | RF07.7 | O usuário deve poder visualizar todas as reservas | Parcial | Alta
 
-Detalhamento: existe uma tela de criação de reservas, mas ela ainda não possui um ponto de entrada no fluxo normal da aplicação. As operações de edição e exclusão também permanecem previstas para uma atividade posterior. Por isso, a criação e visualização são classificadas como parciais, enquanto edição e exclusão permanecem não iniciadas.
+Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. A criação, a edição e a exclusão de reservas passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/bookings/` e `.../[bookingId]/`), que validam os dados, gravam apenas os campos previstos e tomam o autor da sessão; o ponto de entrada é a aba Reservas do detalhe da viagem. Essas operações estão cobertas por testes de integração (`tests/api/bookings-route.test.ts` e `tests/api/booking-item-route.test.ts`) e por teste ponta a ponta (`e2e/reservas.spec.ts`), que cria uma reserva de voo pela interface, a edita e a exclui — o que classifica RF07.1, RF07.5 e RF07.6 como existentes. Os tipos hotel, carro e atividade (RF07.2 a RF07.4) usam o mesmo formulário e a mesma rota, mas nenhum teste cria uma reserva desses tipos, e por isso permanecem parciais. O RF07.7 também permanece parcial: a listagem por viagem é testada, mas a tela geral `/dashboard/bookings` não é coberta por teste.
 
 ## RF08 — Lugares e Mapas
 

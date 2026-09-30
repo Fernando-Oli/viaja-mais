@@ -42,12 +42,12 @@ catálogo das seções 14 e 15.
 | RF-04.8 | O membro deve poder sair da viagem por vontade própria | Existente | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
 | RF-04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Existente | — | — | — |
 | RF-05.1 | O usuário deve poder adicionar atividade ao itinerário | Existente | `app/api/trips/[tripId]/itinerary/route.ts`<br>`lib/schemas/itinerario.ts` | `tests/api/itinerary-route.test.ts`<br>`e2e/adicionar-atividade.spec.ts` | 9fb0cfc |
-| RF-05.2 | O usuário deve poder editar atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`lib/schemas/itinerario.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | — |
-| RF-05.3 | O usuário deve poder excluir atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | — |
+| RF-05.2 | O usuário deve poder editar atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`lib/schemas/itinerario.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | ad9d35b |
+| RF-05.3 | O usuário deve poder excluir atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | ad9d35b |
 | RF-05.4 | O usuário deve poder visualizar itinerário por data | Parcial | `app/api/trips/[tripId]/itinerary/route.ts` | `tests/api/itinerary-route.test.ts` | 9fb0cfc |
-| RF-05.5 | O usuário deve poder categorizar atividades | Parcial | `lib/schemas/itinerario.ts` | — | 9fb0cfc |
-| RF-05.6 | O usuário deve poder definir horários | Existente | `lib/schemas/itinerario.ts` | — | 9fb0cfc |
-| RF-05.7 | O usuário deve poder adicionar localização | Existente | `lib/schemas/itinerario.ts` | — | 9fb0cfc |
+| RF-05.5 | O usuário deve poder categorizar atividades | Parcial | `lib/schemas/itinerario.ts` | — | ad9d35b |
+| RF-05.6 | O usuário deve poder definir horários | Existente | `lib/schemas/itinerario.ts` | — | ad9d35b |
+| RF-05.7 | O usuário deve poder adicionar localização | Existente | `lib/schemas/itinerario.ts` | — | ad9d35b |
 | RF-06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/schemas/despesa.ts` | `tests/lib/despesa-schema.test.ts`<br>`tests/lib/expenses-route.test.ts` | 1ead84a |
 | RF-06.2 | Usuário deve poder editar despesa | Planejado | — | — | — |
 | RF-06.3 | Usuário deve poder excluir despesa | Planejado | — | — | — |
@@ -61,13 +61,13 @@ catálogo das seções 14 e 15.
 | RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | — | — | — |
 | RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | — | — | — |
 | RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | — | — | — |
-| RF-07.1 | O usuário deve poder adicionar reserva de voo | Parcial | — | — | — |
-| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | — | — | — |
-| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | — | — | — |
-| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | — | — | — |
-| RF-07.5 | O usuário deve poder editar reserva | Não iniciado | — | — | — |
-| RF-07.6 | O usuário deve poder excluir reserva | Não iniciado | — | — | — |
-| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | — | — | — |
+| RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
+| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
+| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
+| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
+| RF-07.5 | O usuário deve poder editar reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`lib/schemas/reserva.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
+| RF-07.6 | O usuário deve poder excluir reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
+| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`components/booking-list.tsx` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
 | RF-08.1 | O usuário deve poder buscar lugares | Parcial | — | — | — |
 | RF-08.2 | O usuário deve poder salvar lugares favoritos | Parcial | — | — | — |
 | RF-08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | — | — | — |
@@ -133,7 +133,7 @@ catálogo das seções 14 e 15.
 ## Resumo
 
 - Requisitos no catálogo: **120**
-- Com implementação marcada: **20**
-- Com teste marcado: **17**
+- Com implementação marcada: **27**
+- Com teste marcado: **21**
 
 _Nenhuma inconsistência._

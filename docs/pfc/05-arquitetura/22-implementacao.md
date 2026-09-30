@@ -8,7 +8,7 @@ A interface foi desenvolvida em Next.js 16 com o App Router, sobre React 19. No 
 
 #### Organização das telas
 
-Todas as telas da área autenticada compartilham o layout definido em `app/dashboard/layout.tsx`, que contém a barra lateral com os atalhos Dashboard, Minhas Viagens, Itinerários, Finanças, Lugares e Reservas, além do menu do usuário com Configurações e Sair. A tela central do sistema é o detalhe da viagem, que reúne indicadores, membros, convites e as abas Itinerário, Despesas e Lugares. A tabela a seguir relaciona cada tela ao tipo de componente adotado e aos requisitos do catálogo da seção 14 que ela atende.
+Todas as telas da área autenticada compartilham o layout definido em `app/dashboard/layout.tsx`, que contém a barra lateral com os atalhos Dashboard, Minhas Viagens, Itinerários, Finanças, Lugares e Reservas, além do menu do usuário com Configurações e Sair. A tela central do sistema é o detalhe da viagem, que reúne indicadores, membros, convites e as abas Itinerário, Despesas, Lugares e Reservas. A tabela a seguir relaciona cada tela ao tipo de componente adotado e aos requisitos do catálogo da seção 14 que ela atende.
 
 | Tela (rota) | Tipo | Requisitos atendidos |
 |---|---|---|
@@ -26,10 +26,12 @@ Todas as telas da área autenticada compartilham o layout definido em `app/dashb
 | `/dashboard/itinerary` | Servidor | RF05.4 |
 | `/dashboard/trips/[id]/expenses/new` | Cliente | RF06.1 |
 | `/dashboard/finances` | Servidor | RF06.4, RF06.5 |
-| `/dashboard/bookings`, `/dashboard/trips/[id]/bookings/new` | Servidor / Cliente | RF07 |
+| `/dashboard/bookings` | Servidor | RF07.7 |
+| `/dashboard/trips/[id]/bookings/new` | Cliente | RF07.1 a RF07.4 |
+| `/dashboard/trips/[id]/bookings/[bookingId]/edit` | Cliente | RF07.5 |
 | `/dashboard/places`, `/dashboard/trips/[id]/places` | Servidor / Cliente | RF08 |
 
-As ações de concluir, reabrir e excluir atividade (RF05.2 e RF05.3) não têm tela própria: ficam no componente `components/itinerary-list.tsx`, exibido na aba Itinerário do detalhe da viagem.
+As ações de concluir, reabrir e excluir atividade (RF05.2 e RF05.3) não têm tela própria: ficam no componente `components/itinerary-list.tsx`, exibido na aba Itinerário do detalhe da viagem. Da mesma forma, a exclusão de reserva (RF07.6) fica em `components/booking-list.tsx`, na aba Reservas, que é também o ponto de entrada para criar e editar reservas. As telas de reserva, ao salvar, retornam ao detalhe com o parâmetro `?aba=reservas`, que abre a página diretamente nessa aba para que o usuário veja o registro que acabou de gravar.
 
 #### Estrutura do código da interface
 
@@ -39,11 +41,13 @@ Adotamos a divisão entre Server Components e Client Components do React conform
 
 #### Comunicação com o backend e retorno ao usuário
 
-A regra do projeto é que nenhuma escrita no banco parte do navegador. A tela envia a requisição por `fetch` a um route handler em `app/api/**`, que verifica a sessão, confirma a participação ou a propriedade da viagem por meio de `exigirMembro` e `exigirDono` (`lib/authz/trip.ts`) e valida o corpo com zod antes de gravar. Seguem esse padrão a edição de viagem (PATCH `/api/trips/[tripId]`), a criação e a listagem de viagens, a inclusão de atividade (POST `/api/trips/[tripId]/itinerary`), a edição, conclusão e exclusão de atividade (PATCH e DELETE `/api/trips/[tripId]/itinerary/[itemId]`), a inclusão de despesa, a gestão de membros e convites e as configurações de perfil e senha. Com isso, a autorização não depende do código que roda no cliente, que pode ser alterado por quem o executa.
+A regra do projeto é que nenhuma escrita no banco parte do navegador. A tela envia a requisição por `fetch` a um route handler em `app/api/**`, que verifica a sessão, confirma a participação ou a propriedade da viagem por meio de `exigirMembro` e `exigirDono` (`lib/authz/trip.ts`) e valida o corpo com zod antes de gravar. Seguem esse padrão a edição de viagem (PATCH `/api/trips/[tripId]`), a criação e a listagem de viagens, a inclusão de atividade (POST `/api/trips/[tripId]/itinerary`), a edição, conclusão e exclusão de atividade (PATCH e DELETE `/api/trips/[tripId]/itinerary/[itemId]`), a inclusão, edição e exclusão de reserva (`/api/trips/[tripId]/bookings` e `.../bookings/[bookingId]`), a inclusão de despesa, a gestão de membros e convites e as configurações de perfil e senha. Com isso, a autorização não depende do código que roda no cliente, que pode ser alterado por quem o executa.
 
-Quando o servidor rejeita os dados, as telas de viagem e de itinerário exibem em um toast a mensagem de validação devolvida pela rota (campo `detalhes.fieldErrors` do zod), de modo que o usuário vê o mesmo motivo que o servidor aplicou. Ações destrutivas pedem confirmação no `ConfirmModal`, e não nas caixas `alert()` e `confirm()` do navegador, que não seguem a identidade visual e não podem ser testadas de forma uniforme.
+Quando o servidor rejeita os dados, as telas de viagem, de itinerário e de reserva exibem em um toast a mensagem de validação devolvida pela rota (campo `detalhes.fieldErrors` do zod), de modo que o usuário vê o mesmo motivo que o servidor aplicou. Ações destrutivas pedem confirmação no `ConfirmModal`, e não nas caixas `alert()` e `confirm()` do navegador, que não seguem a identidade visual e não podem ser testadas de forma uniforme.
 
-No itinerário, entregue nesta fase, `itinerary-list.tsx` agrupa as atividades por data e oferece por item as ações Concluir ou Reabrir, Editar e Excluir. Enquanto a requisição de um item está em andamento, os botões desse item ficam desabilitados, o que impede envios duplicados. Após cada ação, `router.refresh()` solicita novamente os dados ao Server Component da página, evitando manter no cliente uma cópia paralela do estado que poderia divergir do banco.
+No itinerário, `itinerary-list.tsx` agrupa as atividades por data e oferece por item as ações Concluir ou Reabrir, Editar e Excluir. Enquanto a requisição de um item está em andamento, os botões desse item ficam desabilitados, o que impede envios duplicados. Após cada ação, `router.refresh()` solicita novamente os dados ao Server Component da página, evitando manter no cliente uma cópia paralela do estado que poderia divergir do banco.
+
+As reservas seguem o mesmo desenho em `booking-list.tsx`, com uma particularidade: a data e a hora de uma reserva são exibidas a partir do texto gravado, sem conversão pelo fuso horário do navegador. A hora informada é a hora local do voo ou da entrada no hotel, e convertê-la deslocaria o horário para quem consulta de outro fuso; o teste ponta a ponta `e2e/reservas.spec.ts` confere que o horário exibido é exatamente o digitado.
 
 ![Itinerário com atividade concluída, perfil de computador](../evidencias/S04-A-itinerario-concluida-chromium.png)
 
@@ -59,4 +63,4 @@ A barra lateral passa a exibir apenas ícones abaixo do ponto de quebra `md` do 
 
 #### Limitações conhecidas
 
-Duas telas ainda não seguem o padrão de escrita pelo servidor. A tela de lugares da viagem (`app/dashboard/trips/[id]/places/page.tsx`) insere e exclui registros em `places` diretamente do navegador com o cliente Supabase, e a tela de nova reserva (`app/dashboard/trips/[id]/bookings/new/page.tsx`) insere em `bookings` da mesma forma. Nesses dois casos, a proteção depende apenas da RLS do banco, sem a verificação explícita de participação no servidor. Além disso, a tela de nova reserva existe, mas nenhum link da interface leva até ela, de modo que o usuário só a alcança digitando o endereço. A migração dessas telas para rotas de API e a inclusão do ponto de entrada de reservas estão previstas.
+Uma tela ainda não segue o padrão de escrita pelo servidor: a de lugares da viagem (`app/dashboard/trips/[id]/places/page.tsx`) insere e exclui registros em `places` diretamente do navegador com o cliente Supabase. Nesse caso, a proteção depende apenas da RLS do banco, sem a verificação explícita de participação no servidor. A migração dessa tela para rotas de API está prevista como atividade própria. A tela de nova reserva, que tinha a mesma limitação e não era alcançável por nenhum link da interface, passou a gravar pela rota de API e ganhou o ponto de entrada na aba Reservas do detalhe da viagem.
