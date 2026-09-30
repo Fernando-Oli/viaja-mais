@@ -25,7 +25,7 @@ catálogo das seções 14 e 15.
 | RF-02.6 | O usuário deve poder escrever uma biografia | Não iniciado | — | — | — |
 | RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | — | — | — |
 | RF-03.1 | O usuário deve poder criar nova viagem | Parcial | `app/api/trips/route.ts` | `tests/api/trips-post.test.ts` | 47dbca9 |
-| RF-03.2 | O usuário deve poder editar viagem | Parcial | `app/api/trips/[tripId]/route.ts` | `tests/api/trips-patch.test.ts`<br>`e2e/editar-viagem.spec.ts` | 6d9496d |
+| RF-03.2 | O usuário deve poder editar viagem | Existente | `app/api/trips/[tripId]/route.ts` | `tests/api/trips-patch.test.ts`<br>`e2e/editar-viagem.spec.ts` | 6d9496d |
 | RF-03.3 | O usuário deve poder excluir viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
 | RF-03.4 | O usuário deve poder visualizar lista de viagens | Parcial | — | — | — |
 | RF-03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
@@ -41,13 +41,13 @@ catálogo das seções 14 e 15.
 | RF-04.7 | O dono deve poder remover membros da viagem | Existente | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
 | RF-04.8 | O membro deve poder sair da viagem por vontade própria | Existente | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
 | RF-04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Existente | — | — | — |
-| RF-05.1 | O usuário deve poder adicionar atividade ao itinerário | Parcial | `app/api/trips/[tripId]/itinerary/route.ts`<br>`lib/schemas/itinerario.ts` | `tests/api/itinerary-route.test.ts`<br>`e2e/adicionar-atividade.spec.ts` | 07f46b2 |
-| RF-05.2 | O usuário deve poder editar atividade | Não iniciado | — | — | — |
-| RF-05.3 | O usuário deve poder excluir atividade | Não iniciado | — | — | — |
-| RF-05.4 | O usuário deve poder visualizar itinerário por data | Parcial | `app/api/trips/[tripId]/itinerary/route.ts` | `tests/api/itinerary-route.test.ts` | 07f46b2 |
-| RF-05.5 | O usuário deve poder categorizar atividades | Parcial | `lib/schemas/itinerario.ts` | — | — |
-| RF-05.6 | O usuário deve poder definir horários | Parcial | `lib/schemas/itinerario.ts` | — | — |
-| RF-05.7 | O usuário deve poder adicionar localização | Parcial | `lib/schemas/itinerario.ts` | — | — |
+| RF-05.1 | O usuário deve poder adicionar atividade ao itinerário | Existente | `app/api/trips/[tripId]/itinerary/route.ts`<br>`lib/schemas/itinerario.ts` | `tests/api/itinerary-route.test.ts`<br>`e2e/adicionar-atividade.spec.ts` | 9fb0cfc |
+| RF-05.2 | O usuário deve poder editar atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`lib/schemas/itinerario.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | — |
+| RF-05.3 | O usuário deve poder excluir atividade | Existente | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | — |
+| RF-05.4 | O usuário deve poder visualizar itinerário por data | Parcial | `app/api/trips/[tripId]/itinerary/route.ts` | `tests/api/itinerary-route.test.ts` | 9fb0cfc |
+| RF-05.5 | O usuário deve poder categorizar atividades | Parcial | `lib/schemas/itinerario.ts` | — | 9fb0cfc |
+| RF-05.6 | O usuário deve poder definir horários | Existente | `lib/schemas/itinerario.ts` | — | 9fb0cfc |
+| RF-05.7 | O usuário deve poder adicionar localização | Existente | `lib/schemas/itinerario.ts` | — | 9fb0cfc |
 | RF-06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/schemas/despesa.ts` | `tests/lib/despesa-schema.test.ts`<br>`tests/lib/expenses-route.test.ts` | 1ead84a |
 | RF-06.2 | Usuário deve poder editar despesa | Planejado | — | — | — |
 | RF-06.3 | Usuário deve poder excluir despesa | Planejado | — | — | — |
@@ -133,7 +133,7 @@ catálogo das seções 14 e 15.
 ## Resumo
 
 - Requisitos no catálogo: **120**
-- Com implementação marcada: **18**
-- Com teste marcado: **15**
+- Com implementação marcada: **20**
+- Com teste marcado: **17**
 
 _Nenhuma inconsistência._
