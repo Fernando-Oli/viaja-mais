@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
-import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned } from "lucide-react"
+import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned, Pencil } from "lucide-react"
 import { ItineraryList } from "@/components/itinerary-list"
 import { TripMembers } from "@/components/trip-members"
 
@@ -94,10 +94,10 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
           </Link>
         </Button>
 
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-viaja-navy">{trip.title}</h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="break-words text-3xl font-bold text-viaja-navy">{trip.title}</h1>
               <Badge variant={trip.status === "confirmed" ? "default" : "secondary"}>{statusLabels[trip.status]}</Badge>
             </div>
             <div className="mt-2 flex flex-wrap gap-4 text-gray-600">
@@ -112,7 +112,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
                 {parseLocalDate(trip.end_date).toLocaleDateString("pt-BR")}
                 </span>
               </div>
-              {trip.budget && (
+              {Number(trip.budget) > 0 && (
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
                   <span>
@@ -127,6 +127,14 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
             </div>
             {trip.description && <p className="mt-4 text-gray-600">{trip.description}</p>}
           </div>
+          {isOwner && (
+            <Button asChild variant="outline" className="shrink-0 self-start">
+              <Link href={`/dashboard/trips/${id}/edit`}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -199,7 +207,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
         <TabsContent value="itinerary" className="mt-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <CardTitle>Itinerário</CardTitle>
                   <CardDescription>Organize suas atividades dia a dia</CardDescription>

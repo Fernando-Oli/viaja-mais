@@ -73,7 +73,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <aside className="w-20 md:w-64 lg:64  border-r border-gray-200 bg-viaja-navy lg:block">
+      <aside className="w-20 shrink-0 md:w-64 border-r border-gray-200 bg-viaja-navy lg:block">
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center gap-2 border-b border-white/10 px-6">
@@ -120,7 +120,7 @@ export default function DashboardLayout({
                       </AvatarFallback>
                     </Avatar>
                   )}
-                  <div className="flex flex-col items-start text-sm">
+                  <div className="hidden flex-col items-start text-sm md:flex">
                     <span className="font-medium text-white">
                       {profile?.full_name || "Usuário"}
                     </span>
@@ -149,7 +149,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="min-w-0 flex-1">
         <div className="mx-auto max-w-7xl p-6 lg:p-8">{children}</div>
       </main>
     </div>

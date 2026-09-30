@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, use } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,8 +17,8 @@ import Link from "next/link"
 export default function NewItineraryItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -34,14 +34,14 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
 
     try {
-      const supabase = createClient()
-
-      const { error } = await supabase.from("itinerary_items").insert([
-        {
-          trip_id: id,
+      // Sem escrita direta do navegador: passa pelo route handler, que valida
+      // com zod e confirma no servidor que este usuário é membro da viagem.
+      const resposta = await fetch(`/api/trips/${id}/itinerary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           title: formData.title,
           description: formData.description || null,
           date: formData.date,
@@ -50,15 +50,26 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
           location: formData.location || null,
           category: formData.category,
           status: formData.status,
-        },
-      ])
+        }),
+      })
 
-      if (error) throw error
+      type RespostaErro = {
+        error?: string
+        detalhes?: { fieldErrors?: Record<string, string[] | undefined> }
+      }
+      const dados: RespostaErro = await resposta.json().catch(() => ({}))
+      if (!resposta.ok) {
+        const especifico = Object.values(dados.detalhes?.fieldErrors ?? {}).find(
+          (m) => m && m.length > 0,
+        )?.[0]
+        throw new Error(especifico || dados.error || "Erro ao criar atividade")
+      }
 
+      toast({ title: "Atividade adicionada", description: "O item foi incluído no itinerário." })
       router.push(`/dashboard/trips/${id}`)
       router.refresh()
     } catch (err: any) {
-      setError(err.message || "Erro ao criar atividade")
+      toast({ title: "Erro", description: err.message || "Erro ao criar atividade", variant: "destructive" })
     } finally {
       setIsLoading(false)
     }
@@ -185,8 +196,6 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
                 </Select>
               </div>
             </div>
-
-            {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
             <div className="flex gap-4">
               <Button type="submit" disabled={isLoading} className="bg-viaja-orange">
