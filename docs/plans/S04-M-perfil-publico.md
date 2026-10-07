@@ -119,15 +119,19 @@ RF02 no catálogo da seção 14, via `/pfc-secao` depois do merge.
 
 Obrigatórios pelo tipo (`regra-de-negocio, route-handler, tela`):
 
-- [ ] Unit do schema com casos de borda; cobertura ≥70% em `lib/schemas/perfil.ts`
+- [x] Unit do schema com casos de borda; cobertura ≥70% em `lib/schemas/perfil.ts`
+  — parte 1: `tests/lib/perfil-schema.test.ts`, 100% de linhas e ramos
 - [ ] Integração das rotas: 200 feliz · 401 sem sessão · 400 payload inválido · e,
   no lugar do 403 (não há perfil-alvo na URL), o corpo não reescreve `id`/`created_at`
   e o update é sempre filtrado pelo `id` da sessão. Mais 409 (username em uso) no
   PATCH e 404 (username inexistente) no GET por username
+  — parte 1: `tests/api/social-perfil-route.test.ts` e `tests/api/profile-userid-route.test.ts`,
+  100% de linhas e ramos nas duas rotas; o GET por username é da parte 2
 - [ ] E2E da edição e da página pública, com screenshot em `docs/pfc/evidencias/`
   (projetos `chromium` e `mobile`), incluindo o estado de erro da tela
-- [ ] Regressão do bug do formulário de senha: o teste falha antes da correção e
-  passa depois
+  — parte 1: `e2e/editar-perfil.spec.ts` (edição e estado de erro); a página pública é da parte 2
+- [x] Regressão do bug do formulário de senha: o teste falha antes da correção e
+  passa depois — `e2e/alterar-senha.spec.ts`, commit próprio
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -187,5 +191,10 @@ critério combinado depois que já existe código para defender deixa de ser cri
 ## 6. Evidência
 
 - [ ] Saída dos testes (unit, integração e E2E) em `docs/pfc/evidencias/S04-M-*`
-- [ ] Screenshots do fluxo (chromium e mobile)
-- [ ] Delta de cobertura de `lib/schemas/perfil.ts` e das rotas novas
+  — parte 1: `S04-M-editar-perfil-integracao.txt` (52 de 52), `S04-M-editar-perfil-e2e.txt`
+  (4 de 4) e `S04-M-alterar-senha-regressao.txt` (falha antes, passa depois)
+- [ ] Screenshots do fluxo (chromium e mobile) — parte 1: `S04-M-editar-perfil-chromium.png`
+  e `-mobile.png`
+- [ ] Delta de cobertura de `lib/schemas/perfil.ts` e das rotas novas — parte 1:
+  `lib/schemas/perfil.ts`, `lib/schemas/perfil-limites.ts`, `app/api/social/perfil/route.ts`
+  (novos) e `app/api/profile/[userId]/route.ts` (0% → 100%), todos com 100% de linhas e ramos
