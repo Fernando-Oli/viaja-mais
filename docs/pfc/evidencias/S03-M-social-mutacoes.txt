@@ -1,0 +1,62 @@
+# S03-M — testes de mutação da RLS do social (2026-10-07 11:10)
+Banco: db reset local com a proposta aplicada. Cada caso parte de banco limpo.
+
+## M1 sem trigger de estado inicial
+Sabotagem: alter table public.follows disable trigger follows_status_inicial;
+     × Bruno segue a Ana (pública) e o vínculo nasce aceito (RF09.1)
+     × nasce pendente mesmo forçando 'accepted' e created_at no futuro (RF09.2)
+     × uma terceira (Carla) não enxerga a solicitação pendente (RF09.3)
+     × uma terceira (Carla) não aprova nem apaga a solicitação alheia
+     × o dono (Bruno) vê a solicitação pendente e a aprova (RF09.3, RF09.4)
+     × um vínculo aceito é visível para quem não é parte (RF09.6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  6 failed | 17 passed (23)
+
+## M2 created_at forjável
+Sabotagem: create or replace function public.follows_definir_status_inicial() returns trigger language plpgsql security definer set search_path = '' as $$ begin if exists (select 1 from public.profiles p where p.id = new.followee_id and p.is_public) then new.status := 'accepted'; else new.status := 'pending'; end if; new.updated_at := now(); return new; end; $$;
+     × nasce pendente mesmo forçando 'accepted' e created_at no futuro (RF09.2)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+
+## M3 UPDATE em todas as colunas
+Sabotagem: grant update on public.follows to authenticated;
+     × o dono não reponta follower_id via UPDATE (grant de coluna)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+
+## M4 DELETE aberto a qualquer autenticado
+Sabotagem: alter policy follows_delete on public.follows using (true);
+     × uma terceira (Carla) não desfaz um vínculo aceito alheio, que ela enxerga
+     × o dono não reponta follower_id via UPDATE (grant de coluna)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 21 passed (23)
+
+## M5 SELECT de pendentes aberto
+Sabotagem: alter policy follows_select on public.follows using (true);
+     × uma terceira (Carla) não enxerga a solicitação pendente (RF09.3)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+
+## M6 INSERT sem checar follower_id
+Sabotagem: alter policy follows_insert on public.follows with check (true);
+     × Bruno não cria um follow com o follower_id da Ana
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+
+## M7 UPDATE aberto a qualquer autenticado
+Sabotagem: alter policy follows_update on public.follows using (true) with check (status = 'accepted');
+     × o solicitante (Ana) não se auto-aprova
+     × uma terceira (Carla) não enxerga a solicitação pendente (RF09.3)
+     × uma terceira (Carla) não aprova nem apaga a solicitação alheia
+     × o dono (Bruno) vê a solicitação pendente e a aprova (RF09.3, RF09.4)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  4 failed | 19 passed (23)
+
+## M8 UPDATE de perfil alheio
+Sabotagem: alter policy "Users can update their own profile" on public.profiles using (true) with check (true);
+     × Bruno não edita o perfil da Ana
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+
+## Restaurado
+      Tests  23 passed (23)

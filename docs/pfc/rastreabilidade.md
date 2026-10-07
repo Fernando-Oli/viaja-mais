@@ -1,7 +1,7 @@
 # Matriz de Rastreabilidade
 
 > Gerado por `npm run pfc:rastreabilidade`. Não edite à mão.
-> Última geração: 2026-09-30
+> Última geração: 2026-10-07
 
 Requisitos são marcados no código e nos testes com uma tag em comentário
 (`// @RF03.4 — permite editar viagem`). Este arquivo cruza essas tags com o
@@ -21,9 +21,9 @@ catálogo das seções 14 e 15.
 | RF-02.2 | O usuário deve poder editar nome e avatar | Parcial | — | — | — |
 | RF-02.3 | O usuário deve poder alterar a senha | Parcial | — | — | — |
 | RF-02.4 | O usuário deve poder excluir a conta | Não iniciado | — | — | — |
-| RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | — | — | — |
-| RF-02.6 | O usuário deve poder escrever uma biografia | Não iniciado | — | — | — |
-| RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | — | — | — |
+| RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-02.6 | O usuário deve poder escrever uma biografia | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
 | RF-03.1 | O usuário deve poder criar nova viagem | Parcial | `app/api/trips/route.ts` | `tests/api/trips-post.test.ts` | 47dbca9 |
 | RF-03.2 | O usuário deve poder editar viagem | Existente | `app/api/trips/[tripId]/route.ts` | `tests/api/trips-patch.test.ts`<br>`e2e/editar-viagem.spec.ts` | 6d9496d |
 | RF-03.3 | O usuário deve poder excluir viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
@@ -61,28 +61,28 @@ catálogo das seções 14 e 15.
 | RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | — | — | — |
 | RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | — | — | — |
 | RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | — | — | — |
-| RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
-| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
-| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
-| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
-| RF-07.5 | O usuário deve poder editar reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`lib/schemas/reserva.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
-| RF-07.6 | O usuário deve poder excluir reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
-| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`components/booking-list.tsx` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
+| RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
+| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
+| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
+| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
+| RF-07.5 | O usuário deve poder editar reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`lib/schemas/reserva.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
+| RF-07.6 | O usuário deve poder excluir reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
+| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`components/booking-list.tsx` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
 | RF-08.1 | O usuário deve poder buscar lugares | Parcial | — | — | — |
 | RF-08.2 | O usuário deve poder salvar lugares favoritos | Parcial | — | — | — |
 | RF-08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | — | — | — |
 | RF-08.4 | O usuário deve poder marcar lugares como visitados | Parcial | — | — | — |
 | RF-08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | — | — | — |
 | RF-08.6 | O usuário deve poder excluir lugares salvos | Parcial | — | — | — |
-| RF-09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Não iniciado | — | — | — |
-| RF-09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Não iniciado | — | — | — |
-| RF-09.3 | O dono de um perfil privado deve poder visualizar suas solicitações pendentes | Não iniciado | — | — | — |
-| RF-09.4 | O dono deve poder aprovar ou recusar uma solicitação | Não iniciado | — | — | — |
-| RF-09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Não iniciado | — | — | — |
-| RF-09.6 | O usuário deve poder visualizar a lista de quem segue e de quem o segue | Não iniciado | — | — | — |
+| RF-09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.3 | O dono de um perfil privado deve poder visualizar suas solicitações pendentes | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.4 | O dono deve poder aprovar ou recusar uma solicitação | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.6 | O usuário deve poder visualizar a lista de quem segue e de quem o segue | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
 | RF-09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | — | — | — |
 | RF-09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | — | — | — |
-| RF-09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | — | — | — |
+| RF-09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
 | RF-10.1 | O usuário deve poder curtir uma publicação | Não iniciado | — | — | — |
 | RF-10.2 | O usuário deve poder remover a própria curtida | Não iniciado | — | — | — |
 | RF-10.3 | O usuário deve poder comentar em uma publicação | Não iniciado | — | — | — |
@@ -105,7 +105,7 @@ catálogo das seções 14 e 15.
 | RNF-02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | — | — | — |
 | RNF-02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | — | — | — |
 | RNF-02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | — | — | — |
-| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts` | — |
+| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts`<br>`tests/rls/04-social.test.ts` | — |
 | RNF-02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | — | — | — |
 | RNF-02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | — | — | — |
 | RNF-02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | — | — | — |
@@ -134,6 +134,6 @@ catálogo das seções 14 e 15.
 
 - Requisitos no catálogo: **120**
 - Com implementação marcada: **27**
-- Com teste marcado: **21**
+- Com teste marcado: **31**
 
 _Nenhuma inconsistência._

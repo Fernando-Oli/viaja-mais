@@ -1,0 +1,32 @@
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, edição restrita > Bruno vê os dados básicos do perfil público da Ana 21ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, edição restrita > Ana vê os dados básicos mesmo de um perfil privado (Bruno) 16ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, edição restrita > visitante sem sessão não lê perfil nenhum 18ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, edição restrita > Bruno não edita o perfil da Ana 33ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, edição restrita > username é único, sem distinção de maiúsculas (RF02.5) 17ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, edição restrita > username fora do formato é recusado (RF02.5) 101ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, edição restrita > bio acima de 280 caracteres é recusada (RF02.6) 22ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil público (efeito imediato) > Bruno segue a Ana (pública) e o vínculo nasce aceito (RF09.1) 42ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil público (efeito imediato) > seguir de novo levanta erro de chave (a idempotência é do route handler) 23ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > nasce pendente mesmo forçando 'accepted' e created_at no futuro (RF09.2) 31ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o solicitante (Ana) não se auto-aprova 15ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não enxerga a solicitação pendente (RF09.3) 14ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não aprova nem apaga a solicitação alheia 45ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono (Bruno) vê a solicitação pendente e a aprova (RF09.3, RF09.4) 33ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não desfaz um vínculo aceito alheio, que ela enxerga 41ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono não reponta follower_id via UPDATE (grant de coluna) 28ms
+ ✓ tests/rls/04-social.test.ts > recusar e remover seguidor — o dono desfaz o vínculo > Bruno recusa a solicitação da Carla, que some para os dois (RF09.4) 42ms
+ ✓ tests/rls/04-social.test.ts > recusar e remover seguidor — o dono desfaz o vínculo > Bruno remove a Carla já aceita, e ela pode solicitar de novo (RF09.9) 84ms
+ ✓ tests/rls/04-social.test.ts > forjar vínculo > Bruno não cria um follow com o follower_id da Ana 34ms
+ ✓ tests/rls/04-social.test.ts > forjar vínculo > ninguém segue a si mesmo 25ms
+ ✓ tests/rls/04-social.test.ts > forjar vínculo > visitante sem sessão não segue ninguém nem lê vínculos 34ms
+ ✓ tests/rls/04-social.test.ts > listas públicas e não sobre-correção > um vínculo aceito é visível para quem não é parte (RF09.6) 31ms
+ ✓ tests/rls/04-social.test.ts > listas públicas e não sobre-correção > deixar de seguir é DELETE da própria linha e continua permitido (RF09.5) 18ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  11:18:37
+   Duration  2.19s (transform 127ms, setup 71ms, import 261ms, tests 1.40s, environment 0ms)
+
