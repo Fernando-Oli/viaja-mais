@@ -1,4 +1,4 @@
-# S03-M — advisors da Supabase e lint (2026-10-07 16:04)
+# S03-M — advisors da Supabase e lint (2026-10-07 17:19)
 supabase db advisors --local --type all --level info, filtrado pelos objetos desta proposta
 (profiles, follows e suas funções). O resto do banco tem achados herdados do schema base,
 fora do escopo desta atividade.

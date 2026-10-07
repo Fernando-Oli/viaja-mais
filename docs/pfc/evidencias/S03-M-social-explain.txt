@@ -1,4 +1,4 @@
-# S03-M — índices de follows sob RLS (2026-10-07 16:04)
+# S03-M — índices de follows sob RLS (2026-10-07 17:19)
 Como o Bruno (role authenticated + claims do JWT). enable_seqscan=off porque, com 3 usuários,
 o planner prefere varrer a tabela; desligado, mostra que o índice serve à consulta.
 InitPlan = (select auth.uid()) avaliado uma vez por consulta, não por linha.

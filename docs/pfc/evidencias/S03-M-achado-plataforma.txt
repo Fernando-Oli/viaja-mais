@@ -1,4 +1,4 @@
-# S03-M — pré-requisito da plataforma: reprodução (2026-10-07 16:03)
+# S03-M — pré-requisito da plataforma: reprodução (2026-10-07 17:19)
 Stack local com a proposta aplicada. A Carla não tem relação nenhuma com a Ana.
 
 1. Carla lista os perfis (efeito da proposta, previsto pelo RF02): Ana Teste, Bruno Teste, Carla Teste

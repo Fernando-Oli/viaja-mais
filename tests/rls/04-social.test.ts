@@ -185,7 +185,7 @@ describe("perfil — dados básicos visíveis, escrita restrita", () => {
   })
 
   it("o updated_at do perfil é do servidor, mesmo que o cliente mande outro", async () => {
-    // A rota /api/profile/update envia updated_at; o trigger decide o valor.
+    // A rota antiga /api/profile/update envia updated_at; o trigger decide o valor.
     const { data } = await bruno
       .from("profiles")
       .update({ bio: "Viajante de teste — perfil privado.", updated_at: DATA_FORJADA })
@@ -215,6 +215,20 @@ describe("perfil — dados básicos visíveis, escrita restrita", () => {
 
     const { data } = await bruno.from("profiles").select("username").eq("id", idBruno).single()
     expect(data?.username).toBe("bruno")
+  })
+
+  it("username reservado é recusado pelo banco, mesmo sem passar pela rota (RF02.5)", async () => {
+    // O PostgREST aceita escrita direta com o JWT do navegador; a lista da rota
+    // não alcança esse caminho, por isso o check também está no banco.
+    for (const reservado of ["suporte", "admin", "viajamais_oficial", "suporte_viajamais"]) {
+      const { error } = await bruno.from("profiles").update({ username: reservado }).eq("id", idBruno)
+      expect(error?.code, `"${reservado}" deveria violar o check de reservados`).toBe(VIOLA_CHECK)
+    }
+
+    // Conter um reservado que não é a marca continua permitido.
+    const { error } = await bruno.from("profiles").update({ username: "admin_da_silva" }).eq("id", idBruno)
+    expect(error).toBeNull()
+    await bruno.from("profiles").update({ username: "bruno" }).eq("id", idBruno)
   })
 
   it("bio acima de 280 caracteres é recusada (RF02.6)", async () => {

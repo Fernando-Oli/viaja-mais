@@ -58,15 +58,25 @@ alter table public.profiles alter column is_public set default true;
 -- split_type: se a coluna já existir por drift (Studio + db:diff), a
 -- constraint entra do mesmo jeito em vez de ser pulada junto com a coluna.
 --
+-- Usernames reservados ficam no banco, e não só na rota: o grant de UPDATE em
+-- username deixa qualquer autenticado gravar direto pelo PostgREST, com o JWT
+-- que está no navegador. Recusa os nomes que imitam a equipe ou se confundem
+-- com caminhos da aplicação, e qualquer nome que contenha a marca
+-- (`suporte_viajamais`, `viajamais_oficial`). A lista espelha
+-- USERNAMES_RESERVADOS em lib/schemas/perfil.ts (S04), que dá a mensagem
+-- legível antes de chegar aqui. Entra válida: a coluna é nova e nula em todas
+-- as contas antigas.
+--
 -- full_name e avatar_url passaram a ser lidos por qualquer autenticado. O nome
 -- ganha teto de tamanho, `not valid` para não exigir que as contas antigas já
 -- obedeçam — vale para toda escrita nova; validar depois de conferir os dados
 -- com `alter table public.profiles validate constraint profiles_full_name_tamanho`.
 -- avatar_url fica sem check no banco de propósito: com `not valid`, uma conta
 -- antiga com URL fora do padrão não conseguiria mais editar nem a bio. A
--- validação dela é do route handler (S04), e a renderização de avatar alheio
--- passa por next/image, que busca a imagem pelo servidor e não expõe o IP de
--- quem vê a um host escolhido pelo dono do perfil.
+-- validação dele é do route handler (S04). Risco aceito, registrado no plano:
+-- a imagem é carregada pelo navegador de quem vê (next.config usa
+-- `images.unoptimized` e o cabeçalho usa <img>), então o host escolhido pelo
+-- dono do perfil recebe o IP de quem o visita.
 do $$
 begin
   if not exists (select 1 from pg_constraint
@@ -78,6 +88,18 @@ begin
                  where conname = 'profiles_username_formato' and conrelid = 'public.profiles'::regclass) then
     alter table public.profiles add constraint profiles_username_formato
       check ((username::text) ~ '^[a-z0-9_]{3,30}$');
+  end if;
+
+  if not exists (select 1 from pg_constraint
+                 where conname = 'profiles_username_reservado' and conrelid = 'public.profiles'::regclass) then
+    alter table public.profiles add constraint profiles_username_reservado
+      check (
+        (username::text) not in (
+          'admin', 'administrador', 'ajuda', 'api', 'auth', 'configuracoes', 'dashboard',
+          'equipe', 'feed', 'perfil', 'root', 'settings', 'sistema', 'suporte'
+        )
+        and (username::text) !~ 'viajamais'
+      );
   end if;
 
   if not exists (select 1 from pg_constraint
@@ -100,8 +122,9 @@ comment on column public.profiles.is_public is 'Perfil público: publicações e
 -- ---------------------------------------------------------------------------
 -- 2. updated_at mantido pelo servidor
 -- ---------------------------------------------------------------------------
--- Uma função para as duas tabelas. Em profiles, a rota /api/profile/update
--- ainda manda updated_at; com o trigger, o valor que vier é ignorado.
+-- Uma função para as duas tabelas. Em profiles, a rota antiga
+-- /api/profile/update manda updated_at; com o trigger, o valor que vier é
+-- ignorado.
 -- Prefixo social_ porque só as tabelas deste domínio a usam: uma utilitária
 -- genérica para o schema inteiro seria decisão da plataforma.
 create or replace function public.social_definir_updated_at()
@@ -172,8 +195,11 @@ create policy profiles_update_proprio on public.profiles
 -- a policy limita QUAL linha, o grant limita QUAIS colunas. Sem ele,
 -- created_at ("membro desde") e qualquer coluna futura seriam graváveis por
 -- quem chama o PostgREST direto, com o JWT que está no navegador.
--- updated_at continua na lista porque a rota de perfil o envia; quem decide o
--- valor é o trigger da seção 2.
+-- updated_at continua na lista só por compatibilidade: a rota antiga
+-- /api/profile/update o envia, e tirá-lo aqui quebraria a tela de
+-- configurações se esta migration entrar antes da S04. A S04 troca essa rota
+-- por /api/social/perfil, que não o envia; depois do merge dela, updated_at
+-- pode sair do grant. Enquanto isso, quem decide o valor é o trigger da seção 2.
 revoke all on public.profiles from anon;
 revoke update on public.profiles from authenticated;
 grant update (full_name, avatar_url, username, bio, is_public, updated_at)

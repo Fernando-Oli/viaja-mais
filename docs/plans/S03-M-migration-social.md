@@ -82,12 +82,17 @@ Correção sugerida, no domínio do Fernando, antes desta migration ou junto del
   candidata à atividade de rate limit `S06-F-rate-limit-csp`.
 - **`updated_at` de um vínculo aceito** mostra o momento da aprovação a quem pode
   ver o vínculo.
-- **Username liberado pode ser reutilizado**, e não há nomes reservados (`admin`,
-  `suporte`, `viajamais`). A lista de reservados entra no schema zod da S04.
+- **Username liberado pode ser reutilizado na hora**: quem troca de nome perde
+  `/u/antigo`, e outra pessoa pode pegá-lo. Uma espera por nome liberado fica para
+  quando houver demanda. Nomes reservados não são mais risco: o check
+  `profiles_username_reservado` os recusa no banco, inclusive pelo PostgREST direto.
 - **`avatar_url` sem check no banco**: com `not valid`, uma conta antiga com URL
-  fora do padrão perderia a edição do perfil inteiro. A validação fica no route
-  handler da S04, e o avatar alheio é renderizado por `next/image`, que busca pelo
-  servidor e não expõe o IP de quem vê.
+  fora do padrão perderia a edição do perfil inteiro, então a validação fica no
+  route handler da S04. **A imagem é carregada pelo navegador de quem vê**
+  (`next.config.mjs` usa `images.unoptimized` e o cabeçalho usa `<img>`), e o host
+  escolhido pelo dono do perfil recebe o IP e o horário de quem visita. Mitigações,
+  todas decisão da plataforma: ligar a otimização de imagem com `remotePatterns`
+  (a imagem passa a vir pelo servidor) ou guardar avatares no Storage do projeto.
 
 ## 2. Arquivos afetados
 
@@ -114,6 +119,10 @@ O SQL completo e comentado está na proposta; aqui fica o porquê de cada decis�
    - O username guardado é sempre minúsculo (check `^[a-z0-9_]{3,30}$` sobre o
      texto). O `citext` não está pela unicidade, que o check já garante, e sim pela
      busca: `/u/Ana` encontra `ana` com igualdade simples.
+   - Usernames reservados recusados **no banco** (`profiles_username_reservado`):
+     nomes que imitam a equipe ou caminhos da aplicação, e qualquer nome que
+     contenha `viajamais`. Só na rota não bastaria: o grant de UPDATE em username
+     deixa gravar direto pelo PostgREST.
    - `is_public` entra com `default false`, para as contas existentes ficarem
      privadas, e só depois o default vira `true` (é só metadado).
    - Constraints protegidas pelo nome, como no rateio: com drift, a constraint
@@ -188,17 +197,17 @@ Obrigatórios pelo tipo (`migration, rls`):
 
 - [x] Aplicação limpa do zero: `npx supabase db reset` aplica as 4 migrations (a
   proposta como a quarta, localmente) e o seed sem erro
-- [x] Teste em `tests/rls/` com os usuários do seed: 39 casos em `04-social.test.ts`
+- [x] Teste em `tests/rls/` com os usuários do seed: 40 casos em `04-social.test.ts`
 - [x] Usuário A não lê E não escreve dados de B, nos dois sentidos:
   - leitura: pendente e rede privada invisíveis para terceiro; visitante sem sessão
     recebe 42501;
   - escrita: INSERT forjado; UPDATE e DELETE de terceiro; auto-aprovação por
     UPDATE e por upsert; rebaixar e repontar; perfil alheio; colunas sem grant.
-- [x] `npm run test:rls` verde: 77 de 77, nas 5 suítes
+- [x] `npm run test:rls` verde: 78 de 78, nas 5 suítes
 
 Além do obrigatório:
 
-- [x] **Cada proteção derruba pelo menos um teste quando é removida.** São 22
+- [x] **Cada proteção derruba pelo menos um teste quando é removida.** São 23
   sabotagens, uma por trigger, policy, grant e constraint, cada uma sobre banco
   limpo. Os erros são conferidos pelo código do Postgres (42501, 23505, 23514), para
   que um teste que espera a RLS não passe porque um check barrou.
@@ -262,7 +271,7 @@ critério combinado depois que já existe código para defender deixa de ser cri
 > - os dois critérios de rede privada e de contas antigas entraram com as decisões
 >   do bloco 1.
 
-- [ ] `username` é único e validado por formato; a busca ignora maiúsculas
+- [ ] `username` é único, validado por formato e fora da lista de reservados — no banco, não só na rota; a busca ignora maiúsculas
 - [ ] Perfil privado expõe só os dados básicos (nome, username, avatar, bio) a
   autenticados; a rede dele só aparece para o dono e seguidores aceitos
 - [ ] Visitante sem sessão não tem acesso nenhum a `profiles` nem a `follows`
@@ -284,8 +293,8 @@ critério combinado depois que já existe código para defender deixa de ser cri
 ## 6. Evidência
 
 - [x] Saída dos testes — arquivada em `docs/pfc/evidencias/`:
-  - `S03-M-social-rls.txt` — `04-social.test.ts`: 39 de 39
-  - `S03-M-social-mutacoes.txt` — as 22 sabotagens e os testes que cada uma derrubou
+  - `S03-M-social-rls.txt` — `04-social.test.ts`: 40 de 40
+  - `S03-M-social-mutacoes.txt` — as 23 sabotagens e os testes que cada uma derrubou
   - `S03-M-social-explain.txt` — planos de consulta das listas sob RLS
   - `S03-M-social-advisors.txt` — advisors e lint antes e depois das correções
   - `S03-M-achado-plataforma.txt` — reprodução do pré-requisito da plataforma
