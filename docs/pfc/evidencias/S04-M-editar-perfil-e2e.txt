@@ -1,0 +1,15 @@
+◇ injected env (10) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\micae because it is outside the current Git repository (C:\Users\micae\viaja-mais).
+[WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
+[WebServer] 
+
+Running 4 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ✓  1 [chromium] › e2e\editar-perfil.spec.ts:27:5 › edita bio e visibilidade, e recusa username em uso, reservado ou em branco (6.7s)
+  ✓  2 [chromium] › e2e\editar-perfil.spec.ts:80:5 › mostra o erro quando o perfil não carrega (1.6s)
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+  ✓  3 [mobile] › e2e\editar-perfil.spec.ts:27:5 › edita bio e visibilidade, e recusa username em uso, reservado ou em branco (5.9s)
+  ✓  4 [mobile] › e2e\editar-perfil.spec.ts:80:5 › mostra o erro quando o perfil não carrega (1.7s)
+
+  4 passed (23.8s)

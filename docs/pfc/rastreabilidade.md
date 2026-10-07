@@ -17,13 +17,13 @@ catálogo das seções 14 e 15.
 | RF-01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Existente | — | — | — |
 | RF-01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Existente | — | — | — |
 | RF-01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | — | — | — |
-| RF-02.1 | O usuário deve poder visualizar seu perfil | Parcial | — | — | — |
-| RF-02.2 | O usuário deve poder editar nome e avatar | Parcial | — | `tests/rls/04-social.test.ts` | — |
+| RF-02.1 | O usuário deve poder visualizar seu perfil | Parcial | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-route.test.ts` | 07f46b2 |
+| RF-02.2 | O usuário deve poder editar nome e avatar | Parcial | `app/api/social/perfil/route.ts`<br>`app/dashboard/settings/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts` | — |
 | RF-02.3 | O usuário deve poder alterar a senha | Parcial | — | — | — |
 | RF-02.4 | O usuário deve poder excluir a conta | Não iniciado | — | — | — |
-| RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
-| RF-02.6 | O usuário deve poder escrever uma biografia | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
-| RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | `app/api/social/perfil/route.ts`<br>`app/dashboard/settings/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | — |
+| RF-02.6 | O usuário deve poder escrever uma biografia | Não iniciado | `app/api/social/perfil/route.ts`<br>`app/dashboard/settings/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | — |
+| RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | `app/api/social/perfil/route.ts`<br>`app/dashboard/settings/page.tsx`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | — |
 | RF-03.1 | O usuário deve poder criar nova viagem | Parcial | `app/api/trips/route.ts` | `tests/api/trips-post.test.ts` | 47dbca9 |
 | RF-03.2 | O usuário deve poder editar viagem | Existente | `app/api/trips/[tripId]/route.ts` | `tests/api/trips-patch.test.ts`<br>`e2e/editar-viagem.spec.ts` | 6d9496d |
 | RF-03.3 | O usuário deve poder excluir viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
@@ -112,7 +112,7 @@ catálogo das seções 14 e 15.
 | RNF-02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Planejado | — | — | — |
 | RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | — | — | — |
 | RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | `tests/lib/supabase-admin.test.ts` | — |
-| RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | — | — | — |
+| RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-route.test.ts` | 07f46b2 |
 | RNF-02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | — | — | — |
 | RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | — | — | — |
 | RNF-04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Planejado | — | — | — |
@@ -133,7 +133,7 @@ catálogo das seções 14 e 15.
 ## Resumo
 
 - Requisitos no catálogo: **120**
-- Com implementação marcada: **27**
-- Com teste marcado: **32**
+- Com implementação marcada: **33**
+- Com teste marcado: **34**
 
 _Nenhuma inconsistência._
