@@ -1,0 +1,13 @@
+◇ injected env (11) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\HOME because it is outside the current Git repository (C:\Users\HOME\Desktop\viaja-mais).
+[WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
+[WebServer] 
+
+Running 2 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+  ✓  1 [chromium] › e2e\itinerario-crud.spec.ts:5:5 › membro conclui, edita e exclui atividade do itinerário (16.6s)
+◇ injected env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ✓  2 [mobile] › e2e\itinerario-crud.spec.ts:5:5 › membro conclui, edita e exclui atividade do itinerário (7.9s)
+
+  2 passed (29.1s)

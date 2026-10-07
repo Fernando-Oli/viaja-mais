@@ -1,0 +1,16 @@
+
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+ ✓ tests/api/itinerary-route.test.ts > POST /api/trips/[tripId]/itinerary > 200: membro da viagem adiciona atividade 12ms
+ ✓ tests/api/itinerary-route.test.ts > POST /api/trips/[tripId]/itinerary > 401: sem sessão não chega a inserir 2ms
+ ✓ tests/api/itinerary-route.test.ts > POST /api/trips/[tripId]/itinerary > 403: quem não participa da viagem não adiciona 1ms
+ ✓ tests/api/itinerary-route.test.ts > POST /api/trips/[tripId]/itinerary > 400: payload inválido (término antes do início) 2ms
+ ✓ tests/api/itinerary-route.test.ts > POST /api/trips/[tripId]/itinerary > descarta colunas fora do schema e usa o trip_id da URL (sem mass-assignment) 2ms
+ ✓ tests/api/itinerary-route.test.ts > GET /api/trips/[tripId]/itinerary > 200: membro lê o itinerário 1ms
+ ✓ tests/api/itinerary-route.test.ts > GET /api/trips/[tripId]/itinerary > 403: quem não participa não lê o itinerário 0ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  10:25:00
+   Duration  721ms (transform 107ms, setup 269ms, import 189ms, tests 25ms, environment 0ms)
+

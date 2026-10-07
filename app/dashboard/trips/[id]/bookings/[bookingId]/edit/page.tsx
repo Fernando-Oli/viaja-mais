@@ -2,23 +2,27 @@
 
 import type React from "react"
 
-import { useState, use } from "react"
-import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { use, useEffect, useState } from "react"
 
-export default function NewBookingPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+// O banco devolve timestamptz completo; o <input type="datetime-local"> quer AAAA-MM-DDTHH:MM.
+const paraCampoDataHora = (valor: string | null) => (valor ? valor.slice(0, 16) : "")
+
+export default function EditBookingPage({ params }: { params: Promise<{ id: string; bookingId: string }> }) {
+  const { id, bookingId } = use(params)
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
 
   const [formData, setFormData] = useState({
     type: "flight",
@@ -34,15 +38,44 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
     notes: "",
   })
 
+  useEffect(() => {
+    async function carregar() {
+      const resposta = await fetch(`/api/trips/${id}/bookings/${bookingId}`)
+      if (!resposta.ok) {
+        toast({ title: "Erro", description: "Não foi possível carregar a reserva", variant: "destructive" })
+        router.push("/dashboard/trips")
+        return
+      }
+      const { booking } = await resposta.json()
+      setFormData({
+        type: booking.type,
+        title: booking.title,
+        confirmation_number: booking.confirmation_number ?? "",
+        provider: booking.provider ?? "",
+        start_date: paraCampoDataHora(booking.start_date),
+        end_date: paraCampoDataHora(booking.end_date),
+        location: booking.location ?? "",
+        price: booking.price === null ? "" : String(booking.price),
+        currency: booking.currency ?? "BRL",
+        status: booking.status ?? "confirmed",
+        notes: booking.notes ?? "",
+      })
+      setIsFetching(false)
+    }
+    carregar()
+  }, [id, bookingId, router, toast])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // Sem escrita direta do navegador: passa pelo route handler, que valida com
-      // zod, confirma a participação na viagem e tira o autor da sessão.
-      const resposta = await fetch(`/api/trips/${id}/bookings`, {
-        method: "POST",
+      const resposta = await fetch(`/api/trips/${id}/bookings/${bookingId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: formData.type,
@@ -68,18 +101,22 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
         const especifico = Object.values(dados.detalhes?.fieldErrors ?? {}).find(
           (m) => m && m.length > 0,
         )?.[0]
-        throw new Error(especifico || dados.error || "Erro ao criar reserva")
+        throw new Error(especifico || dados.error || "Erro ao editar reserva")
       }
 
-      toast({ title: "Reserva adicionada", description: "A reserva foi incluída na viagem." })
+      toast({ title: "Reserva atualizada", description: "As alterações foram salvas." })
       router.push(`/dashboard/trips/${id}?aba=reservas`)
       router.refresh()
     } catch (err) {
-      const mensagem = err instanceof Error ? err.message : "Erro ao criar reserva"
+      const mensagem = err instanceof Error ? err.message : "Erro ao editar reserva"
       toast({ title: "Erro", description: mensagem, variant: "destructive" })
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isFetching) {
+    return <p className="text-gray-600">Carregando...</p>
   }
 
   return (
@@ -91,21 +128,23 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Nova Reserva</h1>
-        <p className="mt-2 text-slate-600">Adicione uma reserva à sua viagem</p>
+        <h1 className="text-3xl font-bold text-slate-900">Editar Reserva</h1>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Detalhes da Reserva</CardTitle>
-          <CardDescription>Preencha as informações sobre a reserva</CardDescription>
+          <CardDescription>Atualize as informações da reserva</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo *</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
+                >
                   <SelectTrigger id="type">
                     <SelectValue />
                   </SelectTrigger>
@@ -121,7 +160,10 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
+                >
                   <SelectTrigger id="status">
                     <SelectValue />
                   </SelectTrigger>
@@ -136,33 +178,22 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
 
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
-              <Input
-                id="title"
-                placeholder="Ex: Voo São Paulo - Paris"
-                required
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
+              <Input id="title" name="title" required value={formData.title} onChange={handleInputChange} />
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="provider">Provedor</Label>
-                <Input
-                  id="provider"
-                  placeholder="Ex: LATAM, Booking.com"
-                  value={formData.provider}
-                  onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                />
+                <Input id="provider" name="provider" value={formData.provider} onChange={handleInputChange} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmation_number">Número de Confirmação</Label>
                 <Input
                   id="confirmation_number"
-                  placeholder="Ex: ABC123"
+                  name="confirmation_number"
                   value={formData.confirmation_number}
-                  onChange={(e) => setFormData({ ...formData, confirmation_number: e.target.value })}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -172,10 +203,11 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
                 <Label htmlFor="start_date">Data de Início *</Label>
                 <Input
                   id="start_date"
+                  name="start_date"
                   type="datetime-local"
                   required
                   value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -183,21 +215,17 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
                 <Label htmlFor="end_date">Data de Término</Label>
                 <Input
                   id="end_date"
+                  name="end_date"
                   type="datetime-local"
                   value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="location">Local</Label>
-              <Input
-                id="location"
-                placeholder="Ex: Aeroporto de Guarulhos"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              />
+              <Input id="location" name="location" value={formData.location} onChange={handleInputChange} />
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -205,11 +233,12 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
                 <Label htmlFor="price">Preço</Label>
                 <Input
                   id="price"
+                  name="price"
                   type="number"
                   step="0.01"
-                  placeholder="0.00"
+                  min="0"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -217,9 +246,9 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
                 <Label htmlFor="currency">Moeda</Label>
                 <Select
                   value={formData.currency}
-                  onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="currency">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -234,18 +263,12 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
 
             <div className="space-y-2">
               <Label htmlFor="notes">Observações</Label>
-              <Textarea
-                id="notes"
-                placeholder="Adicione observações sobre esta reserva..."
-                rows={3}
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
+              <Textarea id="notes" name="notes" rows={3} value={formData.notes} onChange={handleInputChange} />
             </div>
 
             <div className="flex flex-wrap gap-4">
               <Button type="submit" disabled={isLoading} className="bg-viaja-orange">
-                {isLoading ? "Salvando..." : "Salvar Reserva"}
+                {isLoading ? "Salvando..." : "Salvar alterações"}
               </Button>
               <Button type="button" variant="outline" asChild>
                 <Link href={`/dashboard/trips/${id}?aba=reservas`}>Cancelar</Link>
