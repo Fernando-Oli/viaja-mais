@@ -1,8 +1,8 @@
 import { test, expect, type Page } from "@playwright/test"
 
 /**
- * @RF02.5 @RF02.6 @RF02.7 editar username, bio e visibilidade pela tela de
- * Configurações.
+ * @RF02.1 @RF02.5 @RF02.6 @RF02.7 ver e editar o próprio perfil na página
+ * Perfil, aberta pelo menu do usuário.
  *
  * Usa o Davi, usuário do seed reservado a este spec: os testes de RLS contam
  * com Ana, Bruno e Carla exatamente como o seed os deixa, e um E2E interrompido
@@ -21,15 +21,20 @@ async function entrarComoDavi(page: Page) {
 }
 
 async function salvar(page: Page) {
-  await page.getByRole("button", { name: "Salvar Alterações" }).click()
+  await page.getByRole("button", { name: "Salvar perfil" }).click()
 }
 
-test("edita bio e visibilidade, e recusa username em uso, reservado ou em branco", async ({ page }) => {
+test("abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco", async ({ page }) => {
   await entrarComoDavi(page)
   try {
-    await page.goto("/dashboard/settings")
+    // O caminho de quem usa: clicar no avatar/nome e escolher "Meu perfil".
+    await page.locator('button[aria-haspopup="menu"]').click()
+    await page.getByRole("menuitem", { name: "Meu perfil" }).click()
+    await page.waitForURL("/dashboard/perfil")
 
-    // O formulário só aparece depois de carregar o perfil pela rota.
+    const cartao = page.getByRole("region", { name: "Como os outros veem seu perfil" })
+    await expect(cartao.getByText("@davi")).toBeVisible()
+    await expect(cartao.getByText("Público")).toBeVisible()
     await expect(page.locator("#username")).toHaveValue("davi")
     const visibilidade = page.getByRole("switch", { name: "Perfil público" })
     await expect(visibilidade).toHaveAttribute("aria-checked", "true")
@@ -44,6 +49,10 @@ test("edita bio e visibilidade, e recusa username em uso, reservado ou em branco
     await visibilidade.click()
     await salvar(page)
     await expect(page.getByText("Perfil atualizado").first()).toBeVisible()
+
+    // O cartão mostra o que ficou gravado.
+    await expect(cartao.getByText(bio)).toBeVisible()
+    await expect(cartao.getByText("Privado")).toBeVisible()
 
     // Recarregar prova que gravou no banco, não só no estado da tela.
     await page.reload()
@@ -77,13 +86,25 @@ test("edita bio e visibilidade, e recusa username em uso, reservado ou em branco
   }
 })
 
+test("Configurações fica só com conta e senha, e aponta para o Perfil", async ({ page }) => {
+  await entrarComoDavi(page)
+  await page.goto("/dashboard/settings")
+
+  await expect(page.locator("#current_password")).toBeVisible()
+  await expect(page.locator("#username")).toHaveCount(0)
+  await expect(page.locator("#bio")).toHaveCount(0)
+
+  await page.getByRole("link", { name: "Meu perfil" }).click()
+  await page.waitForURL("/dashboard/perfil")
+})
+
 test("mostra o erro quando o perfil não carrega", async ({ page }) => {
   await entrarComoDavi(page)
   await page.route("**/api/social/perfil", (rota) =>
     rota.fulfill({ status: 500, contentType: "application/json", body: '{"error":"Erro interno do servidor"}' }),
   )
 
-  await page.goto("/dashboard/settings")
+  await page.goto("/dashboard/perfil")
 
   await expect(page.getByRole("alert").filter({ hasText: "Não foi possível carregar seu perfil" })).toBeVisible()
   await expect(page.locator("#username")).toHaveCount(0)

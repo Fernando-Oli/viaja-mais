@@ -32,7 +32,7 @@ passaria de ~1.000 linhas, e o limite combinado é ~400 por PR:
 
 | PR | Branch | Conteúdo |
 |---|---|---|
-| Parte 1 — editar perfil | `feat/S04-M-perfil-publico` | schema zod, rota GET/PATCH do próprio perfil, tela de edição |
+| Parte 1 — editar perfil | `feat/S04-M-perfil-publico` | schema zod, rota GET/PATCH do próprio perfil, página Perfil |
 | Parte 2 — página pública | `feat/S04-M-perfil-publico-pagina` | rota GET por username, tela `/u/[username]` |
 
 **Dependência:** as colunas `username`, `bio` e `is_public` vêm da migration da S03,
@@ -63,12 +63,21 @@ outra pessoa no corpo **não tem efeito**.
   mensagem do Postgres (RNF02.11).
 - `lib/schemas/perfil-limites.ts` (criar) — os limites sem dependência, para a tela
   usar no `maxLength` sem levar o zod ao bundle do navegador.
-- `app/dashboard/settings/page.tsx` (editar) — **decisão do Micael:** a edição fica na
-  tela de Configurações, que já editava nome e avatar, em vez de uma segunda tela.
-  Ganha username, bio e o seletor público/privado; lê e grava por `/api/social/perfil`
-  e envia só o que mudou (um campo antigo fora do padrão não bloqueia salvar a bio).
-  O app e `app/api/profile/**` não estão na lista de caminhos do domínio, mas
-  implementam o RF02, que é do Micael no `CLAUDE.md`.
+- `app/dashboard/perfil/page.tsx` (criar) — **decisão do Micael:** o perfil ganha página
+  própria, aberta pelo menu do usuário (clicar no avatar e nome → "Meu perfil"). No
+  topo, um cartão mostra como os outros veem o perfil (avatar, nome, @username, bio,
+  selo Público/Privado), atualizado ao salvar; embaixo, o formulário em dois blocos,
+  "Dados do perfil" e "Privacidade". Lê e grava por `/api/social/perfil` e envia só o
+  que mudou (um campo antigo fora do padrão não bloqueia salvar a bio). A primeira
+  versão pôs esses campos em Configurações; o Micael viu no navegador e pediu a
+  separação.
+- `app/dashboard/settings/page.tsx` (editar) — fica só com Conta (e-mail) e Segurança
+  (senha), com um link para Meu perfil. Junto com `app/api/profile/**`, não está na
+  lista de caminhos do domínio, mas implementa o RF02, que é do Micael no `CLAUDE.md`.
+- `app/dashboard/layout.tsx` (editar, **arquivo compartilhado**) — o item "Meu perfil" no
+  menu do usuário: um ícone no import e um `DropdownMenuItem`. O plano norte pede PR
+  dedicado para arquivo compartilhado; aqui são duas linhas sem outra mudança, como na
+  S03-A, que ajustou o mesmo arquivo dentro do PR dela.
 - `app/api/profile/update/route.ts` (apagar) — substituída por `/api/social/perfil`.
 - `app/api/profile/[userId]/route.ts` (editar) — sai o PATCH com `.update(body)`
   (mass-assignment, sem uso); o GET, que o `context/auth-context.tsx` (compartilhado)
@@ -129,7 +138,8 @@ Obrigatórios pelo tipo (`regra-de-negocio, route-handler, tela`):
   100% de linhas e ramos nas duas rotas; o GET por username é da parte 2
 - [ ] E2E da edição e da página pública, com screenshot em `docs/pfc/evidencias/`
   (projetos `chromium` e `mobile`), incluindo o estado de erro da tela
-  — parte 1: `e2e/editar-perfil.spec.ts` (edição e estado de erro); a página pública é da parte 2
+  — parte 1: `e2e/editar-perfil.spec.ts` (entrada pelo menu do usuário, edição, Configurações
+  isolada e estado de erro); a página pública é da parte 2
 - [x] Regressão do bug do formulário de senha: o teste falha antes da correção e
   passa depois — `e2e/alterar-senha.spec.ts`, commit próprio
 
@@ -140,10 +150,11 @@ Pré-requisito: `npm run setup`, a proposta da S03 aplicada localmente (ver o pl
 S03-M) e `npm run dev` em http://localhost:3000.
 
 1. Entrar como `teste.d@viajamais.local` / `viajamais123` (Davi, reservado aos testes de
-   perfil) e abrir Configurações (`/dashboard/settings`).
-   → Aparecem nome, avatar, username `davi`, bio e o seletor de privacidade
-   marcado como público.
-2. Trocar a bio e salvar. → Toast "Perfil atualizado"; recarregar mostra a bio nova.
+   perfil), clicar no avatar e nome no rodapé do menu e escolher **Meu perfil**.
+   → Abre `/dashboard/perfil`: o cartão mostra @davi e o selo Público; o formulário
+   traz nome, username `davi`, avatar, bio e o seletor de privacidade ligado.
+2. Trocar a bio, desligar "Perfil público" e salvar. → Toast "Perfil atualizado"; o
+   cartão passa a mostrar a bio nova e o selo Privado; recarregar mantém os dois.
 3. Tentar o username `ana`. → Toast de erro "nome de usuário em uso"; nada muda.
 4. Tentar o username `Admin` e depois `ab`. → Erro de validação (reservado; curto demais).
    Apagar o username e salvar. → Aviso de que não dá para deixar em branco; nada muda.
@@ -155,7 +166,8 @@ S03-M) e `npm run dev` em http://localhost:3000.
 8. Sair e abrir `/u/bruno` sem sessão. → Redireciona para o login (proxy).
 9. Repetir os passos 1, 2 e 6 no DevTools em modo celular (ex.: Pixel 7). → Layout
    utilizável, sem rolagem horizontal.
-10. No DevTools, aba Network, salvar o perfil. → `PATCH /api/social/perfil`, e nenhuma
+10. Abrir Configurações. → Só Conta e Segurança, com o link "Meu perfil".
+11. No DevTools, aba Network, salvar o perfil. → `PATCH /api/social/perfil`, e nenhuma
     requisição direta ao Supabase (`/rest/v1/profiles`).
 
 ## 5. O que validar
@@ -176,6 +188,8 @@ critério combinado depois que já existe código para defender deixa de ser cri
 - [ ] Username único, minúsculo, no formato e fora da lista de reservados; repetido dá 409
 - [ ] Username não pode ser apagado: a tela avisa, em vez de mostrar "salvo" sem salvar
 - [ ] A tela envia só o que mudou; sem mudança, nada vai ao servidor
+- [ ] O perfil tem página própria, aberta pelo menu do usuário; Configurações fica só
+  com conta e senha
 - [ ] Ninguém edita perfil alheio: o `id` do update vem da sessão, nunca do corpo ou da URL
 - [ ] Nenhuma resposta de erro devolve a mensagem crua do Postgres
 - [ ] Nenhuma despesa ou dado de outro membro aparece
@@ -192,7 +206,7 @@ critério combinado depois que já existe código para defender deixa de ser cri
 
 - [ ] Saída dos testes (unit, integração e E2E) em `docs/pfc/evidencias/S04-M-*`
   — parte 1: `S04-M-editar-perfil-integracao.txt` (52 de 52), `S04-M-editar-perfil-e2e.txt`
-  (4 de 4) e `S04-M-alterar-senha-regressao.txt` (falha antes, passa depois)
+  (6 de 6) e `S04-M-alterar-senha-regressao.txt` (falha antes, passa depois)
 - [ ] Screenshots do fluxo (chromium e mobile) — parte 1: `S04-M-editar-perfil-chromium.png`
   e `-mobile.png`
 - [ ] Delta de cobertura de `lib/schemas/perfil.ts` e das rotas novas — parte 1:
