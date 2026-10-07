@@ -175,7 +175,10 @@ export default function SettingsPage() {
     setIsChangingPassword(true);
 
     try {
-      const formData = new FormData(e.currentTarget);
+      // Guardado antes do primeiro await: depois dele o React já zerou o
+      // `e.currentTarget`, e o reset do fim estourava mesmo com a senha trocada.
+      const formulario = e.currentTarget;
+      const formData = new FormData(formulario);
       const response = await fetch("/api/auth/change-password", {
         method: "POST",
         body: formData,
@@ -192,8 +195,7 @@ export default function SettingsPage() {
         description: data.message || "Sua senha foi alterada com sucesso.",
       });
 
-      // Reset form
-      e.currentTarget.reset();
+      formulario.reset();
     } catch (erro) {
       toast({
         title: "Erro",
