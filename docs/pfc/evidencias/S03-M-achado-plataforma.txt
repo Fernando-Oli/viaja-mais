@@ -1,0 +1,10 @@
+# S03-M — pré-requisito da plataforma: reprodução (2026-10-07 16:03)
+Stack local com a proposta aplicada. A Carla não tem relação nenhuma com a Ana.
+
+1. Carla lista os perfis (efeito da proposta, previsto pelo RF02): Ana Teste, Bruno Teste, Carla Teste
+2. Carla cria uma viagem própria: ok
+3. Carla insere a Ana em trip_members, sem convite: PASSOU — ramo is_trip_owner de trip_members_insert
+4. A viagem aparece para a Ana: SIM — "Viagem que a Ana nunca aceitou"
+5. Visitante SEM login pergunta via RPC se a Ana é membro: responde true — EXECUTE concedido a anon
+
+Limpeza: viagem apagada. Correção sugerida no plano S03-M, seção "Pré-requisito da plataforma".

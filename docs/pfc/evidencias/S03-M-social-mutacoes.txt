@@ -1,62 +1,166 @@
-# S03-M — testes de mutação da RLS do social (2026-10-07 11:10)
+# S03-M — testes de mutação da RLS do social (2026-10-07 15:39)
 Banco: db reset local com a proposta aplicada. Cada caso parte de banco limpo.
 
+# follows
+
 ## M1 sem trigger de estado inicial
-Sabotagem: alter table public.follows disable trigger follows_status_inicial;
+Sabotagem: alter table public.follows disable trigger follows_estado_inicial;
      × Bruno segue a Ana (pública) e o vínculo nasce aceito (RF09.1)
-     × nasce pendente mesmo forçando 'accepted' e created_at no futuro (RF09.2)
-     × uma terceira (Carla) não enxerga a solicitação pendente (RF09.3)
-     × uma terceira (Carla) não aprova nem apaga a solicitação alheia
-     × o dono (Bruno) vê a solicitação pendente e a aprova (RF09.3, RF09.4)
-     × um vínculo aceito é visível para quem não é parte (RF09.6)
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  6 failed | 17 passed (23)
+     × mesmo escrevendo direto no banco, status e datas são do servidor
+     × um vínculo aceito com perfil público é visível para quem não é parte (RF09.6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 36 passed (39)
 
-## M2 created_at forjável
-Sabotagem: create or replace function public.follows_definir_status_inicial() returns trigger language plpgsql security definer set search_path = '' as $$ begin if exists (select 1 from public.profiles p where p.id = new.followee_id and p.is_public) then new.status := 'accepted'; else new.status := 'pending'; end if; new.updated_at := now(); return new; end; $$;
-     × nasce pendente mesmo forçando 'accepted' e created_at no futuro (RF09.2)
+## M2 trigger não fixa created_at
+Sabotagem: create or replace function public.follows_definir_estado_inicial() returns trigger language plpgsql security definer set search_path = '' as $$ begin if exists (select 1 from public.profiles p where p.id = new.followee_id and p.is_public) then new.status := 'accepted'; else new.status := 'pending'; end if; new.updated_at := now(); return new; end; $$;
+     × mesmo escrevendo direto no banco, status e datas são do servidor
 ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  1 failed | 22 passed (23)
+      Tests  1 failed | 38 passed (39)
 
-## M3 UPDATE em todas as colunas
+## M3 INSERT em todas as colunas
+Sabotagem: grant insert on public.follows to authenticated;
+     × o cliente não escolhe status nem datas ao seguir (grant de coluna)
+     × Ana solicita seguir o Bruno (privado) e o vínculo nasce pendente (RF09.2)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 37 passed (39)
+
+## M4 UPDATE em todas as colunas
 Sabotagem: grant update on public.follows to authenticated;
      × o dono não reponta follower_id via UPDATE (grant de coluna)
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  1 failed | 22 passed (23)
+     × mesmo escrevendo direto no banco, status e datas são do servidor
+     × quem não segue nenhum dos dois não vê o vínculo entre perfis privados
+     × seguidora aceita do Bruno passa a ver a rede dele (RF09.6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  4 failed | 35 passed (39)
 
-## M4 DELETE aberto a qualquer autenticado
+## M5 DELETE aberto a qualquer autenticado
 Sabotagem: alter policy follows_delete on public.follows using (true);
      × uma terceira (Carla) não desfaz um vínculo aceito alheio, que ela enxerga
+     × o dono não rebaixa um vínculo aceito para pendente
      × o dono não reponta follower_id via UPDATE (grant de coluna)
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  2 failed | 21 passed (23)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 36 passed (39)
 
-## M5 SELECT de pendentes aberto
+## M6 SELECT aberto
 Sabotagem: alter policy follows_select on public.follows using (true);
      × uma terceira (Carla) não enxerga a solicitação pendente (RF09.3)
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  1 failed | 22 passed (23)
+     × quem não segue nenhum dos dois não vê o vínculo entre perfis privados
+     × seguidora aceita do Bruno passa a ver a rede dele (RF09.6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 36 passed (39)
 
-## M6 INSERT sem checar follower_id
+## M7 INSERT sem checar follower_id
 Sabotagem: alter policy follows_insert on public.follows with check (true);
      × Bruno não cria um follow com o follower_id da Ana
 ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  1 failed | 22 passed (23)
+      Tests  1 failed | 38 passed (39)
 
-## M7 UPDATE aberto a qualquer autenticado
+## M8 UPDATE aberto a qualquer autenticado
 Sabotagem: alter policy follows_update on public.follows using (true) with check (status = 'accepted');
-     × o solicitante (Ana) não se auto-aprova
+     × o solicitante (Ana) não se auto-aprova por UPDATE
+     × o solicitante (Ana) não se auto-aprova por upsert
      × uma terceira (Carla) não enxerga a solicitação pendente (RF09.3)
      × uma terceira (Carla) não aprova nem apaga a solicitação alheia
-     × o dono (Bruno) vê a solicitação pendente e a aprova (RF09.3, RF09.4)
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  4 failed | 19 passed (23)
+     × o dono (Bruno) vê a solicitação e a aprova, e o updated_at avança (RF09.3, RF09.4)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  5 failed | 34 passed (39)
 
-## M8 UPDATE de perfil alheio
-Sabotagem: alter policy "Users can update their own profile" on public.profiles using (true) with check (true);
+## M9 dono pode rebaixar para pendente
+Sabotagem: alter policy follows_update on public.follows with check ((select auth.uid()) = followee_id);
+     × o dono não rebaixa um vínculo aceito para pendente
+     × o dono não reponta follower_id via UPDATE (grant de coluna)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 37 passed (39)
+
+## M10 sem trigger de updated_at em follows
+Sabotagem: alter table public.follows disable trigger follows_definir_updated_at;
+     × o dono (Bruno) vê a solicitação e a aprova, e o updated_at avança (RF09.3, RF09.4)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+## M11 rede de perfil privado aberta
+Sabotagem: create or replace function public.pode_ver_rede(perfil uuid) returns boolean language sql stable security definer set search_path = '' as $$ select true $$;
+     × quem não segue nenhum dos dois não vê o vínculo entre perfis privados
+     × seguidora aceita do Bruno passa a ver a rede dele (RF09.6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 37 passed (39)
+
+## M12 anon lê follows
+Sabotagem: grant select on public.follows to anon;
+     × visitante sem sessão não segue ninguém nem lê vínculos
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+## M13 follows sem cascade na exclusão
+Sabotagem: alter table public.follows drop constraint follows_follower_id_fkey, add constraint follows_follower_id_fkey foreign key (follower_id) references public.profiles(id);
+     × apagar a conta apaga o perfil e os vínculos nos dois papéis (cascade, base do RF02.4)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+# profiles
+
+## M14 UPDATE de perfil alheio
+Sabotagem: alter policy profiles_update_proprio on public.profiles using (true) with check (true);
      × Bruno não edita o perfil da Ana
 ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
-      Tests  1 failed | 22 passed (23)
+      Tests  1 failed | 38 passed (39)
+
+## M15 sem policy de UPDATE do próprio perfil
+Sabotagem: drop policy profiles_update_proprio on public.profiles;
+     × cada um continua editando o próprio perfil (RF02.6)
+     × o updated_at do perfil é do servidor, mesmo que o cliente mande outro
+     × username é único (RF02.5)
+     × username fora do formato é recusado (RF02.5)
+     × bio acima de 280 caracteres é recusada (RF02.6)
+     × nome acima de 120 caracteres é recusado
+     × quem não segue nenhum dos dois não vê o vínculo entre perfis privados
+     × seguidora aceita do Bruno passa a ver a rede dele (RF09.6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  8 failed | 31 passed (39)
+
+## M16 INSERT de perfil em nome de outro
+Sabotagem: alter policy profiles_insert_proprio on public.profiles with check (true);
+     × Bruno não cria um perfil em nome da Ana
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+## M17 perfil volta a ser só do dono
+Sabotagem: alter policy profiles_select_autenticado on public.profiles using ((select auth.uid()) = id);
+     × Bruno vê os dados básicos do perfil público da Ana
+     × Ana vê os dados básicos mesmo de um perfil privado (Bruno)
+     × busca por username ignora maiúsculas: /u/Ana encontra ana (citext)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 36 passed (39)
+
+## M18 anon volta a ter acesso a profiles
+Sabotagem: grant select on public.profiles to anon;
+     × visitante sem sessão não tem acesso nenhum a profiles
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+## M19 UPDATE de perfil em todas as colunas
+Sabotagem: grant update on public.profiles to authenticated;
+     × ninguém reescreve o created_at do próprio perfil (grant de coluna)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+## M20 sem trigger de updated_at em profiles
+Sabotagem: alter table public.profiles disable trigger profiles_definir_updated_at;
+     × o updated_at do perfil é do servidor, mesmo que o cliente mande outro
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+## M21 nome sem limite de tamanho
+Sabotagem: alter table public.profiles drop constraint profiles_full_name_tamanho;
+     × nome acima de 120 caracteres é recusado
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
+
+## M22 contas novas nascem privadas
+Sabotagem: alter table public.profiles alter column is_public set default false;
+     × contas novas nascem públicas (RF02.7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 38 passed (39)
 
 ## Restaurado
-      Tests  23 passed (23)
+      Tests  39 passed (39)

@@ -1,0 +1,18 @@
+# S03-M — advisors da Supabase e lint (2026-10-07 16:04)
+supabase db advisors --local --type all --level info, filtrado pelos objetos desta proposta
+(profiles, follows e suas funções). O resto do banco tem achados herdados do schema base,
+fora do escopo desta atividade.
+
+## Primeira versão da proposta (commit 4d4da37): 6 achado(s)
+- [WARN] auth_rls_initplan: Table `public.profiles` has a row level security policy `Users can insert their own profile` that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing `auth.<function>()` with `(select auth.<function>())`. See [docs](https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select) for more info.
+- [WARN] auth_rls_initplan: Table `public.profiles` has a row level security policy `Users can update their own profile` that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing `auth.<function>()` with `(select auth.<function>())`. See [docs](https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select) for more info.
+- [WARN] auth_rls_initplan: Table `public.profiles` has a row level security policy `Users can view their own profile` that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing `auth.<function>()` with `(select auth.<function>())`. See [docs](https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select) for more info.
+- [INFO] unused_index: Index `follows_followee_id_idx` on table `public.follows` has not been used
+- [INFO] unused_index: Index `follows_pendentes_idx` on table `public.follows` has not been used
+- [WARN] multiple_permissive_policies: Table `public.profiles` has multiple permissive policies for role `authenticated` for action `SELECT`. Policies include `{"Users can view their own profile",profiles_select_autenticado}`
+
+## Versão revisada: 1 achado(s)
+- [INFO] unused_index: Index `follows_pendentes_idx` on table `public.follows` has not been used
+
+## supabase db lint --local --schema public (plpgsql_check)
+{"results":[],"message":"db lint"}

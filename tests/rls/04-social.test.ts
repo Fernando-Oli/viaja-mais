@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 
 /**
@@ -9,16 +10,20 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
  * a chave anon e fala com o PostgREST como o navegador. A RLS é a fronteira real.
  *
  * O que se prova aqui, do mais crítico para o menos:
- *   - o estado inicial do follow é imposto pelo servidor, não pelo cliente
- *     (perfil privado nunca nasce 'accepted', e created_at não é forjável);
- *   - ninguém forja o follower_id de outro (criar vínculo em nome alheio);
- *   - só o dono (followee) aprova — nem o solicitante nem um terceiro;
- *   - um terceiro não apaga vínculo alheio (escrita, não só leitura);
- *   - o grant de coluna impede repontar follower_id/followee_id via UPDATE;
- *   - solicitação pendente não vaza para terceiros, e visitante sem sessão
- *     não lê nada;
+ *   - o estado inicial do follow é do servidor: o cliente não manda status nem
+ *     datas (grant de coluna), e o trigger os fixa mesmo para quem escreve
+ *     direto no banco;
+ *   - ninguém se auto-aprova — nem por UPDATE, nem por upsert — e ninguém forja
+ *     o follower_id de outro;
+ *   - só o dono (followee) aprova, não rebaixa e não reponta o vínculo;
+ *   - um terceiro não lê pendente, não aprova e não apaga vínculo alheio;
+ *   - a rede de um perfil privado só aparece para o dono e seguidores aceitos;
+ *   - em profiles, cada um escreve só o próprio perfil e só as colunas
+ *     editáveis; visitante sem sessão não lê nada;
  *   - e, contra correção exagerada, o fluxo legítimo continua funcionando:
- *     seguir, aprovar, recusar, remover seguidor e deixar de seguir.
+ *     editar o próprio perfil, seguir, aprovar, recusar, remover seguidor e
+ *     deixar de seguir;
+ *   - apagar a conta leva junto o perfil e os vínculos, nos dois papéis.
  *
  * Os erros são conferidos pelo código do Postgres, não só por "deu erro": um
  * teste que espera a RLS barrar não pode passar porque o check barrou.
@@ -30,6 +35,10 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 
 const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
+// Conexão direta só para o que nenhum cliente da aplicação alcança: o
+// catálogo, escrever sem passar pelo grant e apagar de auth.users. Tudo que
+// escreve roda numa transação desfeita no fim: o banco sai como entrou.
+const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
 const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
@@ -39,6 +48,13 @@ const CARLA = { email: "teste.c@viajamais.local", senha: "viajamais123" }
 const VIOLA_RLS_OU_GRANT = "42501"
 const VIOLA_UNICIDADE = "23505"
 const VIOLA_CHECK = "23514"
+
+const DATA_FORJADA = "2099-01-01T00:00:00Z"
+
+/** Compara com o relógio, não com o ano: 2099-01-01T00:00Z ainda é 2098 em Brasília. */
+function ehDeAgora(timestamp: string) {
+  return Date.parse(timestamp) < Date.now() + 60_000
+}
 
 function novoCliente() {
   return createClient(API, CHAVE, {
@@ -57,6 +73,7 @@ let ana: SupabaseClient
 let bruno: SupabaseClient
 let carla: SupabaseClient
 let visitante: SupabaseClient
+let db: Client
 let idAna: string
 let idBruno: string
 let idCarla: string
@@ -68,15 +85,22 @@ async function limparVinculos() {
     [bruno, idBruno],
     [carla, idCarla],
   ] as const) {
-    await cliente.from("follows").delete().or(`follower_id.eq.${id},followee_id.eq.${id}`)
+    const { error } = await cliente.from("follows").delete().or(`follower_id.eq.${id},followee_id.eq.${id}`)
+    if (error) throw new Error(`limpeza dos vínculos falhou: ${error.message}`)
   }
+}
+
+/** Apaga um vínculo pelo lado de quem é parte, falhando alto se não conseguir. */
+async function desfazer(cliente: SupabaseClient, followerId: string, followeeId: string) {
+  const { error } = await cliente.from("follows").delete().eq("follower_id", followerId).eq("followee_id", followeeId)
+  if (error) throw new Error(`não desfez ${followerId}→${followeeId}: ${error.message}`)
 }
 
 /** Lê o vínculo como um dos lados, para conferir o estado sem depender de quem testou. */
 async function vinculo(cliente: SupabaseClient, followerId: string, followeeId: string) {
   const { data } = await cliente
     .from("follows")
-    .select("status, created_at")
+    .select("status, created_at, updated_at")
     .eq("follower_id", followerId)
     .eq("followee_id", followeeId)
     .maybeSingle()
@@ -95,14 +119,18 @@ beforeAll(async () => {
   idCarla = c.usuario.id
   visitante = novoCliente()
 
+  db = new Client({ connectionString: CONEXAO })
+  await db.connect()
+
   await limparVinculos()
 })
 
 afterAll(async () => {
   await limparVinculos()
+  await db.end()
 })
 
-describe("perfil — dados básicos visíveis, edição restrita", () => {
+describe("perfil — dados básicos visíveis, escrita restrita", () => {
   it("Bruno vê os dados básicos do perfil público da Ana", async () => {
     const { data } = await bruno.from("profiles").select("id, username, is_public").eq("id", idAna)
     expect(data).toHaveLength(1)
@@ -110,16 +138,18 @@ describe("perfil — dados básicos visíveis, edição restrita", () => {
   })
 
   it("Ana vê os dados básicos mesmo de um perfil privado (Bruno)", async () => {
-    // A privacidade recai sobre as publicações, não sobre nome/username/bio
-    // (detalhamento do RF02 na seção 14).
+    // A privacidade recai sobre as publicações e a rede, não sobre
+    // nome/username/bio (detalhamento do RF02 na seção 14).
     const { data } = await ana.from("profiles").select("id, username, is_public").eq("id", idBruno)
     expect(data).toHaveLength(1)
     expect(data?.[0].is_public).toBe(false)
   })
 
-  it("visitante sem sessão não lê perfil nenhum", async () => {
-    const { data } = await visitante.from("profiles").select("id").in("id", [idAna, idBruno])
-    expect(data ?? []).toEqual([])
+  it("visitante sem sessão não tem acesso nenhum a profiles", async () => {
+    // 42501 e não lista vazia: sem o revoke, a RLS também devolveria vazio, e o
+    // teste não distinguiria as duas coisas.
+    const { error } = await visitante.from("profiles").select("id")
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 
   it("Bruno não edita o perfil da Ana", async () => {
@@ -130,9 +160,51 @@ describe("perfil — dados básicos visíveis, edição restrita", () => {
     expect(original?.bio).not.toBe("invadido")
   })
 
-  it("username é único, sem distinção de maiúsculas (RF02.5)", async () => {
-    const { error: igual } = await bruno.from("profiles").update({ username: "ana" }).eq("id", idBruno)
-    expect(igual?.code, "username repetido deveria violar a unicidade").toBe(VIOLA_UNICIDADE)
+  it("Bruno não cria um perfil em nome da Ana", async () => {
+    // 42501 da policy, e não 23505 da PK: a WITH CHECK roda antes da unicidade.
+    const { error } = await bruno.from("profiles").insert({ id: idAna, full_name: "Ana Falsa" })
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+  })
+
+  it("cada um continua editando o próprio perfil (RF02.6)", async () => {
+    // Contra correção exagerada: as policies de escrita foram recriadas e o
+    // UPDATE ficou restrito a colunas; o caso legítimo precisa continuar.
+    const { data } = await bruno.from("profiles").update({ bio: "Bio nova do Bruno." }).eq("id", idBruno).select("bio")
+    expect(data).toEqual([{ bio: "Bio nova do Bruno." }])
+
+    const { error } = await bruno
+      .from("profiles")
+      .update({ bio: "Viajante de teste — perfil privado." })
+      .eq("id", idBruno)
+    expect(error).toBeNull()
+  })
+
+  it("ninguém reescreve o created_at do próprio perfil (grant de coluna)", async () => {
+    const { error } = await bruno.from("profiles").update({ created_at: "2015-01-01T00:00:00Z" }).eq("id", idBruno)
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+  })
+
+  it("o updated_at do perfil é do servidor, mesmo que o cliente mande outro", async () => {
+    // A rota /api/profile/update envia updated_at; o trigger decide o valor.
+    const { data } = await bruno
+      .from("profiles")
+      .update({ bio: "Viajante de teste — perfil privado.", updated_at: DATA_FORJADA })
+      .eq("id", idBruno)
+      .select("updated_at")
+      .single()
+    expect(ehDeAgora(data!.updated_at), "o trigger tem de sobrepor updated_at").toBe(true)
+  })
+
+  it("username é único (RF02.5)", async () => {
+    const { error } = await bruno.from("profiles").update({ username: "ana" }).eq("id", idBruno)
+    expect(error?.code, "username repetido deveria violar a unicidade").toBe(VIOLA_UNICIDADE)
+  })
+
+  it("busca por username ignora maiúsculas: /u/Ana encontra ana (citext)", async () => {
+    // É o motivo de a coluna ser citext: o route handler do perfil público
+    // filtra com igualdade simples, sem lower().
+    const { data } = await bruno.from("profiles").select("id").eq("username", "Ana")
+    expect(data).toEqual([{ id: idAna }])
   })
 
   it("username fora do formato é recusado (RF02.5)", async () => {
@@ -149,11 +221,47 @@ describe("perfil — dados básicos visíveis, edição restrita", () => {
     const { error } = await bruno.from("profiles").update({ bio: "x".repeat(281) }).eq("id", idBruno)
     expect(error?.code).toBe(VIOLA_CHECK)
   })
+
+  it("nome acima de 120 caracteres é recusado", async () => {
+    const { error } = await bruno.from("profiles").update({ full_name: "x".repeat(121) }).eq("id", idBruno)
+    expect(error?.code).toBe(VIOLA_CHECK)
+  })
+})
+
+describe("estrutura de profiles", () => {
+  it("as colunas de profiles são exatamente as conhecidas", async () => {
+    // profiles é lida por qualquer autenticado. Uma coluna nova aqui vira
+    // pública no mesmo instante — este teste obriga a decidir isso de propósito.
+    const { rows } = await db.query(
+      `select column_name from information_schema.columns
+        where table_schema = 'public' and table_name = 'profiles' order by column_name`,
+    )
+    expect(rows.map((r) => r.column_name)).toEqual([
+      "avatar_url",
+      "bio",
+      "created_at",
+      "full_name",
+      "id",
+      "is_public",
+      "updated_at",
+      "username",
+    ])
+  })
+
+  it("contas novas nascem públicas (RF02.7)", async () => {
+    // As que já existiam antes do social ficam privadas: a migration adiciona a
+    // coluna com default false e só depois troca o default.
+    const { rows } = await db.query(
+      `select column_default from information_schema.columns
+        where table_schema = 'public' and table_name = 'profiles' and column_name = 'is_public'`,
+    )
+    expect(rows[0].column_default).toBe("true")
+  })
 })
 
 describe("seguir perfil público (efeito imediato)", () => {
   afterAll(async () => {
-    await bruno.from("follows").delete().eq("follower_id", idBruno).eq("followee_id", idAna)
+    await desfazer(bruno, idBruno, idAna)
   })
 
   it("Bruno segue a Ana (pública) e o vínculo nasce aceito (RF09.1)", async () => {
@@ -171,34 +279,36 @@ describe("seguir perfil público (efeito imediato)", () => {
 })
 
 describe("seguir perfil privado (solicitação pendente)", () => {
-  beforeAll(async () => {
-    await ana.from("follows").delete().eq("follower_id", idAna).eq("followee_id", idBruno)
-  })
-
   afterAll(async () => {
-    await ana.from("follows").delete().eq("follower_id", idAna).eq("followee_id", idBruno)
+    await desfazer(ana, idAna, idBruno)
   })
 
-  it("nasce pendente mesmo forçando 'accepted' e created_at no futuro (RF09.2)", async () => {
-    // O vetor da seção 25: o cliente tenta se auto-aceitar num perfil privado e,
-    // de quebra, furar a ordenação por data.
-    const { error } = await ana.from("follows").insert({
-      follower_id: idAna,
-      followee_id: idBruno,
-      status: "accepted",
-      created_at: "2099-01-01T00:00:00Z",
-    })
+  it("o cliente não escolhe status nem datas ao seguir (grant de coluna)", async () => {
+    // O vetor da seção 25: auto-aceitar-se num perfil privado, ou furar a
+    // ordenação da central de notificações com uma data no futuro.
+    const { error: comStatus } = await ana
+      .from("follows")
+      .insert({ follower_id: idAna, followee_id: idBruno, status: "accepted" })
+    expect(comStatus?.code).toBe(VIOLA_RLS_OU_GRANT)
+
+    const { error: comData } = await ana
+      .from("follows")
+      .insert({ follower_id: idAna, followee_id: idBruno, created_at: DATA_FORJADA })
+    expect(comData?.code).toBe(VIOLA_RLS_OU_GRANT)
+
+    expect(await vinculo(ana, idAna, idBruno)).toBeNull()
+  })
+
+  it("Ana solicita seguir o Bruno (privado) e o vínculo nasce pendente (RF09.2)", async () => {
+    const { error } = await ana.from("follows").insert({ follower_id: idAna, followee_id: idBruno })
     expect(error).toBeNull()
 
     const linha = await vinculo(ana, idAna, idBruno)
-    expect(linha?.status, "o trigger tem de sobrepor para 'pending'").toBe("pending")
-    // Compara com o relógio, não com o ano: 2099-01-01T00:00Z ainda é 2098 no
-    // fuso de Brasília, e `getFullYear()` deixaria a data forjada passar.
-    const umMinutoAFrente = Date.now() + 60_000
-    expect(Date.parse(linha!.created_at), "o trigger tem de sobrepor created_at").toBeLessThan(umMinutoAFrente)
+    expect(linha?.status).toBe("pending")
+    expect(ehDeAgora(linha!.created_at)).toBe(true)
   })
 
-  it("o solicitante (Ana) não se auto-aprova", async () => {
+  it("o solicitante (Ana) não se auto-aprova por UPDATE", async () => {
     const { data } = await ana
       .from("follows")
       .update({ status: "accepted" })
@@ -206,6 +316,16 @@ describe("seguir perfil privado (solicitação pendente)", () => {
       .eq("followee_id", idBruno)
       .select()
     expect(data, "só o followee aprova — a policy de UPDATE exige uid = followee").toEqual([])
+  })
+
+  it("o solicitante (Ana) não se auto-aprova por upsert", async () => {
+    // O terceiro caminho até 'accepted', e o mecanismo que a S05 vai usar para
+    // seguir de forma idempotente: precisa continuar fechado.
+    const { error } = await ana
+      .from("follows")
+      .upsert({ follower_id: idAna, followee_id: idBruno, status: "accepted" })
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect((await vinculo(bruno, idAna, idBruno))?.status).toBe("pending")
   })
 
   it("uma terceira (Carla) não enxerga a solicitação pendente (RF09.3)", async () => {
@@ -233,23 +353,27 @@ describe("seguir perfil privado (solicitação pendente)", () => {
     expect((await vinculo(bruno, idAna, idBruno))?.status).toBe("pending")
   })
 
-  it("o dono (Bruno) vê a solicitação pendente e a aprova (RF09.3, RF09.4)", async () => {
-    expect((await vinculo(bruno, idAna, idBruno))?.status).toBe("pending")
+  it("o dono (Bruno) vê a solicitação e a aprova, e o updated_at avança (RF09.3, RF09.4)", async () => {
+    const pendente = await vinculo(bruno, idAna, idBruno)
+    expect(pendente?.status).toBe("pending")
 
     const { data: aprovado } = await bruno
       .from("follows")
       .update({ status: "accepted" })
       .eq("follower_id", idAna)
       .eq("followee_id", idBruno)
-      .select()
+      .select("status, created_at, updated_at")
     expect(aprovado).toHaveLength(1)
     expect(aprovado?.[0].status).toBe("accepted")
+    expect(Date.parse(aprovado![0].updated_at), "o trigger de UPDATE tem de tocar updated_at").toBeGreaterThan(
+      Date.parse(aprovado![0].created_at),
+    )
   })
 
   it("uma terceira (Carla) não desfaz um vínculo aceito alheio, que ela enxerga", async () => {
-    // O caso que importa para o DELETE: a pendente é invisível para a Carla, e o
-    // Postgres não deixa apagar o que a policy de SELECT esconde. A aceita é
-    // lista pública (RF09.6) — só a policy de DELETE a protege.
+    // A pendente é invisível para a Carla, e o Postgres não deixa apagar o que
+    // a policy de SELECT esconde. Esta aceita ela enxerga — está na lista de
+    // seguidos da Ana, que é pública —, então só a policy de DELETE a protege.
     expect((await vinculo(carla, idAna, idBruno))?.status).toBe("accepted")
 
     const { data: apagou } = await carla
@@ -262,9 +386,20 @@ describe("seguir perfil privado (solicitação pendente)", () => {
     expect((await vinculo(bruno, idAna, idBruno))?.status).toBe("accepted")
   })
 
+  it("o dono não rebaixa um vínculo aceito para pendente", async () => {
+    // Para desfazer, ele apaga (RF09.9); a WITH CHECK só aceita 'accepted'.
+    const { error } = await bruno
+      .from("follows")
+      .update({ status: "pending" })
+      .eq("follower_id", idAna)
+      .eq("followee_id", idBruno)
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect((await vinculo(bruno, idAna, idBruno))?.status).toBe("accepted")
+  })
+
   it("o dono não reponta follower_id via UPDATE (grant de coluna)", async () => {
     // Bruno é o followee e passa na RLS de UPDATE; ainda assim não pode escrever
-    // follower_id, porque o grant só concede status.
+    // follower_id e fabricar um seguidor, porque o grant só concede status.
     const { error } = await bruno
       .from("follows")
       .update({ follower_id: idCarla })
@@ -276,9 +411,65 @@ describe("seguir perfil privado (solicitação pendente)", () => {
   })
 })
 
+describe("estado inicial imposto pelo trigger", () => {
+  it("mesmo escrevendo direto no banco, status e datas são do servidor", async () => {
+    // Sem passar pelo grant (service_role, SQL direto), o trigger é a única
+    // barreira — é o que este caso isola.
+    try {
+      await db.query("begin")
+      const { rows } = await db.query(
+        `insert into public.follows (follower_id, followee_id, status, created_at, updated_at)
+         values ($1, $2, 'accepted', $3, $3)
+         returning status, created_at, updated_at`,
+        [idCarla, idBruno, DATA_FORJADA],
+      )
+      expect(rows[0].status, "perfil privado nasce pendente").toBe("pending")
+      expect(ehDeAgora(rows[0].created_at.toISOString())).toBe(true)
+      expect(ehDeAgora(rows[0].updated_at.toISOString())).toBe(true)
+    } finally {
+      await db.query("rollback")
+    }
+  })
+})
+
+describe("rede de perfil privado", () => {
+  // Para ter um vínculo cujos DOIS lados são privados, a Ana fica privada só
+  // neste bloco: Ana→Bruno aceito, entre dois perfis privados.
+  beforeAll(async () => {
+    await ana.from("follows").insert({ follower_id: idAna, followee_id: idBruno })
+    await bruno.from("follows").update({ status: "accepted" }).eq("follower_id", idAna).eq("followee_id", idBruno)
+    const { error } = await ana.from("profiles").update({ is_public: false }).eq("id", idAna)
+    if (error) throw new Error(`não tornou a Ana privada: ${error.message}`)
+  })
+
+  afterAll(async () => {
+    await ana.from("profiles").update({ is_public: true }).eq("id", idAna)
+    await desfazer(ana, idAna, idBruno)
+    await desfazer(carla, idCarla, idBruno)
+  })
+
+  it("quem não segue nenhum dos dois não vê o vínculo entre perfis privados", async () => {
+    expect(await vinculo(carla, idAna, idBruno)).toBeNull()
+  })
+
+  it("as partes continuam vendo o próprio vínculo", async () => {
+    expect((await vinculo(ana, idAna, idBruno))?.status).toBe("accepted")
+    expect((await vinculo(bruno, idAna, idBruno))?.status).toBe("accepted")
+  })
+
+  it("seguidora aceita do Bruno passa a ver a rede dele (RF09.6)", async () => {
+    await carla.from("follows").insert({ follower_id: idCarla, followee_id: idBruno })
+    // Pendente ainda não dá acesso.
+    expect(await vinculo(carla, idAna, idBruno)).toBeNull()
+
+    await bruno.from("follows").update({ status: "accepted" }).eq("follower_id", idCarla).eq("followee_id", idBruno)
+    expect((await vinculo(carla, idAna, idBruno))?.status).toBe("accepted")
+  })
+})
+
 describe("recusar e remover seguidor — o dono desfaz o vínculo", () => {
   afterAll(async () => {
-    await carla.from("follows").delete().eq("follower_id", idCarla).eq("followee_id", idBruno)
+    await desfazer(carla, idCarla, idBruno)
   })
 
   it("Bruno recusa a solicitação da Carla, que some para os dois (RF09.4)", async () => {
@@ -327,16 +518,17 @@ describe("forjar vínculo", () => {
   })
 
   it("visitante sem sessão não segue ninguém nem lê vínculos", async () => {
-    const { error } = await visitante.from("follows").insert({ follower_id: idAna, followee_id: idCarla })
-    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    const { error: inseriu } = await visitante.from("follows").insert({ follower_id: idAna, followee_id: idCarla })
+    expect(inseriu?.code).toBe(VIOLA_RLS_OU_GRANT)
 
-    const { data } = await visitante.from("follows").select("*")
-    expect(data ?? []).toEqual([])
+    // 42501 e não lista vazia: é o revoke de anon que está sendo provado.
+    const { error: leu } = await visitante.from("follows").select("*")
+    expect(leu?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 })
 
 describe("listas públicas e não sobre-correção", () => {
-  it("um vínculo aceito é visível para quem não é parte (RF09.6)", async () => {
+  it("um vínculo aceito com perfil público é visível para quem não é parte (RF09.6)", async () => {
     await carla.from("follows").insert({ follower_id: idCarla, followee_id: idAna })
 
     expect((await vinculo(bruno, idCarla, idAna))?.status).toBe("accepted")
@@ -350,5 +542,31 @@ describe("listas públicas e não sobre-correção", () => {
       .eq("followee_id", idAna)
       .select()
     expect(data).toHaveLength(1)
+  })
+})
+
+describe("exclusão de conta", () => {
+  it("apagar a conta apaga o perfil e os vínculos nos dois papéis (cascade, base do RF02.4)", async () => {
+    try {
+      await db.query("begin")
+      // Carla segue a Ana e é seguida pelo Bruno: os dois papéis.
+      await db.query("insert into public.follows (follower_id, followee_id) values ($1, $2), ($3, $1)", [
+        idCarla,
+        idAna,
+        idBruno,
+      ])
+
+      await db.query("delete from auth.users where id = $1", [idCarla])
+
+      const { rows: vinculos } = await db.query(
+        "select count(*)::int as n from public.follows where $1 in (follower_id, followee_id)",
+        [idCarla],
+      )
+      const { rows: perfil } = await db.query("select count(*)::int as n from public.profiles where id = $1", [idCarla])
+      expect(vinculos[0].n, "on delete cascade de follows → profiles").toBe(0)
+      expect(perfil[0].n, "on delete cascade de profiles → auth.users").toBe(0)
+    } finally {
+      await db.query("rollback")
+    }
   })
 })

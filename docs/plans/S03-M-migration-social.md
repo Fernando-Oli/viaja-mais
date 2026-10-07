@@ -30,13 +30,64 @@ atividade segue a regra sem exceção:
 | Quem | Entrega |
 |---|---|
 | Micael | Esta especificação; a proposta executável em [`S03-M-migration-social.proposta.sql`](S03-M-migration-social.proposta.sql); o seed; o teste de RLS `tests/rls/04-social.test.ts`; as evidências |
-| Fernando | A migration final em `supabase/migrations/<timestamp>_social_perfil_e_follows.sql`, livre para reescrever a proposta, e o `types/database.ts` regenerado junto |
+| Fernando | A correção da plataforma descrita abaixo; a migration final em `supabase/migrations/<timestamp>_social_perfil_e_follows.sql`, livre para reescrever a proposta; e o `types/database.ts` regenerado junto |
 
-A proposta já foi aplicada localmente sobre a `main` e exercitada pelo teste — é
-o que garante que a especificação é coerente, e não só plausível. **Ordem de
-merge:** o seed e o teste referenciam colunas e tabela que só existem com a
-migration, então este PR só entra em `main` junto com ela (o Fernando pode
-empurrar a migration para esta branch, ou mergear a dele antes).
+A proposta foi aplicada localmente sobre a `main` e exercitada pelo teste, e
+passou por uma revisão adversarial independente antes de chegar ao Fernando.
+**Ordem de merge:** o seed e o teste referenciam colunas e tabela que só existem
+com a migration, então este PR só entra em `main` junto com ela — o CI de banco
+fica vermelho nesta branch até lá.
+
+### Pré-requisito da plataforma (bloqueante)
+
+A revisão encontrou, e a reprodução em
+`docs/pfc/evidencias/S03-M-achado-plataforma.txt` confirma, que **abrir a leitura
+de `profiles` torna explorável algo que já existe na base**. Até hoje isso estava
+coberto só porque ninguém conseguia descobrir o UUID de outro usuário:
+
+1. `trip_members_insert` (migration `plataforma_rls_isolamento`) deixa o dono da
+   viagem adicionar **qualquer** usuário sem convite. Com a lista de perfis, uma
+   estranha coloca a vítima numa viagem que ela nunca aceitou (a viagem aparece
+   para a vítima) e pode lançar partes de rateio em nome dela.
+2. `is_trip_member`, `is_trip_owner` e `can_access_trip` são SECURITY DEFINER,
+   recebem o usuário por parâmetro e têm EXECUTE para **anon**: sem login, dá para
+   perguntar via RPC se um UUID participa de uma viagem.
+
+Correção sugerida, no domínio do Fernando, antes desta migration ou junto dela:
+
+- (a) Tirar o ramo do dono de `trip_members_insert`, deixando entrar só por convite
+  pendente. O app não usa esse ramo: o dono entra pelo trigger
+  `add_trip_owner_as_member`, a rota de membros só tem DELETE, e o único insert é
+  o de aceitar convite. Quem depende dele são as fixtures de `01-isolamento`,
+  `02-rateio` e `03-escopo-grupo`, que passariam a montar o membro por `pg` ou pelo
+  fluxo de convite.
+- (b) Recriar as três funções sem o parâmetro de usuário, resolvendo
+  `auth.uid()` por dentro como `pode_acessar_despesa`, ou ao menos revogar de anon.
+- Testes: "dono não adiciona membro sem convite → 42501" e "RPC sobre terceiro não
+  responde".
+
+### Decisões de produto tomadas nesta atividade
+
+| Decisão | Motivo |
+|---|---|
+| A **rede** (seguidores e seguidos) de um perfil privado só aparece para o dono e para seguidores aceitos | O detalhamento do RF02 não põe a rede entre o que um perfil privado mantém visível; o Instagram esconde. Decidido agora porque a S05 vai construir as listas em cima disso. |
+| Contas que já existem ficam **privadas**; contas novas nascem públicas | Quem se cadastrou só para planejar viagem não consentiu em ser descoberto e seguido com efeito imediato (privacidade por padrão — argumento da seção 25). |
+
+### Riscos aceitos (insumo da seção 25)
+
+- **Reordenar ou insistir em solicitações.** Recusa sem barreira é requisito
+  (RF09.9), então quem foi recusado pode apagar e pedir de novo, voltando ao topo
+  da lista de pendentes. Uma espera por par tornaria a remoção detectável. A
+  mitigação compatível é um limite global de pendentes por seguidor (trigger),
+  candidata à atividade de rate limit `S06-F-rate-limit-csp`.
+- **`updated_at` de um vínculo aceito** mostra o momento da aprovação a quem pode
+  ver o vínculo.
+- **Username liberado pode ser reutilizado**, e não há nomes reservados (`admin`,
+  `suporte`, `viajamais`). A lista de reservados entra no schema zod da S04.
+- **`avatar_url` sem check no banco**: com `not valid`, uma conta antiga com URL
+  fora do padrão perderia a edição do perfil inteiro. A validação fica no route
+  handler da S04, e o avatar alheio é renderizado por `next/image`, que busca pelo
+  servidor e não expõe o IP de quem vê.
 
 ## 2. Arquivos afetados
 
@@ -49,78 +100,87 @@ empurrar a migration para esta branch, ou mergear a dele antes).
   `is_public` dos três: Ana pública, Bruno privado, Carla pública.
 - `tests/rls/04-social.test.ts` — **novo** (Micael). O prefixo `04-` segue
   `02-rateio` e `03-escopo-grupo`.
-- `docs/pfc/evidencias/S03-M-social-rls.txt` e `S03-M-social-mutacoes.txt` — evidências.
-- `docs/pfc/04-design/18-Modelo-de-dados.md` — `profiles` (colunas novas) e `follows`
-  no modelo de dados. **Depois do merge da migration**, via `/pfc-secao 18`: antes
-  disso a seção descreveria um schema que não está no repositório.
+- `docs/pfc/evidencias/S03-M-*` — evidências (lista no bloco 6).
+- `docs/pfc/04-design/18-Modelo-de-dados.md` — `profiles` e `follows` no modelo de
+  dados. **Depois do merge da migration**, via `/pfc-secao 18`: antes disso a
+  seção descreveria um schema que não está no repositório.
 
 ## 3. Passos
 
-O SQL completo está na proposta; aqui fica o porquê de cada decisão.
+O SQL completo e comentado está na proposta; aqui fica o porquê de cada decisão.
 
-1. **`profiles` — colunas novas.**
-   - `username extensions.citext unique` (nulo por ora, pois as linhas existentes
-     não têm), com `check (username::text ~ '^[a-z0-9_]{3,30}$')`. `citext` dá
-     unicidade case-insensitive sem `lower()` espalhado nas queries; o check roda
-     sobre o texto para guardar só a forma minúscula.
-   - `bio text check (char_length(bio) <= 280)`.
-   - `is_public boolean not null default true` — público por padrão alinha com o
-     produto de descoberta.
+1. **`profiles` — colunas novas.** `username extensions.citext`, `bio text`,
+   `is_public boolean`.
+   - O username guardado é sempre minúsculo (check `^[a-z0-9_]{3,30}$` sobre o
+     texto). O `citext` não está pela unicidade, que o check já garante, e sim pela
+     busca: `/u/Ana` encontra `ana` com igualdade simples.
+   - `is_public` entra com `default false`, para as contas existentes ficarem
+     privadas, e só depois o default vira `true` (é só metadado).
+   - Constraints protegidas pelo nome, como no rateio: com drift, a constraint
+     entra mesmo que a coluna já exista.
+   - `full_name` ganha teto de 120 caracteres, `not valid`.
 
-2. **`profiles` — leitura dos dados básicos.** Policy `to authenticated using (true)`.
-   Não é o `USING (true)` que o fix de isolamento removeu de `trips`: o
-   detalhamento do RF02 (seção 14) diz que nome, username, avatar e bio ficam
-   visíveis **mesmo em perfil privado**; a privacidade recai sobre as publicações
-   (`trip_posts`, S06). `profiles` não tem e-mail nem dado sensível. Visitante sem
-   sessão continua sem ler nada.
+2. **`updated_at` do servidor.** Uma função `social_definir_updated_at()` para os
+   triggers de UPDATE de `profiles` e de `follows`. A rota de perfil ainda manda
+   `updated_at`, e o trigger ignora esse valor.
 
-3. **Tabela `follows`.** PK composta `(follower_id, followee_id)`, `status in
-   ('pending','accepted')`, check que proíbe seguir a si mesmo, FKs com `on delete
-   cascade` (RF02.4 apaga vínculos junto com a conta). A PK **não** torna o segundo
-   INSERT silencioso — levanta 23505; a idempotência do RF09.2 é do route handler
-   (`ON CONFLICT DO NOTHING`, S05).
+3. **`profiles` — policies e privilégios.**
+   - SELECT `to authenticated using (true)`: o detalhamento do RF02 manda os
+     dados básicos ficarem visíveis mesmo em perfil privado. A policy antiga ("ver
+     o próprio perfil") sai, porque a nova a contém.
+   - INSERT e UPDATE do próprio perfil recriados com `(select auth.uid())` e
+     `to authenticated`.
+   - `anon` sem nada. UPDATE só em `full_name, avatar_url, username, bio,
+     is_public, updated_at`: sem o grant de coluna, `created_at` e qualquer coluna
+     futura seriam graváveis pelo PostgREST direto.
+   - O teste trava a lista de colunas de `profiles`: uma coluna nova vira pública
+     no mesmo instante, e o teste obriga a decidir isso.
 
-4. **Trigger de estado inicial (segurança).** `before insert`, `security definer`,
-   `search_path = ''`. Sobrepõe **tudo que o cliente não deve escolher**:
-   - `status` conforme `is_public` do alvo — sem isso, um INSERT direto gravaria
-     `accepted` num perfil privado e furaria a aprovação (o vetor da seção 25);
-   - `created_at` e `updated_at` com `now()` — sem isso, o cliente gravaria uma data
-     no futuro e ficaria sempre no topo das listas e da central de notificações
-     (RF13), que ordenam por data.
+4. **Tabela `follows`.** PK `(follower_id, followee_id)`, status `pending|accepted`,
+   check contra seguir a si mesmo, FKs com nome explícito (o embed
+   `profiles!follows_follower_id_fkey` da S05 precisa) e `on delete cascade`. A PK
+   não torna o segundo INSERT silencioso: dá 23505, e a idempotência do RF09.2 é do
+   route handler (`ON CONFLICT DO NOTHING`, S05).
 
-   `execute` revogado de `public`, `anon` e `authenticated`. Um segundo trigger
-   mantém `updated_at` em toda aprovação.
+5. **Estado inicial: duas linhas de defesa.**
+   - Grant de INSERT só em `follower_id, followee_id`: o cliente que mandar
+     `status` ou `created_at` recebe 42501.
+   - Trigger `before insert`, `security definer`, `search_path = ''`: fixa o
+     `status` pelo `is_public` do alvo e as datas pelo relógio do servidor, também
+     para quem escreve sem passar pelo grant.
 
-5. **RLS** — `enable row level security` em `follows`. Sem `force`, como o resto do
-   schema: a tabela é de `postgres` e a Data API fala como `authenticated`/`anon`,
-   a quem a RLS sempre se aplica. `(select auth.uid())` envelopado, por performance.
-   - SELECT → aceitos são públicos (RF09.6); pendentes só para as duas partes (RF09.3).
-   - INSERT → `with check (uid = follower_id)`: ninguém cria vínculo em nome de outro.
-   - UPDATE → `using (uid = followee_id) with check (uid = followee_id and status =
-     'accepted')`: só o dono aprova (RF09.4).
-   - DELETE → `using (uid in (follower_id, followee_id))`: deixar de seguir e cancelar
-     (RF09.5), recusar (RF09.4) e remover seguidor sem barreira (RF09.9).
+6. **Rede de perfil privado.** `pode_ver_rede(perfil)`: é o dono, o perfil é
+   público, ou o usuário é seguidor aceito. Precisa ser função porque a policy de
+   `follows` consulta `follows` (inline, recursaria). Recebe só o perfil e resolve
+   o usuário por `auth.uid()`, no molde de `pode_acessar_despesa`.
 
-6. **Privilégios explícitos**, no padrão da migration do rateio (sem depender de
-   `DEFAULT PRIVILEGES`): `revoke all` de `anon` e `authenticated`; `select, insert,
-   delete` para `authenticated`; `update (status)` — só a coluna. O `WITH CHECK` não
-   vê a linha antiga, então sozinho não impediria repontar `follower_id`/`followee_id`;
-   o grant de coluna fecha isso. `anon` fica sem nada.
+7. **RLS de `follows`** — sem `force`, como o resto do schema.
+   - SELECT: as partes sempre veem o próprio vínculo (RF09.3). Um vínculo aceito
+     aparece para quem pode ver a rede de qualquer um dos lados (RF09.6). Como no
+     Instagram, que um perfil público segue um privado é visível, porque está na
+     lista do público.
+   - INSERT: `uid = follower_id`.
+   - UPDATE: só o followee, e o resultado só pode ser `accepted`. Ele aprova, mas
+     não rebaixa.
+   - DELETE: qualquer das partes (RF09.4, RF09.5, RF09.9).
 
-7. **Índices.** `follows (followee_id)` — a PK só cobre buscas por `follower_id`, e
-   "quem me segue"/"minhas solicitações" filtram por `followee_id` (também é o
-   índice de FK). Parcial `follows (followee_id) where status = 'pending'` para a
-   Zona 1 da central de notificações (RF13.2).
+8. **Privilégios de `follows`.** `revoke all` de anon e authenticated, depois
+   `select, delete`, `insert (follower_id, followee_id)` e `update (status)`. O
+   WITH CHECK já impede trocar `followee_id`; só o repontar de `follower_id`
+   depende do grant de coluna.
 
-8. **Seed.** Ana pública, Bruno privado, Carla pública. A Carla existe porque uma
-   solicitação tem dois lados, e provar que ela não vaza exige alguém que não é
-   nenhum deles.
+9. **Índices.** `(followee_id, created_at desc)` cobre "quem me segue" na ordem da
+   tela e a FK, e a versão parcial `where status = 'pending'` cobre a Zona 1 da
+   central de notificações (RF13.2). "Quem eu sigo" usa a PK.
 
-9. **Teste de RLS** em `tests/rls/04-social.test.ts` — ver bloco 4.
+10. **Seed.** Ana pública, Bruno privado, Carla pública. A Carla existe porque uma
+    solicitação tem dois lados, e provar que ela não vaza exige alguém que não é
+    nenhum deles.
 
-**Fora do escopo, registrado para a S05:** quando um perfil passa de privado para
-público, as solicitações pendentes continuam pendentes até o dono decidir. Se o
-produto quiser aceitá-las automaticamente, isso entra na rota de editar perfil.
+**Fora do escopo, registrado para a S05:** ao passar de privado para público, as
+solicitações pendentes continuam pendentes. Se o produto quiser aceitá-las
+sozinhas, isso precisa ser trigger em `profiles`, e não regra da rota: `is_public`
+é gravável direto pelo PostgREST.
 
 ## 4. O que testar
 
@@ -128,63 +188,94 @@ Obrigatórios pelo tipo (`migration, rls`):
 
 - [x] Aplicação limpa do zero: `npx supabase db reset` aplica as 4 migrations (a
   proposta como a quarta, localmente) e o seed sem erro
-- [x] Teste em `tests/rls/` com os usuários do seed — 23 casos em `04-social.test.ts`
-- [x] Usuário A não lê E não escreve dados de B — leitura (pendente invisível para
-  terceiro, visitante sem sessão não lê) e escrita (INSERT forjado, UPDATE e DELETE
-  de terceiro, UPDATE de perfil alheio, UPDATE de coluna sem grant)
-- [x] `npm run test:rls` verde — 61 de 61, as 5 suítes
-- [x] **Cada proteção derruba pelo menos um teste quando é removida** — 8 sabotagens
-  (trigger, `created_at`, grant de coluna, as quatro policies de `follows` e o UPDATE
-  de `profiles`), cada uma sobre banco limpo. Os erros são conferidos pelo código do
-  Postgres (42501, 23505, 23514), para que um teste que espera a RLS não passe
-  porque um check barrou.
+- [x] Teste em `tests/rls/` com os usuários do seed: 39 casos em `04-social.test.ts`
+- [x] Usuário A não lê E não escreve dados de B, nos dois sentidos:
+  - leitura: pendente e rede privada invisíveis para terceiro; visitante sem sessão
+    recebe 42501;
+  - escrita: INSERT forjado; UPDATE e DELETE de terceiro; auto-aprovação por
+    UPDATE e por upsert; rebaixar e repontar; perfil alheio; colunas sem grant.
+- [x] `npm run test:rls` verde: 77 de 77, nas 5 suítes
+
+Além do obrigatório:
+
+- [x] **Cada proteção derruba pelo menos um teste quando é removida.** São 22
+  sabotagens, uma por trigger, policy, grant e constraint, cada uma sobre banco
+  limpo. Os erros são conferidos pelo código do Postgres (42501, 23505, 23514), para
+  que um teste que espera a RLS não passe porque um check barrou.
+- [x] **Advisors da Supabase** (`supabase db advisors`): antes das correções, 6
+  achados nos objetos desta proposta; depois, só o "índice ainda não usado" de
+  `follows_pendentes_idx`, que nenhuma tela consulta até a S05.
+- [x] **`supabase db lint`** (plpgsql_check): sem erros.
+- [x] **Índices**: `EXPLAIN` das consultas de lista e de pendentes, como usuário
+  autenticado com RLS ativa, usa os índices, e `(select auth.uid())` aparece como
+  InitPlan, avaliado uma vez por consulta.
+- [x] **Tipos**: `supabase gen types` gera `follows`, `username`, `bio` e
+  `is_public`, e o `typecheck` passa com eles. O arquivo não foi commitado, porque
+  é do Fernando.
+- [x] **Regressão da equipe**: o E2E inteiro contra o banco com a proposta deu 16
+  de 20. As 4 falhas existem sem esta mudança: `00-fumaca` espera 404 em `/login` e
+  `/register`, mas o `proxy.ts` redireciona visitante para `/auth/login` antes.
+  Fica registrado para quem é dono do E2E.
+- [x] **Revisão adversarial independente** da proposta e do teste. Todos os
+  achados foram tratados: corrigidos na proposta, decididos acima ou escalados como
+  pré-requisito da plataforma.
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 
 Pré-requisito: copiar a proposta para `supabase/migrations/` com um timestamp
 posterior ao do rateio (ou usar a migration do Fernando, quando existir) e rodar
-`npm run db:reset`. **Não** commitar essa cópia.
+`npx supabase db reset`. **Não** commitar essa cópia.
 
-1. `npm run db:reset` → aplica as migrations e o seed sem erro.
+1. `npx supabase db reset` → aplica as migrations e o seed sem erro.
 2. `npm run test:rls` → 5 suítes verdes.
 3. No Studio (http://localhost:54323), SQL Editor, trocar o papel de `postgres` para
    **authenticated** e escolher a Ana (`teste.a@viajamais.local`). Sem trocar o papel,
    o editor roda como superusuário e a RLS não se aplica — o passo não provaria nada.
-4. Como Ana: `insert into follows (follower_id, followee_id, status, created_at) values
+4. Como Ana: `insert into follows (follower_id, followee_id, status) values
    ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222',
-   'accepted', '2099-01-01')` → a linha nasce `pending` e com `created_at` de agora.
-5. Repetir o mesmo INSERT → erro 23505 (a idempotência é do route handler, S05).
+   'accepted')` → erro de permissão: o cliente não escolhe o status.
+5. Como Ana, sem o status: `insert into follows (follower_id, followee_id) values
+   ('1111…', '2222…')` → a linha nasce `pending`. Repetir → erro 23505.
 6. Como Ana: `update follows set status = 'accepted' where follower_id = '1111…'` →
    0 linhas (só o followee aprova).
 7. Trocar para a Carla (`teste.c@…`): `select * from follows` → a pendente Ana→Bruno
    não aparece.
 8. Trocar para o Bruno: `update follows set status = 'accepted' where follower_id =
-   '1111…'` → 1 linha; agora a Carla a vê (vínculo aceito é lista pública).
+   '1111…'` → 1 linha. Como a Ana é pública, a Carla agora vê o vínculo, porque ele
+   está na lista de seguidos da Ana.
 9. Como Carla: `delete from follows where follower_id = '1111…'` → 0 linhas.
-10. Como Bruno: `update profiles set username = 'ana' where id = '2222…'` → erro 23505;
-    `set username = 'AB'` → erro 23514.
+10. Como Bruno: `update profiles set username = 'ana' where id = '2222…'` → erro
+    23505; `set username = 'AB'` → erro 23514; `set created_at = now()` → erro de
+    permissão.
 
 ## 5. O que validar
 
 Critérios objetivos e binários. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
 
-> Dois critérios mudaram em relação ao rascunho da S03, e o motivo fica registrado:
-> "perfil privado não vaza nem o nome em listagem" contradizia o detalhamento do
-> RF02 na seção 14, que manda os dados básicos ficarem visíveis; e "policy usa
-> participação (trip_members)" é critério de tabela de viagem, que não se aplica a
-> `follows`.
+> Critérios que mudaram em relação ao rascunho da S03, com o motivo:
+> - "perfil privado não vaza nem o nome em listagem" contradizia o detalhamento do
+>   RF02 na seção 14, que manda os dados básicos ficarem visíveis;
+> - "policy usa participação (trip_members)" é critério de tabela de viagem e não se
+>   aplica a `follows`;
+> - os dois critérios de rede privada e de contas antigas entraram com as decisões
+>   do bloco 1.
 
-- [ ] `username` é único (case-insensitive) e validado por formato
+- [ ] `username` é único e validado por formato; a busca ignora maiúsculas
 - [ ] Perfil privado expõe só os dados básicos (nome, username, avatar, bio) a
-  autenticados; visitante sem sessão não lê perfil nenhum
+  autenticados; a rede dele só aparece para o dono e seguidores aceitos
+- [ ] Visitante sem sessão não tem acesso nenhum a `profiles` nem a `follows`
+- [ ] Contas existentes antes da migration ficam privadas; contas novas nascem públicas
 - [ ] Solicitação pendente só é visível para as duas partes
-- [ ] `status`, `created_at` e `updated_at` não são escolhidos pelo cliente no INSERT
-- [ ] Só o followee aprova; ninguém reponta `follower_id`/`followee_id` via UPDATE
+- [ ] O cliente não escolhe `status` nem datas: o grant de INSERT recusa, e o trigger
+  fixa os valores para quem escreve direto
+- [ ] Só o followee aprova; ninguém se auto-aprova por UPDATE ou upsert; o dono não
+  rebaixa nem reponta o vínculo
+- [ ] Em `profiles`, cada um escreve só o próprio perfil e só as colunas editáveis
 - [ ] Toda tabela nova tem RLS habilitada e policy por operação usada
-- [ ] Privilégios explícitos: `anon` sem nada, UPDATE só em `status`
 - [ ] SELECT vazio não é aceito como prova: INSERT, UPDATE e DELETE também são testados
+- [ ] Pré-requisito da plataforma resolvido antes ou junto do merge (Fernando)
 - [ ] Nome do arquivo final segue `<timestamp>_<dominio>_<descrição>.sql` (Fernando)
 - [ ] `npm run db:types` rodado e `types/database.ts` commitado junto da migration (Fernando)
 - [ ] ~~Policy usa participação (trip_members), não propriedade (user_id)~~ — não se
@@ -193,7 +284,10 @@ critério combinado depois que já existe código para defender deixa de ser cri
 ## 6. Evidência
 
 - [x] Saída dos testes — arquivada em `docs/pfc/evidencias/`:
-  - `S03-M-social-rls.txt` — `04-social.test.ts`: 23 de 23
-  - `S03-M-social-mutacoes.txt` — as 8 sabotagens e os testes que cada uma derrubou
+  - `S03-M-social-rls.txt` — `04-social.test.ts`: 39 de 39
+  - `S03-M-social-mutacoes.txt` — as 22 sabotagens e os testes que cada uma derrubou
+  - `S03-M-social-explain.txt` — planos de consulta das listas sob RLS
+  - `S03-M-social-advisors.txt` — advisors e lint antes e depois das correções
+  - `S03-M-achado-plataforma.txt` — reprodução do pré-requisito da plataforma
 - [ ] Screenshot ou gravação do fluxo (se houver tela) — não há tela nesta atividade
 - [ ] Delta de cobertura (se mexeu em `lib/`) — não mexeu
