@@ -28,7 +28,7 @@ export const CATEGORIAS_DESPESA = [
   "other",
 ] as const
 
-export const criarDespesaSchema = z.object({
+const base = {
   title: z.string().trim().min(1, "informe uma descrição").max(120),
 
   // `coerce` porque o formulário manda o valor como texto do `<input type="number">`.
@@ -41,7 +41,7 @@ export const criarDespesaSchema = z.object({
     .positive("o valor deve ser maior que zero")
     .max(99_999_999.99, "valor acima do limite"),
 
-  currency: z.string().trim().length(3, "use o código ISO de 3 letras").toUpperCase().default("BRL"),
+  currency: z.string().trim().length(3, "use o código ISO de 3 letras").toUpperCase(),
 
   category: z.enum(CATEGORIAS_DESPESA),
 
@@ -50,6 +50,30 @@ export const criarDespesaSchema = z.object({
   // Opcionais na tabela; o formulário envia `null` quando em branco.
   payment_method: z.string().trim().max(120).optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+}
+
+export const criarDespesaSchema = z.object({
+  ...base,
+  currency: base.currency.default("BRL"),
 })
 
+/**
+ * Atualização parcial: editar o formulário inteiro ou só um campo passam pelo
+ * mesmo schema. Sem default em `currency` aqui — campo ausente não é alterado.
+ *
+ * @RF06.2 editar despesa
+ */
+export const atualizarDespesaSchema = z
+  .object({
+    title: base.title.optional(),
+    amount: base.amount.optional(),
+    currency: base.currency.optional(),
+    category: base.category.optional(),
+    date: base.date.optional(),
+    payment_method: base.payment_method,
+    notes: base.notes,
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "envie ao menos um campo para atualizar" })
+
 export type CriarDespesa = z.infer<typeof criarDespesaSchema>
+export type AtualizarDespesa = z.infer<typeof atualizarDespesaSchema>

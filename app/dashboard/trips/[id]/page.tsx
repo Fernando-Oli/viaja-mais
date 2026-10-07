@@ -8,6 +8,7 @@ import Link from "next/link"
 import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned, Pencil } from "lucide-react"
 import { ItineraryList } from "@/components/itinerary-list"
 import { BookingList } from "@/components/booking-list"
+import { ExpenseList } from "@/components/expense-list"
 import { TripMembers } from "@/components/trip-members"
 
 function parseLocalDate(dateString: string) {
@@ -271,37 +272,7 @@ export default async function TripDetailPage({
               </div>
             </CardHeader>
             <CardContent>
-              {!expenses || expenses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <DollarSign className="mb-4 h-12 w-12 text-gray-300" />
-                  <h3 className="mb-2 text-lg font-semibold text-viaja-navy">Nenhuma despesa registrada</h3>
-                  <p className="text-center text-gray-600">Comece a registrar seus gastos</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {expenses.map((expense) => (
-                    <div
-                      key={expense.id}
-                      className="flex items-center justify-between border-b border-gray-200 pb-4 last:border-0"
-                    >
-                      <div>
-                        <h4 className="font-medium text-viaja-navy">{expense.title}</h4>
-                        <p className="text-sm text-gray-600">
-                          {expense.category} • {new Date(`${expense.date}T00:00`).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-viaja-navy">
-                          {new Intl.NumberFormat("pt-BR", {
-                            style: "currency",
-                            currency: expense.currency || "BRL",
-                          }).format(Number(expense.amount))}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ExpenseList expenses={expenses || []} tripId={id} currentUserId={user.id} isOwner={isOwner} />
             </CardContent>
           </Card>
         </TabsContent>
