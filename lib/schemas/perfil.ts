@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { LIMITE_AVATAR, LIMITE_BIO, LIMITE_NOME, USERNAME_MAX, USERNAME_MIN } from "./perfil-limites"
+import { LIMITE_BIO, LIMITE_NOME, USERNAME_MAX, USERNAME_MIN } from "./perfil-limites"
 
 /**
  * Contratos de entrada das rotas de perfil (domínio Social).
@@ -10,7 +10,12 @@ import { LIMITE_AVATAR, LIMITE_BIO, LIMITE_NOME, USERNAME_MAX, USERNAME_MIN } fr
  * aqui (`id`, `created_at`, `user_id`) é descartado pelo zod e nunca chega ao
  * `.update()`.
  *
- * @RF02.2 nome e avatar · @RF02.5 username · @RF02.6 bio · @RF02.7 público/privado
+ * `avatar_url` também fica de fora: a foto só muda pelas rotas de foto
+ * (/api/social/perfil/foto), que enviam o arquivo para o Storage e gravam o
+ * caminho. Aceitar URL aqui reabriria o avatar apontando para servidor de
+ * terceiro (S04-M-foto-perfil).
+ *
+ * @RF02.2 nome · @RF02.5 username · @RF02.6 bio · @RF02.7 público/privado
  */
 
 export { LIMITE_BIO, LIMITE_NOME }
@@ -78,54 +83,12 @@ const semInvisiveisNaBio = (v: string) => vazioSeInvisivel(v.replace(NAO_E_TEXTO
 /** Texto opcional em que vazio significa "apagar": vira nulo, não string vazia. */
 const vazioViraNulo = (v: string | null) => (v === "" ? null : v)
 
-/**
- * O avatar é carregado pelo navegador de quem vê o perfil (risco registrado na
- * S03). Não dá para escolher o host por ele, mas dá para recusar o que não tem
- * motivo legítimo: credencial embutida na URL e endereço local ou IP literal.
- */
-function hostPublicoSemCredencial(endereco: string) {
-  // O zod roda esta checagem mesmo quando o `.url()` anterior já falhou; quem
-  // explica "URL inválida" é ele, então aqui não se opina sobre o que nem é URL.
-  let url: URL
-  try {
-    url = new URL(endereco)
-  } catch {
-    return true
-  }
-  if (url.username || url.password) return false
-  const host = url.hostname
-  if (host === "localhost" || host.endsWith(".localhost")) return false
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith("[")) return false
-  return true
-}
-
-/**
- * Só https: avatar é exibido para outras pessoas, e http no meio de página https
- * vira conteúdo misto. Apara antes de validar, para que só espaços também
- * signifique "apagar".
- */
-const avatarSchema = z
-  .string()
-  .trim()
-  .nullable()
-  .transform(vazioViraNulo)
-  .pipe(
-    z
-      .string()
-      .max(LIMITE_AVATAR, `use até ${LIMITE_AVATAR} caracteres`)
-      .url("informe uma URL válida")
-      .startsWith("https://", "use um endereço que comece com https://")
-      .refine(hostPublicoSemCredencial, "use um endereço público, sem usuário, senha ou IP")
-      .nullable(),
-  )
-
 export const atualizarPerfilSchema = z
   .object({
     full_name: z
       .string()
       .transform(semInvisiveis)
       .pipe(z.string().trim().min(1, "informe seu nome").max(LIMITE_NOME, `use até ${LIMITE_NOME} caracteres`)),
-    avatar_url: avatarSchema,
     username: usernameSchema,
     bio: z
       .string()

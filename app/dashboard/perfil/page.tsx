@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,19 +11,29 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Globe, Lock, UserRound } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Globe, ImagePlus, Loader2, Lock, Pencil, Trash2, UserRound } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { LIMITE_BIO, LIMITE_NOME, USERNAME_MAX, USERNAME_MIN } from "@/lib/schemas/perfil-limites";
+import type { Recorte } from "@/lib/social/enquadramento";
+import { EnquadrarFoto } from "./enquadrar-foto";
+import { lerImagem, recortarFoto, TIPOS_ACEITOS } from "./recortar-foto";
 
 /**
  * Página do próprio perfil (domínio Social), aberta pelo menu do usuário.
  *
- * No topo, o cartão mostra como as outras pessoas veem o perfil; embaixo, o
- * formulário que o edita. Lê e grava por /api/social/perfil: nada de cliente
+ * No topo, o cartão mostra como as outras pessoas veem o perfil, com o lápis de
+ * trocar a foto na bolinha do avatar; embaixo, o formulário que o edita. Lê e
+ * grava por /api/social/perfil e /api/social/perfil/foto: nada de cliente
  * Supabase nesta tela. Conta e senha continuam em Configurações.
  *
- * @RF02.1 visualizar o próprio perfil · @RF02.2 nome e avatar · @RF02.5 username
+ * @RF02.1 visualizar o próprio perfil · @RF02.2 nome e foto · @RF02.5 username
  * @RF02.6 bio · @RF02.7 público/privado
  */
 
@@ -42,7 +52,6 @@ type RespostaDeErro = {
 
 type Alteracoes = Partial<{
   full_name: string;
-  avatar_url: string;
   username: string;
   bio: string;
   is_public: boolean;
@@ -50,7 +59,6 @@ type Alteracoes = Partial<{
 
 const ROTULOS: Record<string, string> = {
   full_name: "Nome",
-  avatar_url: "Avatar",
   username: "Nome de usuário",
   bio: "Bio",
   is_public: "Visibilidade",
@@ -65,8 +73,9 @@ function mensagemDeErro(corpo: RespostaDeErro): string {
 
 /**
  * Só o que mudou vai para o servidor. Assim um campo antigo fora do padrão — um
- * avatar http salvo pela rota anterior, por exemplo — não impede salvar a bio, e
- * duas abas abertas não desfazem uma o que a outra salvou nos campos não tocados.
+ * nome acima do limite atual, por exemplo — não impede salvar a bio, e duas abas
+ * abertas não desfazem uma o que a outra salvou nos campos não tocados. A foto
+ * não passa por aqui: tem rota própria.
  * O username é comparado já normalizado: `Bruno` e `bruno` são o mesmo nome.
  */
 function alteracoes(atual: PerfilEditavel, formulario: FormData, publico: boolean): Alteracoes {
@@ -75,8 +84,6 @@ function alteracoes(atual: PerfilEditavel, formulario: FormData, publico: boolea
 
   const fullName = texto("full_name");
   if (fullName !== (atual.full_name ?? "")) mudou.full_name = fullName;
-  const avatarUrl = texto("avatar_url");
-  if (avatarUrl !== (atual.avatar_url ?? "")) mudou.avatar_url = avatarUrl;
   const bio = texto("bio");
   if (bio !== (atual.bio ?? "")) mudou.bio = bio;
   const username = texto("username").toLowerCase();
@@ -99,6 +106,10 @@ export default function PerfilPage() {
   const [perfil, setPerfil] = useState<PerfilEditavel | null>(null);
   const [erroAoCarregar, setErroAoCarregar] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+  const seletorDeFoto = useRef<HTMLInputElement>(null);
+  // Foto escolhida, à espera do enquadramento no modal.
+  const [fotoEscolhida, setFotoEscolhida] = useState<{ imagem: ImageBitmap; url: string } | null>(null);
   const [publico, setPublico] = useState(true);
   // Remonta o formulário depois de salvar, para os campos mostrarem o que ficou
   // gravado (username em minúsculas, espaços aparados), e não o que foi digitado.
@@ -172,8 +183,83 @@ export default function PerfilPage() {
     }
   }
 
+  /** Depois de trocar ou remover a foto: cartão e menu lateral mostram a nova. */
+  /** "Failed to fetch" não diz nada a quem usa: falha de rede ganha mensagem própria. */
+  function mensagemDaFoto(erro: unknown, padrao: string) {
+    if (erro instanceof TypeError) return "Não foi possível falar com o servidor. Verifique a conexão e tente de novo.";
+    return erro instanceof Error ? erro.message : padrao;
+  }
+
+  async function aplicarFoto(resposta: Response, sucesso: string) {
+    const dados = await resposta.json().catch(() => ({}));
+    if (!resposta.ok) throw new Error(dados.error ?? "Não foi possível atualizar a foto");
+    setPerfil(dados.perfil);
+    toast({ title: sucesso });
+    await refreshUser();
+  }
+
+  /** Escolher o arquivo só abre o modal de enquadramento; nada é enviado ainda. */
+  async function escolherFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    // Limpa o seletor: escolher o mesmo arquivo de novo precisa abrir o modal.
+    e.target.value = "";
+    if (!arquivo) return;
+
+    // Sem pré-checagem pelo tipo declarado: alguns celulares mandam o tipo vazio,
+    // e o navegador sabe ler formatos (HEIC no Safari) que o recorte converte. Quem
+    // decide é a leitura da imagem; quem garante, a rota.
+    try {
+      const imagem = await lerImagem(arquivo);
+      setFotoEscolhida({ imagem, url: URL.createObjectURL(arquivo) });
+    } catch {
+      toast({
+        title: "Erro",
+        description: "Não foi possível ler essa imagem. Escolha uma imagem JPEG, PNG ou WebP.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  /** Fecha o modal e libera a memória da imagem e do endereço local dela. */
+  function descartarFoto() {
+    if (!fotoEscolhida) return;
+    fotoEscolhida.imagem.close();
+    URL.revokeObjectURL(fotoEscolhida.url);
+    setFotoEscolhida(null);
+  }
+
+  /** "Aplicar" no modal: recorta o que está no círculo, em 512×512, e envia. */
+  async function enviarFoto(recorte: Recorte) {
+    if (!fotoEscolhida) return;
+    setEnviandoFoto(true);
+    try {
+      const recortada = await recortarFoto(fotoEscolhida.imagem, recorte);
+      const formulario = new FormData();
+      formulario.append("foto", recortada, "foto");
+      await aplicarFoto(await fetch("/api/social/perfil/foto", { method: "POST", body: formulario }), "Foto atualizada");
+      descartarFoto();
+    } catch (erro) {
+      // O modal continua aberto, com o enquadramento, para tentar de novo.
+      toast({ title: "Erro", description: mensagemDaFoto(erro, "Não foi possível atualizar a foto"), variant: "destructive" });
+    } finally {
+      setEnviandoFoto(false);
+    }
+  }
+
+  async function removerFoto() {
+    setEnviandoFoto(true);
+    try {
+      await aplicarFoto(await fetch("/api/social/perfil/foto", { method: "DELETE" }), "Foto removida");
+    } catch (erro) {
+      toast({ title: "Erro", description: mensagemDaFoto(erro, "Não foi possível remover a foto"), variant: "destructive" });
+    } finally {
+      setEnviandoFoto(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
+      <EnquadrarFoto foto={fotoEscolhida} enviando={enviandoFoto} onCancelar={descartarFoto} onAplicar={enviarFoto} />
       <div>
         <h1 className="text-3xl font-bold text-viaja-navy">Perfil</h1>
         <p className="mt-2 text-gray-600">Como as outras pessoas veem você no ViajaMais</p>
@@ -191,12 +277,61 @@ export default function PerfilPage() {
         <>
           <Card role="region" aria-label="Como os outros veem seu perfil">
             <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
-              <Avatar className="h-16 w-16 shrink-0">
-                {perfil.avatar_url ? <AvatarImage src={perfil.avatar_url} alt="" /> : null}
-                <AvatarFallback className="bg-viaja-green text-lg text-white">
-                  {iniciais(perfil.full_name)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative h-20 w-20 shrink-0">
+                {/* A key recria o avatar quando a foto muda: o Avatar do Radix guarda
+                    "imagem carregada" e, sem isso, ao remover a foto as iniciais não
+                    voltavam — o círculo ficava vazio. */}
+                <Avatar key={perfil.avatar_url ?? "sem-foto"} className="h-20 w-20" aria-busy={enviandoFoto}>
+                  {perfil.avatar_url ? <AvatarImage src={perfil.avatar_url} alt="Foto de perfil" /> : null}
+                  <AvatarFallback className="bg-viaja-green text-xl text-white">
+                    {iniciais(perfil.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                {enviandoFoto ? (
+                  <div
+                    role="status"
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40"
+                  >
+                    <Loader2 className="h-6 w-6 animate-spin text-white" aria-hidden />
+                    <span className="sr-only">Enviando foto…</span>
+                  </div>
+                ) : null}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      aria-label="Alterar foto de perfil"
+                      disabled={enviandoFoto || salvando}
+                      className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full border-2 border-white bg-white shadow-md hover:bg-gray-50"
+                    >
+                      <Pencil className="h-4 w-4 text-viaja-navy" aria-hidden />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onSelect={() => seletorDeFoto.current?.click()}>
+                      <ImagePlus className="mr-2 h-4 w-4" aria-hidden />
+                      Enviar nova foto
+                    </DropdownMenuItem>
+                    {perfil.avatar_url ? (
+                      <DropdownMenuItem onSelect={removerFoto} className="text-red-600 focus:text-red-600">
+                        <Trash2 className="mr-2 h-4 w-4" aria-hidden />
+                        Remover foto
+                      </DropdownMenuItem>
+                    ) : null}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <input
+                  ref={seletorDeFoto}
+                  type="file"
+                  accept={TIPOS_ACEITOS.join(",")}
+                  onChange={escolherFoto}
+                  className="hidden"
+                  aria-hidden
+                  tabIndex={-1}
+                />
+              </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-xl font-semibold text-viaja-navy break-words">
@@ -223,7 +358,7 @@ export default function PerfilPage() {
                     <UserRound className="h-5 w-5 text-viaja-orange" />
                     Dados do perfil
                   </CardTitle>
-                  <CardDescription>Nome, foto e o que aparece na sua página</CardDescription>
+                  <CardDescription>Nome e o que aparece na sua página. A foto muda pelo lápis do avatar.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -255,17 +390,6 @@ export default function PerfilPage() {
                     <p id="username-dica" className="text-xs text-gray-500">
                       De {USERNAME_MIN} a {USERNAME_MAX} caracteres: letras, números e _. Fica salvo em minúsculas.
                     </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="avatar_url">URL do avatar</Label>
-                    <Input
-                      id="avatar_url"
-                      name="avatar_url"
-                      type="url"
-                      defaultValue={perfil.avatar_url ?? ""}
-                      placeholder="https://exemplo.com/avatar.jpg"
-                      disabled={salvando}
-                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
@@ -317,7 +441,9 @@ export default function PerfilPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" className="bg-viaja-orange hover:bg-viaja-orange/90" disabled={salvando}>
+              {/* Travado durante o envio da foto: a resposta do PATCH chegaria com o
+                  avatar_url de antes e desfaria a foto nova na tela. */}
+              <Button type="submit" className="bg-viaja-orange hover:bg-viaja-orange/90" disabled={salvando || enviandoFoto}>
                 {salvando ? "Salvando..." : "Salvar perfil"}
               </Button>
             </div>

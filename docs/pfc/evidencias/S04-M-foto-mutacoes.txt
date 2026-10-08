@@ -1,0 +1,131 @@
+# S04-M — testes de mutação do bucket de avatares e do trigger (2026-10-07 20:54)
+Banco: db reset local com as propostas da S03 e da S04-foto aplicadas. Cada caso parte de banco limpo.
+
+# Storage — policies que não podem existir
+
+## B1 INSERT na própria pasta
+Sabotagem: create policy s on storage.objects for insert to authenticated with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.jwt() ->> 'sub'));
+     × Ana não envia nem na própria pasta (só a rota envia)
+     × Ana não envia na pasta do Bruno, e o visitante não envia em lugar nenhum
+     × ninguém apaga pela API: nem a Ana o próprio arquivo, nem o Bruno o dela
+     × ninguém sobrescreve, move nem copia
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  4 failed | 15 passed (19)
+
+## B2 INSERT em qualquer pasta
+Sabotagem: create policy s on storage.objects for insert to authenticated with check (bucket_id = 'avatars');
+     × Ana não envia nem na própria pasta (só a rota envia)
+     × Ana não envia na pasta do Bruno, e o visitante não envia em lugar nenhum
+     × ninguém apaga pela API: nem a Ana o próprio arquivo, nem o Bruno o dela
+     × ninguém sobrescreve, move nem copia
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  4 failed | 15 passed (19)
+
+## B3 SELECT (listar) a própria pasta
+Sabotagem: create policy s on storage.objects for select to authenticated using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.jwt() ->> 'sub'));
+     × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+## B4 SELECT + DELETE da própria pasta
+Sabotagem: create policy s on storage.objects for select to authenticated using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.jwt() ->> 'sub')); create policy d on storage.objects for delete to authenticated using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.jwt() ->> 'sub'));
+     × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz
+     × ninguém apaga pela API: nem a Ana o próprio arquivo, nem o Bruno o dela
+     × ninguém sobrescreve, move nem copia
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 16 passed (19)
+
+## B5 SELECT + UPDATE (mover) amplos
+Sabotagem: create policy s on storage.objects for select to authenticated using (bucket_id = 'avatars'); create policy u on storage.objects for update to authenticated using (bucket_id = 'avatars') with check (true);
+     × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+## B6 INSERT para anon
+Sabotagem: create policy s on storage.objects for insert to anon with check (bucket_id = 'avatars');
+     × Ana não envia na pasta do Bruno, e o visitante não envia em lugar nenhum
+     × ninguém apaga pela API: nem a Ana o próprio arquivo, nem o Bruno o dela
+     × ninguém sobrescreve, move nem copia
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 16 passed (19)
+
+# Bucket
+
+## B7 bucket privado
+Sabotagem: update storage.buckets set public = false where id = 'avatars';
+     × é público para leitura, com 2 MB e só JPEG, PNG e WebP
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+## B8 bucket aceita qualquer tipo
+Sabotagem: update storage.buckets set allowed_mime_types = null where id = 'avatars';
+     × é público para leitura, com 2 MB e só JPEG, PNG e WebP
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+## B9 bucket sem limite de tamanho
+Sabotagem: update storage.buckets set file_size_limit = null where id = 'avatars';
+     × é público para leitura, com 2 MB e só JPEG, PNG e WebP
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+# Trigger de avatar_url
+
+## B10 sem trigger
+Sabotagem: drop trigger profiles_validar_avatar_url on public.profiles;
+     × recusa URL externa, mesmo pelo PostgREST direto
+     × recusa URL externa imitando o caminho do bucket, mesmo pelo PostgREST direto
+     × recusa arquivo na pasta de outra pessoa, mesmo pelo PostgREST direto
+     × recusa arquivo fora de pasta, mesmo pelo PostgREST direto
+     × recusa subpasta, mesmo pelo PostgREST direto
+     × recusa nome que não é uuid, mesmo pelo PostgREST direto
+     × recusa extensão que não é imagem, mesmo pelo PostgREST direto
+     × recusa extensão disfarçada no fim, mesmo pelo PostgREST direto
+     × recusa subida de pasta depois do nome, mesmo pelo PostgREST direto
+     × recusa quebra de linha no fim, mesmo pelo PostgREST direto
+     × recusa maiúsculas, mesmo pelo PostgREST direto
+     × vale também no INSERT do perfil
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  12 failed | 7 passed (19)
+
+## B11 regex sem âncora no fim
+Sabotagem: create or replace function public.social_validar_avatar_url() returns trigger language plpgsql security invoker set search_path = '' as $$ begin if (tg_op = 'INSERT' or new.avatar_url is distinct from old.avatar_url) and new.avatar_url is not null and new.avatar_url !~ ('^' || new.id::text || '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(webp|jpg|png)') then raise exception 'x' using errcode = 'check_violation'; end if; return new; end; $$;
+     × recusa extensão disfarçada no fim, mesmo pelo PostgREST direto
+     × recusa subida de pasta depois do nome, mesmo pelo PostgREST direto
+     × recusa quebra de linha no fim, mesmo pelo PostgREST direto
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 16 passed (19)
+
+## B12 qualquer pasta
+Sabotagem: create or replace function public.social_validar_avatar_url() returns trigger language plpgsql security invoker set search_path = '' as $$ begin if (tg_op = 'INSERT' or new.avatar_url is distinct from old.avatar_url) and new.avatar_url is not null and new.avatar_url !~ '^[0-9a-f-]{36}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(webp|jpg|png)$' then raise exception 'x' using errcode = 'check_violation'; end if; return new; end; $$;
+     × recusa arquivo na pasta de outra pessoa, mesmo pelo PostgREST direto
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+## B13 nome livre em vez de uuid
+Sabotagem: create or replace function public.social_validar_avatar_url() returns trigger language plpgsql security invoker set search_path = '' as $$ begin if (tg_op = 'INSERT' or new.avatar_url is distinct from old.avatar_url) and new.avatar_url is not null and new.avatar_url !~ ('^' || new.id::text || '/[A-Za-z0-9-]+\.(webp|jpg|png)$') then raise exception 'x' using errcode = 'check_violation'; end if; return new; end; $$;
+     × recusa nome que não é uuid, mesmo pelo PostgREST direto
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+## B14 só no UPDATE
+Sabotagem: drop trigger profiles_validar_avatar_url on public.profiles; create trigger profiles_validar_avatar_url before update of avatar_url on public.profiles for each row execute function public.social_validar_avatar_url();
+     × vale também no INSERT do perfil
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 18 passed (19)
+
+## Restaurado
+      Tests  19 passed (19)
+
+# Revisão do PR (2026-10-08) — o arquivo de teste passa a existir de verdade no Storage
+Banco: db reset local com as 5 migrations. A sabotagem é desfeita no fim.
+
+## B15 SELECT e UPDATE para o usuário na própria pasta
+Sabotagem: create policy mutacao_select / mutacao_update on storage.objects to authenticated (bucket avatars, pasta = auth.uid())
+     × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz 40ms
+     × ninguém sobrescreve, move nem copia — nem a Ana dentro da própria pasta 98ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 18 passed (20)
+
+## Restaurado
+      Tests  20 passed (20)
