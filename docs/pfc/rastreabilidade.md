@@ -19,7 +19,7 @@ catálogo das seções 14 e 15.
 | RF-01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | — | — | — |
 | RF-02.1 | O usuário deve poder visualizar seu perfil | Parcial | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-route.test.ts`<br>`e2e/editar-perfil.spec.ts` | 3e7ad89 |
 | RF-02.2 | O usuário deve poder editar nome e avatar | Parcial | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts` | 3e7ad89 |
-| RF-02.3 | O usuário deve poder alterar a senha | Parcial | `app/dashboard/settings/page.tsx` | `e2e/alterar-senha.spec.ts` | 593ec50 |
+| RF-02.3 | O usuário deve poder alterar a senha | Parcial | — | — | — |
 | RF-02.4 | O usuário deve poder excluir a conta | Não iniciado | — | — | — |
 | RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | 3e7ad89 |
 | RF-02.6 | O usuário deve poder escrever uma biografia | Não iniciado | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | 3e7ad89 |
@@ -133,7 +133,7 @@ catálogo das seções 14 e 15.
 ## Resumo
 
 - Requisitos no catálogo: **120**
-- Com implementação marcada: **34**
-- Com teste marcado: **35**
+- Com implementação marcada: **33**
+- Com teste marcado: **34**
 
 _Nenhuma inconsistência._

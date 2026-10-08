@@ -88,11 +88,10 @@ outra pessoa no corpo **não tem efeito**.
 - `tests/lib/perfil-schema.test.ts`, `tests/api/social-perfil-route.test.ts` e
   `tests/api/profile-userid-route.test.ts` (criar) — unit e integração.
 - `e2e/editar-perfil.spec.ts` (criar) — fluxo de edição com screenshot e estado de erro.
-- `e2e/alterar-senha.spec.ts` (criar) — regressão de um bug do RF02.3 achado na
-  revisão, corrigido em commit próprio: o formulário de senha chamava
-  `e.currentTarget.reset()` depois de um `await`, quando o React já zerou o
-  `currentTarget`; a senha mudava, mas os campos continuavam preenchidos e um toast
-  de erro aparecia depois do de sucesso.
+- O formulário de senha, que continua em Configurações, **não foi tocado**: senha e
+  autenticação são da plataforma, não do domínio Social. Uma primeira versão desta
+  atividade corrigiu um bug nele; o Micael pediu para desfazer, e o formulário voltou
+  a ser idêntico ao da `main`. O bug fica registrado abaixo como achado para o dono.
 
 **Parte 2 — página pública**
 - `app/api/social/perfis/[username]/route.ts` (criar) — GET por username.
@@ -110,9 +109,15 @@ RF02 no catálogo da seção 14, via `/pfc-secao` depois do merge.
   IP literal, mas não escolhe o host — ver o risco aceito no plano S03-M.
 - Depois do merge desta parte, nenhuma rota envia `profiles.updated_at`: o grant de
   UPDATE nessa coluna, mantido na S03 só por compatibilidade, pode sair.
-- `app/api/auth/change-password/route.ts` (RF02.3) segue sem zod e devolve a
-  mensagem crua do erro do Auth. Fora do escopo desta atividade; fica para uma
-  correção própria.
+- **Achados para o dono da autenticação (plataforma), não corrigidos aqui:**
+  - o formulário de senha em `app/dashboard/settings/page.tsx` chama
+    `e.currentTarget.reset()` depois de um `await`, quando o React já zerou o
+    `currentTarget`. A senha muda, mas os campos continuam preenchidos e aparece o toast
+    "Cannot read properties of null" logo depois de "Senha alterada". Reproduzido com o
+    usuário Davi; a correção é guardar `const formulario = e.currentTarget` antes do
+    primeiro `await`;
+  - `app/api/auth/change-password/route.ts` não usa zod e devolve ao cliente a mensagem
+    crua do erro do Auth.
 
 ## 3. Passos
 
@@ -140,8 +145,6 @@ Obrigatórios pelo tipo (`regra-de-negocio, route-handler, tela`):
   (projetos `chromium` e `mobile`), incluindo o estado de erro da tela
   — parte 1: `e2e/editar-perfil.spec.ts` (entrada pelo menu do usuário, edição, Configurações
   isolada e estado de erro); a página pública é da parte 2
-- [x] Regressão do bug do formulário de senha: o teste falha antes da correção e
-  passa depois — `e2e/alterar-senha.spec.ts`, commit próprio
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -206,7 +209,7 @@ critério combinado depois que já existe código para defender deixa de ser cri
 
 - [ ] Saída dos testes (unit, integração e E2E) em `docs/pfc/evidencias/S04-M-*`
   — parte 1: `S04-M-editar-perfil-integracao.txt` (52 de 52), `S04-M-editar-perfil-e2e.txt`
-  (6 de 6) e `S04-M-alterar-senha-regressao.txt` (falha antes, passa depois)
+  (6 de 6)
 - [ ] Screenshots do fluxo (chromium e mobile) — parte 1: `S04-M-editar-perfil-chromium.png`
   e `-mobile.png`
 - [ ] Delta de cobertura de `lib/schemas/perfil.ts` e das rotas novas — parte 1:

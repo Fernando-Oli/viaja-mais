@@ -20,9 +20,8 @@ import { useToast } from "@/hooks/use-toast";
 
 /**
  * Configurações da conta: e-mail e senha. Os dados do perfil (nome, foto,
- * nome de usuário, bio e visibilidade) ficam em /dashboard/perfil.
- *
- * @RF02.3 alterar a senha
+ * nome de usuário, bio e visibilidade) ficam em /dashboard/perfil (domínio
+ * Social). O formulário de senha é da plataforma e fica como estava.
  */
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -35,10 +34,7 @@ export default function SettingsPage() {
     setIsChangingPassword(true);
 
     try {
-      // Guardado antes do primeiro await: depois dele o React já zerou o
-      // `e.currentTarget`, e o reset do fim estourava mesmo com a senha trocada.
-      const formulario = e.currentTarget;
-      const formData = new FormData(formulario);
+      const formData = new FormData(e.currentTarget);
       const response = await fetch("/api/auth/change-password", {
         method: "POST",
         body: formData,
@@ -55,11 +51,12 @@ export default function SettingsPage() {
         description: data.message || "Sua senha foi alterada com sucesso.",
       });
 
-      formulario.reset();
-    } catch (erro) {
+      // Reset form
+      e.currentTarget.reset();
+    } catch (error: any) {
       toast({
         title: "Erro",
-        description: erro instanceof Error ? erro.message : "Erro ao alterar senha",
+        description: error.message,
         variant: "destructive",
       });
     } finally {

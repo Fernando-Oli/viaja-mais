@@ -12,7 +12,7 @@
 -- usuário só não prova isolamento nenhum. A terceira existe por causa do
 -- social: uma solicitação de seguir tem dois lados, e provar que ela não vaza
 -- exige alguém que não é nenhum deles. O quarto é dos E2E de perfil, que
--- editam o próprio perfil e a senha: com usuário só deles, um E2E
+-- editam o próprio perfil: com usuário só deles, um E2E
 -- interrompido no meio não quebra os testes de RLS, que contam com Ana, Bruno
 -- e Carla exatamente como o seed os deixa.
 --
@@ -27,7 +27,7 @@
 -- Carla Teste — usuária C (terceiro, para provar que quem não é parte de uma
 -- solicitação pendente não a enxerga — RF09.3)
 -- id: 33333333-3333-4333-8333-333333333333 / senha: viajamais123
--- Davi Teste — usuário D (reservado aos E2E de perfil e senha)
+-- Davi Teste — usuário D (reservado aos E2E de perfil)
 -- id: 44444444-4444-4444-8444-444444444444 / senha: viajamais123
 
 do $$
