@@ -35,12 +35,12 @@ passaria de ~1.000 linhas, e o limite combinado é ~400 por PR:
 | Parte 1 — editar perfil | `feat/S04-M-perfil-publico` | schema zod, rota GET/PATCH do próprio perfil, página Perfil |
 | Parte 2 — página pública | `feat/S04-M-perfil-publico-pagina` | rota GET por username, tela `/u/[username]` |
 
-**Dependência:** as colunas `username`, `bio` e `is_public` vêm da migration da S03,
-que é do Fernando. O desenvolvimento roda sobre a cópia local da proposta; o
-**merge** espera a migration. Nenhuma tabela de outro domínio é consultada, e não
-há SQL, migration, RLS nem `types/database.ts` nesta atividade (os clientes
-Supabase do projeto não usam o tipo `Database`, então o typecheck não depende dos
-tipos regenerados).
+**Dependência:** as colunas `username`, `bio` e `is_public` vêm da migration da S03
+(`20261007105848_social_perfil_e_follows.sql`), que subiu no #27 com o aval do
+Fernando. Este PR é empilhado sobre ela, e o **merge** espera o da S03. Nenhuma tabela
+de outro domínio é consultada, e não há SQL, migration, RLS nem `types/database.ts`
+nesta atividade (os clientes Supabase do projeto não usam o tipo `Database`, então
+o typecheck não depende dos tipos regenerados).
 
 **Autorização.** `exigirMembro`/`exigirDono` não se aplicam: respondem "participa
 desta viagem?", e perfil não é recurso de viagem. A regra aqui é "só o próprio
@@ -149,8 +149,8 @@ Obrigatórios pelo tipo (`regra-de-negocio, route-handler, tela`):
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 
-Pré-requisito: `npm run setup`, a proposta da S03 aplicada localmente (ver o plano
-S03-M) e `npm run dev` em http://localhost:3000.
+Pré-requisito: `npm run setup` nesta branch (a migration da S03 vem junto) e
+`npm run dev` em http://localhost:3000.
 
 1. Entrar como `teste.d@viajamais.local` / `viajamais123` (Davi, reservado aos testes de
    perfil), clicar no avatar e nome no rodapé do menu e escolher **Meu perfil**.
