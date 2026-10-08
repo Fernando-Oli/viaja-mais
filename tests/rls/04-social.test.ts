@@ -584,3 +584,40 @@ describe("exclusão de conta", () => {
     }
   })
 })
+
+describe("revisão da S03 — pode_ver_rede e o teto de full_name", () => {
+  it("visitante sem sessão não chama pode_ver_rede por RPC (@RNF02.4)", async () => {
+    // Antes respondia true para perfil público e null para privado ou
+    // inexistente: um oráculo de contas por UUID para quem nem lê profiles. O
+    // revoke só de public não tirava o EXECUTE que os default privileges da base
+    // dão a anon nominalmente. Os dois perfis, para provar que nenhuma das duas
+    // respostas sobrou.
+    for (const perfil of [idAna, idBruno]) {
+      const { data, error } = await visitante.rpc("pode_ver_rede", { perfil })
+      expect(error?.code, "anon não pode ter EXECUTE em pode_ver_rede").toBe(VIOLA_RLS_OU_GRANT)
+      expect(data).toBeNull()
+    }
+  })
+
+  it("autenticado continua chamando pode_ver_rede — as policies de follows dependem dela (@RNF02.4)", async () => {
+    // Contra correção exagerada: sem EXECUTE para authenticated, todo SELECT em
+    // follows daria 42501.
+    const { rows } = await db.query("select is_public from public.profiles where id = $1", [idAna])
+    expect(rows[0]?.is_public, "pré-condição: a Ana do seed é pública").toBe(true)
+
+    const { data, error } = await bruno.rpc("pode_ver_rede", { perfil: idAna })
+    expect(error).toBeNull()
+    expect(data).toBe(true)
+  })
+
+  it("o teto de 120 caracteres em full_name entra válido, não NOT VALID (@RF02.2)", async () => {
+    // NOT VALID só pula as linhas existentes na criação; depois a constraint vale
+    // em todo UPDATE da linha, e uma conta antiga com nome longo não mudaria mais
+    // nem a bio. A migration corta os nomes antigos e cria a constraint válida.
+    const { rows } = await db.query(
+      `select convalidated from pg_constraint
+        where conname = 'profiles_full_name_tamanho' and conrelid = 'public.profiles'::regclass`,
+    )
+    expect(rows).toEqual([{ convalidated: true }])
+  })
+})

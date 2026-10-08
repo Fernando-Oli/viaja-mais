@@ -68,9 +68,16 @@ alter table public.profiles alter column is_public set default true;
 -- as contas antigas.
 --
 -- full_name e avatar_url passaram a ser lidos por qualquer autenticado. O nome
--- ganha teto de tamanho, `not valid` para não exigir que as contas antigas já
--- obedeçam — vale para toda escrita nova; validar depois de conferir os dados
--- com `alter table public.profiles validate constraint profiles_full_name_tamanho`.
+-- ganha teto de tamanho, e a constraint entra VÁLIDA, depois de cortar em 120
+-- os nomes antigos que passam disso. Não `not valid`: ele só pula a checagem
+-- das linhas existentes no momento da criação, e depois a constraint vale em
+-- TODO update da linha, mesmo de outra coluna — a conta antiga com nome longo
+-- não mudaria mais nem a bio (23514, que a rota devolve como 500), e o
+-- `update ... set avatar_url = null` da migration de avatares abortaria o
+-- deploy. Cortar perde o fim de um nome acima de 120 caracteres; travar a conta
+-- é pior. Validar já na criação é barato: profiles tem uma linha por conta.
+-- (@RF02.2: a conta antiga continua editando o próprio perfil.)
+--
 -- avatar_url fica sem check no banco de propósito: com `not valid`, uma conta
 -- antiga com URL fora do padrão não conseguiria mais editar nem a bio. A
 -- validação dele é do route handler (S04). Risco aceito, registrado no plano:
@@ -110,8 +117,9 @@ begin
 
   if not exists (select 1 from pg_constraint
                  where conname = 'profiles_full_name_tamanho' and conrelid = 'public.profiles'::regclass) then
+    update public.profiles set full_name = left(full_name, 120) where char_length(full_name) > 120;
     alter table public.profiles add constraint profiles_full_name_tamanho
-      check (char_length(full_name) <= 120) not valid;
+      check (char_length(full_name) <= 120);
   end if;
 end $$;
 
@@ -312,8 +320,12 @@ create trigger follows_definir_updated_at
 -- Função, e não subconsulta na policy, porque a policy de follows precisa
 -- consultar follows: inline, a RLS se aplicaria de novo e recursaria. Recebe
 -- só o perfil e resolve o usuário com auth.uid(), como pode_acessar_despesa —
--- não dá para perguntar em nome de terceiros. O que ela revela via RPC (se um
--- perfil é público, se eu o sigo) já é visível por outros caminhos.
+-- não dá para perguntar em nome de terceiros. Para um autenticado, o que ela
+-- revela via RPC (se um perfil é público, se eu o sigo) já é visível por
+-- outros caminhos: ele lê profiles e os próprios vínculos. Para o visitante sem
+-- sessão, não: anon não lê nenhuma das duas tabelas, e a função lhe respondia
+-- `true` para perfil público e nulo para privado ou inexistente — um oráculo de
+-- existência e visibilidade de conta por UUID (@RNF02.4).
 create or replace function public.pode_ver_rede(perfil uuid)
 returns boolean
 language sql
@@ -334,7 +346,12 @@ $$;
 comment on function public.pode_ver_rede(uuid) is
   'Verdadeiro se o usuário da sessão pode ver a rede do perfil: é o dono, o perfil é público, ou ele é seguidor aceito.';
 
-revoke all on function public.pode_ver_rede(uuid) from public;
+-- O EXECUTE sai de public E de anon, como em follows_definir_estado_inicial.
+-- Revogar só de public não basta: o ALTER DEFAULT PRIVILEGES da base concede
+-- EXECUTE a anon nominalmente, e esse grant não passa por public.
+-- authenticated precisa continuar: as policies de follows chamam a função com
+-- o papel de quem consulta, e sem EXECUTE todo SELECT em follows daria 42501.
+revoke all on function public.pode_ver_rede(uuid) from public, anon;
 grant execute on function public.pode_ver_rede(uuid) to authenticated, service_role;
 
 
