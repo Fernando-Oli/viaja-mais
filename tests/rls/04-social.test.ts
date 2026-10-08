@@ -96,6 +96,19 @@ async function desfazer(cliente: SupabaseClient, followerId: string, followeeId:
   if (error) throw new Error(`não desfez ${followerId}→${followeeId}: ${error.message}`)
 }
 
+/**
+ * Devolve o próprio perfil ao estado do seed, falhando alto se não conseguir.
+ * Confere a linha que voltou, não só o erro: um update que não acha a linha não
+ * dá erro. Estado não restaurado quebra a rodada seguinte em cascata, longe da
+ * causa.
+ */
+async function restaurarPerfil(cliente: SupabaseClient, id: string, valores: Record<string, unknown>) {
+  const { data, error } = await cliente.from("profiles").update(valores).eq("id", id).select("id")
+  if (error || data?.length !== 1) {
+    throw new Error(`não restaurou ${JSON.stringify(valores)} no perfil ${id}: ${error?.message ?? "nenhuma linha"}`)
+  }
+}
+
 /** Lê o vínculo como um dos lados, para conferir o estado sem depender de quem testou. */
 async function vinculo(cliente: SupabaseClient, followerId: string, followeeId: string) {
   const { data } = await cliente
@@ -226,9 +239,12 @@ describe("perfil — dados básicos visíveis, escrita restrita", () => {
     }
 
     // Conter um reservado que não é a marca continua permitido.
-    const { error } = await bruno.from("profiles").update({ username: "admin_da_silva" }).eq("id", idBruno)
-    expect(error).toBeNull()
-    await bruno.from("profiles").update({ username: "bruno" }).eq("id", idBruno)
+    try {
+      const { error } = await bruno.from("profiles").update({ username: "admin_da_silva" }).eq("id", idBruno)
+      expect(error).toBeNull()
+    } finally {
+      await restaurarPerfil(bruno, idBruno, { username: "bruno" })
+    }
   })
 
   it("bio acima de 280 caracteres é recusada (RF02.6)", async () => {
@@ -264,12 +280,33 @@ describe("estrutura de profiles", () => {
 
   it("contas novas nascem públicas (RF02.7)", async () => {
     // As que já existiam antes do social ficam privadas: a migration adiciona a
-    // coluna com default false e só depois troca o default.
+    // coluna com default false e só depois troca o default — o teste seguinte
+    // prova essa parte.
     const { rows } = await db.query(
       `select column_default from information_schema.columns
         where table_schema = 'public' and table_name = 'profiles' and column_name = 'is_public'`,
     )
     expect(rows[0].column_default).toBe("true")
+  })
+
+  it("contas que já existiam antes do social ficaram privadas (RF02.7)", async () => {
+    // @RF02.7 — o teste acima só vê o default final. Este prova a ordem da
+    // migration: coluna adicionada com default false, e só depois o default
+    // trocado para true. Adicionar coluna com default constante não reescreve
+    // a tabela: o Postgres guarda em pg_attribute.attmissingval o valor que as
+    // linhas já existentes passam a ler, e trocar o default depois não mexe
+    // nele. `{f}` ali é o false das contas anteriores ao social; com a coluna
+    // criada direto com default true, seria `{t}`. Nenhum dado de teste
+    // alcança isso: o seed roda depois das migrations e só cria contas novas.
+    //
+    // Se uma migration futura reescrever profiles (ALTER COLUMN TYPE, por
+    // exemplo), o Postgres grava o valor em cada linha e limpa attmissingval:
+    // aí é este teste que precisa ser revisto, não a migration.
+    const { rows } = await db.query(
+      `select attmissingval::text as valor from pg_attribute
+        where attrelid = 'public.profiles'::regclass and attname = 'is_public'`,
+    )
+    expect(rows[0].valor).toBe("{f}")
   })
 })
 
@@ -457,9 +494,12 @@ describe("rede de perfil privado", () => {
   })
 
   afterAll(async () => {
-    await ana.from("profiles").update({ is_public: true }).eq("id", idAna)
-    await desfazer(ana, idAna, idBruno)
-    await desfazer(carla, idCarla, idBruno)
+    try {
+      await desfazer(ana, idAna, idBruno)
+      await desfazer(carla, idCarla, idBruno)
+    } finally {
+      await restaurarPerfil(ana, idAna, { is_public: true })
+    }
   })
 
   it("quem não segue nenhum dos dois não vê o vínculo entre perfis privados", async () => {
