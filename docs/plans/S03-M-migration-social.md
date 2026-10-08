@@ -5,7 +5,7 @@ trilha: T1
 responsavel: micael
 revisor: fernando
 semana: S03
-requisitos: [RF02.5, RF02.6, RF02.7, RF09.1, RF09.2, RF09.3, RF09.4, RF09.5, RF09.6, RF09.9, RF13.2]
+requisitos: [RF02.5, RF02.6, RF02.7, RF09.1, RF09.2, RF09.3, RF09.4, RF09.5, RF09.6, RF09.9]
 secoes_doc: [18, 25]
 branch: feat/S03-M-migration-social
 tipo: [migration, rls]
@@ -65,6 +65,42 @@ Correção sugerida, no domínio do Fernando, antes desta migration ou junto del
   `auth.uid()` por dentro como `pode_acessar_despesa`, ou ao menos revogar de anon.
 - Testes: "dono não adiciona membro sem convite → 42501" e "RPC sobre terceiro não
   responde".
+
+### Segundo pré-requisito da plataforma (bloqueante): cadastro com nome longo
+
+A revisão do PR achou um efeito colateral do teto de `full_name` (passo 1): **quem
+se cadastra com nome de mais de 120 caracteres não consegue criar a conta**.
+
+- O trigger `handle_new_user` (migration `plataforma_schema_base`) copia
+  `raw_user_meta_data->>'full_name'` para `profiles` sem cortar.
+- A constraint `profiles_full_name_tamanho` (≤120) vale para toda linha nova: ela
+  derruba o INSERT.
+- Como o trigger roda dentro da criação do usuário em `auth.users`, o cadastro
+  inteiro volta, e a pessoa vê só "Database error saving new user".
+- A tela de cadastro (`app/auth/sign-up`) não tem `maxLength` no campo de nome,
+  então nada avisa antes de enviar.
+
+Correção sugerida, no domínio do Fernando (o `handle_new_user` e a tela de cadastro
+são da autenticação), antes desta migration ou junto dela, como o pré-requisito
+acima:
+
+- `left(..., 120)` no `handle_new_user`, para o cadastro nunca falhar pelo nome;
+- `maxLength` de 120 no campo de nome da tela de cadastro, para a pessoa ver o
+  limite em vez de ter o nome cortado sem aviso;
+- teste: "cadastro com nome de 121 caracteres cria a conta, com o nome cortado em 120".
+
+### Achado para o dono, sem bloqueio: `pode_acessar_despesa` com EXECUTE para anon
+
+A função `pode_acessar_despesa` (migration `financeiro_rateio`, fora do domínio
+Social) tem EXECUTE para `anon`. A migration faz `revoke all ... from public` e
+concede só a `authenticated` e `service_role`, mas o `alter default privileges` da
+`plataforma_schema_base` já dá EXECUTE a `anon`, nominalmente, em toda função criada
+no schema `public`, e revogar de `public` não tira esse grant. É o mesmo padrão que a
+revisão achou em `pode_ver_rede`, desta migration, cuja correção entra neste PR.
+
+Em `pode_acessar_despesa` o impacto é menor: o usuário vem de `auth.uid()`, então,
+para `anon`, a resposta é sempre falsa. Fica registrado para o Fernando decidir, por ser privilégio no banco,
+e não corrigido aqui, por estar na migration do rateio.
 
 ### Decisões de produto tomadas nesta atividade
 
@@ -126,7 +162,12 @@ O SQL completo e comentado está na migration; aqui fica o porquê de cada decis
      privadas, e só depois o default vira `true` (é só metadado).
    - Constraints protegidas pelo nome, como no rateio: com drift, a constraint
      entra mesmo que a coluna já exista.
-   - `full_name` ganha teto de 120 caracteres, `not valid`.
+   - `full_name` ganha teto de 120 caracteres. Os nomes antigos acima disso são
+     cortados antes, e a constraint entra **válida**. A primeira versão usava
+     `not valid`, e a revisão do PR mostrou o problema: a constraint vale em todo
+     UPDATE da linha, então uma conta antiga com nome longo não mudaria nem a bio, e
+     o `update` da migration de avatares abortaria o deploy. É o mesmo motivo que já
+     tirava o `not valid` de `avatar_url`.
 
 2. **`updated_at` do servidor.** Uma função `social_definir_updated_at()` para os
    triggers de UPDATE de `profiles` e de `follows`. A rota de perfil ainda manda
@@ -178,8 +219,12 @@ O SQL completo e comentado está na migration; aqui fica o porquê de cada decis
    depende do grant de coluna.
 
 9. **Índices.** `(followee_id, created_at desc)` cobre "quem me segue" na ordem da
-   tela e a FK, e a versão parcial `where status = 'pending'` cobre a Zona 1 da
-   central de notificações (RF13.2). "Quem eu sigo" usa a PK.
+   tela e a FK, e a versão parcial `where status = 'pending'` (`follows_pendentes_idx`)
+   **prepara** a Zona 1 da central de notificações (RF13.2). "Quem eu sigo" usa a PK.
+   O RF13.2 em si, a notificação de nova solicitação, não é entregue aqui: não há
+   código nem teste dele nesta atividade, só o índice que vai servi-lo. Ele será
+   implementado depois, em atividade própria, e por isso não está entre os
+   `requisitos` deste plano.
 
 10. **Seed.** Ana pública, Bruno privado, Carla pública. A Carla existe porque uma
     solicitação tem dois lados, e provar que ela não vaza exige alguém que não é
@@ -266,7 +311,9 @@ critério combinado depois que já existe código para defender deixa de ser cri
 > - "policy usa participação (trip_members)" é critério de tabela de viagem e não se
 >   aplica a `follows`;
 > - os dois critérios de rede privada e de contas antigas entraram com as decisões
->   do bloco 1.
+>   do bloco 1;
+> - o critério do pré-requisito da plataforma passou a cobrir dois: o cadastro com
+>   nome longo foi achado na revisão do PR, depois do rascunho.
 
 - [ ] `username` é único, validado por formato e fora da lista de reservados — no banco, não só na rota; a busca ignora maiúsculas
 - [ ] Perfil privado expõe só os dados básicos (nome, username, avatar, bio) a
@@ -281,7 +328,8 @@ critério combinado depois que já existe código para defender deixa de ser cri
 - [ ] Em `profiles`, cada um escreve só o próprio perfil e só as colunas editáveis
 - [ ] Toda tabela nova tem RLS habilitada e policy por operação usada
 - [ ] SELECT vazio não é aceito como prova: INSERT, UPDATE e DELETE também são testados
-- [ ] Pré-requisito da plataforma resolvido antes ou junto do merge (Fernando)
+- [ ] Os dois pré-requisitos da plataforma do bloco 1 (membros e RPCs; cadastro com
+  nome longo) resolvidos antes ou junto do merge (Fernando)
 - [ ] Nome do arquivo final segue `<timestamp>_<dominio>_<descrição>.sql` (Fernando)
 - [ ] `npm run db:types` rodado e `types/database.ts` commitado junto da migration (Fernando)
 - [ ] ~~Policy usa participação (trip_members), não propriedade (user_id)~~ — não se
