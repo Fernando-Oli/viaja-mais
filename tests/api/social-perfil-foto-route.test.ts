@@ -90,10 +90,26 @@ vi.mock("@/lib/supabase/admin", () => ({
             h.remocoes.push(caminhos)
             return { data: h.removeVazio ? [] : caminhos.map((name) => ({ name })), error: null }
           },
+          // Varredura da pasta depois da troca. Estado em `varredura`, logo abaixo.
+          async list(pasta: string, opcoes: unknown) {
+            varredura.listagens.push({ pasta, opcoes })
+            if (varredura.listaLanca) throw new Error("rede caiu")
+            return varredura.erroLista ? { data: null, error: varredura.erroLista } : { data: varredura.pasta(), error: null }
+          },
         }
       },
     },
   }),
+}))
+
+type ObjetoNaPasta = { name: string; id: string | null; created_at: string | null }
+
+/** O que o `list` do Storage devolve. Calculado na hora, porque o nome da foto nova só existe depois do envio. */
+const varredura = vi.hoisted(() => ({
+  pasta: (() => []) as () => ObjetoNaPasta[],
+  erroLista: null as { message: string } | null,
+  listaLanca: false,
+  listagens: [] as { pasta: string; opcoes: unknown }[],
 }))
 
 import { POST, DELETE } from "@/app/api/social/perfil/foto/route"
@@ -349,5 +365,159 @@ describe("DELETE /api/social/perfil/foto", () => {
     expect(resposta.status).toBe(500)
     expect(JSON.stringify(await resposta.json())).not.toContain("permission denied")
     expect(h.remocoes).toHaveLength(0)
+  })
+})
+
+describe("varredura da pasta depois da troca (@RF02.2)", () => {
+  // Quem zera avatar_url direto pelo PostgREST e envia de novo deixava a foto
+  // anterior para sempre no bucket. Agora a rota lista a pasta da sessão e apaga
+  // o que foi criado antes da referência — a foto nova no POST, a que saiu no
+  // DELETE —, com o created_at que o Storage devolve (relógio do banco).
+  const T_ORFA_1 = "2026-10-08T12:00:00.000Z"
+  const T_ORFA_2 = "2026-10-08T12:01:00.000Z"
+  const T_ANTERIOR = "2026-10-08T12:05:00.000Z"
+  const T_NOVA = "2026-10-08T12:10:00.000Z"
+  const T_DEPOIS = "2026-10-08T12:10:00.001Z"
+
+  const ORFA_1 = `${DAVI}/1a1a1a1a-1111-4111-8111-111111111111.webp`
+  const ORFA_2 = `${DAVI}/2b2b2b2b-2222-4222-8222-222222222222.png`
+  const DE_OUTRA_ABA = `${DAVI}/3c3c3c3c-3333-4333-8333-333333333333.webp`
+  const MESMO_INSTANTE = `${DAVI}/4d4d4d4d-4444-4444-8444-444444444444.jpg`
+
+  /** Entrada do `list`: o Storage devolve o nome relativo à pasta listada. */
+  const arquivo = (caminho: string, created_at: string): ObjetoNaPasta => ({
+    name: caminho.slice(DAVI.length + 1),
+    id: "objeto",
+    created_at,
+  })
+  const fotoNova = () => h.envios[0].caminho
+
+  let log: ReturnType<typeof vi.spyOn>
+
+  const listagemPadrao = () => {
+    varredura.pasta = () => []
+    varredura.erroLista = null
+    varredura.listaLanca = false
+    varredura.listagens.length = 0
+  }
+
+  beforeEach(() => {
+    listagemPadrao()
+    log = vi.spyOn(console, "error").mockImplementation(() => {})
+    log.mockClear()
+    // Desfeito depois de cada teste, para quem vier abaixo achar a pasta vazia.
+    return () => {
+      listagemPadrao()
+      log.mockRestore()
+    }
+  })
+
+  it("POST apaga da pasta as fotos antigas que não são a nova", async () => {
+    logado()
+    varredura.pasta = () => [
+      arquivo(fotoNova(), T_NOVA),
+      arquivo(ANTERIOR, T_ANTERIOR),
+      arquivo(ORFA_2, T_ORFA_2),
+      arquivo(ORFA_1, T_ORFA_1),
+    ]
+
+    expect((await POST(envio(PNG))).status).toBe(200)
+    // Só a pasta da sessão, uma página, do mais novo para o mais antigo.
+    expect(varredura.listagens).toEqual([
+      { pasta: DAVI, opcoes: { limit: 100, sortBy: { column: "created_at", order: "desc" } } },
+    ])
+    // As órfãs saem numa chamada; a anterior continua com a remoção dela.
+    expect(h.remocoes).toEqual([[ORFA_2, ORFA_1], [ANTERIOR]])
+  })
+
+  it("POST não apaga o que foi criado depois da foto nova, nem no mesmo instante", async () => {
+    // DE_OUTRA_ABA: um envio que leu o avatar depois da troca e ainda vai virar
+    // o avatar. MESMO_INSTANTE: no mesmo milissegundo não dá para ordenar — fica.
+    logado()
+    varredura.pasta = () => [
+      arquivo(DE_OUTRA_ABA, T_DEPOIS),
+      arquivo(MESMO_INSTANTE, T_NOVA),
+      arquivo(fotoNova(), T_NOVA),
+      arquivo(ORFA_1, T_ORFA_1),
+    ]
+
+    expect((await POST(envio(PNG))).status).toBe(200)
+    expect(h.remocoes).toEqual([[ORFA_1], [ANTERIOR]])
+  })
+
+  it("DELETE apaga as fotos mais antigas que a removida e deixa a que outra aba enviou depois", async () => {
+    logado()
+    varredura.pasta = () => [
+      arquivo(DE_OUTRA_ABA, T_DEPOIS),
+      arquivo(ANTERIOR, T_ANTERIOR),
+      arquivo(ORFA_1, T_ORFA_1),
+    ]
+
+    expect((await DELETE()).status).toBe(200)
+    expect(varredura.listagens.map((l) => l.pasta)).toEqual([DAVI])
+    expect(h.remocoes).toEqual([[ORFA_1], [ANTERIOR]])
+  })
+
+  it("DELETE sem foto anterior não varre: nulo para nulo não barra um envio em andamento", async () => {
+    logado()
+    h.leitura = { data: { avatar_url: null }, error: null }
+    varredura.pasta = () => [arquivo(ORFA_1, T_ORFA_1)]
+
+    expect((await DELETE()).status).toBe(200)
+    expect(varredura.listagens).toEqual([])
+    expect(h.remocoes).toEqual([])
+  })
+
+  it("nome fora do formato da rota, subida de pasta e subpasta não são apagados", async () => {
+    logado()
+    varredura.pasta = () => [
+      arquivo(fotoNova(), T_NOVA),
+      { name: "foto.webp", id: "objeto", created_at: T_ORFA_1 },
+      { name: "1a1a1a1a-1111-4111-8111-111111111111.svg", id: "objeto", created_at: T_ORFA_1 },
+      { name: "1a1a1a1a-1111-4111-8111-111111111111.PNG", id: "objeto", created_at: T_ORFA_1 },
+      { name: `../${OUTRO}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`, id: "objeto", created_at: T_ORFA_1 },
+      { name: "subpasta", id: null, created_at: null },
+      arquivo(ORFA_1, T_ORFA_1),
+    ]
+
+    expect((await POST(envio(PNG))).status).toBe(200)
+    expect(h.remocoes).toEqual([[ORFA_1], [ANTERIOR]])
+  })
+
+  it("sem a foto de referência na página, não apaga nada além da anterior", async () => {
+    // Mais de 100 arquivos mais novos que ela, ou outra aba já a apagou: sem
+    // referência não há corte, e na dúvida nada sai.
+    logado()
+    varredura.pasta = () => [arquivo(ORFA_1, T_ORFA_1)]
+
+    expect((await POST(envio(PNG))).status).toBe(200)
+    expect(h.remocoes).toEqual([[ANTERIOR]])
+  })
+
+  it("falha no list não derruba a resposta: só vai para o log", async () => {
+    logado()
+    varredura.erroLista = { message: "storage fora do ar" }
+
+    expect((await POST(envio(PNG))).status).toBe(200)
+    expect(h.remocoes).toEqual([[ANTERIOR]])
+    expect(log).toHaveBeenCalledWith("[foto de perfil] pasta não listada", DAVI, varredura.erroLista)
+
+    // E se o list lançar em vez de devolver o erro.
+    h.remocoes.length = 0
+    varredura.erroLista = null
+    varredura.listaLanca = true
+
+    expect((await DELETE()).status).toBe(200)
+    expect(h.remocoes).toEqual([[ANTERIOR]])
+    expect(log).toHaveBeenCalledWith("[foto de perfil] varredura da pasta falhou", DAVI, expect.any(Error))
+  })
+
+  it("se as sobras não forem apagadas, responde 200 e registra no log", async () => {
+    logado()
+    h.removeVazio = true
+    varredura.pasta = () => [arquivo(fotoNova(), T_NOVA), arquivo(ORFA_1, T_ORFA_1)]
+
+    expect((await POST(envio(PNG))).status).toBe(200)
+    expect(log).toHaveBeenCalledWith("[foto de perfil] sobras não apagadas", [ORFA_1], null)
   })
 })

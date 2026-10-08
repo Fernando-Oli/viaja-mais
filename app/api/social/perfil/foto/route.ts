@@ -84,6 +84,73 @@ async function apagar(admin: ReturnType<typeof criarClienteAdmin>, caminho: stri
   if (error || !data?.length) console.error("[foto de perfil] arquivo não apagado", caminho, error)
 }
 
+/** Uma página do `list` do Storage (o padrão dele). */
+const PAGINA_DA_VARREDURA = 100
+
+/**
+ * Depois da troca, apaga da pasta da pessoa as fotos que nenhuma troca vai
+ * usar. O grant deixa gravar avatar_url direto pelo PostgREST: quem o zerava e
+ * enviava de novo deixava até 2 MB públicos no bucket a cada volta, para sempre.
+ *
+ * Só sai o que foi criado antes da referência: a foto nova (POST) ou a que
+ * acabou de sair do perfil (DELETE). Um envio de outra aba que leu o avatar
+ * depois da troca sobe o arquivo depois dela e ainda pode virar o avatar — fica.
+ * Relógio: o `created_at` de storage.objects dos dois lados (o now() do banco),
+ * nunca o do servidor da aplicação. Não o updated_at do perfil porque, num
+ * DELETE sem foto, a troca é de nulo para nulo e não barra um envio que leu nulo
+ * antes dela; sem referência, não varre. Fica o ABA do nulo (uma aba lê nulo,
+ * outra põe e tira uma foto antes de ela gravar): o arquivo dela pode sair, e
+ * fechar isso pede versão na linha, não relógio.
+ *
+ * Uma página (100), do mais novo para o mais antigo, para a referência estar
+ * sempre nela; com mais arquivos (só sobra de falha), os mais antigos ficam para
+ * a próxima troca. Em ordem crescente, a referência sairia da página e nada mais
+ * seria apagado.
+ *
+ * Como em `apagar`: todo caminho passa por `caminhoApagavel`, a anterior fica
+ * com `apagar` (`jaTratada`) e erro só vai para o log — a troca já valeu.
+ *
+ * @RF02.2
+ */
+async function varrerPasta(
+  admin: ReturnType<typeof criarClienteAdmin>,
+  userId: string,
+  referencia: string | null,
+  jaTratada: string | null,
+) {
+  if (!referencia) return
+  try {
+    const pasta = admin.storage.from(BUCKET_AVATARES)
+    const { data, error } = await pasta.list(userId, {
+      limit: PAGINA_DA_VARREDURA,
+      sortBy: { column: "created_at", order: "desc" },
+    })
+    if (error || !data) {
+      console.error("[foto de perfil] pasta não listada", userId, error)
+      return
+    }
+
+    // Pasta vem com created_at nulo; NaN nunca é menor que nada, então fica.
+    const criadoEm = (o: { created_at: string | null }) => (o.created_at ? Date.parse(o.created_at) : NaN)
+    const ref = data.find((o) => `${userId}/${o.name}` === referencia)
+    const corte = ref ? criadoEm(ref) : NaN
+    if (Number.isNaN(corte)) return
+
+    const sobras = data
+      .filter((o) => criadoEm(o) < corte)
+      .map((o) => caminhoApagavel(`${userId}/${o.name}`, userId))
+      .filter((caminho): caminho is string => caminho !== null && caminho !== jaTratada)
+    if (!sobras.length) return
+
+    const { data: apagados, error: erroRemocao } = await pasta.remove(sobras)
+    if (erroRemocao || (apagados?.length ?? 0) < sobras.length) {
+      console.error("[foto de perfil] sobras não apagadas", sobras, erroRemocao)
+    }
+  } catch (erro) {
+    console.error("[foto de perfil] varredura da pasta falhou", userId, erro)
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -124,7 +191,9 @@ export async function POST(request: Request) {
       throw erro
     }
 
-    await apagar(admin, caminhoApagavel(anterior, user.id))
+    const anteriorApagavel = caminhoApagavel(anterior, user.id)
+    await varrerPasta(admin, user.id, caminho, anteriorApagavel)
+    await apagar(admin, anteriorApagavel)
     return NextResponse.json({ perfil: paraResposta(perfil) })
   } catch (erro) {
     return respostaDeErro(erro)
@@ -139,7 +208,12 @@ export async function DELETE() {
     const anterior = await avatarAtual(supabase, user.id)
     const perfil = await trocarAvatar(supabase, user.id, anterior, null)
 
-    await apagar(criarClienteAdmin(), caminhoApagavel(anterior, user.id))
+    // A referência da varredura é a foto que saiu: ela precisa estar na
+    // listagem, então `apagar` vem depois.
+    const admin = criarClienteAdmin()
+    const anteriorApagavel = caminhoApagavel(anterior, user.id)
+    await varrerPasta(admin, user.id, anteriorApagavel, anteriorApagavel)
+    await apagar(admin, anteriorApagavel)
     return NextResponse.json({ perfil: paraResposta(perfil) })
   } catch (erro) {
     return respostaDeErro(erro)
