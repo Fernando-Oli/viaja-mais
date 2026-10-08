@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -13,51 +14,20 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
+/**
+ * Configurações da conta: e-mail e senha. Os dados do perfil (nome, foto,
+ * nome de usuário, bio e visibilidade) ficam em /dashboard/perfil (domínio
+ * Social). O formulário de senha é da plataforma e fica como estava.
+ */
 export default function SettingsPage() {
-  const { user, profile, refreshUser } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-
-  async function handleProfileUpdate(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsUpdatingProfile(true);
-
-    try {
-      const formData = new FormData(e.currentTarget);
-      const response = await fetch("/api/profile/update", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao atualizar perfil");
-      }
-
-      toast({
-        title: "Perfil atualizado",
-        description: "Suas informações foram atualizadas com sucesso.",
-      });
-
-      // Refresh user data in context
-      await refreshUser();
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdatingProfile(false);
-    }
-  }
 
   async function handlePasswordChange(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -98,55 +68,11 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-viaja-navy">Configurações</h1>
-        <p className="mt-2 text-gray-600">
-          Gerencie suas informações pessoais e preferências
-        </p>
+        <p className="mt-2 text-gray-600">Gerencie sua conta e sua senha</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-viaja-orange" />
-              Informações Pessoais
-            </CardTitle>
-            <CardDescription>Atualize seus dados pessoais</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleProfileUpdate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">Nome Completo</Label>
-                <Input
-                  id="full_name"
-                  name="full_name"
-                  defaultValue={profile?.full_name || ""}
-                  placeholder="Seu nome completo"
-                  required
-                  disabled={isUpdatingProfile}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="avatar_url">URL do Avatar</Label>
-                <Input
-                  id="avatar_url"
-                  name="avatar_url"
-                  defaultValue={profile?.avatar_url || ""}
-                  placeholder="https://exemplo.com/avatar.jpg"
-                  disabled={isUpdatingProfile}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="bg-viaja-orange hover:bg-viaja-orange/90"
-                disabled={isUpdatingProfile}
-              >
-                {isUpdatingProfile ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-viaja-orange" />
@@ -166,6 +92,13 @@ export default function SettingsPage() {
                 O email não pode ser alterado
               </p>
             </div>
+            <p className="text-sm text-gray-600">
+              Nome, foto, nome de usuário e bio ficam em{" "}
+              <Link href="/dashboard/perfil" className="font-medium text-viaja-orange hover:underline">
+                Meu perfil
+              </Link>
+              .
+            </p>
           </CardContent>
         </Card>
 
