@@ -37,9 +37,13 @@ function ascii(bytes: Uint8Array, inicio: number, fim: number) {
 }
 
 /**
- * Tipo real da imagem pelos primeiros bytes. O nome do arquivo e o
- * `content-type` vêm do cliente e mentem de graça: um PDF renomeado para `.png`
- * e enviado como `image/png` passaria pelo bucket, que só olha o tipo declarado.
+ * Tipo da imagem pela assinatura (magic bytes) no começo do arquivo. O nome do
+ * arquivo e o `content-type` vêm do cliente e mentem de graça: um PDF renomeado
+ * para `.png` e enviado como `image/png` passaria pelo bucket, que só olha o
+ * tipo declarado.
+ *
+ * Confere só a assinatura, não decodifica a imagem: um arquivo que comece com o
+ * cabeçalho certo e traga qualquer coisa depois passa por aqui.
  */
 export function tipoDaImagem(bytes: Uint8Array): TipoFoto | null {
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg"

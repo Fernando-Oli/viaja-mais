@@ -17,8 +17,9 @@ import { BUCKET_AVATARES, LIMITE_FOTO_BYTES, caminhoApagavel, caminhoDaNovaFoto,
  * Por que a chave de serviço no Storage: o bucket não tem policy nenhuma para
  * usuário (migration social_avatares), então ninguém grava nem apaga nele pela
  * API do Storage com o JWT do navegador. Só esta rota grava, e só depois de
- * conferir os bytes do arquivo — a única coisa que nem a RLS nem o bucket sabem
- * fazer, já que o bucket confia no tipo declarado. É o critério de
+ * conferir a assinatura do arquivo (os magic bytes do começo) — que nem a RLS
+ * nem o bucket conferem, já que o bucket confia no tipo declarado. É só a
+ * assinatura: a rota não decodifica a imagem. É o critério de
  * lib/supabase/admin.ts: usar a chave para o que a RLS não resolve.
  *
  * O perfil, ao contrário, é atualizado com a sessão do usuário: a RLS de
@@ -156,8 +157,11 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const user = await usuarioAtual(supabase)
 
-    // Recusa pelo cabeçalho, antes de ler o corpo: senão a rota leria vários MB
-    // só para descobrir que eram grandes demais.
+    // Recusa pelo cabeçalho, antes de processar o multipart. Não evita a leitura
+    // do corpo: o proxy.ts casa com /api, e o Next lê até 10 MB dele para a
+    // memória (proxyClientMaxBodySize) antes de chamar a rota. O que se poupa é
+    // montar o formulário e copiar o arquivo só para descobrir que era grande
+    // demais.
     const declarado = Number(request.headers.get("content-length") ?? 0)
     if (declarado > LIMITE_FOTO_BYTES + FOLGA_MULTIPART) throw new ErroHttp(413, "A foto pode ter até 2 MB")
 

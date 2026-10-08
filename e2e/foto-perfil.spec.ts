@@ -8,9 +8,15 @@ import { test, expect, type Page } from "@playwright/test"
  * Usa o Davi, usuário do seed reservado aos E2E de perfil, e remove a foto no fim.
  *
  * A imagem de teste é um degradê de 900×600 em que o vermelho cresce da esquerda
- * para a direita. Arrastar a foto para a direita enquadra a parte esquerda: o
- * centro da foto enviada fica menos vermelho do que no recorte centralizado
- * (~127). É assim que o teste prova que o enquadramento escolhido é o enviado.
+ * para a direita (x/899·255). O teste arrasta a foto para a direita e dá zoom 2,
+ * e mede a linha do meio da foto enviada em dois pontos:
+ *   - o centro prova o arrasto: o recorte vai para a parte esquerda, e o centro
+ *     fica em ~85, contra ~127 no recorte centralizado;
+ *   - a borda esquerda prova o zoom: o zoom é em torno do centro e não mexe
+ *     nele (~85 com ou sem zoom), mas estreita o recorte — com zoom 2 ele tem
+ *     300 px a partir de x=150, e a borda fica em ~43; sem zoom, 600 px a
+ *     partir de x=0, e a borda fica em ~0.
+ * É assim que o teste prova que o enquadramento escolhido é o enviado.
  */
 
 const FOTO = "e2e/fixtures/foto-perfil.png"
@@ -34,8 +40,11 @@ async function escolherArquivo(page: Page, arquivo: Parameters<import("@playwrig
   await seletor.setFiles(arquivo)
 }
 
-/** Vermelho do pixel central da foto, lida pelos bytes (sem depender de CORS do Storage). */
-async function vermelhoNoCentro(page: Page, url: string) {
+/**
+ * Vermelho no centro e na borda esquerda (coluna 2) da linha do meio da foto,
+ * lida pelos bytes (sem depender de CORS do Storage).
+ */
+async function vermelhoNaLinhaDoMeio(page: Page, url: string) {
   const bytes = (await (await page.request.get(url)).body()).toString("base64")
   return page.evaluate(async (base64) => {
     const binario = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
@@ -43,7 +52,8 @@ async function vermelhoNoCentro(page: Page, url: string) {
     const canvas = new OffscreenCanvas(imagem.width, imagem.height)
     const contexto = canvas.getContext("2d")!
     contexto.drawImage(imagem, 0, 0)
-    return contexto.getImageData(imagem.width / 2, imagem.height / 2, 1, 1).data[0]
+    const vermelho = (x: number) => contexto.getImageData(x, imagem.height / 2, 1, 1).data[0]
+    return { centro: vermelho(imagem.width / 2), borda: vermelho(2) }
   }, bytes)
 }
 
@@ -85,9 +95,10 @@ test("enquadra a foto no modal, envia o que está no círculo e remove", async (
     await expect(foto).toHaveAttribute("src", /\/storage\/v1\/object\/public\/avatars\/44444444-4444-4444-8444-444444444444\//)
     await expect.poll(() => foto.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight])).toEqual([512, 512])
 
-    // …e é o pedaço enquadrado, não o centro da imagem.
-    const vermelho = await vermelhoNoCentro(page, (await foto.getAttribute("src"))!)
-    expect(vermelho, "arrastar para a direita deveria enquadrar a parte esquerda, menos vermelha").toBeLessThan(105)
+    // …e é o pedaço enquadrado: arrastado (centro) e com zoom (borda).
+    const { centro, borda } = await vermelhoNaLinhaDoMeio(page, (await foto.getAttribute("src"))!)
+    expect(centro, "arrastar para a direita deveria enquadrar a parte esquerda, menos vermelha").toBeLessThan(105)
+    expect(borda, "o zoom 2 deveria cortar a faixa da esquerda: sem zoom, a borda fica em ~0").toBeGreaterThan(25)
 
     // O menu lateral também troca as iniciais pela foto.
     await expect(page.locator("aside img[src*='/avatars/']")).toBeVisible()

@@ -19,6 +19,9 @@ type Resposta = { data: Record<string, unknown> | null; error: { message: string
 const h = vi.hoisted(() => ({
   getUser: vi.fn(),
   leitura: { data: null, error: null } as Resposta,
+  /** Onde o cliente da sessão leu (tabela, colunas, filtro) e em que tabela escreveu. */
+  leituras: [] as { tabela: string; colunas: string; filtro: string }[],
+  tabelasEscritas: [] as string[],
   /** null = o update não achou a linha (outra aba mexeu antes). */
   linhaAtualizada: true,
   erroEscrita: null as { message: string; code?: string } | null,
@@ -44,9 +47,15 @@ const perfilCom = (avatar_url: unknown) => ({
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: h.getUser },
-    from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => h.leitura }) }),
+    from: (tabela: string) => ({
+      select: (colunas: string) => ({
+        eq: (coluna: string, valor: string) => {
+          h.leituras.push({ tabela, colunas, filtro: `${coluna}=${valor}` })
+          return { maybeSingle: async () => h.leitura }
+        },
+      }),
       update(valores: Record<string, unknown>) {
+        h.tabelasEscritas.push(tabela)
         h.updates.push(valores)
         const responder = {
           select: () => ({
@@ -139,6 +148,8 @@ const semSessao = () => h.getUser.mockResolvedValue({ data: { user: null } })
 beforeEach(() => {
   h.getUser.mockReset()
   h.leitura = { data: { avatar_url: ANTERIOR }, error: null }
+  h.leituras.length = 0
+  h.tabelasEscritas.length = 0
   h.linhaAtualizada = true
   h.erroEscrita = null
   h.erroEnvio = null
@@ -221,17 +232,19 @@ describe("POST /api/social/perfil/foto", () => {
     expect(h.envios).toHaveLength(0)
   })
 
-  it("413: content-length grande é recusado antes de ler o corpo", async () => {
+  it("413: content-length grande é recusado sem processar o multipart", async () => {
+    // Não é "sem ler o corpo": com o proxy.ts, o Next já leu até 10 MB dele
+    // (proxyClientMaxBodySize) antes da rota. O que o cabeçalho evita é o formData().
     logado()
     const pedido = new Request("http://localhost/api/social/perfil/foto", {
       method: "POST",
       body: "x",
       headers: { "content-length": String(50 * 1024 * 1024) },
     })
-    const lerCorpo = vi.spyOn(pedido, "formData")
+    const processarMultipart = vi.spyOn(pedido, "formData")
 
     expect((await POST(pedido)).status).toBe(413)
-    expect(lerCorpo).not.toHaveBeenCalled()
+    expect(processarMultipart).not.toHaveBeenCalled()
   })
 
   it("400: PDF declarado como image/png é recusado pelo conteúdo", async () => {
@@ -316,6 +329,31 @@ describe("POST /api/social/perfil/foto", () => {
 
     expect((await POST(envio(PNG))).status).toBe(404)
     expect(h.envios).toHaveLength(0)
+  })
+
+  it("400: campo foto enviado como texto, não como arquivo (@RF02.2)", async () => {
+    // O texto imita a assinatura do WebP (é toda ASCII): o 400 tem de vir de
+    // "não é arquivo", não da conferência da assinatura.
+    logado()
+    const formulario = new FormData()
+    formulario.append("foto", "RIFF\u0000\u0000\u0000\u0000WEBPVP8 ")
+    const pedido = new Request("http://localhost/api/social/perfil/foto", { method: "POST", body: formulario })
+
+    const resposta = await POST(pedido)
+
+    expect(resposta.status).toBe(400)
+    expect((await resposta.json()).error).toContain('campo "foto"')
+    expect(h.envios).toHaveLength(0)
+  })
+
+  it("lê a foto atual em profiles, pelo id da sessão, e grava em profiles (@RF02.2)", async () => {
+    // A foto anterior decide o que a rota apaga com a chave de serviço: lida na
+    // tabela errada ou pelo filtro errado, apagaria a foto de outra pessoa.
+    logado()
+
+    expect((await POST(envio(PNG))).status).toBe(200)
+    expect(h.leituras).toEqual([{ tabela: "profiles", colunas: "avatar_url", filtro: `id=${DAVI}` }])
+    expect(h.tabelasEscritas).toEqual(["profiles"])
   })
 })
 
