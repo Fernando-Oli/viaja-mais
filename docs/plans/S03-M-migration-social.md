@@ -24,19 +24,19 @@ a base do seguir estilo Instagram (RF09). Sustenta os requisitos RF02.5–RF02.7
 RF09.1–RF09.6/RF09.9 — que, sem esta migration, não têm coluna nem tabela onde
 existir. A RLS de visibilidade definida aqui é o estudo de caso da seção 25.
 
-**Divisão do trabalho.** Migration e RLS são do Fernando (CLAUDE.md), e esta
-atividade segue a regra sem exceção:
+**Divisão do trabalho.** Migration e RLS são do Fernando (CLAUDE.md). O SQL
+nasceu como proposta em `docs/plans/`. Depois de revisado, o Fernando autorizou,
+em 08/10, subi-lo como migration de verdade, desde que passasse na validação:
 
 | Quem | Entrega |
 |---|---|
-| Micael | Esta especificação; a proposta executável em [`S03-M-migration-social.proposta.sql`](S03-M-migration-social.proposta.sql); o seed; o teste de RLS `tests/rls/04-social.test.ts`; as evidências |
-| Fernando | A correção da plataforma descrita abaixo; a migration final em `supabase/migrations/<timestamp>_social_perfil_e_follows.sql`, livre para reescrever a proposta; e o `types/database.ts` regenerado junto |
+| Micael | Esta especificação; a migration [`20261007105848_social_perfil_e_follows.sql`](../../supabase/migrations/20261007105848_social_perfil_e_follows.sql), escrita como proposta e promovida com o aval do Fernando; o `types/database.ts` regenerado junto; o seed; o teste de RLS `tests/rls/04-social.test.ts`; as evidências |
+| Fernando | A revisão da migration e da RLS, que continuam dele; e a correção da plataforma descrita abaixo |
 
-A proposta foi aplicada localmente sobre a `main` e exercitada pelo teste, e
-passou por uma revisão adversarial independente antes de chegar ao Fernando.
-**Ordem de merge:** o seed e o teste referenciam colunas e tabela que só existem
-com a migration, então este PR só entra em `main` junto com ela — o CI de banco
-fica vermelho nesta branch até lá.
+A migration foi exercitada pelo teste e passou por uma revisão adversarial
+independente antes de chegar ao Fernando. Com ela no PR, o seed e o teste têm as
+colunas e a tabela que referenciam, e o CI de banco ("Migrations e RLS") roda a
+suíte inteira sobre um Supabase criado só a partir do repositório.
 
 ### Pré-requisito da plataforma (bloqueante)
 
@@ -96,11 +96,10 @@ Correção sugerida, no domínio do Fernando, antes desta migration ou junto del
 
 ## 2. Arquivos afetados
 
-- `docs/plans/S03-M-migration-social.proposta.sql` — **novo** (Micael). A proposta
-  de SQL: fica fora de `supabase/migrations/` de propósito, não é aplicada pelo
-  `db:reset` e os scripts do Notion só leem `.md`.
-- `supabase/migrations/<timestamp>_social_perfil_e_follows.sql` — **novo** (Fernando).
-- `types/database.ts` — **gerado** por `npm run db:types` junto com a migration (Fernando).
+- `supabase/migrations/20261007105848_social_perfil_e_follows.sql` — **novo**. Escrita
+  pelo Micael como proposta em `docs/plans/` e movida para cá com o aval do
+  Fernando, que segue como revisor e dono da RLS.
+- `types/database.ts` — **gerado** por `npm run db:types` junto com a migration.
 - `supabase/seed.sql` — (Micael) terceira usuária de teste, Carla, e `username`/`bio`/
   `is_public` dos três: Ana pública, Bruno privado, Carla pública.
 - `tests/rls/04-social.test.ts` — **novo** (Micael). O prefixo `04-` segue
@@ -112,7 +111,7 @@ Correção sugerida, no domínio do Fernando, antes desta migration ou junto del
 
 ## 3. Passos
 
-O SQL completo e comentado está na proposta; aqui fica o porquê de cada decisão.
+O SQL completo e comentado está na migration; aqui fica o porquê de cada decisão.
 
 1. **`profiles` — colunas novas.** `username extensions.citext`, `bio text`,
    `is_public boolean`.
@@ -195,8 +194,8 @@ sozinhas, isso precisa ser trigger em `profiles`, e não regra da rota: `is_publ
 
 Obrigatórios pelo tipo (`migration, rls`):
 
-- [x] Aplicação limpa do zero: `npx supabase db reset` aplica as 4 migrations (a
-  proposta como a quarta, localmente) e o seed sem erro
+- [x] Aplicação limpa do zero: `npx supabase db reset` aplica as 4 migrations e o
+  seed sem erro, localmente e no CI ("Migrations e RLS", `supabase start` do zero)
 - [x] Teste em `tests/rls/` com os usuários do seed: 40 casos em `04-social.test.ts`
 - [x] Usuário A não lê E não escreve dados de B, nos dois sentidos:
   - leitura: pendente e rede privada invisíveis para terceiro; visitante sem sessão
@@ -212,16 +211,16 @@ Além do obrigatório:
   limpo. Os erros são conferidos pelo código do Postgres (42501, 23505, 23514), para
   que um teste que espera a RLS não passe porque um check barrou.
 - [x] **Advisors da Supabase** (`supabase db advisors`): antes das correções, 6
-  achados nos objetos desta proposta; depois, só o "índice ainda não usado" de
+  achados nos objetos desta migration; depois, só o "índice ainda não usado" de
   `follows_pendentes_idx`, que nenhuma tela consulta até a S05.
 - [x] **`supabase db lint`** (plpgsql_check): sem erros.
 - [x] **Índices**: `EXPLAIN` das consultas de lista e de pendentes, como usuário
   autenticado com RLS ativa, usa os índices, e `(select auth.uid())` aparece como
   InitPlan, avaliado uma vez por consulta.
-- [x] **Tipos**: `supabase gen types` gera `follows`, `username`, `bio` e
-  `is_public`, e o `typecheck` passa com eles. O arquivo não foi commitado, porque
-  é do Fernando.
-- [x] **Regressão da equipe**: o E2E inteiro contra o banco com a proposta deu 16
+- [x] **Tipos**: `npm run db:types` gera `follows`, `username`, `bio` e
+  `is_public`, o `typecheck` passa com eles, e o arquivo vai commitado junto com
+  a migration (regra 7).
+- [x] **Regressão da equipe**: o E2E inteiro contra o banco com a migration deu 16
   de 20. As 4 falhas existem sem esta mudança: `00-fumaca` espera 404 em `/login` e
   `/register`, mas o `proxy.ts` redireciona visitante para `/auth/login` antes.
   Fica registrado para quem é dono do E2E.
@@ -232,9 +231,7 @@ Além do obrigatório:
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 
-Pré-requisito: copiar a proposta para `supabase/migrations/` com um timestamp
-posterior ao do rateio (ou usar a migration do Fernando, quando existir) e rodar
-`npx supabase db reset`. **Não** commitar essa cópia.
+Pré-requisito: estar nesta branch, com o Supabase local no ar (`npm run setup`).
 
 1. `npx supabase db reset` → aplica as migrations e o seed sem erro.
 2. `npm run test:rls` → 5 suítes verdes.

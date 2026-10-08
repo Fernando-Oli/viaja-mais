@@ -1,10 +1,10 @@
--- PROPOSTA DE MIGRATION — S03-M-migration-social
+-- Social: perfil público (username, bio, visibilidade) e seguidores.
 --
--- Isto NÃO é uma migration: fica em docs/plans/ e não é aplicado por
--- `db:reset`. Migration e RLS são do Fernando (CLAUDE.md); este arquivo é a
--- especificação executável do que o domínio Social precisa, já exercitada
--- localmente por tests/rls/04-social.test.ts. A versão final, o nome
--- (<timestamp>_social_perfil_e_follows.sql) e o `npm run db:types` são dele.
+-- S03-M-migration-social. Migration e RLS são do Fernando (CLAUDE.md): o Micael
+-- escreveu o SQL como proposta em docs/plans/, e o Fernando autorizou subi-lo
+-- como migration depois da validação. Ela é exercitada por
+-- tests/rls/04-social.test.ts. Cada proteção foi sabotada uma a uma para
+-- provar que um teste cai (docs/pfc/evidencias/S03-M-social-mutacoes.txt).
 --
 -- PRÉ-REQUISITO DA PLATAFORMA (bloqueante, fora deste arquivo): abrir a
 -- leitura de `profiles` torna os UUIDs enumeráveis, e duas peças da base
@@ -12,8 +12,8 @@
 -- qualquer usuário sem convite, e `is_trip_member`/`is_trip_owner`/
 -- `can_access_trip` respondem a anon via RPC sobre terceiros. Ver o plano,
 -- seção "Pré-requisito da plataforma", e a reprodução em
--- docs/pfc/evidencias/S03-M-achado-plataforma.txt. Esta proposta não deve
--- entrar antes dessa correção, ou junto dela.
+-- docs/pfc/evidencias/S03-M-achado-plataforma.txt. Esta migration não deve
+-- chegar à main antes dessa correção, ou deve entrar junto dela.
 --
 -- Constrói sobre a base da plataforma (20260910000333_plataforma_schema_base):
 -- `profiles` já existe, criada no signup pelo trigger handle_new_user. Aqui ela
