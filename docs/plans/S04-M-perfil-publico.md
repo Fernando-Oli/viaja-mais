@@ -135,6 +135,9 @@ Obrigatórios pelo tipo (`regra-de-negocio, route-handler, tela`):
 
 - [x] Unit do schema com casos de borda; cobertura ≥70% em `lib/schemas/perfil.ts`
   — parte 1: `tests/lib/perfil-schema.test.ts`, 100% de linhas e ramos
+  (`S04-M-editar-perfil-cobertura.txt`). A revisão do PR acrescentou os casos de
+  nome e bio só com caracteres invisíveis, de caracteres de controle e de surrogate
+  isolado, que antes passavam (e o NUL virava 500 no banco)
 - [ ] Integração das rotas: 200 feliz · 401 sem sessão · 400 payload inválido · e,
   no lugar do 403 (não há perfil-alvo na URL), o corpo não reescreve `id`/`created_at`
   e o update é sempre filtrado pelo `id` da sessão. Mais 409 (username em uso) no
@@ -208,7 +211,7 @@ critério combinado depois que já existe código para defender deixa de ser cri
 ## 6. Evidência
 
 - [ ] Saída dos testes (unit, integração e E2E) em `docs/pfc/evidencias/S04-M-*`
-  — parte 1: `S04-M-editar-perfil-integracao.txt` (52 de 52), `S04-M-editar-perfil-e2e.txt`
+  — parte 1: `S04-M-editar-perfil-integracao.txt` (62 de 62), `S04-M-editar-perfil-cobertura.txt`, `S04-M-editar-perfil-e2e.txt`
   (6 de 6)
 - [ ] Screenshots do fluxo (chromium e mobile) — parte 1: `S04-M-editar-perfil-chromium.png`
   e `-mobile.png`

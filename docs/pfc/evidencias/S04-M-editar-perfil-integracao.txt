@@ -1,12 +1,12 @@
 
  RUN  v4.1.11 C:/Users/micae/viaja-mais
 
- ✓ tests/lib/perfil-schema.test.ts > usernameSchema > normaliza para minúsculas e apara espaços 5ms
+ ✓ tests/lib/perfil-schema.test.ts > usernameSchema > normaliza para minúsculas e apara espaços 4ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > aceita os limites de 3 e 30 caracteres 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "ab" (curto demais) 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" (longo demais) 0ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "com espaco" (espaço no meio) 0ms
- ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "com-hifen" (hífen) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "com-hifen" (hífen) 0ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "joão" (acento) 0ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "ana.b" (ponto) 0ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "" (vazio) 1ms
@@ -15,7 +15,17 @@
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > não confunde reservado com nome que só o contém (fora a marca) 0ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > nome só com caractere de largura zero é nome vazio 2ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de formatação do nome e da bio 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > aceita um payload completo 2ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+3164, preenchimento hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+115F, preenchimento inicial hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+1160, preenchimento medial hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+FFA0, preenchimento hangul de meia largura: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+2800, braille em branco: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só mistura de preenchimentos, espaço e largura zero: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de controle: o NUL viraria 500 no Postgres em vez de 400 (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > a bio guarda a quebra de linha; o resto do controle sai (@RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove metade solta de par substituto, que não é texto (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > não quebra emoji: o seletor de variação U+FE0F continua no nome e na bio (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > aceita um payload completo 1ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > nome: recusa vazio e só espaços; aceita até o limite 2ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > bio: aceita até o limite e recusa acima 1ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > bio: vazia, só espaços ou nula vira nulo (apagar) 0ms
@@ -51,23 +61,23 @@ stderr | tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500:
   message: 'new row violates check constraint "profiles_bio_tamanho"'
 }
 
- ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: devolve o perfil da sessão, filtrado pelo id dela 12ms
- ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 401: sem sessão não chega a consultar 3ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: devolve o perfil da sessão, filtrado pelo id dela 10ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 401: sem sessão não chega a consultar 2ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 404: sessão sem linha em profiles 1ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 500: erro do banco na leitura não vaza a mensagem crua 3ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 200: edita o próprio perfil, com o username normalizado 6ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 401: sem sessão não chega a atualizar 1ms
- ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: payload inválido (bio acima do limite) 2ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: payload inválido (bio acima do limite) 3ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: username reservado 1ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: corpo vazio 2ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: JSON malformado é payload inválido, não erro do servidor 2ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > o corpo não escolhe o perfil nem reescreve id/created_at (no lugar do 403) 2ms
- ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 404: o update não encontrou a linha da sessão 2ms
- ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 409: username em uso, sem a mensagem do Postgres 2ms
- ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500: outro erro do banco não vaza a mensagem crua (RNF02.11) 2ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 404: o update não encontrou a linha da sessão 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 409: username em uso, sem a mensagem do Postgres 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500: outro erro do banco não vaza a mensagem crua (RNF02.11) 1ms
 
  Test Files  3 passed (3)
-      Tests  52 passed (52)
-   Start at  17:24:37
-   Duration  1.56s (transform 382ms, setup 1.86s, import 634ms, tests 102ms, environment 1ms)
+      Tests  62 passed (62)
+   Start at  17:29:17
+   Duration  1.27s (transform 436ms, setup 1.55s, import 677ms, tests 101ms, environment 1ms)
 
