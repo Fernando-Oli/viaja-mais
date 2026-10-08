@@ -1,21 +1,31 @@
 
  RUN  v4.1.11 C:/Users/micae/viaja-mais
 
- ✓ tests/lib/perfil-schema.test.ts > usernameSchema > normaliza para minúsculas e apara espaços 4ms
- ✓ tests/lib/perfil-schema.test.ts > usernameSchema > aceita os limites de 3 e 30 caracteres 1ms
- ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "ab" (curto demais) 1ms
- ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" (longo demais) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > usernameSchema > normaliza para minúsculas e apara espaços 6ms
+ ✓ tests/lib/perfil-schema.test.ts > usernameSchema > aceita os limites de 3 e 30 caracteres 2ms
+ ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "ab" (curto demais) 2ms
+ ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" (longo demais) 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "com espaco" (espaço no meio) 0ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "com-hifen" (hífen) 0ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "joão" (acento) 0ms
- ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "ana.b" (ponto) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "ana.b" (ponto) 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa "" (vazio) 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa nome reservado, mesmo escrito com maiúsculas 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa qualquer nome que contenha a marca 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > não confunde reservado com nome que só o contém (fora a marca) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > nome só com caractere de largura zero é nome vazio 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de formatação do nome e da bio 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > aceita um payload completo 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > nome só com caractere de largura zero é nome vazio 2ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de formatação do nome e da bio 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+3164, preenchimento hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+115F, preenchimento inicial hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+1160, preenchimento medial hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+FFA0, preenchimento hangul de meia largura: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+2800, braille em branco: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só mistura de preenchimentos, espaço e largura zero: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de controle: o NUL viraria 500 no Postgres em vez de 400 (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > a bio guarda a quebra de linha; o resto do controle sai (@RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove metade solta de par substituto, que não é texto (@RF02.2 @RF02.6) 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > não quebra emoji: o seletor de variação U+FE0F continua no nome e na bio (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > aceita um payload completo 2ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > nome: recusa vazio e só espaços; aceita até o limite 2ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > bio: aceita até o limite e recusa acima 1ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > bio: vazia, só espaços ou nula vira nulo (apagar) 0ms
@@ -45,7 +55,7 @@ stderr | tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500:
   message: 'new row violates check constraint "profiles_bio_tamanho"'
 }
 
- ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: devolve o perfil da sessão, filtrado pelo id dela 10ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: devolve o perfil da sessão, filtrado pelo id dela 11ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: o caminho da foto no bucket volta como URL pública; URL antiga volta nula 2ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 401: sem sessão não chega a consultar 2ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 404: sessão sem linha em profiles 1ms
@@ -63,7 +73,7 @@ stderr | tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500:
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500: outro erro do banco não vaza a mensagem crua (RNF02.11) 1ms
 
  Test Files  3 passed (3)
-      Tests  48 passed (48)
-   Start at  09:32:27
-   Duration  1.35s (transform 462ms, setup 1.57s, import 758ms, tests 95ms, environment 1ms)
+      Tests  58 passed (58)
+   Start at  17:32:47
+   Duration  1.26s (transform 452ms, setup 1.50s, import 776ms, tests 107ms, environment 1ms)
 

@@ -130,6 +130,16 @@ e não corrigido aqui, por estar na migration do rateio.
   todas decisão da plataforma: ligar a otimização de imagem com `remotePatterns`
   (a imagem passa a vir pelo servidor) ou guardar avatares no Storage do projeto.
 
+  > **Atualização: superado pela S04-M-foto-perfil (#30).** Venceu a segunda
+  > mitigação: a foto passou a ser enviada para o bucket `avatars` do Storage do
+  > projeto, e `avatar_url` guarda só o caminho no bucket
+  > (`<id>/<uuid>.(webp|jpg|png)`). O banco agora confere esse formato, com o trigger
+  > `profiles_validar_avatar_url` (INSERT e UPDATE, também pelo PostgREST direto). O
+  > obstáculo que motivou a decisão acima saiu junto: a migration de avatares zera as
+  > URLs antigas, então nenhuma conta fica presa a um valor fora do padrão. A
+  > validação de URL na rota deixou de existir, e o risco do IP de quem visita fica
+  > fechado. A decisão original continua registrada aqui como a da S03.
+
 ## 2. Arquivos afetados
 
 - `supabase/migrations/20261007105848_social_perfil_e_follows.sql` — **novo**. Escrita
@@ -172,6 +182,13 @@ O SQL completo e comentado está na migration; aqui fica o porquê de cada decis
 2. **`updated_at` do servidor.** Uma função `social_definir_updated_at()` para os
    triggers de UPDATE de `profiles` e de `follows`. A rota de perfil ainda manda
    `updated_at`, e o trigger ignora esse valor.
+
+   > **Atualização: superado pela parte 1 da S04 (#29).** A rota que mandava
+   > `updated_at`, `/api/profile/update`, foi apagada; a que a substituiu,
+   > `/api/social/perfil`, não manda. O trigger continua valendo para quem escreve
+   > direto. O grant de UPDATE em `updated_at` (passo 3), mantido só por
+   > compatibilidade com a rota antiga, pode sair: pendência registrada no plano
+   > S04-M-perfil-publico.
 
 3. **`profiles` — policies e privilégios.**
    - SELECT `to authenticated using (true)`: o detalhamento do RF02 manda os

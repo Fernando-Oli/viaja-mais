@@ -56,6 +56,9 @@ outra pessoa no corpo **não tem efeito**.
   username normalizado (trim + minúsculas), formato `^[a-z0-9_]{3,30}$` e nomes
   reservados; bio ≤280; nome ≤120; avatar `https://` ou vazio (vira nulo);
   `is_public` booleano. No PATCH tudo é opcional, mas corpo vazio é 400.
+  > **Superado pela S04-M-foto-perfil (#30):** o avatar por URL é o que a parte 1
+  > entregou. No #30 a foto passou a ser enviada por upload, o schema deixou de aceitar
+  > `avatar_url`, e a foto muda só pelas rotas `POST/DELETE /api/social/perfil/foto`.
 - `app/api/social/perfil/route.ts` (criar) — GET e PATCH do próprio perfil, no molde
   de `app/api/trips/[tripId]/route.ts`. O GET alimenta o formulário e funciona com
   `username` nulo (contas novas não têm). O PATCH atualiza campo a campo; username
@@ -107,6 +110,11 @@ RF02 no catálogo da seção 14, via `/pfc-secao` depois do merge.
   `next.config.mjs`, `<img>` no cabeçalho): o host escolhido pelo dono do perfil
   recebe o IP de quem visita. A rota recusa http, credencial na URL, `localhost` e
   IP literal, mas não escolhe o host — ver o risco aceito no plano S03-M.
+  > **Superado pela S04-M-foto-perfil (#30):** o risco valia para o avatar por URL
+  > da parte 1. Com o upload, a foto vem do Storage do próprio projeto, o banco só
+  > aceita o caminho no bucket (`<id>/<uuid>.(webp|jpg|png)`, trigger
+  > `profiles_validar_avatar_url`), a migration de avatares zera as URLs antigas, e a
+  > validação de URL saiu da rota, porque não há mais URL para validar.
 - Depois do merge desta parte, nenhuma rota envia `profiles.updated_at`: o grant de
   UPDATE nessa coluna, mantido na S03 só por compatibilidade, pode sair.
 - **Achados para o dono da autenticação (plataforma), não corrigidos aqui:**
@@ -158,7 +166,9 @@ Pré-requisito: `npm run setup` nesta branch (a migration da S03 vem junto) e
 1. Entrar como `teste.d@viajamais.local` / `viajamais123` (Davi, reservado aos testes de
    perfil), clicar no avatar e nome no rodapé do menu e escolher **Meu perfil**.
    → Abre `/dashboard/perfil`: o cartão mostra @davi e o selo Público; o formulário
-   traz nome, username `davi`, avatar, bio e o seletor de privacidade ligado.
+   traz nome, username `davi`, bio e o seletor de privacidade ligado. A foto não está
+   no formulário: muda pelo lápis na bolinha do avatar do cartão (roteiro no plano
+   S04-M-foto-perfil). Até o #29 havia aqui um campo "URL do avatar", que o #30 tirou.
 2. Trocar a bio, desligar "Perfil público" e salvar. → Toast "Perfil atualizado"; o
    cartão passa a mostrar a bio nova e o selo Privado; recarregar mantém os dois.
 3. Tentar o username `ana`. → Toast de erro "nome de usuário em uso"; nada muda.
@@ -211,8 +221,10 @@ critério combinado depois que já existe código para defender deixa de ser cri
 ## 6. Evidência
 
 - [ ] Saída dos testes (unit, integração e E2E) em `docs/pfc/evidencias/S04-M-*`
-  — parte 1: `S04-M-editar-perfil-integracao.txt` (62 de 62), `S04-M-editar-perfil-cobertura.txt`, `S04-M-editar-perfil-e2e.txt`
-  (6 de 6)
+  — parte 1: `S04-M-editar-perfil-integracao.txt`, `S04-M-editar-perfil-cobertura.txt`,
+  `S04-M-editar-perfil-e2e.txt` (6 de 6). A integração deu 62 de 62 na entrega do #29;
+  no #30 a evidência foi regravada, depois que os testes de URL do avatar saíram com o
+  upload, e dá 58 de 58.
 - [ ] Screenshots do fluxo (chromium e mobile) — parte 1: `S04-M-editar-perfil-chromium.png`
   e `-mobile.png`
 - [ ] Delta de cobertura de `lib/schemas/perfil.ts` e das rotas novas — parte 1:

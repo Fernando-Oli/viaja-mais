@@ -78,7 +78,8 @@ tipo declarado).
   de perfil usa (esta página, a página pública, o feed, telas de outros domínios), para
   ninguém entregar o caminho cru ao navegador.
 - `app/api/social/perfil/foto/route.ts` (criar) — `POST` (multipart): recusa pelo
-  `content-length` antes de ler o corpo (413), confere os bytes, envia para
+  `content-length` antes de processar o multipart (413; o corpo em si o Next já leu
+  antes de chamar a rota, ver bloco 3), confere os bytes, envia para
   `avatars/<id>/<uuid>.<ext>` com a chave de serviço e troca `avatar_url` **condicionado à
   foto lida no começo** — duas abas ao mesmo tempo não deixam arquivo órfão: a segunda
   recebe 409 e seu arquivo é apagado. `DELETE` remove a foto do mesmo jeito.
@@ -121,6 +122,23 @@ tipo declarado).
   1 hora, e navegador/CDN podem continuar mostrando até lá.
 - **Metadados (EXIF, GPS)** saem quando a tela recorta a foto no canvas. Quem chamar a
   rota direto com um JPEG mantém os metadados no arquivo.
+- **A checagem de tipo confere a assinatura do arquivo, não decodifica a imagem.**
+  `tipoDaImagem` olha só os primeiros bytes (os _magic bytes_). Um arquivo que começa
+  com a assinatura de JPEG e depois traz qualquer coisa passa e fica público no bucket.
+  Risco aceito, com a mitigação que já existe: a rota grava com o tipo detectado
+  (`image/jpeg`, `image/png` ou `image/webp`), o Storage serve com esse content-type de
+  imagem, e o navegador não interpreta o arquivo como HTML; o app mostra a foto em
+  `<img>`. Pela tela, o canvas gera uma imagem nova antes do envio; só quem chama a
+  rota direto manda bytes arbitrários. Opção futura: decodificar a imagem no servidor,
+  o que exigiria uma biblioteca nativa de imagem, fora do `package.json` compartilhado.
+- **O 413 pelo `content-length` não poupa o servidor de ler o corpo.** O `proxy.ts`
+  pega `/api` (o matcher só deixa de fora `_next/static`, `_next/image`, o favicon e
+  caminhos terminados em extensão de imagem), e, com proxy, o Next lê o corpo da
+  requisição e o guarda em memória antes de chamar a rota, até o limite de
+  `proxyClientMaxBodySize` (10 MB por padrão; acima disso guarda só os primeiros 10 MB
+  e registra um aviso, sem recusar). A recusa pelo cabeçalho só evita processar o
+  multipart e copiar o arquivo. O teto de corpo de verdade é decisão da plataforma
+  (pendência abaixo).
 - **Arquivo órfão se a rota cair entre o envio e a troca do perfil** (timeout). Raro, sem
   efeito para quem usa; uma limpeza periódica da pasta resolveria.
 - **Apagar a conta não apaga a pasta no Storage**: fica para quando a exclusão de conta
@@ -134,6 +152,19 @@ tipo declarado).
   vale trocar por `AvatarImage` + `AvatarFallback` numa mudança da plataforma.
 - `docs/pfc/05-arquitetura/22-implementacao.md` ainda atribui o RF02.2 a Configurações:
   atualizar via `/pfc-secao 22` depois do merge.
+
+**Pendências para o Fernando**, registradas e não resolvidas aqui (`proxy.ts` e
+`lib/supabase/` são da plataforma):
+
+- **Teto de corpo das rotas de `/api`.** Hoje vale o padrão de 10 MB do
+  `proxyClientMaxBodySize`, que só limita quanto o Next guarda em memória, sem recusar a
+  requisição (ver o risco do 413 acima). Se a rota da foto, ou qualquer outra, precisar
+  de um teto real abaixo disso, a decisão é da plataforma: na configuração do Next,
+  arquivo compartilhado, ou na frente do app.
+- **Comentário de `lib/supabase/admin.ts`.** Ele ainda diz que a chave de serviço é
+  usada "exclusivamente" para a API administrativa do GoTrue (`auth.admin.*`). Com este
+  PR, ela também é usada no Storage, pela rota da foto, para enviar e apagar no bucket
+  `avatars`. Vale ajustar o comentário, para a narrativa da seção 25 bater com o código.
 
 ## 4. Passos
 
@@ -160,9 +191,9 @@ Obrigatórios pelo tipo (`migration, rls, route-handler, regra-de-negocio, tela`
   fora do formato —, também pelo PostgREST direto e no INSERT
 - [ ] Unit de `lib/social/foto.ts` e `lib/social/avatar.ts` com casos de borda; ≥70%
 - [ ] Integração das rotas: 200 · 401 · 400 sem arquivo · 400 tipo que não é imagem
-  (mesmo declarado como imagem) · 413 acima do limite (e pelo `content-length`, sem ler
-  o corpo) · exatamente 2 MB passa · tipo e extensão vêm dos bytes · 409 quando outra aba
-  trocou a foto · erro do banco apaga o arquivo recém-enviado e não vaza · só a foto da
+  (mesmo declarado como imagem) · 413 acima do limite (e pelo `content-length`, sem
+  processar o multipart) · exatamente 2 MB passa · tipo e extensão vêm dos bytes · 409
+  quando outra aba trocou a foto · erro do banco apaga o arquivo recém-enviado e não vaza · só a foto da
   própria pasta é apagada · URL esperada montada a partir de `lib/env` (passa com a URL
   do CI)
 - [ ] Unit de `lib/social/enquadramento.ts`: cobre a janela, limites de arrasto, zoom em
@@ -197,7 +228,9 @@ vêm junto) e `npm run dev`.
 9. No console do navegador, logado, tentar `upload` direto no bucket com o cliente
    Supabase. → Recusado pela RLS, mesmo na própria pasta.
 10. No DevTools, aba Network, enviar a foto. → `POST /api/social/perfil/foto`, e nenhuma
-   chamada direta a `/storage/v1/object`.
+   escrita direta no Storage (POST, PUT ou DELETE em `/storage/v1/object`, nem `move`
+   ou `copy`). O único acesso do navegador ao Storage é o GET da imagem pública
+   (`/storage/v1/object/public/avatars/...`), esperado com o bucket público.
 11. Repetir 1 a 4 e 7 em modo celular. → Lápis, menu e modal utilizáveis, com pinça.
 
 ## 6. O que validar
@@ -208,7 +241,9 @@ critério combinado depois que já existe código para defender deixa de ser cri
 > Critérios ajustados depois da revisão independente, com o motivo no bloco 1: "ninguém
 > grava, apaga nem lista na pasta de outro" virou "ninguém grava, apaga nem lista pela
 > API do Storage", porque o desenho final tira do usuário qualquer acesso direto ao
-> bucket; e entraram a ordem de merge e as URLs antigas zeradas.
+> bucket; e entraram a ordem de merge e as URLs antigas zeradas. Depois, na revisão
+> do PR, "nenhuma chamada ao Storage parte do navegador" virou "nenhuma escrita": com
+> o bucket público, o navegador carrega a foto por GET, e é isso que se espera.
 
 - [ ] O lápis fica na bolinha do avatar do cartão do perfil e abre "Enviar nova foto" e,
   quando há foto, "Remover foto"
@@ -227,7 +262,8 @@ critério combinado depois que já existe código para defender deixa de ser cri
   apagado; envios simultâneos não deixam arquivo órfão
 - [ ] O campo "URL do avatar" sai e o PATCH do perfil não aceita mais `avatar_url`
 - [ ] Erro do Storage ou do banco não volta cru ao cliente
-- [ ] Nenhuma chamada ao Storage parte do navegador
+- [ ] Nenhuma escrita no Storage (envio, troca, `move`, `copy` ou remoção) parte do
+  navegador; o navegador só faz o GET da imagem pública
 - [ ] A migration de avatares entra neste mesmo PR; `db:types` rodado, sem diferença nos
   tipos (bucket e trigger não aparecem no schema `public`)
 - [ ] Funciona em mobile e desktop; feedback por `toast()`; estado de envio e de erro tratados
