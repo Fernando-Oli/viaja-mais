@@ -5,11 +5,13 @@
 -- é dado pessoal de terceiro num ambiente sem os controles de produção.
 
 -- ---------------------------------------------------------------------------
--- Dois usuários de teste.
+-- Três usuários de teste.
 --
--- São dois, e não um, porque metade do valor da suíte está em provar que o
--- usuário B *não* enxerga o que é do A. Teste de RLS com um usuário só não
--- prova isolamento nenhum.
+-- São pelo menos dois, e não um, porque metade do valor da suíte está em
+-- provar que o usuário B *não* enxerga o que é do A. Teste de RLS com um
+-- usuário só não prova isolamento nenhum. A terceira existe por causa do
+-- social: uma solicitação de seguir tem dois lados, e provar que ela não vaza
+-- exige alguém que não é nenhum deles.
 --
 -- As senhas são fixas e públicas — só existem no ambiente local, e estarem no
 -- repositório é o que permite que E2E e testes de RLS rodem sem configuração.
@@ -19,6 +21,9 @@
 -- id: 11111111-1111-4111-8111-111111111111 / senha: viajamais123
 -- Bruno Teste — usuário B
 -- id: 22222222-2222-4222-8222-222222222222 / senha: viajamais123
+-- Carla Teste — usuária C (terceiro, para provar que quem não é parte de uma
+-- solicitação pendente não a enxerga — RF09.3)
+-- id: 33333333-3333-4333-8333-333333333333 / senha: viajamais123
 
 do $$
 declare
@@ -32,6 +37,11 @@ declare
       'id',    '22222222-2222-4222-8222-222222222222',
       'email', 'teste.b@viajamais.local',
       'nome',  'Bruno Teste'
+    ),
+    jsonb_build_object(
+      'id',    '33333333-3333-4333-8333-333333333333',
+      'email', 'teste.c@viajamais.local',
+      'nome',  'Carla Teste'
     )
   );
   u jsonb;
@@ -71,6 +81,29 @@ begin
     on conflict (provider, provider_id) do nothing;
   end loop;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- Perfis sociais dos usuários de teste
+--
+-- Os perfis nascem pelo trigger handle_new_user no INSERT acima. Aqui damos a
+-- eles username, bio e visibilidade, com um público e um privado de propósito:
+-- metade do valor da suíte de RLS está em provar a diferença entre os dois.
+--   Ana   → público  (seguir a Ana tem efeito imediato)
+--   Bruno → privado  (seguir o Bruno vira solicitação pendente)
+--   Carla → público  (terceiro observador)
+-- ---------------------------------------------------------------------------
+
+update public.profiles
+   set username = 'ana', is_public = true, bio = 'Viajante de teste — perfil público.'
+ where id = '11111111-1111-4111-8111-111111111111';
+
+update public.profiles
+   set username = 'bruno', is_public = false, bio = 'Viajante de teste — perfil privado.'
+ where id = '22222222-2222-4222-8222-222222222222';
+
+update public.profiles
+   set username = 'carla', is_public = true, bio = 'Viajante de teste — terceiro observador.'
+ where id = '33333333-3333-4333-8333-333333333333';
 
 -- ---------------------------------------------------------------------------
 -- Fixtures de domínio (viagens, despesas, itinerário)

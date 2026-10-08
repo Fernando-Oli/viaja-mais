@@ -1,0 +1,62 @@
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > Bruno vê os dados básicos do perfil público da Ana 18ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > Ana vê os dados básicos mesmo de um perfil privado (Bruno) 14ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > visitante sem sessão não tem acesso nenhum a profiles 15ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > Bruno não edita o perfil da Ana 30ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > Bruno não cria um perfil em nome da Ana 17ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > cada um continua editando o próprio perfil (RF02.6) 35ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > ninguém reescreve o created_at do próprio perfil (grant de coluna) 13ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > o updated_at do perfil é do servidor, mesmo que o cliente mande outro 16ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > username é único (RF02.5) 14ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > busca por username ignora maiúsculas: /u/Ana encontra ana (citext) 22ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > username fora do formato é recusado (RF02.5) 98ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > username reservado é recusado pelo banco, mesmo sem passar pela rota (RF02.5) 76ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > bio acima de 280 caracteres é recusada (RF02.6) 13ms
+ ✓ tests/rls/04-social.test.ts > perfil — dados básicos visíveis, escrita restrita > nome acima de 120 caracteres é recusado 13ms
+ ✓ tests/rls/04-social.test.ts > estrutura de profiles > as colunas de profiles são exatamente as conhecidas 13ms
+ ✓ tests/rls/04-social.test.ts > estrutura de profiles > contas novas nascem públicas (RF02.7) 7ms
+ ✓ tests/rls/04-social.test.ts > estrutura de profiles > contas que já existiam antes do social ficaram privadas (RF02.7) 3ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil público (efeito imediato) > Bruno segue a Ana (pública) e o vínculo nasce aceito (RF09.1) 27ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil público (efeito imediato) > seguir de novo levanta erro de chave (a idempotência é do route handler) 16ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o cliente não escolhe status nem datas ao seguir (grant de coluna) 45ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > Ana solicita seguir o Bruno (privado) e o vínculo nasce pendente (RF09.2) 30ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o solicitante (Ana) não se auto-aprova por UPDATE 13ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o solicitante (Ana) não se auto-aprova por upsert 28ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não enxerga a solicitação pendente (RF09.3) 11ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não aprova nem apaga a solicitação alheia 35ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono (Bruno) vê a solicitação e a aprova, e o updated_at avança (RF09.3, RF09.4) 27ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não desfaz um vínculo aceito alheio, que ela enxerga 35ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono não rebaixa um vínculo aceito para pendente 26ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono não reponta follower_id via UPDATE (grant de coluna) 25ms
+ ✓ tests/rls/04-social.test.ts > estado inicial imposto pelo trigger > mesmo escrevendo direto no banco, status e datas são do servidor 10ms
+ ✓ tests/rls/04-social.test.ts > rede de perfil privado > quem não segue nenhum dos dois não vê o vínculo entre perfis privados 12ms
+ ✓ tests/rls/04-social.test.ts > rede de perfil privado > as partes continuam vendo o próprio vínculo 24ms
+ ✓ tests/rls/04-social.test.ts > rede de perfil privado > seguidora aceita do Bruno passa a ver a rede dele (RF09.6) 47ms
+ ✓ tests/rls/04-social.test.ts > recusar e remover seguidor — o dono desfaz o vínculo > Bruno recusa a solicitação da Carla, que some para os dois (RF09.4) 37ms
+ ✓ tests/rls/04-social.test.ts > recusar e remover seguidor — o dono desfaz o vínculo > Bruno remove a Carla já aceita, e ela pode solicitar de novo (RF09.9) 81ms
+ ✓ tests/rls/04-social.test.ts > forjar vínculo > Bruno não cria um follow com o follower_id da Ana 31ms
+ ✓ tests/rls/04-social.test.ts > forjar vínculo > ninguém segue a si mesmo 19ms
+ ✓ tests/rls/04-social.test.ts > forjar vínculo > visitante sem sessão não segue ninguém nem lê vínculos 29ms
+ ✓ tests/rls/04-social.test.ts > listas públicas e não sobre-correção > um vínculo aceito com perfil público é visível para quem não é parte (RF09.6) 26ms
+ ✓ tests/rls/04-social.test.ts > listas públicas e não sobre-correção > deixar de seguir é DELETE da própria linha e continua permitido (RF09.5) 14ms
+ ✓ tests/rls/04-social.test.ts > exclusão de conta > apagar a conta apaga o perfil e os vínculos nos dois papéis (cascade, base do RF02.4) 22ms
+ ✓ tests/rls/04-social.test.ts > revisão da S03 — pode_ver_rede e o teto de full_name > visitante sem sessão não chama pode_ver_rede por RPC (@RNF02.4) 30ms
+ ✓ tests/rls/04-social.test.ts > revisão da S03 — pode_ver_rede e o teto de full_name > autenticado continua chamando pode_ver_rede — as policies de follows dependem dela (@RNF02.4) 19ms
+ ✓ tests/rls/04-social.test.ts > revisão da S03 — pode_ver_rede e o teto de full_name > o teto de 120 caracteres em full_name entra válido, não NOT VALID (@RF02.2) 3ms
+
+ Test Files  1 passed (1)
+      Tests  44 passed (44)
+   Start at  17:09:45
+   Duration  2.51s (transform 124ms, setup 53ms, import 311ms, tests 1.77s, environment 0ms)
+
+
+# Suíte inteira (npm run test:rls), mesma rodada de banco
+      4  ✓ tests/rls/00-estrutura.test.ts
+     19  ✓ tests/rls/01-isolamento.test.ts
+      9  ✓ tests/rls/02-rateio.test.ts
+      6  ✓ tests/rls/03-escopo-grupo.test.ts
+     44  ✓ tests/rls/04-social.test.ts
+ Test Files  5 passed (5)
+      Tests  82 passed (82)

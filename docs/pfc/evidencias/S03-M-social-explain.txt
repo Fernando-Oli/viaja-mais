@@ -1,0 +1,59 @@
+# S03-M — índices de follows sob RLS (2026-10-07 17:19)
+Como o Bruno (role authenticated + claims do JWT). enable_seqscan=off porque, com 3 usuários,
+o planner prefere varrer a tabela; desligado, mostra que o índice serve à consulta.
+InitPlan = (select auth.uid()) avaliado uma vez por consulta, não por linha.
+
+## RF13.2 — minhas solicitações pendentes, mais recentes primeiro
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using follows_pendentes_idx on follows
+   Index Cond: (followee_id = '22222222-2222-4222-8222-222222222222'::uuid)
+   Filter: (((InitPlan 1).col1 = follower_id) OR ((InitPlan 2).col1 = followee_id) OR ((status = 'accepted'::text) AND ((SubPlan 3) OR (SubPlan 4))))
+   InitPlan 1
+     ->  Result
+   InitPlan 2
+     ->  Result
+   SubPlan 3
+     ->  Result
+   SubPlan 4
+     ->  Result
+(11 rows)
+
+## RF09.6 — quem me segue, mais recentes primeiro
+                                                                                          QUERY PLAN                                                                                          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Sort Key: follows.created_at DESC
+   InitPlan 1
+     ->  Result
+   InitPlan 2
+     ->  Result
+   ->  Bitmap Heap Scan on follows
+         Recheck Cond: (followee_id = '22222222-2222-4222-8222-222222222222'::uuid)
+         Filter: ((status = 'accepted'::text) AND (((InitPlan 1).col1 = follower_id) OR ((InitPlan 2).col1 = followee_id) OR ((status = 'accepted'::text) AND ((SubPlan 3) OR (SubPlan 4)))))
+         ->  Bitmap Index Scan on follows_followee_recentes_idx
+               Index Cond: (followee_id = '22222222-2222-4222-8222-222222222222'::uuid)
+         SubPlan 3
+           ->  Result
+         SubPlan 4
+           ->  Result
+(15 rows)
+
+## RF09.6 — quem eu sigo
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on follows
+   Recheck Cond: (follower_id = '22222222-2222-4222-8222-222222222222'::uuid)
+   Filter: (((InitPlan 1).col1 = follower_id) OR ((InitPlan 2).col1 = followee_id) OR ((status = 'accepted'::text) AND ((SubPlan 3) OR (SubPlan 4))))
+   InitPlan 1
+     ->  Result
+   InitPlan 2
+     ->  Result
+   ->  Bitmap Index Scan on follows_pkey
+         Index Cond: (follower_id = '22222222-2222-4222-8222-222222222222'::uuid)
+   SubPlan 3
+     ->  Result
+   SubPlan 4
+     ->  Result
+(13 rows)
+
