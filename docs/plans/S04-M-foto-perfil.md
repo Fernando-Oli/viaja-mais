@@ -29,8 +29,11 @@ recebe o IP e o horário de cada visita. Com upload, a foto passa a vir do Stora
 próprio projeto — e as URLs antigas são zeradas (ver bloco 3).
 
 **Decisões do Micael:** PR próprio, empilhado sobre a parte 1 da S04 (#29), para o que
-já está pronto não esperar o Storage; e o navegador recorta o centro em quadrado e
-reduz para 512×512 antes de enviar.
+já está pronto não esperar o Storage; o navegador recorta em quadrado e reduz para
+512×512 antes de enviar; e, depois de testar a primeira versão (que recortava sempre o
+centro), **um modal de enquadramento como o do Instagram**: escolhida a foto, a pessoa
+arrasta para posicionar e ajusta o zoom antes de aplicar. Feito sem biblioteca nova,
+para não mexer no `package.json` (arquivo compartilhado).
 
 **Dependência da plataforma (Fernando).** O projeto não usa Storage até hoje (o plano
 norte registra isso). O bucket e as regras de acesso são migration e RLS, então seguem
@@ -87,9 +90,18 @@ tipo declarado).
   quando a foto muda (o Avatar do Radix guarda "imagem carregada" e, sem isso, ao remover
   a foto as iniciais não voltavam — achado pelo E2E); "Salvar perfil" travado durante o
   envio; mensagem própria para falha de rede.
-- `app/dashboard/perfil/recortar-foto.ts` (criar) — recorte quadrado 512×512 no canvas,
-  com fundo branco (PNG transparente não vira preto no JPEG).
-- Testes: `tests/lib/foto.test.ts`, `tests/api/social-perfil-foto-route.test.ts` (criar);
+- `lib/social/enquadramento.ts` (criar) — a geometria do enquadramento, em funções
+  puras: escala que cobre a janela, limites (a imagem sempre cobre o círculo), zoom em
+  torno do centro e o quadrado da imagem original que vira a foto.
+- `app/dashboard/perfil/enquadrar-foto.tsx` (criar) — o modal "Ajustar foto": janela
+  quadrada com a máscara circular do avatar; arrastar com mouse ou dedo; zoom pelo
+  controle, pela roda do mouse e pela pinça; setas e +/− pelo teclado; Cancelar e
+  Aplicar. Usa o `Dialog` do projeto e um `<input type="range">` nativo (o `Slider` do
+  projeto não repassa o rótulo de acessibilidade, e `components/ui` não se edita).
+- `app/dashboard/perfil/recortar-foto.ts` (criar) — gera o 512×512 no canvas a partir do
+  recorte escolhido no modal, com fundo branco (PNG transparente não vira preto no JPEG).
+- Testes: `tests/lib/foto.test.ts`, `tests/lib/enquadramento.test.ts`,
+  `tests/api/social-perfil-foto-route.test.ts` (criar);
   `tests/lib/perfil-schema.test.ts`, `tests/api/social-perfil-route.test.ts`,
   `tests/api/profile-userid-route.test.ts` (editar — as URLs esperadas saem de `lib/env`:
   no CI a URL do Supabase é outra); `tests/rls/05-avatares.test.ts` (criar);
@@ -149,8 +161,13 @@ Obrigatórios pelo tipo (`migration, rls, route-handler, regra-de-negocio, tela`
   trocou a foto · erro do banco apaga o arquivo recém-enviado e não vaza · só a foto da
   própria pasta é apagada · URL esperada montada a partir de `lib/env` (passa com a URL
   do CI)
-- [ ] E2E: lápis → enviar foto → aparece 512×512 no cartão e no menu lateral → remover;
-  PDF e PDF renomeado para `.png` recusados na tela; screenshot em chromium e mobile
+- [ ] Unit de `lib/social/enquadramento.ts`: cobre a janela, limites de arrasto, zoom em
+  torno do centro, faixa de zoom, recorte sempre dentro da imagem
+- [ ] E2E: lápis → escolher foto → abre o modal → arrastar e dar zoom → Aplicar → a foto
+  aparece 512×512 no cartão e no menu lateral **e é o pedaço enquadrado** (o degradê de
+  teste fica menos vermelho no centro quando se arrasta para a direita) → remover;
+  Cancelar não envia nada; PDF e PDF renomeado para `.png` recusados; screenshots do
+  modal e do perfil em chromium e mobile
 - [ ] Mutação: cada policy que não pode existir, o bucket e o trigger — sabotados, derrubam
   ao menos um teste
 
@@ -162,17 +179,21 @@ Pré-requisito: as propostas da S03 e desta atividade aplicadas localmente, `npm
 1. Entrar como `teste.d@viajamais.local` / `viajamais123`, abrir **Meu perfil** pelo menu
    do usuário. → A bolinha do avatar mostra as iniciais e um lápis.
 2. Clicar no lápis → **Enviar nova foto** e escolher uma foto grande (ex.: de celular).
-   → Indicador de envio; a foto aparece recortada no círculo, no cartão e no menu lateral.
-3. No Studio (Storage → avatars), conferir o arquivo em `4444…/` com nome uuid, ~100 KB,
+   → Abre o modal **Ajustar foto**, com a foto escurecida fora do círculo.
+3. Arrastar a foto, aumentar o zoom (controle, roda do mouse ou pinça no celular) e
+   clicar em **Aplicar**. → Indicador de envio; a foto aparece no círculo do cartão e do
+   menu lateral exatamente como foi enquadrada.
+4. Escolher outra foto e clicar em **Cancelar**. → O modal fecha e nada muda.
+5. No Studio (Storage → avatars), conferir o arquivo em `4444…/` com nome uuid, ~100 KB,
    512×512.
-4. Enviar outra foto. → A anterior some do bucket.
-5. Clicar no lápis → **Remover foto**. → Volta às iniciais; o arquivo some do bucket.
-6. Tentar enviar um PDF renomeado para `.png`. → Recusado com mensagem de formato.
-7. No console do navegador, logado, tentar `upload` direto no bucket com o cliente
+6. Enviar outra foto. → A anterior some do bucket.
+7. Clicar no lápis → **Remover foto**. → Volta às iniciais; o arquivo some do bucket.
+8. Tentar enviar um PDF renomeado para `.png`. → Recusado com mensagem de formato.
+9. No console do navegador, logado, tentar `upload` direto no bucket com o cliente
    Supabase. → Recusado pela RLS, mesmo na própria pasta.
-8. No DevTools, aba Network, enviar a foto. → `POST /api/social/perfil/foto`, e nenhuma
+10. No DevTools, aba Network, enviar a foto. → `POST /api/social/perfil/foto`, e nenhuma
    chamada direta a `/storage/v1/object`.
-9. Repetir 1, 2 e 5 em modo celular. → Lápis e menu utilizáveis.
+11. Repetir 1 a 4 e 7 em modo celular. → Lápis, menu e modal utilizáveis, com pinça.
 
 ## 6. O que validar
 
@@ -186,7 +207,11 @@ critério combinado depois que já existe código para defender deixa de ser cri
 
 - [ ] O lápis fica na bolinha do avatar do cartão do perfil e abre "Enviar nova foto" e,
   quando há foto, "Remover foto"
-- [ ] A foto enviada é recortada em quadrado e reduzida para 512×512 antes do envio
+- [ ] Escolhida a foto, abre um modal de enquadramento: arrastar posiciona, o zoom vem
+  do controle, da roda do mouse ou da pinça, e o círculo mostra o que vira o avatar;
+  Cancelar não envia nada
+- [ ] A foto enviada é exatamente o que estava no círculo, recortada e reduzida para
+  512×512 antes do envio
 - [ ] Só JPEG, PNG e WebP de até 2 MB; o tipo é conferido pelo conteúdo do arquivo
 - [ ] Ninguém grava, sobrescreve, move, copia, lista nem apaga no bucket pela API do
   Storage — só a rota escreve, depois de conferir os bytes
@@ -206,6 +231,6 @@ critério combinado depois que já existe código para defender deixa de ser cri
 ## 7. Evidência
 
 - [ ] Saída dos testes (unit, integração, RLS e E2E) em `docs/pfc/evidencias/S04-M-foto-*`
-- [ ] Screenshots do fluxo (chromium e mobile)
+- [ ] Screenshots do fluxo (chromium e mobile): o modal de enquadramento e o perfil com a foto
 - [ ] Mutações das policies, do bucket e do trigger
 - [ ] Delta de cobertura de `lib/social/` e da rota

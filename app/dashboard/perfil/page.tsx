@@ -21,7 +21,9 @@ import { Globe, ImagePlus, Loader2, Lock, Pencil, Trash2, UserRound } from "luci
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { LIMITE_BIO, LIMITE_NOME, USERNAME_MAX, USERNAME_MIN } from "@/lib/schemas/perfil-limites";
-import { recortarFoto, TIPOS_ACEITOS } from "./recortar-foto";
+import type { Recorte } from "@/lib/social/enquadramento";
+import { EnquadrarFoto } from "./enquadrar-foto";
+import { lerImagem, recortarFoto, TIPOS_ACEITOS } from "./recortar-foto";
 
 /**
  * Página do próprio perfil (domínio Social), aberta pelo menu do usuário.
@@ -106,6 +108,8 @@ export default function PerfilPage() {
   const [salvando, setSalvando] = useState(false);
   const [enviandoFoto, setEnviandoFoto] = useState(false);
   const seletorDeFoto = useRef<HTMLInputElement>(null);
+  // Foto escolhida, à espera do enquadramento no modal.
+  const [fotoEscolhida, setFotoEscolhida] = useState<{ imagem: ImageBitmap; url: string } | null>(null);
   const [publico, setPublico] = useState(true);
   // Remonta o formulário depois de salvar, para os campos mostrarem o que ficou
   // gravado (username em minúsculas, espaços aparados), e não o que foi digitado.
@@ -194,24 +198,48 @@ export default function PerfilPage() {
     await refreshUser();
   }
 
-  async function enviarFoto(e: React.ChangeEvent<HTMLInputElement>) {
+  /** Escolher o arquivo só abre o modal de enquadramento; nada é enviado ainda. */
+  async function escolherFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const arquivo = e.target.files?.[0];
-    // Limpa o seletor: escolher o mesmo arquivo de novo precisa disparar o envio.
+    // Limpa o seletor: escolher o mesmo arquivo de novo precisa abrir o modal.
     e.target.value = "";
     if (!arquivo) return;
 
     // Sem pré-checagem pelo tipo declarado: alguns celulares mandam o tipo vazio,
     // e o navegador sabe ler formatos (HEIC no Safari) que o recorte converte. Quem
-    // decide é a leitura da imagem logo abaixo; quem garante, a rota.
+    // decide é a leitura da imagem; quem garante, a rota.
+    try {
+      const imagem = await lerImagem(arquivo);
+      setFotoEscolhida({ imagem, url: URL.createObjectURL(arquivo) });
+    } catch {
+      toast({
+        title: "Erro",
+        description: "Não foi possível ler essa imagem. Escolha uma imagem JPEG, PNG ou WebP.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  /** Fecha o modal e libera a memória da imagem e do endereço local dela. */
+  function descartarFoto() {
+    if (!fotoEscolhida) return;
+    fotoEscolhida.imagem.close();
+    URL.revokeObjectURL(fotoEscolhida.url);
+    setFotoEscolhida(null);
+  }
+
+  /** "Aplicar" no modal: recorta o que está no círculo, em 512×512, e envia. */
+  async function enviarFoto(recorte: Recorte) {
+    if (!fotoEscolhida) return;
     setEnviandoFoto(true);
     try {
-      const recortada = await recortarFoto(arquivo).catch(() => {
-        throw new Error("Não foi possível ler essa imagem. Escolha uma imagem JPEG, PNG ou WebP.");
-      });
+      const recortada = await recortarFoto(fotoEscolhida.imagem, recorte);
       const formulario = new FormData();
       formulario.append("foto", recortada, "foto");
       await aplicarFoto(await fetch("/api/social/perfil/foto", { method: "POST", body: formulario }), "Foto atualizada");
+      descartarFoto();
     } catch (erro) {
+      // O modal continua aberto, com o enquadramento, para tentar de novo.
       toast({ title: "Erro", description: mensagemDaFoto(erro, "Não foi possível atualizar a foto"), variant: "destructive" });
     } finally {
       setEnviandoFoto(false);
@@ -231,6 +259,7 @@ export default function PerfilPage() {
 
   return (
     <div className="space-y-6">
+      <EnquadrarFoto foto={fotoEscolhida} enviando={enviandoFoto} onCancelar={descartarFoto} onAplicar={enviarFoto} />
       <div>
         <h1 className="text-3xl font-bold text-viaja-navy">Perfil</h1>
         <p className="mt-2 text-gray-600">Como as outras pessoas veem você no ViajaMais</p>
@@ -297,7 +326,7 @@ export default function PerfilPage() {
                   ref={seletorDeFoto}
                   type="file"
                   accept={TIPOS_ACEITOS.join(",")}
-                  onChange={enviarFoto}
+                  onChange={escolherFoto}
                   className="hidden"
                   aria-hidden
                   tabIndex={-1}

@@ -1,9 +1,23 @@
 
  RUN  v4.1.11 C:/Users/micae/viaja-mais
 
+ ✓ tests/lib/enquadramento.test.ts > escalaBase e ponto de partida > o lado menor preenche a janela 3ms
+ ✓ tests/lib/enquadramento.test.ts > escalaBase e ponto de partida > começa centralizado e sem zoom: recorte é o quadrado do meio 2ms
+ ✓ tests/lib/enquadramento.test.ts > escalaBase e ponto de partida > a caixa na tela cobre a janela e fica centralizada 1ms
+ ✓ tests/lib/enquadramento.test.ts > arrastar > arrastar para a direita mostra a parte esquerda da foto 1ms
+ ✓ tests/lib/enquadramento.test.ts > arrastar > não passa da borda: a imagem continua cobrindo a janela 1ms
+ ✓ tests/lib/enquadramento.test.ts > zoom > zoom de 2× recorta um quadrado com metade do lado, no centro 0ms
+ ✓ tests/lib/enquadramento.test.ts > zoom > mantém o ponto do centro no centro: o deslocamento cresce com o zoom 0ms
+ ✓ tests/lib/enquadramento.test.ts > zoom > fica entre 1× e o máximo 0ms
+ ✓ tests/lib/enquadramento.test.ts > zoom > ao diminuir o zoom, o deslocamento volta para dentro da borda 1ms
+ ✓ tests/lib/enquadramento.test.ts > zoom > limitar corrige um enquadramento fora das regras 0ms
+ ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 1, x: +0, y: +0 } 1ms
+ ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 3, x: +0, y: +0 } 0ms
+ ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 2.37, x: 123.4, y: -56.7 } 1ms
+ ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 3, x: 675, y: 450 } 0ms
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > reconhece JPEG, PNG e WebP pela assinatura 3ms
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa PDF 1ms
- ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa GIF 1ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa GIF 0ms
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa SVG 0ms
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa RIFF que não é WebP (WAV) 0ms
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa vazio 0ms
@@ -31,23 +45,23 @@
  ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa subpasta 0ms
  ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa nome fora do formato 0ms
  ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa prefixo parecido 0ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 200: envia para a pasta da sessão, troca a anterior por ela e devolve a URL pública 24ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 200: envia para a pasta da sessão, troca a anterior por ela e devolve a URL pública 22ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > o tipo e a extensão vêm dos bytes, não do que o cliente declarou 3ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > sem foto anterior, o update exige avatar_url nulo 3ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > aceita exatamente 2 MB 10ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > aceita exatamente 2 MB 9ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 401: sem sessão não envia nada 2ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: sem o campo foto 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: arquivo vazio 2ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: um byte acima de 2 MB 8ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: content-length grande é recusado antes de ler o corpo 4ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: PDF declarado como image/png é recusado pelo conteúdo 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: um byte acima de 2 MB 7ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: content-length grande é recusado antes de ler o corpo 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: PDF declarado como image/png é recusado pelo conteúdo 2ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: corpo que não é multipart 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é URL antiga 2ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é arquivo de outra pasta 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é arquivo de outra pasta 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é nome fora do formato da rota 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > se a foto anterior não for apagada, responde 200 e registra no log 2ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 409: outra aba trocou a foto no meio — a nova é apagada e a anterior fica 1ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o banco falha, a foto recém-enviada é apagada e o erro não vaza 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o banco falha, a foto recém-enviada é apagada e o erro não vaza 4ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o Storage falha, nada é gravado no perfil e o erro não vaza 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 404: sessão sem linha em profiles não envia nada 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 200: limpa avatar_url, condicionado à foto atual, e apaga o arquivo 1ms
@@ -56,8 +70,8 @@
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 409: a foto mudou no meio — nada é apagado 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 500: erro do banco não vaza e não apaga a foto 1ms
 
- Test Files  2 passed (2)
-      Tests  54 passed (54)
-   Start at  09:32:22
-   Duration  1.53s (transform 300ms, setup 1.25s, import 487ms, tests 100ms, environment 1ms)
+ Test Files  3 passed (3)
+      Tests  68 passed (68)
+   Start at  10:58:35
+   Duration  1.37s (transform 492ms, setup 1.50s, import 627ms, tests 111ms, environment 1ms)
 
