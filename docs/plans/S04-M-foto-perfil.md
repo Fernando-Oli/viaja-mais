@@ -26,77 +26,133 @@ Instagram.
 Além da experiência, fecha um risco registrado na S03: com URL livre, a imagem é
 carregada pelo navegador de quem vê o perfil direto do host escolhido pelo dono, que
 recebe o IP e o horário de cada visita. Com upload, a foto passa a vir do Storage do
-próprio projeto.
+próprio projeto — e as URLs antigas são zeradas (ver bloco 3).
 
 **Decisões do Micael:** PR próprio, empilhado sobre a parte 1 da S04 (#29), para o que
 já está pronto não esperar o Storage; e o navegador recorta o centro em quadrado e
-reduz para 512×512 antes de enviar — foto de celular de vários MB vira ~100 KB, e o
-círculo fica sempre bem preenchido.
+reduz para 512×512 antes de enviar.
 
 **Dependência da plataforma (Fernando).** O projeto não usa Storage até hoje (o plano
-norte registra isso). Criar o bucket e as policies de `storage.objects` é migration e
-RLS, então segue o formato da S03: proposta em
+norte registra isso). O bucket e as regras de acesso são migration e RLS, então seguem
+o formato da S03: proposta em
 [`S04-M-foto-perfil.proposta.sql`](S04-M-foto-perfil.proposta.sql), exercitada
-localmente pelo teste de RLS, e a migration final é dele. Como o Storage passa a fazer
-parte da arquitetura, as seções 20 e 21 do documento (dele) também mudam.
+localmente pelo teste de RLS, e a migration final é dele. **Ordem de merge: este PR
+entra junto com a migration de avatares, nem antes nem depois** — antes, a rota não
+teria bucket e o campo de URL já teria sumido; depois, o trigger recusaria a URL que o
+formulário da parte 1 ainda envia. As seções 20 e 21 do documento (dele) também mudam.
 
-**Autorização.** Como na parte 1, não há `exigirMembro`/`exigirDono`: a foto é do
-próprio perfil, o caminho no Storage é montado com o `id` de `getUser()` e as policies
-do bucket só deixam cada um gravar e apagar na própria pasta.
+**Autorização e quem escreve no Storage.** Como na parte 1, não há
+`exigirMembro`/`exigirDono`: a foto é do próprio perfil. O bucket **não tem policy
+nenhuma para usuário** — a RLS de `storage.objects` nega tudo a `authenticated` e
+`anon` — e quem grava e apaga é a rota, com a chave de serviço
+(`lib/supabase/admin.ts`), depois de conferir os bytes do arquivo e montar o caminho
+com o `id` de `getUser()`. O perfil é atualizado com a sessão do usuário, então a RLS de
+`profiles` e o trigger continuam valendo. **Uso novo do helper de serviço, a validar
+com o Fernando:** o comentário dele em `admin.ts` diz para usá-lo no que a RLS não
+resolve, e conferir os bytes de uma imagem é exatamente isso (o bucket só confere o
+tipo declarado).
+
+> **Como chegamos aqui.** A primeira versão dava ao usuário policies de INSERT, UPDATE,
+> SELECT e DELETE na própria pasta. A revisão independente mostrou que, com o JWT que
+> está no navegador, dava para enviar direto ao Storage qualquer coisa declarada como
+> `image/png` e apontar o avatar para ela — os bytes nunca seriam conferidos — e que
+> isso fere a regra 1 do `CLAUDE.md` (`storage.objects` é tabela do banco). As mutações
+> também mostraram três proteções que nenhum teste pegava (DELETE amplo, UPDATE amplo e
+> a regex sem âncora no fim). O desenho final remove as policies de usuário.
 
 ## 2. Arquivos afetados
 
 - `docs/plans/S04-M-foto-perfil.proposta.sql` (criar, proposta para o Fernando) —
-  bucket `avatars` público, 2 MB, só JPEG/PNG/WebP; policies de INSERT, UPDATE e DELETE
-  em `storage.objects` restritas à pasta `<id do usuário>/`; nenhuma policy de SELECT
-  (bucket público serve a imagem pela URL, e sem SELECT ninguém lista a pasta dos
-  outros); trigger em `profiles` que só aceita `avatar_url` nula ou apontando para a
-  pasta do próprio usuário no bucket — sem isso, o PATCH direto pelo PostgREST
-  continuaria aceitando qualquer URL.
-- `lib/social/foto.ts` (criar) — regras puras: tipo real da imagem pelos primeiros bytes
-  (não pela extensão nem pelo `content-type` que o cliente manda), limite de tamanho,
-  extensão e o caminho no Storage a partir da URL pública.
-- `app/api/social/perfil/foto/route.ts` (criar) — `POST` (multipart) envia a foto para
-  `avatars/<id>/<aleatório>.<ext>`, grava a URL em `avatar_url` e apaga a anterior;
-  `DELETE` remove a foto. Erro do Storage ou do banco não volta cru.
-- `app/dashboard/perfil/page.tsx` (editar) — lápis na bolinha do avatar com menu
-  "Enviar nova foto" / "Remover foto"; sai o campo "URL do avatar".
-- `app/dashboard/perfil/recortar-foto.ts` (criar) — recorte quadrado e redução para
-  512×512 no navegador (canvas), ao lado da página porque só ela usa e não roda fora
-  do navegador.
+  bucket `avatars` público para leitura, 2 MB, só JPEG/PNG/WebP; **nenhuma** policy de
+  usuário em `storage.objects`; trigger em `profiles` (INSERT e UPDATE) que só aceita
+  `avatar_url` nula ou `<id do perfil>/<uuid>.(webp|jpg|png)`, ancorado nas duas pontas;
+  e zera as URLs gravadas antes.
+- `lib/social/foto.ts` (criar) — regras puras: tipo real pelos primeiros bytes, limite,
+  caminho da nova foto, o formato exato do caminho, a URL pública (só para caminho no
+  formato; URL antiga, `javascript:`, `//host` e `../` viram nulo) e o que pode ser apagado.
+- `lib/social/avatar.ts` (criar) — `avatarPublico(valor)`: o helper que quem mostra foto
+  de perfil usa (esta página, a página pública, o feed, telas de outros domínios), para
+  ninguém entregar o caminho cru ao navegador.
+- `app/api/social/perfil/foto/route.ts` (criar) — `POST` (multipart): recusa pelo
+  `content-length` antes de ler o corpo (413), confere os bytes, envia para
+  `avatars/<id>/<uuid>.<ext>` com a chave de serviço e troca `avatar_url` **condicionado à
+  foto lida no começo** — duas abas ao mesmo tempo não deixam arquivo órfão: a segunda
+  recebe 409 e seu arquivo é apagado. `DELETE` remove a foto do mesmo jeito.
+- `app/api/social/perfil/route.ts` e `app/api/profile/[userId]/route.ts` (editar) — as
+  respostas usam `avatarPublico()`; o `auth-context` (cabeçalho) recebe a URL pronta.
 - `lib/schemas/perfil.ts` e `lib/schemas/perfil-limites.ts` (editar) — o PATCH do perfil
-  deixa de aceitar `avatar_url`: a foto só muda pelas rotas de foto.
-- `tests/lib/foto.test.ts`, `tests/api/social-perfil-foto-route.test.ts` (criar);
-  `tests/lib/perfil-schema.test.ts` (editar).
-- `tests/rls/05-avatares.test.ts` (criar) — isolamento do bucket e o trigger de `avatar_url`.
-- `e2e/foto-perfil.spec.ts` e `e2e/fixtures/foto-perfil.png` (criar).
+  deixa de aceitar `avatar_url`.
+- `app/dashboard/perfil/page.tsx` (editar) — lápis na bolinha do avatar com menu
+  "Enviar nova foto" / "Remover foto"; sai o campo "URL do avatar"; o avatar é recriado
+  quando a foto muda (o Avatar do Radix guarda "imagem carregada" e, sem isso, ao remover
+  a foto as iniciais não voltavam — achado pelo E2E); "Salvar perfil" travado durante o
+  envio; mensagem própria para falha de rede.
+- `app/dashboard/perfil/recortar-foto.ts` (criar) — recorte quadrado 512×512 no canvas,
+  com fundo branco (PNG transparente não vira preto no JPEG).
+- Testes: `tests/lib/foto.test.ts`, `tests/api/social-perfil-foto-route.test.ts` (criar);
+  `tests/lib/perfil-schema.test.ts`, `tests/api/social-perfil-route.test.ts`,
+  `tests/api/profile-userid-route.test.ts` (editar — as URLs esperadas saem de `lib/env`:
+  no CI a URL do Supabase é outra); `tests/rls/05-avatares.test.ts` (criar);
+  `e2e/foto-perfil.spec.ts` e `e2e/fixtures/foto-perfil.png` (900×600) (criar).
 
-## 3. Passos
+## 3. Riscos e pendências (insumo da seção 25)
+
+- **As URLs de avatar gravadas antes são zeradas pela migration.** Deixá-las não fecharia
+  o risco do IP: quem pôs um pixel rastreador nunca vai trocar a foto. O custo é quem
+  tinha avatar por URL enviar a foto de novo. Decisão final do Fernando.
+- **Bucket público é a internet inteira**, não "qualquer autenticado": quem tem a URL vê
+  a foto sem sessão, e o caminho leva o id do usuário. A escolha evita URL assinada que
+  expira. Pesa enquanto o pré-requisito da plataforma da S03 (RPCs respondendo a anon)
+  não estiver corrigido.
+- **Remover a foto não é instantâneo para quem já a viu**: o Storage serve com cache de
+  1 hora, e navegador/CDN podem continuar mostrando até lá.
+- **Metadados (EXIF, GPS)** saem quando a tela recorta a foto no canvas. Quem chamar a
+  rota direto com um JPEG mantém os metadados no arquivo.
+- **Arquivo órfão se a rota cair entre o envio e a troca do perfil** (timeout). Raro, sem
+  efeito para quem usa; uma limpeza periódica da pasta resolveria.
+- **Apagar a conta não apaga a pasta no Storage**: fica para quando a exclusão de conta
+  (RF02.4) existir.
+- A Content Security Policy (`S06-F-rate-limit-csp`) vai precisar liberar `img-src` para o
+  host do Storage.
+- O recorte em JPEG (navegador sem WebP) não é exercitado pelo E2E: os dois projetos do
+  Playwright são Chromium.
+- `app/dashboard/layout.tsx` (compartilhado) mostra o avatar com `<img>` sem fallback; com
+  `avatarPublico()` devolvendo nulo para tudo fora do formato, não há mais URL morta, mas
+  vale trocar por `AvatarImage` + `AvatarFallback` numa mudança da plataforma.
+- `docs/pfc/05-arquitetura/22-implementacao.md` ainda atribui o RF02.2 a Configurações:
+  atualizar via `/pfc-secao 22` depois do merge.
+
+## 4. Passos
 
 1. Proposta de SQL + cópia local; teste de RLS do bucket e do trigger.
-2. `lib/social/foto.ts` + unit.
+2. `lib/social/foto.ts` e `lib/social/avatar.ts` + unit.
 3. Rota `POST/DELETE /api/social/perfil/foto` + integração.
-4. PATCH sem `avatar_url` (schema e testes).
+4. PATCH sem `avatar_url`; respostas com `avatarPublico()`.
 5. Tela: lápis, menu, recorte no navegador; sai o campo de URL.
-6. E2E com upload de verdade; mutações das policies; `npm run verify`; PR.
+6. E2E com upload de verdade; mutações; revisão independente; `npm run verify`; PR.
 
-## 4. O que testar
+## 5. O que testar
 
 Obrigatórios pelo tipo (`migration, rls, route-handler, regra-de-negocio, tela`):
 
 - [ ] Aplicação limpa do zero com a proposta aplicada localmente
-- [ ] RLS do bucket com dois usuários: cada um envia e apaga na própria pasta; ninguém
-  envia, sobrescreve, apaga nem lista na pasta de outro; visitante sem sessão não envia
-- [ ] Trigger: `avatar_url` só aceita nulo ou a pasta do próprio usuário no bucket, também
-  pelo PostgREST direto
-- [ ] Unit de `lib/social/foto.ts` com casos de borda; cobertura ≥70%
-- [ ] Integração das rotas: 200 · 401 · 400 sem arquivo · 400 tipo que não é imagem (mesmo
-  com `content-type` de imagem) · 400 acima do limite · erro do banco apaga o arquivo
-  recém-enviado e não vaza a mensagem · a foto anterior só é apagada se estiver na pasta
-  do usuário
-- [ ] E2E: lápis → enviar foto → aparece no cartão e no menu lateral → remover; arquivo que
-  não é imagem é recusado na tela; screenshot em chromium e mobile
-- [ ] Mutação: cada policy e o trigger, removidos, derrubam ao menos um teste
+- [ ] RLS do bucket com dois usuários e visitante: ninguém envia, sobrescreve, move,
+  copia, lista nem apaga pela API do Storage — nem na própria pasta; configuração do
+  bucket (público, 2 MB, tipos) conferida
+- [ ] Trigger: `avatar_url` só aceita nulo ou `<id>/<uuid>.(webp|jpg|png)` — recusa URL,
+  pasta alheia, subpasta, `../`, extensão disfarçada, quebra de linha, maiúsculas, nome
+  fora do formato —, também pelo PostgREST direto e no INSERT
+- [ ] Unit de `lib/social/foto.ts` e `lib/social/avatar.ts` com casos de borda; ≥70%
+- [ ] Integração das rotas: 200 · 401 · 400 sem arquivo · 400 tipo que não é imagem
+  (mesmo declarado como imagem) · 413 acima do limite (e pelo `content-length`, sem ler
+  o corpo) · exatamente 2 MB passa · tipo e extensão vêm dos bytes · 409 quando outra aba
+  trocou a foto · erro do banco apaga o arquivo recém-enviado e não vaza · só a foto da
+  própria pasta é apagada · URL esperada montada a partir de `lib/env` (passa com a URL
+  do CI)
+- [ ] E2E: lápis → enviar foto → aparece 512×512 no cartão e no menu lateral → remover;
+  PDF e PDF renomeado para `.png` recusados na tela; screenshot em chromium e mobile
+- [ ] Mutação: cada policy que não pode existir, o bucket e o trigger — sabotados, derrubam
+  ao menos um teste
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -107,38 +163,49 @@ Pré-requisito: as propostas da S03 e desta atividade aplicadas localmente, `npm
    do usuário. → A bolinha do avatar mostra as iniciais e um lápis.
 2. Clicar no lápis → **Enviar nova foto** e escolher uma foto grande (ex.: de celular).
    → Indicador de envio; a foto aparece recortada no círculo, no cartão e no menu lateral.
-3. No Studio (Storage → avatars), conferir o arquivo em `4444…/` com ~100 KB, 512×512.
+3. No Studio (Storage → avatars), conferir o arquivo em `4444…/` com nome uuid, ~100 KB,
+   512×512.
 4. Enviar outra foto. → A anterior some do bucket.
 5. Clicar no lápis → **Remover foto**. → Volta às iniciais; o arquivo some do bucket.
 6. Tentar enviar um PDF renomeado para `.png`. → Recusado com mensagem de formato.
-7. No DevTools, aba Network, enviar a foto. → `POST /api/social/perfil/foto`, e nenhuma
+7. No console do navegador, logado, tentar `upload` direto no bucket com o cliente
+   Supabase. → Recusado pela RLS, mesmo na própria pasta.
+8. No DevTools, aba Network, enviar a foto. → `POST /api/social/perfil/foto`, e nenhuma
    chamada direta a `/storage/v1/object`.
-8. Repetir 1, 2 e 5 em modo celular. → Lápis e menu utilizáveis.
+9. Repetir 1, 2 e 5 em modo celular. → Lápis e menu utilizáveis.
 
-## 5. O que validar
+## 6. O que validar
 
 Critérios objetivos e binários. Escritos **antes** da implementação, de propósito:
 critério combinado depois que já existe código para defender deixa de ser critério.
+
+> Critérios ajustados depois da revisão independente, com o motivo no bloco 1: "ninguém
+> grava, apaga nem lista na pasta de outro" virou "ninguém grava, apaga nem lista pela
+> API do Storage", porque o desenho final tira do usuário qualquer acesso direto ao
+> bucket; e entraram a ordem de merge e as URLs antigas zeradas.
 
 - [ ] O lápis fica na bolinha do avatar do cartão do perfil e abre "Enviar nova foto" e,
   quando há foto, "Remover foto"
 - [ ] A foto enviada é recortada em quadrado e reduzida para 512×512 antes do envio
 - [ ] Só JPEG, PNG e WebP de até 2 MB; o tipo é conferido pelo conteúdo do arquivo
-- [ ] O arquivo fica em `avatars/<id do usuário>/`; ninguém grava, apaga nem lista na
-  pasta de outro, nem pela API do Storage direto
-- [ ] `avatar_url` só aceita nulo ou a pasta do próprio usuário no bucket, também pelo
-  PostgREST direto
-- [ ] A foto anterior é apagada ao trocar ou remover; nada fora da pasta do usuário é apagado
-- [ ] O campo "URL do avatar" sai do formulário e o PATCH do perfil não aceita mais `avatar_url`
+- [ ] Ninguém grava, sobrescreve, move, copia, lista nem apaga no bucket pela API do
+  Storage — só a rota escreve, depois de conferir os bytes
+- [ ] O arquivo fica em `avatars/<id do usuário>/<uuid>.<ext>`
+- [ ] `avatar_url` só aceita nulo ou um arquivo no formato da rota na pasta do próprio
+  usuário, também pelo PostgREST direto; as URLs antigas são zeradas
+- [ ] A foto anterior é apagada ao trocar ou remover; nada fora da pasta do usuário é
+  apagado; envios simultâneos não deixam arquivo órfão
+- [ ] O campo "URL do avatar" sai e o PATCH do perfil não aceita mais `avatar_url`
 - [ ] Erro do Storage ou do banco não volta cru ao cliente
-- [ ] Nenhuma chamada ao Storage parte do navegador: o envio passa pela rota
+- [ ] Nenhuma chamada ao Storage parte do navegador
+- [ ] Merge junto com a migration de avatares
 - [ ] Funciona em mobile e desktop; feedback por `toast()`; estado de envio e de erro tratados
 - [ ] ~~Autorização via `exigirMembro` / `exigirDono`~~ — não se aplica: a foto é do
   próprio perfil
 
-## 6. Evidência
+## 7. Evidência
 
 - [ ] Saída dos testes (unit, integração, RLS e E2E) em `docs/pfc/evidencias/S04-M-foto-*`
 - [ ] Screenshots do fluxo (chromium e mobile)
-- [ ] Mutações das policies e do trigger
-- [ ] Delta de cobertura de `lib/social/foto.ts` e da rota
+- [ ] Mutações das policies, do bucket e do trigger
+- [ ] Delta de cobertura de `lib/social/` e da rota

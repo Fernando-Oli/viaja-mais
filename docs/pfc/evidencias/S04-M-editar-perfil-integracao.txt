@@ -13,48 +13,32 @@
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa nome reservado, mesmo escrito com maiúsculas 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > recusa qualquer nome que contenha a marca 1ms
  ✓ tests/lib/perfil-schema.test.ts > usernameSchema > não confunde reservado com nome que só o contém (fora a marca) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > nome só com caractere de largura zero é nome vazio 2ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de formatação do nome e da bio 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+3164, preenchimento hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+115F, preenchimento inicial hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+1160, preenchimento medial hangul: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+FFA0, preenchimento hangul de meia largura: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só U+2800, braille em branco: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > só mistura de preenchimentos, espaço e largura zero: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de controle: o NUL viraria 500 no Postgres em vez de 400 (@RF02.2 @RF02.6) 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > a bio guarda a quebra de linha; o resto do controle sai (@RF02.6) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove metade solta de par substituto, que não é texto (@RF02.2 @RF02.6) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > não quebra emoji: o seletor de variação U+FE0F continua no nome e na bio (@RF02.2 @RF02.6) 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > nome só com caractere de largura zero é nome vazio 1ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — caracteres invisíveis > remove caracteres de formatação do nome e da bio 0ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > aceita um payload completo 1ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > nome: recusa vazio e só espaços; aceita até o limite 2ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > bio: aceita até o limite e recusa acima 1ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > bio: vazia, só espaços ou nula vira nulo (apagar) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: aceita https, e vazio ou nulo vira nulo (apagar) 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: recusa http, outro esquema e texto que não é URL 1ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: recusa https://usuario:senha@exemplo.com/a.png (credencial embutida) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: recusa https://localhost/a.png (localhost) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: recusa https://painel.localhost/a.png (subdomínio de localhost) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: recusa https://169.254.169.254/a.png (IPv4 literal) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: recusa https://[::1]/a.png (IPv6 literal) 0ms
- ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar: recusa URL acima do limite 0ms
+ ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > avatar_url no corpo é descartado: a foto só muda pelas rotas de foto 0ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — campos > is_public: só booleano, não texto 1ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — lista fechada > descarta id, created_at e user_id vindos do corpo (sem mass-assignment) 0ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — lista fechada > recusa corpo vazio 0ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — lista fechada > recusa corpo só com campos fora da lista 0ms
  ✓ tests/lib/perfil-schema.test.ts > atualizarPerfilSchema — lista fechada > recusa username nulo: dá para trocar, não para apagar 0ms
+stderr | tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 500: erro do banco na leitura não vaza a mensagem crua
+[erro não tratado] { code: '42P01', message: 'relation "profiles" does not exist' }
+
 stderr | tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 500: erro do banco não vaza a mensagem crua
 [erro não tratado] { code: '42501', message: 'permission denied for table profiles' }
 
  ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 200: autenticado lê os dados básicos de um perfil 11ms
- ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 401: sem sessão não chega a consultar 3ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 200: o caminho da foto no bucket volta como URL pública 2ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 401: sem sessão não chega a consultar 2ms
  ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 400: id inválido (undefined) não chega a consultar 1ms
  ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 400: id inválido (nao-e-uuid) não chega a consultar 1ms
  ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 400: id inválido (1111) não chega a consultar 1ms
  ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 404: id sem perfil 1ms
  ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 500: erro do banco não vaza a mensagem crua 3ms
-stderr | tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 500: erro do banco na leitura não vaza a mensagem crua
-[erro não tratado] { code: '42P01', message: 'relation "profiles" does not exist' }
-
 stderr | tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500: outro erro do banco não vaza a mensagem crua (RNF02.11)
 [erro não tratado] {
   code: '23514',
@@ -62,13 +46,15 @@ stderr | tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500:
 }
 
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: devolve o perfil da sessão, filtrado pelo id dela 10ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: o caminho da foto no bucket volta como URL pública; URL antiga volta nula 2ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 401: sem sessão não chega a consultar 2ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 404: sessão sem linha em profiles 1ms
  ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 500: erro do banco na leitura não vaza a mensagem crua 3ms
- ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 200: edita o próprio perfil, com o username normalizado 6ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 200: edita o próprio perfil, com o username normalizado 4ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 401: sem sessão não chega a atualizar 1ms
- ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: payload inválido (bio acima do limite) 3ms
- ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: username reservado 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: payload inválido (bio acima do limite) 2ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: username reservado 2ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: só avatar_url no corpo — a foto muda pelas rotas de foto 2ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: corpo vazio 2ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: JSON malformado é payload inválido, não erro do servidor 2ms
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > o corpo não escolhe o perfil nem reescreve id/created_at (no lugar do 403) 2ms
@@ -77,7 +63,7 @@ stderr | tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500:
  ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500: outro erro do banco não vaza a mensagem crua (RNF02.11) 1ms
 
  Test Files  3 passed (3)
-      Tests  62 passed (62)
-   Start at  17:29:17
-   Duration  1.27s (transform 436ms, setup 1.55s, import 677ms, tests 101ms, environment 1ms)
+      Tests  48 passed (48)
+   Start at  09:32:27
+   Duration  1.35s (transform 462ms, setup 1.57s, import 758ms, tests 95ms, environment 1ms)
 

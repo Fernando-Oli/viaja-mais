@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
+import { env } from "@/lib/env"
 
 /**
  * @RF02.1 @RNF02.11 — dados básicos de um perfil, por id (consumido pelo
@@ -61,6 +62,19 @@ describe("GET /api/profile/[userId]", () => {
     expect(await resposta.json()).toEqual({ profile: perfilAna })
     expect(h.tabelas).toEqual(["profiles"])
     expect(h.filtros).toEqual([["id", ANA]])
+  })
+
+  it("200: o caminho da foto no bucket volta como URL pública", async () => {
+    h.getUser.mockResolvedValue({ data: { user: { id: BRUNO } } })
+    const caminho = `${ANA}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
+    h.resposta = { data: { ...perfilAna, avatar_url: caminho }, error: null }
+
+    const { profile } = await (await GET(pedido(), contexto(ANA))).json()
+
+    // Montado a partir de lib/env: no CI a URL do Supabase não é a local.
+    expect(profile.avatar_url).toBe(
+      `${env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/avatars/${caminho}`,
+    )
   })
 
   it("401: sem sessão não chega a consultar", async () => {

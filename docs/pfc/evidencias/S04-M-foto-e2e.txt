@@ -1,0 +1,17 @@
+◇ injected env (10) from .env.local // tip: ⌘ enable debugging { debug: true }
+[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\micae because it is outside the current Git repository (C:\Users\micae\viaja-mais).
+[WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
+[WebServer] 
+
+Running 6 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+  ok 1 [chromium] › e2e\foto-perfil.spec.ts:28:5 › envia a foto pelo lápis, aparece recortada no cartão e no menu lateral, e remove (6.7s)
+  ok 2 [chromium] › e2e\foto-perfil.spec.ts:73:9 › recusa o que não é imagem › PDF (2.2s)
+  ok 3 [chromium] › e2e\foto-perfil.spec.ts:73:9 › recusa o que não é imagem › PDF renomeado para .png (2.1s)
+◇ injected env (0) from .env.local // tip: ⌘ override existing { override: true }
+  ok 4 [mobile] › e2e\foto-perfil.spec.ts:28:5 › envia a foto pelo lápis, aparece recortada no cartão e no menu lateral, e remove (6.0s)
+  ok 5 [mobile] › e2e\foto-perfil.spec.ts:73:9 › recusa o que não é imagem › PDF (2.4s)
+  ok 6 [mobile] › e2e\foto-perfil.spec.ts:73:9 › recusa o que não é imagem › PDF renomeado para .png (2.7s)
+
+  6 passed (30.9s)

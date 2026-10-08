@@ -1,0 +1,28 @@
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+ ✓ tests/rls/05-avatares.test.ts > bucket avatars — configuração > é público para leitura, com 2 MB e só JPEG, PNG e WebP 8ms
+ ✓ tests/rls/05-avatares.test.ts > bucket avatars — nenhum usuário escreve, lista ou apaga pela API > Ana não envia nem na própria pasta (só a rota envia) 73ms
+ ✓ tests/rls/05-avatares.test.ts > bucket avatars — nenhum usuário escreve, lista ou apaga pela API > Ana não envia na pasta do Bruno, e o visitante não envia em lugar nenhum 50ms
+ ✓ tests/rls/05-avatares.test.ts > bucket avatars — nenhum usuário escreve, lista ou apaga pela API > ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz 123ms
+ ✓ tests/rls/05-avatares.test.ts > bucket avatars — nenhum usuário escreve, lista ou apaga pela API > ninguém apaga pela API: nem a Ana o próprio arquivo, nem o Bruno o dela 56ms
+ ✓ tests/rls/05-avatares.test.ts > bucket avatars — nenhum usuário escreve, lista ou apaga pela API > ninguém sobrescreve, move nem copia 91ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa URL externa, mesmo pelo PostgREST direto 91ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa URL externa imitando o caminho do bucket, mesmo pelo PostgREST direto 16ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa arquivo na pasta de outra pessoa, mesmo pelo PostgREST direto 17ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa arquivo fora de pasta, mesmo pelo PostgREST direto 15ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa subpasta, mesmo pelo PostgREST direto 16ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa nome que não é uuid, mesmo pelo PostgREST direto 16ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa extensão que não é imagem, mesmo pelo PostgREST direto 15ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa extensão disfarçada no fim, mesmo pelo PostgREST direto 15ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa subida de pasta depois do nome, mesmo pelo PostgREST direto 17ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa quebra de linha no fim, mesmo pelo PostgREST direto 19ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > recusa maiúsculas, mesmo pelo PostgREST direto 15ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > aceita um arquivo no formato da rota, na própria pasta, e aceita nulo 26ms
+ ✓ tests/rls/05-avatares.test.ts > profiles.avatar_url — só arquivo no formato da rota, na própria pasta > vale também no INSERT do perfil 10ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  09:32:17
+   Duration  1.89s (transform 89ms, setup 57ms, import 333ms, tests 1.08s, environment 0ms)
+

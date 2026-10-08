@@ -1,17 +1,17 @@
-◇ injected env (10) from .env.local // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (10) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
 [WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\micae because it is outside the current Git repository (C:\Users\micae\viaja-mais).
 [WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
 [WebServer] 
 
 Running 6 tests using 1 worker
 
-◇ injected env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
-  ✓  1 [chromium] › e2e\editar-perfil.spec.ts:27:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco (22.4s)
-  ✓  2 [chromium] › e2e\editar-perfil.spec.ts:89:5 › Configurações fica só com conta e senha, e aponta para o Perfil (2.4s)
-  ✓  3 [chromium] › e2e\editar-perfil.spec.ts:101:5 › mostra o erro quando o perfil não carrega (2.1s)
-◇ injected env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
-  ✓  4 [mobile] › e2e\editar-perfil.spec.ts:27:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco (6.2s)
-  ✓  5 [mobile] › e2e\editar-perfil.spec.ts:89:5 › Configurações fica só com conta e senha, e aponta para o Perfil (2.4s)
-  ✓  6 [mobile] › e2e\editar-perfil.spec.ts:101:5 › mostra o erro quando o perfil não carrega (1.7s)
+◇ injected env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok 1 [chromium] › e2e\editar-perfil.spec.ts:27:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco (22.0s)
+  ok 2 [chromium] › e2e\editar-perfil.spec.ts:89:5 › Configurações fica só com conta e senha, e aponta para o Perfil (2.2s)
+  ok 3 [chromium] › e2e\editar-perfil.spec.ts:101:5 › mostra o erro quando o perfil não carrega (1.5s)
+◇ injected env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ok 4 [mobile] › e2e\editar-perfil.spec.ts:27:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco (6.7s)
+  ok 5 [mobile] › e2e\editar-perfil.spec.ts:89:5 › Configurações fica só com conta e senha, e aponta para o Perfil (2.4s)
+  ok 6 [mobile] › e2e\editar-perfil.spec.ts:101:5 › mostra o erro quando o perfil não carrega (1.8s)
 
-  6 passed (45.7s)
+  6 passed (45.8s)
