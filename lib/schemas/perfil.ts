@@ -55,11 +55,25 @@ export const usernameSchema = z
   .refine((u) => !USERNAMES_RESERVADOS.includes(u) && !u.includes(MARCA), "esse nome de usuário é reservado")
 
 /**
- * Caracteres de formatação Unicode (categoria Cf): espaço de largura zero,
- * inversão de direção do texto e afins. Não aparecem na tela, então deixariam
- * passar um nome "invisível" pelo `min(1)` ou embaralhar a leitura da bio.
+ * Saem do texto os caracteres de formatação Unicode (categoria Cf: espaço de
+ * largura zero, inversão de direção e afins), que não aparecem na tela e
+ * embaralhariam a leitura; os de controle (Cc), porque o NUL o Postgres recusa
+ * com 22P05 e a rota responderia 500 em vez de 400; e a metade solta de par
+ * substituto (Cs), que não é texto. A bio guarda a quebra de linha.
+ *
+ * Texto sem nenhum caractere visível — só espaços, ignoráveis como o
+ * preenchimento hangul U+3164 e o braille em branco U+2800 — vira vazio, como
+ * um texto em branco: nome vazio é recusado pelo `min(1)`, bio vazia vira nulo.
+ * Os ignoráveis só contam para essa decisão e não saem do texto: entre eles está
+ * o seletor de variação U+FE0F, sem o qual ❤️ vira ❤.
  */
-const semInvisiveis = (v: string) => v.replace(/\p{Cf}/gu, "")
+const NAO_E_TEXTO = /[\p{Cf}\p{Cc}\p{Cs}]/gu
+const NAO_E_TEXTO_MENOS_QUEBRA = /(?!\n)[\p{Cf}\p{Cc}\p{Cs}]/gu
+const NADA_VISIVEL = /^[\p{White_Space}\p{Default_Ignorable_Code_Point}⠀]*$/u
+
+const vazioSeInvisivel = (v: string) => (NADA_VISIVEL.test(v) ? "" : v)
+const semInvisiveis = (v: string) => vazioSeInvisivel(v.replace(NAO_E_TEXTO, ""))
+const semInvisiveisNaBio = (v: string) => vazioSeInvisivel(v.replace(NAO_E_TEXTO_MENOS_QUEBRA, ""))
 
 /** Texto opcional em que vazio significa "apagar": vira nulo, não string vazia. */
 const vazioViraNulo = (v: string | null) => (v === "" ? null : v)
@@ -115,7 +129,7 @@ export const atualizarPerfilSchema = z
     username: usernameSchema,
     bio: z
       .string()
-      .transform(semInvisiveis)
+      .transform(semInvisiveisNaBio)
       .pipe(z.string().trim().max(LIMITE_BIO, `use até ${LIMITE_BIO} caracteres`))
       .nullable()
       .transform(vazioViraNulo),

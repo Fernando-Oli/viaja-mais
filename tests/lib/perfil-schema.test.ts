@@ -60,6 +60,45 @@ describe("atualizarPerfilSchema — caracteres invisíveis", () => {
     expect(r.full_name).toBe("Ana Teste")
     expect(r.bio).toBe("Trilha e praia")
   })
+
+  // Preenchimentos que não são Cf: passavam pelo `min(1)` e o nome aparecia em
+  // branco. Sem nada visível, contam como texto em branco.
+  it.each([
+    ["U+3164, preenchimento hangul", "ㅤ"],
+    ["U+115F, preenchimento inicial hangul", "ᅟ"],
+    ["U+1160, preenchimento medial hangul", "ᅠ"],
+    ["U+FFA0, preenchimento hangul de meia largura", "ﾠ"],
+    ["U+2800, braille em branco", "⠀"],
+    ["mistura de preenchimentos, espaço e largura zero", " ㅤ⠀​ "],
+  ])("só %s: nome é recusado como vazio e bio vira nulo (@RF02.2 @RF02.6)", (_caso, invisivel) => {
+    expect(erroDe(atualizarPerfilSchema.safeParse({ full_name: invisivel }))).toContain("informe seu nome")
+    expect(atualizarPerfilSchema.parse({ bio: invisivel }).bio).toBeNull()
+  })
+
+  it("remove caracteres de controle: o NUL viraria 500 no Postgres em vez de 400 (@RF02.2 @RF02.6)", () => {
+    const r = atualizarPerfilSchema.parse({ full_name: "An\u0000a\u0007", bio: "Trilha\u0000 e\u007F praia" })
+    expect(r.full_name).toBe("Ana")
+    expect(r.bio).toBe("Trilha e praia")
+    expect(erroDe(atualizarPerfilSchema.safeParse({ full_name: "\u0000" }))).toContain("informe seu nome")
+  })
+
+  it("a bio guarda a quebra de linha; o resto do controle sai (@RF02.6)", () => {
+    expect(atualizarPerfilSchema.parse({ bio: "Trilha\ne praia\u0000" }).bio).toBe("Trilha\ne praia")
+  })
+
+  it("remove metade solta de par substituto, que não é texto (@RF02.2 @RF02.6)", () => {
+    const r = atualizarPerfilSchema.parse({ full_name: "Ana\uD800", bio: "\uDC00Trilha" })
+    expect(r.full_name).toBe("Ana")
+    expect(r.bio).toBe("Trilha")
+    expect(erroDe(atualizarPerfilSchema.safeParse({ full_name: "\uD800" }))).toContain("informe seu nome")
+  })
+
+  it("não quebra emoji: o seletor de variação U+FE0F continua no nome e na bio (@RF02.2 @RF02.6)", () => {
+    // U+FE0F é ignorável, como os preenchimentos — só não pode sair do texto.
+    const r = atualizarPerfilSchema.parse({ full_name: "Ana ❤️", bio: "Praia \u{1F3D6}️ e trilha \u{1F97E}" })
+    expect(r.full_name).toBe("Ana ❤️")
+    expect(r.bio).toBe("Praia \u{1F3D6}️ e trilha \u{1F97E}")
+  })
 })
 
 describe("atualizarPerfilSchema — campos", () => {
