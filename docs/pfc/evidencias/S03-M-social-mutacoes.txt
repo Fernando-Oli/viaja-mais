@@ -171,3 +171,21 @@ Sabotagem: alter table public.profiles drop constraint profiles_username_reserva
 
 ## Restaurado
       Tests  40 passed (40)
+
+# Revisão do PR (2026-10-08) — proteções acrescentadas
+Banco: db reset local com a migration corrigida. Cada sabotagem é desfeita antes da próxima.
+
+## M24 visitante volta a executar pode_ver_rede
+Sabotagem: grant execute on function public.pode_ver_rede(uuid) to anon;
+     × visitante sem sessão não chama pode_ver_rede por RPC (@RNF02.4) 28ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 43 passed (44)
+
+## M25 teto de full_name volta a ser NOT VALID
+Sabotagem: alter table public.profiles drop constraint profiles_full_name_tamanho; alter table public.profiles add constraint profiles_full_name_tamanho check (char_length(full_name) <= 120) not valid;
+     × o teto de 120 caracteres em full_name entra válido, não NOT VALID (@RF02.2) 15ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 43 passed (44)
+
+## Restaurado
+      Tests  44 passed (44)

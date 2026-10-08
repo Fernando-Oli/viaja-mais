@@ -241,19 +241,20 @@ Obrigatórios pelo tipo (`migration, rls`):
 
 - [x] Aplicação limpa do zero: `npx supabase db reset` aplica as 4 migrations e o
   seed sem erro, localmente e no CI ("Migrations e RLS", `supabase start` do zero)
-- [x] Teste em `tests/rls/` com os usuários do seed: 40 casos em `04-social.test.ts`
+- [x] Teste em `tests/rls/` com os usuários do seed: 44 casos em `04-social.test.ts`
 - [x] Usuário A não lê E não escreve dados de B, nos dois sentidos:
   - leitura: pendente e rede privada invisíveis para terceiro; visitante sem sessão
     recebe 42501;
   - escrita: INSERT forjado; UPDATE e DELETE de terceiro; auto-aprovação por
     UPDATE e por upsert; rebaixar e repontar; perfil alheio; colunas sem grant.
-- [x] `npm run test:rls` verde: 78 de 78, nas 5 suítes
+- [x] `npm run test:rls` verde: 82 de 82, nas 5 suítes (`S03-M-social-rls.txt`)
 
 Além do obrigatório:
 
-- [x] **Cada proteção derruba pelo menos um teste quando é removida.** São 23
+- [x] **Cada proteção derruba pelo menos um teste quando é removida.** São 25
   sabotagens, uma por trigger, policy, grant e constraint, cada uma sobre banco
-  limpo. Os erros são conferidos pelo código do Postgres (42501, 23505, 23514), para
+  limpo (as duas últimas vieram da revisão do PR: o EXECUTE de `pode_ver_rede` para
+  visitante e o teto de `full_name` voltando a `not valid`). Os erros são conferidos pelo código do Postgres (42501, 23505, 23514), para
   que um teste que espera a RLS não passe porque um check barrou.
 - [x] **Advisors da Supabase** (`supabase db advisors`): antes das correções, 6
   achados nos objetos desta migration; depois, só o "índice ainda não usado" de
@@ -266,12 +267,15 @@ Além do obrigatório:
   `is_public`, o `typecheck` passa com eles, e o arquivo vai commitado junto com
   a migration (regra 7).
 - [x] **Regressão da equipe**: o E2E inteiro contra o banco com a migration deu 16
-  de 20. As 4 falhas existem sem esta mudança: `00-fumaca` espera 404 em `/login` e
+  de 20 (`S03-M-e2e-regressao.txt`). As 4 falhas existem sem esta mudança: `00-fumaca` espera 404 em `/login` e
   `/register`, mas o `proxy.ts` redireciona visitante para `/auth/login` antes.
   Fica registrado para quem é dono do E2E.
 - [x] **Revisão adversarial independente** da proposta e do teste. Todos os
   achados foram tratados: corrigidos na proposta, decididos acima ou escalados como
-  pré-requisito da plataforma.
+  pré-requisito da plataforma. A revisão independente do PR, em 08/10, achou mais
+  três pontos, corrigidos aqui: `pode_ver_rede` executável por visitante, o teto de
+  `full_name` em `not valid` e um critério sem teste (contas antigas privadas). Um
+  quarto ponto (cadastro com nome longo) virou o segundo pré-requisito da plataforma.
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -338,8 +342,9 @@ critério combinado depois que já existe código para defender deixa de ser cri
 ## 6. Evidência
 
 - [x] Saída dos testes — arquivada em `docs/pfc/evidencias/`:
-  - `S03-M-social-rls.txt` — `04-social.test.ts`: 40 de 40
-  - `S03-M-social-mutacoes.txt` — as 23 sabotagens e os testes que cada uma derrubou
+  - `S03-M-social-rls.txt` — `04-social.test.ts`: 44 de 44, e a suíte inteira: 82 de 82
+  - `S03-M-social-mutacoes.txt` — as 25 sabotagens e os testes que cada uma derrubou
+  - `S03-M-e2e-regressao.txt` — o E2E da equipe contra o banco com a migration: 16 de 20
   - `S03-M-social-explain.txt` — planos de consulta das listas sob RLS
   - `S03-M-social-advisors.txt` — advisors e lint antes e depois das correções
   - `S03-M-achado-plataforma.txt` — reprodução do pré-requisito da plataforma

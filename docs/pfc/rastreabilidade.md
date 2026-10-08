@@ -1,7 +1,7 @@
 # Matriz de Rastreabilidade
 
 > Gerado por `npm run pfc:rastreabilidade`. Não edite à mão.
-> Última geração: 2026-10-07
+> Última geração: 2026-10-08
 
 Requisitos são marcados no código e nos testes com uma tag em comentário
 (`// @RF03.4 — permite editar viagem`). Este arquivo cruza essas tags com o
@@ -18,7 +18,7 @@ catálogo das seções 14 e 15.
 | RF-01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Existente | — | — | — |
 | RF-01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | — | — | — |
 | RF-02.1 | O usuário deve poder visualizar seu perfil | Parcial | — | — | — |
-| RF-02.2 | O usuário deve poder editar nome e avatar | Parcial | — | — | — |
+| RF-02.2 | O usuário deve poder editar nome e avatar | Parcial | — | `tests/rls/04-social.test.ts` | — |
 | RF-02.3 | O usuário deve poder alterar a senha | Parcial | — | — | — |
 | RF-02.4 | O usuário deve poder excluir a conta | Não iniciado | — | — | — |
 | RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
@@ -134,6 +134,6 @@ catálogo das seções 14 e 15.
 
 - Requisitos no catálogo: **120**
 - Com implementação marcada: **27**
-- Com teste marcado: **31**
+- Com teste marcado: **32**
 
 _Nenhuma inconsistência._

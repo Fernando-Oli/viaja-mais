@@ -1,0 +1,27 @@
+# S03-M — regressão do E2E da equipe contra o banco com a migration social (2026-10-08 17:11)
+Build de produção da branch feat/S03-M-migration-social, npm run start, npx playwright test (chromium + mobile).
+As 4 falhas existem sem esta mudança: e2e/00-fumaca espera 404 em /login e /register, mas o proxy.ts redireciona (307) antes.
+
+  ok  1 [chromium] › e2e\00-fumaca.spec.ts:9:7 › páginas públicas › a landing page carrega e leva ao cadastro
+  ok  2 [chromium] › e2e\00-fumaca.spec.ts:19:7 › páginas públicas › o login está acessível e pede e-mail e senha
+  ok  3 [chromium] › e2e\00-fumaca.spec.ts:28:7 › proteção de rotas › visitante anônimo é redirecionado do dashboard para o login
+  ok  4 [chromium] › e2e\00-fumaca.spec.ts:35:7 › proteção de rotas › a API responde 401 em JSON, não redireciona para HTML
+  x   5 [chromium] › e2e\00-fumaca.spec.ts:47:9 › rotas removidas › /login não existe mais
+  x   6 [chromium] › e2e\00-fumaca.spec.ts:47:9 › rotas removidas › /register não existe mais
+  ok  7 [chromium] › e2e\adicionar-atividade.spec.ts:5:5 › membro adiciona atividade ao itinerário da viagem
+  ok  8 [chromium] › e2e\editar-viagem.spec.ts:5:5 › dono edita título e destino da viagem
+  ok  9 [chromium] › e2e\itinerario-crud.spec.ts:5:5 › membro conclui, edita e exclui atividade do itinerário
+  ok 10 [chromium] › e2e\reservas.spec.ts:8:5 › membro cria, edita e exclui reserva a partir da aba da viagem
+  ok 11 [mobile] › e2e\00-fumaca.spec.ts:9:7 › páginas públicas › a landing page carrega e leva ao cadastro
+  ok 12 [mobile] › e2e\00-fumaca.spec.ts:19:7 › páginas públicas › o login está acessível e pede e-mail e senha
+  ok 13 [mobile] › e2e\00-fumaca.spec.ts:28:7 › proteção de rotas › visitante anônimo é redirecionado do dashboard para o login
+  ok 14 [mobile] › e2e\00-fumaca.spec.ts:35:7 › proteção de rotas › a API responde 401 em JSON, não redireciona para HTML
+  x  15 [mobile] › e2e\00-fumaca.spec.ts:47:9 › rotas removidas › /login não existe mais
+  x  16 [mobile] › e2e\00-fumaca.spec.ts:47:9 › rotas removidas › /register não existe mais
+  ok 17 [mobile] › e2e\adicionar-atividade.spec.ts:5:5 › membro adiciona atividade ao itinerário da viagem
+  ok 18 [mobile] › e2e\editar-viagem.spec.ts:5:5 › dono edita título e destino da viagem
+  ok 19 [mobile] › e2e\itinerario-crud.spec.ts:5:5 › membro conclui, edita e exclui atividade do itinerário
+  ok 20 [mobile] › e2e\reservas.spec.ts:8:5 › membro cria, edita e exclui reserva a partir da aba da viagem
+
+  4 failed
+  16 passed (1.4m)
