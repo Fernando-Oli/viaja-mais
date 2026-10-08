@@ -116,3 +116,16 @@ Sabotagem: drop trigger profiles_validar_avatar_url on public.profiles; create t
 
 ## Restaurado
       Tests  19 passed (19)
+
+# Revisão do PR (2026-10-08) — o arquivo de teste passa a existir de verdade no Storage
+Banco: db reset local com as 5 migrations. A sabotagem é desfeita no fim.
+
+## B15 SELECT e UPDATE para o usuário na própria pasta
+Sabotagem: create policy mutacao_select / mutacao_update on storage.objects to authenticated (bucket avatars, pasta = auth.uid())
+     × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz 40ms
+     × ninguém sobrescreve, move nem copia — nem a Ana dentro da própria pasta 98ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 18 passed (20)
+
+## Restaurado
+      Tests  20 passed (20)

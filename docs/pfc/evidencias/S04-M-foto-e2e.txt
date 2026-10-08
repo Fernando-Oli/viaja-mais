@@ -1,19 +1,16 @@
-◇ injected env (10) from .env.local // tip: ⌘ override existing { override: true }
-[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\micae because it is outside the current Git repository (C:\Users\micae\viaja-mais).
-[WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
-[WebServer] 
+◇ injected env (11) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
 
 Running 8 tests using 1 worker
 
-◇ injected env (0) from .env.local // tip: ⌘ override existing { override: true }
-  ok 1 [chromium] › e2e\foto-perfil.spec.ts:50:5 › enquadra a foto no modal, envia o que está no círculo e remove (7.8s)
-  ok 2 [chromium] › e2e\foto-perfil.spec.ts:110:5 › Cancelar no modal não envia nada (2.7s)
-  ok 3 [chromium] › e2e\foto-perfil.spec.ts:134:9 › recusa o que não é imagem › PDF (2.5s)
-  ok 4 [chromium] › e2e\foto-perfil.spec.ts:134:9 › recusa o que não é imagem › PDF renomeado para .png (2.7s)
-◇ injected env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
-  ok 5 [mobile] › e2e\foto-perfil.spec.ts:50:5 › enquadra a foto no modal, envia o que está no círculo e remove (6.6s)
-  ok 6 [mobile] › e2e\foto-perfil.spec.ts:110:5 › Cancelar no modal não envia nada (2.6s)
-  ok 7 [mobile] › e2e\foto-perfil.spec.ts:134:9 › recusa o que não é imagem › PDF (2.3s)
-  ok 8 [mobile] › e2e\foto-perfil.spec.ts:134:9 › recusa o que não é imagem › PDF renomeado para .png (2.7s)
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+  ok 1 [chromium] › e2e\foto-perfil.spec.ts:60:5 › enquadra a foto no modal, envia o que está no círculo e remove (17.8s)
+  ok 2 [chromium] › e2e\foto-perfil.spec.ts:121:5 › Cancelar no modal não envia nada (2.5s)
+  ok 3 [chromium] › e2e\foto-perfil.spec.ts:145:9 › recusa o que não é imagem › PDF (2.2s)
+  ok 4 [chromium] › e2e\foto-perfil.spec.ts:145:9 › recusa o que não é imagem › PDF renomeado para .png (2.1s)
+◇ injected env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok 5 [mobile] › e2e\foto-perfil.spec.ts:60:5 › enquadra a foto no modal, envia o que está no círculo e remove (6.6s)
+  ok 6 [mobile] › e2e\foto-perfil.spec.ts:121:5 › Cancelar no modal não envia nada (2.7s)
+  ok 7 [mobile] › e2e\foto-perfil.spec.ts:145:9 › recusa o que não é imagem › PDF (2.5s)
+  ok 8 [mobile] › e2e\foto-perfil.spec.ts:145:9 › recusa o que não é imagem › PDF renomeado para .png (2.2s)
 
-  8 passed (39.9s)
+  8 passed (44.5s)

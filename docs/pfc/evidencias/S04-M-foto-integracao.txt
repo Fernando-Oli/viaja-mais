@@ -13,7 +13,7 @@
  ✓ tests/lib/enquadramento.test.ts > zoom > limitar corrige um enquadramento fora das regras 0ms
  ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 1, x: +0, y: +0 } 1ms
  ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 3, x: +0, y: +0 } 0ms
- ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 2.37, x: 123.4, y: -56.7 } 1ms
+ ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 2.37, x: 123.4, y: -56.7 } 0ms
  ✓ tests/lib/enquadramento.test.ts > recorte sempre dentro da imagem > enquadramento { zoom: 3, x: 675, y: 450 } 0ms
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > reconhece JPEG, PNG e WebP pela assinatura 3ms
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa PDF 1ms
@@ -25,7 +25,7 @@
  ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa JPEG truncado 0ms
  ✓ tests/lib/foto.test.ts > caminhoDaNovaFoto > fica na pasta de quem envia, com a extensão do tipo real 1ms
  ✓ tests/lib/foto.test.ts > urlPublicaDoAvatar — só o caminho no formato exato vira URL > monta a URL pública a partir do caminho no bucket 1ms
- ✓ tests/lib/foto.test.ts > urlPublicaDoAvatar — só o caminho no formato exato vira URL > não duplica a barra quando a URL do projeto termina com ela 0ms
+ ✓ tests/lib/foto.test.ts > urlPublicaDoAvatar — só o caminho no formato exato vira URL > não duplica a barra quando a URL do projeto termina com ela 1ms
  ✓ tests/lib/foto.test.ts > urlPublicaDoAvatar — só o caminho no formato exato vira URL > devolve nulo para nulo 0ms
  ✓ tests/lib/foto.test.ts > urlPublicaDoAvatar — só o caminho no formato exato vira URL > devolve nulo para vazio 0ms
  ✓ tests/lib/foto.test.ts > urlPublicaDoAvatar — só o caminho no formato exato vira URL > devolve nulo para URL antiga (o pixel rastreador) 0ms
@@ -48,30 +48,40 @@
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 200: envia para a pasta da sessão, troca a anterior por ela e devolve a URL pública 22ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > o tipo e a extensão vêm dos bytes, não do que o cliente declarou 3ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > sem foto anterior, o update exige avatar_url nulo 3ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > aceita exatamente 2 MB 9ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > aceita exatamente 2 MB 6ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 401: sem sessão não envia nada 2ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: sem o campo foto 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: arquivo vazio 2ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: um byte acima de 2 MB 7ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: content-length grande é recusado antes de ler o corpo 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: um byte acima de 2 MB 5ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: content-length grande é recusado sem processar o multipart 3ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: PDF declarado como image/png é recusado pelo conteúdo 2ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: corpo que não é multipart 1ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é URL antiga 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é URL antiga 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é arquivo de outra pasta 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é nome fora do formato da rota 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > se a foto anterior não for apagada, responde 200 e registra no log 2ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 409: outra aba trocou a foto no meio — a nova é apagada e a anterior fica 1ms
- ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o banco falha, a foto recém-enviada é apagada e o erro não vaza 4ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o banco falha, a foto recém-enviada é apagada e o erro não vaza 3ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o Storage falha, nada é gravado no perfil e o erro não vaza 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 404: sessão sem linha em profiles não envia nada 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: campo foto enviado como texto, não como arquivo (@RF02.2) 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > lê a foto atual em profiles, pelo id da sessão, e grava em profiles (@RF02.2) 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 200: limpa avatar_url, condicionado à foto atual, e apaga o arquivo 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 401: sem sessão não mexe em nada 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 404: sessão sem linha em profiles 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 409: a foto mudou no meio — nada é apagado 1ms
  ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 500: erro do banco não vaza e não apaga a foto 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > POST apaga da pasta as fotos antigas que não são a nova 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > POST não apaga o que foi criado depois da foto nova, nem no mesmo instante 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > DELETE apaga as fotos mais antigas que a removida e deixa a que outra aba enviou depois 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > DELETE sem foto anterior não varre: nulo para nulo não barra um envio em andamento 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > nome fora do formato da rota, subida de pasta e subpasta não são apagados 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > sem a foto de referência na página, não apaga nada além da anterior 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > falha no list não derruba a resposta: só vai para o log 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > se as sobras não forem apagadas, responde 200 e registra no log 2ms
 
  Test Files  3 passed (3)
-      Tests  68 passed (68)
-   Start at  10:58:35
-   Duration  1.37s (transform 492ms, setup 1.50s, import 627ms, tests 111ms, environment 1ms)
+      Tests  78 passed (78)
+   Start at  17:45:56
+   Duration  1.35s (transform 445ms, setup 1.46s, import 617ms, tests 118ms, environment 1ms)
 
