@@ -15,7 +15,7 @@ import { BUCKET_AVATARES, LIMITE_FOTO_BYTES, caminhoApagavel, caminhoDaNovaFoto,
  * próprio perfil, e o caminho no Storage é montado com o id de `getUser()`.
  *
  * Por que a chave de serviço no Storage: o bucket não tem policy nenhuma para
- * usuário (proposta S04-M-foto-perfil), então ninguém grava nem apaga nele pela
+ * usuário (migration social_avatares), então ninguém grava nem apaga nele pela
  * API do Storage com o JWT do navegador. Só esta rota grava, e só depois de
  * conferir os bytes do arquivo — a única coisa que nem a RLS nem o bucket sabem
  * fazer, já que o bucket confia no tipo declarado. É o critério de

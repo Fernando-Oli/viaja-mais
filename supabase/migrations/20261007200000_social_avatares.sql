@@ -1,15 +1,15 @@
--- PROPOSTA DE MIGRATION — S04-M-foto-perfil
+-- Social: bucket de fotos de perfil e o formato fechado de profiles.avatar_url.
 --
--- Isto NÃO é uma migration: fica em docs/plans/ e não é aplicado por
--- `db:reset`. Migration e RLS são do Fernando (CLAUDE.md); este arquivo é a
--- especificação executável do que a foto de perfil precisa, já exercitada
--- localmente por tests/rls/05-avatares.test.ts. A versão final e o nome
--- (<timestamp>_social_avatares.sql) são dele.
+-- S04-M-foto-perfil. Migration e RLS são do Fernando (CLAUDE.md). O Micael
+-- escreveu o SQL como proposta em docs/plans/, e o Fernando autorizou subi-lo
+-- como migration depois da validação. Ela é exercitada por
+-- tests/rls/05-avatares.test.ts, e cada proteção foi sabotada para provar que
+-- um teste cai (docs/pfc/evidencias/S04-M-foto-mutacoes.txt).
 --
--- Assume a migration social da S03 (policies e grants de profiles: o
--- autenticado atualiza a própria linha, e avatar_url está no grant de UPDATE).
--- **Precisa entrar junto com o PR da foto**, nem antes nem depois: antes, o
--- trigger da seção 3 recusaria a URL que o formulário da parte 1 ainda envia;
+-- Constrói sobre 20261007105848_social_perfil_e_follows (policies e grants de
+-- profiles: o autenticado atualiza a própria linha, e avatar_url está no grant
+-- de UPDATE). Entra no mesmo PR da rota de foto, nem antes nem depois: antes,
+-- o trigger da seção 3 recusaria a URL que o formulário da parte 1 ainda envia;
 -- depois, a rota de foto não teria bucket.
 --
 -- O projeto não usava Storage até aqui. Esta é a primeira peça dele.
@@ -66,7 +66,7 @@ on conflict (id) do update
 -- rota grava — `<id do perfil>/<uuid>.(webp|jpg|png)`, ancorado nas duas
 -- pontas —, e as rotas montam a URL pública com o endereço do projeto.
 --
--- Isto também substitui o que a proposta da S03 dizia sobre avatar_url não ter
+-- Isto também substitui o que a migration da S03 diz sobre avatar_url não ter
 -- check no banco: com o caminho no formato fechado, passa a ter.
 --
 -- O trigger vale para toda escrita: o PATCH direto pelo PostgREST (o grant de

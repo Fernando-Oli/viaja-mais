@@ -4,7 +4,7 @@
  * `profiles.avatar_url` guarda o caminho do arquivo dentro do bucket
  * (`<id do usuário>/<uuid>.webp`), não uma URL: sem host no valor, não há como
  * apontar o avatar para um servidor de terceiro que veria o IP de quem visita o
- * perfil (proposta S04-M-foto-perfil). O formato é o mesmo que o trigger do
+ * perfil (migration social_avatares). O formato é o mesmo que o trigger do
  * banco exige; o que não casar com ele não vira URL — nem URL antiga, nem
  * `javascript:`, nem `../`.
  *

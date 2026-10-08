@@ -4,7 +4,7 @@ import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 
 /**
- * Bucket de avatares e o trigger de `profiles.avatar_url` (proposta S04-M-foto-perfil).
+ * Bucket de avatares e o trigger de `profiles.avatar_url` (migration social_avatares).
  *
  * O bucket não tem policy nenhuma para usuário: quem grava e apaga é a rota de
  * foto, com a chave de serviço, depois de conferir os bytes. Aqui se prova que,

@@ -37,12 +37,12 @@ para não mexer no `package.json` (arquivo compartilhado).
 
 **Dependência da plataforma (Fernando).** O projeto não usa Storage até hoje (o plano
 norte registra isso). O bucket e as regras de acesso são migration e RLS, então seguem
-o formato da S03: proposta em
-[`S04-M-foto-perfil.proposta.sql`](S04-M-foto-perfil.proposta.sql), exercitada
-localmente pelo teste de RLS, e a migration final é dele. **Ordem de merge: este PR
-entra junto com a migration de avatares, nem antes nem depois** — antes, a rota não
-teria bucket e o campo de URL já teria sumido; depois, o trigger recusaria a URL que o
-formulário da parte 1 ainda envia. As seções 20 e 21 do documento (dele) também mudam.
+o formato da S03. O SQL nasceu como proposta em `docs/plans/`, exercitada pelo teste
+de RLS, e o Fernando autorizou, em 08/10, subi-lo como migration de verdade:
+[`20261007200000_social_avatares.sql`](../../supabase/migrations/20261007200000_social_avatares.sql).
+A revisão da RLS continua dele. **A migration entra neste mesmo PR, nem antes nem
+depois.** Antes, a rota não teria bucket e o campo de URL já teria sumido. Depois, o
+trigger recusaria a URL que o formulário da parte 1 ainda envia. As seções 20 e 21 do documento (dele) também mudam.
 
 **Autorização e quem escreve no Storage.** Como na parte 1, não há
 `exigirMembro`/`exigirDono`: a foto é do próprio perfil. O bucket **não tem policy
@@ -65,7 +65,8 @@ tipo declarado).
 
 ## 2. Arquivos afetados
 
-- `docs/plans/S04-M-foto-perfil.proposta.sql` (criar, proposta para o Fernando) —
+- `supabase/migrations/20261007200000_social_avatares.sql` (criar; escrita como proposta
+  e promovida com o aval do Fernando) —
   bucket `avatars` público para leitura, 2 MB, só JPEG/PNG/WebP; **nenhuma** policy de
   usuário em `storage.objects`; trigger em `profiles` (INSERT e UPDATE) que só aceita
   `avatar_url` nula ou `<id do perfil>/<uuid>.(webp|jpg|png)`, ancorado nas duas pontas;
@@ -136,7 +137,9 @@ tipo declarado).
 
 ## 4. Passos
 
-1. Proposta de SQL + cópia local; teste de RLS do bucket e do trigger.
+1. SQL (proposta, depois migration com o aval do Fernando); teste de RLS do bucket e do
+   trigger. O `db:types` não muda nada: bucket e trigger não aparecem nos tipos do
+   schema `public`.
 2. `lib/social/foto.ts` e `lib/social/avatar.ts` + unit.
 3. Rota `POST/DELETE /api/social/perfil/foto` + integração.
 4. PATCH sem `avatar_url`; respostas com `avatarPublico()`.
@@ -147,7 +150,8 @@ tipo declarado).
 
 Obrigatórios pelo tipo (`migration, rls, route-handler, regra-de-negocio, tela`):
 
-- [ ] Aplicação limpa do zero com a proposta aplicada localmente
+- [ ] Aplicação limpa do zero: `db reset` com as 5 migrations e o seed, localmente e
+  no CI ("Migrations e RLS")
 - [ ] RLS do bucket com dois usuários e visitante: ninguém envia, sobrescreve, move,
   copia, lista nem apaga pela API do Storage — nem na própria pasta; configuração do
   bucket (público, 2 MB, tipos) conferida
@@ -174,7 +178,8 @@ Obrigatórios pelo tipo (`migration, rls, route-handler, regra-de-negocio, tela`
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
 
-Pré-requisito: as propostas da S03 e desta atividade aplicadas localmente, `npm run dev`.
+Pré-requisito: `npm run setup` nesta branch (as migrations da S03 e desta atividade
+vêm junto) e `npm run dev`.
 
 1. Entrar como `teste.d@viajamais.local` / `viajamais123`, abrir **Meu perfil** pelo menu
    do usuário. → A bolinha do avatar mostra as iniciais e um lápis.
@@ -223,7 +228,8 @@ critério combinado depois que já existe código para defender deixa de ser cri
 - [ ] O campo "URL do avatar" sai e o PATCH do perfil não aceita mais `avatar_url`
 - [ ] Erro do Storage ou do banco não volta cru ao cliente
 - [ ] Nenhuma chamada ao Storage parte do navegador
-- [ ] Merge junto com a migration de avatares
+- [ ] A migration de avatares entra neste mesmo PR; `db:types` rodado, sem diferença nos
+  tipos (bucket e trigger não aparecem no schema `public`)
 - [ ] Funciona em mobile e desktop; feedback por `toast()`; estado de envio e de erro tratados
 - [ ] ~~Autorização via `exigirMembro` / `exigirDono`~~ — não se aplica: a foto é do
   próprio perfil
