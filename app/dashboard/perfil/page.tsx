@@ -183,13 +183,13 @@ export default function PerfilPage() {
     }
   }
 
-  /** Depois de trocar ou remover a foto: cartão e menu lateral mostram a nova. */
   /** "Failed to fetch" não diz nada a quem usa: falha de rede ganha mensagem própria. */
   function mensagemDaFoto(erro: unknown, padrao: string) {
     if (erro instanceof TypeError) return "Não foi possível falar com o servidor. Verifique a conexão e tente de novo.";
     return erro instanceof Error ? erro.message : padrao;
   }
 
+  /** Depois de trocar ou remover a foto: cartão e menu lateral mostram a nova. */
   async function aplicarFoto(resposta: Response, sucesso: string) {
     const dados = await resposta.json().catch(() => ({}));
     if (!resposta.ok) throw new Error(dados.error ?? "Não foi possível atualizar a foto");
