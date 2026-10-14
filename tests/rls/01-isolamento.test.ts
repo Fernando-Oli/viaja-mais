@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { entrarPorConvite } from "./convite"
 
 /**
  * Isolamento entre contas, provado com os dois usuários do seed.
@@ -257,10 +258,14 @@ describe("participação na viagem", () => {
  */
 describe("membro legítimo", () => {
   beforeAll(async () => {
-    const { error } = await ana
-      .from("trip_members")
-      .insert({ trip_id: viagemDaAna, user_id: usuarioBruno.id, role: "member" })
-    if (error) throw new Error(`Ana não conseguiu adicionar Bruno à própria viagem: ${error.message}`)
+    await entrarPorConvite({
+      dona: ana,
+      idDona: usuarioAna.id,
+      convidado: bruno,
+      idConvidado: usuarioBruno.id,
+      emailConvidado: BRUNO.email,
+      tripId: viagemDaAna,
+    })
   })
 
   it("Bruno passa a enxergar a viagem depois de adicionado", async () => {

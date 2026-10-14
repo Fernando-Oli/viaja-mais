@@ -51,6 +51,17 @@ beforeEach(() => {
 })
 
 describe("SignUpPage", () => {
+  // @RF01.1 o perfil guarda até 120 caracteres; a tela mostra o teto em vez de cortar calada.
+  it("o nome completo para em 120 caracteres", async () => {
+    const usuario = userEvent.setup()
+    render(<SignUpPage />)
+    const nome = screen.getAllByRole("textbox")[0] as HTMLInputElement
+
+    await usuario.type(nome, "N".repeat(130))
+
+    expect(nome.value).toHaveLength(120)
+  })
+
   it("sem confirmação de e-mail, leva direto ao painel", async () => {
     // O GoTrue devolveu sessão: a conta já está criada e confirmada.
     h.signUp.mockResolvedValue({

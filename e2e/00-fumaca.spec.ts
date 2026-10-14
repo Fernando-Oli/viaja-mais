@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test"
 
 /**
- * Testes de fumaça: não exigem sessão e provam que o essencial está de pé.
- * Rodam mesmo sem os usuários de teste configurados.
+ * Testes de fumaça: provam que o essencial está de pé. Só "rotas removidas"
+ * entra com o usuário A do seed — ver o motivo no próprio bloco.
  */
 
 test.describe("páginas públicas", () => {
@@ -43,8 +43,17 @@ test.describe("proteção de rotas", () => {
 test.describe("rotas removidas", () => {
   // As páginas /login e /register usavam autenticação falsa em localStorage e
   // foram apagadas em S01. Se voltarem, este teste avisa.
+  //
+  // Com sessão, porque o visitante anônimo nunca chega a elas: o proxy manda
+  // qualquer rota não pública para /auth/login, e o goto terminava num 200.
   for (const rota of ["/login", "/register"]) {
     test(`${rota} não existe mais`, async ({ page }) => {
+      await page.goto("/auth/login")
+      await page.fill("#email", "teste.a@viajamais.local")
+      await page.fill("#password", "viajamais123")
+      await page.click('button[type="submit"]')
+      await page.waitForURL("/dashboard")
+
       const resposta = await page.goto(rota)
       expect(resposta?.status()).toBe(404)
     })
