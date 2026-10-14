@@ -52,6 +52,26 @@ function exigirAutorOuDono(despesa: Despesa, userId: string, papel: PapelNaViage
   throw semPermissao("esta despesa, restrita a quem a registrou ou ao dono da viagem")
 }
 
+/**
+ * A constraint trigger `expense_shares_soma_fecha` só dispara quando as partes
+ * mudam, não quando `expenses.amount` muda. Trocar o valor de uma despesa já
+ * rateada deixaria a soma das partes diferente do total sem nenhum erro.
+ *
+ * @RNF08.1 a soma das partes iguala o valor da despesa
+ */
+async function exigirSemRateio(supabase: Awaited<ReturnType<typeof createClient>>, expenseId: string) {
+  const { data: partes, error } = await supabase
+    .from("expense_shares")
+    .select("id")
+    .eq("expense_id", expenseId)
+    .limit(1)
+
+  if (error) throw new ErroHttp(400, "Não foi possível conferir o rateio da despesa")
+  if (partes && partes.length > 0) {
+    throw new ErroHttp(409, "Esta despesa já foi rateada: o valor não pode mudar sem refazer o rateio")
+  }
+}
+
 export async function GET(_request: Request, { params }: Contexto) {
   const { tripId, expenseId } = await params
   try {
@@ -84,6 +104,10 @@ export async function PATCH(request: Request, { params }: Contexto) {
     // Campo a campo. `id`, `trip_id` e `user_id` não estão no schema: a despesa
     // não muda de viagem nem de autor.
     const { title, amount, currency, category, date, payment_method, notes } = analise.data
+
+    if (amount !== undefined && Math.round(amount * 100) !== Math.round(Number(despesa.amount) * 100)) {
+      await exigirSemRateio(supabase, expenseId)
+    }
 
     const { data: atualizada, error } = await supabase
       .from("expenses")

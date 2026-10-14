@@ -1,0 +1,128 @@
+
+ RUN  v4.1.11 C:/Users/AbnerCosmo/Desktop/viaja-mais
+
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — caminho feliz > aceita um payload completo e converte amount de texto para número 4ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — caminho feliz > assume BRL quando a moeda não é enviada 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — caminho feliz > normaliza a moeda para maiúsculas 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — caminho feliz > aceita payment_method e notes ausentes ou nulos 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — caminho feliz > aceita todas as categorias do CHECK da tabela 1ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — regra do valor (amount > 0) > recusa amount igual a zero 1ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — regra do valor (amount > 0) > recusa amount negativo 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — regra do valor (amount > 0) > recusa amount ausente 1ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — regra do valor (amount > 0) > recusa amount não numérico 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — regra do valor (amount > 0) > recusa amount acima do teto de NUMERIC(10,2) 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — demais campos obrigatórios > recusa título vazio 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — demais campos obrigatórios > recusa categoria fora da lista 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — demais campos obrigatórios > recusa data fora do formato AAAA-MM-DD 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — demais campos obrigatórios > recusa moeda que não tem 3 letras 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — anti mass-assignment > descarta id, trip_id, user_id e outros campos de propriedade enviados no corpo 2ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > é opcional 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > aceita os três tipos 2ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa tipo desconhecido 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa sem participantes 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa participante que não é uuid 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa participante repetido 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa peso zero 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa peso negativo 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa peso acima do teto 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa peso ausente 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa valor negativo 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa valor com três casas 0ms
+ ✓ tests/lib/despesa-schema.test.ts > criarDespesaSchema — rateio > recusa valor em texto 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte "10" em 1000 centavos sem erro de ponto flutuante 2ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte "10.5" em 1050 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte "10,05" em 1005 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte "0.01" em 1 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte "0" em 0 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte " 3.34 " em 334 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte 80 em 8000 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte 0.1 em 10 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > converte 10.05 em 1005 centavos sem erro de ponto flutuante 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa "" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa "abc" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa "-1" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa "1.005" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa "1e3" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa -5 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa null 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa null 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa 10.005 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa null 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa undefined 0ms
+ ✓ tests/lib/finance-rateio.test.ts > reaisParaCentavos > recusa valor fora do inteiro seguro 0ms
+ ✓ tests/lib/finance-rateio.test.ts > formatação > volta para reais e formata em BRL 21ms
+ ✓ tests/lib/finance-rateio.test.ts > formatação > não quebra com código de moeda desconhecido 0ms
+ ✓ tests/lib/finance-rateio.test.ts > pesoParaCentesimos > aceita peso positivo com até duas casas 0ms
+ ✓ tests/lib/finance-rateio.test.ts > pesoParaCentesimos > recusa "0" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > pesoParaCentesimos > recusa "-1" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > pesoParaCentesimos > recusa "" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > pesoParaCentesimos > recusa "abc" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > pesoParaCentesimos > recusa "10000" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > pesoParaCentesimos > recusa "0.001" 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > R$ 10,00 entre 3 pessoas: 3,34 + 3,33 + 3,33, somando exatamente 10,00 1ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > divisão exata não gera centavo extra 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > total menor que o número de pessoas: centavos para os primeiros, zero para os demais 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > uma pessoa leva o total inteiro 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > a soma fecha para qualquer total entre 1 e 7 pessoas 3ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > recusa total 0 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > recusa total -100 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > recusa total 1.5 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > recusa total null 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirIgual > recusa lista vazia e participante repetido 1ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > distribui proporcionalmente ao peso: R$ 100,00 com pesos 2, 1, 1 1ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > R$ 10,00 com pesos iguais se comporta como a divisão igual 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > o centavo que sobra vai para quem teve a maior fração descartada 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > aceita peso decimal 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > não estoura com total e pesos no teto das colunas 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > recusa peso 0 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > recusa peso -1 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > recusa peso 10000 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > recusa peso 1.234 0ms
+ ✓ tests/lib/finance-rateio.test.ts > dividirPorPeso > recusa peso null 0ms
+ ✓ tests/lib/finance-rateio.test.ts > valor exato > conferirValorExato informa soma, falta e excesso 0ms
+ ✓ tests/lib/finance-rateio.test.ts > valor exato > aceita partes que fecham, inclusive uma parte zero 0ms
+ ✓ tests/lib/finance-rateio.test.ts > valor exato > recusa soma que falta ou excede 1ms
+ ✓ tests/lib/finance-rateio.test.ts > valor exato > recusa valor negativo ou fracionário de centavo 0ms
+ ✓ tests/lib/finance-rateio.test.ts > calcularRateio > encaminha cada tipo para a sua regra 0ms
+ ✓ tests/lib/finance-rateio.test.ts > calcularRateio > valor exato ilegível vira erro de valor, não zero 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > sem valor da despesa não é válido 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > sem participante selecionado não é válido 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > igual: prévia de 10,00 / 3 e soma igual ao total 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > peso: marca o participante com peso inválido e bloqueia 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > peso: calcula a parte de cada um 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > exato: mostra quanto falta 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > exato: mostra quanto excede 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > exato: valor negativo ou com três casas é inválido 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > exato: fecha quando a soma é igual ao total 0ms
+ ✓ tests/lib/finance-rateio.test.ts > avaliarRateio (formulário) > usa a moeda informada na mensagem 0ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses > cria a despesa e responde 200 quando quem chama é membro da viagem 7ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses > responde 401 quando não há sessão 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses > responde 403 para usuário autenticado que não participa da viagem 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses > responde 400 para payload inválido (valor zero) 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses > ignora user_id e trip_id enviados no corpo — usa a sessão e a URL 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses > converte erro do Postgres em resposta sem vazar a mensagem crua 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > divisão igual: R$ 10,00 entre 3 grava 3,34 + 3,33 + 3,33 e split_type equal 2ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > divisão por peso: grava o peso e as partes proporcionais 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > divisão por valor exato que fecha: grava os valores informados 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > valor exato que não fecha: 400 e nada é gravado 15ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > participante que não é membro da viagem: 400 e nada é gravado 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > peso inválido: 400 pelo schema 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > 401 sem sessão e 403 para quem não participa, mesmo com rateio válido 0ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > se gravar as partes falhar, desfaz a despesa e não vaza a mensagem do banco 1ms
+ ✓ tests/lib/expenses-route.test.ts > POST /api/trips/[tripId]/expenses — rateio > sem rateio, mantém o comportamento anterior: não grava partes nem split_type 0ms
+ ✓ tests/lib/expenses-route.test.ts > GET /api/trips/[tripId]/expenses > responde 401 quando não há sessão 0ms
+ ✓ tests/lib/expenses-route.test.ts > GET /api/trips/[tripId]/expenses > responde 403 para quem não participa da viagem 0ms
+ ✓ tests/lib/expenses-route.test.ts > GET /api/trips/[tripId]/expenses > lista as despesas para um membro 1ms
+ ✓ tests/components/expense-split.test.tsx > Nova despesa — carregamento e erro dos participantes > mostra o carregamento e mantém o envio desabilitado 192ms
+ ✓ tests/components/expense-split.test.tsx > Nova despesa — carregamento e erro dos participantes > mostra o erro, avisa por toast e permite tentar de novo 188ms
+ ✓ tests/components/expense-split.test.tsx > Nova despesa — divisão igual > R$ 10,00 entre 3: prévia 3,34 + 3,33 + 3,33, soma 10,00, e envia o rateio 323ms
+ ✓ tests/components/expense-split.test.tsx > Nova despesa — divisão igual > tirar um participante redistribui entre os que ficaram; nenhum selecionado bloqueia 248ms
+ ✓ tests/components/expense-split.test.tsx > Nova despesa — divisão por peso > valida peso zero e calcula as partes proporcionais 443ms
+ ✓ tests/components/expense-split.test.tsx > Nova despesa — divisão por valor exato > mostra soma, quanto falta e quanto excede; só libera quando fecha 361ms
+ ✓ tests/components/expense-split.test.tsx > Nova despesa — divisão por valor exato > erro da API no envio vira toast e o botão volta a ficar disponível 176ms
+
+ Test Files  4 passed (4)
+      Tests  119 passed (119)
+   Start at  17:21:22
+   Duration  3.28s (transform 316ms, setup 625ms, import 600ms, tests 2.04s, environment 747ms)
+
