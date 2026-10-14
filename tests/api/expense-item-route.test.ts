@@ -22,7 +22,9 @@ const h = vi.hoisted(() => ({
   updates: [] as Record<string, unknown>[],
   deletes: 0,
   filtros: [] as [string, string][],
-  partes: [] as { id: string }[],
+  partes: [] as { user_id: string; weight: number | null; settled_at: string | null }[],
+  upserts: [] as Record<string, unknown>[][],
+  erroUpsert: null as { message: string } | null,
 }))
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -42,8 +44,12 @@ vi.mock("@/lib/supabase/server", () => ({
       if (tabela === "expense_shares") {
         return {
           select: () => ({
-            eq: () => ({ limit: async () => ({ data: h.partes, error: null }) }),
+            eq: () => ({ order: async () => ({ data: h.partes, error: null }) }),
           }),
+          async upsert(linhas: Record<string, unknown>[]) {
+            h.upserts.push(linhas)
+            return { error: h.erroUpsert }
+          },
         }
       }
 
@@ -121,6 +127,8 @@ beforeEach(() => {
   h.deletes = 0
   h.filtros.length = 0
   h.partes = []
+  h.upserts.length = 0
+  h.erroUpsert = null
 })
 
 describe("PATCH /api/trips/[tripId]/expenses/[expenseId]", () => {
@@ -205,27 +213,87 @@ describe("PATCH /api/trips/[tripId]/expenses/[expenseId]", () => {
     expect(resposta.status).toBe(404)
   })
 
-  // @RNF08.1 regressão: a trigger da soma das partes não dispara em `expenses.amount`.
-  it("409: despesa já rateada não muda de valor, e nada é gravado", async () => {
-    logadoComoAutor()
-    h.linha = { id: EXPENSE_ID, title: "Jantar", user_id: "user-1", amount: 100 }
-    h.partes = [{ id: "share-1" }]
+  // @RNF08.1 regressão: a trigger da soma das partes não dispara em `expenses.amount`,
+  // então mudar o valor sem refazer as partes deixava o rateio descolado do total.
+  describe("despesa já rateada", () => {
+    const parte = (user_id: string, weight: number | null = null, settled_at: string | null = null) => ({
+      user_id,
+      weight,
+      settled_at,
+    })
+    const soma = (linhas: Record<string, unknown>[]) =>
+      Math.round(linhas.reduce((t, l) => t + Number(l.amount) * 100, 0))
 
-    const resposta = await PATCH(requisicao("PATCH", { amount: "150" }), contexto())
+    beforeEach(() => {
+      logadoComoAutor()
+      h.linha = { id: EXPENSE_ID, title: "Jantar", user_id: "user-1", amount: 100, split_type: "equal" }
+      h.partes = [parte("a"), parte("b"), parte("c")]
+    })
 
-    expect(resposta.status).toBe(409)
-    expect(h.updates).toEqual([])
-  })
+    it("200: rateio igual é refeito sobre o valor novo, com os mesmos participantes", async () => {
+      const resposta = await PATCH(requisicao("PATCH", { amount: "150" }), contexto())
 
-  it("200: despesa rateada ainda edita título e aceita o mesmo valor", async () => {
-    logadoComoAutor()
-    h.linha = { id: EXPENSE_ID, title: "Jantar", user_id: "user-1", amount: 100 }
-    h.partes = [{ id: "share-1" }]
+      expect(resposta.status).toBe(200)
+      expect(h.updates).toEqual([expect.objectContaining({ amount: 150 })])
+      expect(h.upserts[0].map((l) => [l.user_id, l.amount])).toEqual([
+        ["a", 50],
+        ["b", 50],
+        ["c", 50],
+      ])
+    })
 
-    const resposta = await PATCH(requisicao("PATCH", { title: "Jantar no centro", amount: "100.00" }), contexto())
+    it("200: centavo que não divide ainda fecha a soma no valor novo", async () => {
+      await PATCH(requisicao("PATCH", { amount: "100.01" }), contexto())
 
-    expect(resposta.status).toBe(200)
-    expect(h.updates).toEqual([expect.objectContaining({ title: "Jantar no centro" })])
+      expect(soma(h.upserts[0])).toBe(10001)
+    })
+
+    it("200: rateio por peso mantém os pesos", async () => {
+      h.linha = { ...h.linha, split_type: "weight" }
+      h.partes = [parte("a", 2), parte("b", 1)]
+
+      await PATCH(requisicao("PATCH", { amount: "90" }), contexto())
+
+      expect(h.upserts[0]).toEqual([
+        expect.objectContaining({ user_id: "a", amount: 60, weight: 2 }),
+        expect.objectContaining({ user_id: "b", amount: 30, weight: 1 }),
+      ])
+    })
+
+    it("409: rateio por valor exato não é adivinhado, e nada é gravado", async () => {
+      h.linha = { ...h.linha, split_type: "exact" }
+
+      const resposta = await PATCH(requisicao("PATCH", { amount: "150" }), contexto())
+
+      expect(resposta.status).toBe(409)
+      expect(h.updates).toEqual([])
+      expect(h.upserts).toEqual([])
+    })
+
+    it("409: com parte já quitada, o valor não muda", async () => {
+      h.partes = [parte("a"), parte("b", null, "2026-12-01T00:00:00Z")]
+
+      const resposta = await PATCH(requisicao("PATCH", { amount: "150" }), contexto())
+
+      expect(resposta.status).toBe(409)
+      expect(h.updates).toEqual([])
+    })
+
+    it("400: se as partes não gravam, o valor antigo volta", async () => {
+      h.erroUpsert = { message: "check_violation" }
+
+      const resposta = await PATCH(requisicao("PATCH", { amount: "150" }), contexto())
+
+      expect(resposta.status).toBe(400)
+      expect(h.updates).toEqual([expect.objectContaining({ amount: 150 }), { amount: 100 }])
+    })
+
+    it("200: mudar só o título, ou mandar o mesmo valor, não toca nas partes", async () => {
+      const resposta = await PATCH(requisicao("PATCH", { title: "Jantar no centro", amount: "100.00" }), contexto())
+
+      expect(resposta.status).toBe(200)
+      expect(h.upserts).toEqual([])
+    })
   })
 
   it("filtra por trip_id e id, e descarta trip_id/user_id/id do corpo (sem mass-assignment)", async () => {
