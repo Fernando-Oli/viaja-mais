@@ -91,7 +91,10 @@ tipo declarado).
   "Enviar nova foto" / "Remover foto"; sai o campo "URL do avatar"; o avatar é recriado
   quando a foto muda (o Avatar do Radix guarda "imagem carregada" e, sem isso, ao remover
   a foto as iniciais não voltavam — achado pelo E2E); "Salvar perfil" travado durante o
-  envio; mensagem própria para falha de rede.
+  envio; mensagem própria para falha de rede. **Sem foto, a bolinha mostra um ícone de
+  pessoa, e não mais as iniciais** (decisão do Micael em 14/10): as iniciais saíam de
+  `nome[0]`, e um nome que começa com emoji virava um caractere quebrado. O ícone tem o
+  rótulo "Sem foto de perfil" para leitor de tela.
 - `lib/social/enquadramento.ts` (criar) — a geometria do enquadramento, em funções
   puras: escala que cobre a janela, limites (a imagem sempre cobre o círculo), zoom em
   torno do centro e o quadrado da imagem original que vira a foto.
@@ -165,6 +168,12 @@ tipo declarado).
   usada "exclusivamente" para a API administrativa do GoTrue (`auth.admin.*`). Com este
   PR, ela também é usada no Storage, pela rota da foto, para enviar e apagar no bucket
   `avatars`. Vale ajustar o comentário, para a narrativa da seção 25 bater com o código.
+- **Bolinha sem foto: ícone de pessoa no lugar das iniciais.** O Perfil passou a mostrar
+  o ícone (decisão do Micael em 14/10). Para o app ficar igual, o pedido é fazer o mesmo
+  no menu lateral (`app/dashboard/layout.tsx`, compartilhado) e na lista de participantes
+  (`components/trip-members.tsx`, RF04). Hoje os dois montam iniciais com `n[0]`, e um
+  nome que começa com emoji aparece como caractere quebrado. Não foram tocados aqui por
+  serem de outro dono.
 
 ## 4. Passos
 

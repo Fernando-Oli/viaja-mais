@@ -61,7 +61,9 @@ test("enquadra a foto no modal, envia o que está no círculo e remove", async (
   await abrirPerfilDoDavi(page)
   try {
     const cartao = page.getByRole("region", { name: "Como os outros veem seu perfil" })
-    await expect(cartao.getByText("DT")).toBeVisible()
+    // Sem foto, a bolinha mostra um ícone de pessoa, e não as iniciais.
+    await expect(cartao.getByRole("img", { name: "Sem foto de perfil" })).toBeVisible()
+    await expect(cartao.getByText("DT", { exact: true })).toHaveCount(0)
 
     // Sem foto, o menu só oferece enviar.
     await page.getByRole("button", { name: "Alterar foto de perfil" }).click()
@@ -91,7 +93,7 @@ test("enquadra a foto no modal, envia o que está no círculo e remove", async (
     await expect(modal).toBeHidden()
 
     // A foto vem do bucket do projeto, na pasta do Davi, em 512×512…
-    const foto = cartao.getByRole("img", { name: "Foto de perfil" })
+    const foto = cartao.getByRole("img", { name: "Foto de perfil", exact: true })
     await expect(foto).toHaveAttribute("src", /\/storage\/v1\/object\/public\/avatars\/44444444-4444-4444-8444-444444444444\//)
     await expect.poll(() => foto.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight])).toEqual([512, 512])
 
@@ -105,13 +107,13 @@ test("enquadra a foto no modal, envia o que está no círculo e remove", async (
 
     // Recarregar prova que ficou gravado.
     await page.reload()
-    await expect(cartao.getByRole("img", { name: "Foto de perfil" })).toBeVisible()
+    await expect(cartao.getByRole("img", { name: "Foto de perfil", exact: true })).toBeVisible()
     await page.screenshot({ path: `docs/pfc/evidencias/S04-M-foto-perfil-${projeto}.png`, fullPage: true })
 
     await escolherNoMenu(page, "Remover foto")
     await expect(page.getByText("Foto removida").first()).toBeVisible()
-    await expect(cartao.getByRole("img", { name: "Foto de perfil" })).toHaveCount(0)
-    await expect(cartao.getByText("DT")).toBeVisible()
+    await expect(cartao.getByRole("img", { name: "Foto de perfil", exact: true })).toHaveCount(0)
+    await expect(cartao.getByRole("img", { name: "Sem foto de perfil" })).toBeVisible()
   } finally {
     // Só depois do login: deixa o Davi sem foto para a próxima execução.
     await page.request.delete("/api/social/perfil/foto")
@@ -133,7 +135,7 @@ test("Cancelar no modal não envia nada", async ({ page }) => {
   await expect(modal).toBeHidden()
   expect(envios).toEqual([])
   await expect(
-    page.getByRole("region", { name: "Como os outros veem seu perfil" }).getByRole("img", { name: "Foto de perfil" }),
+    page.getByRole("region", { name: "Como os outros veem seu perfil" }).getByRole("img", { name: "Foto de perfil", exact: true }),
   ).toHaveCount(0)
 })
 

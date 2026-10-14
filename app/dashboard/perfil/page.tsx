@@ -93,12 +93,6 @@ function alteracoes(atual: PerfilEditavel, formulario: FormData, publico: boolea
   return mudou;
 }
 
-function iniciais(nome: string | null): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return "?";
-  return (partes[0][0] + (partes.length > 1 ? partes[partes.length - 1][0] : "")).toUpperCase();
-}
-
 export default function PerfilPage() {
   const { refreshUser } = useAuth();
   const { toast } = useToast();
@@ -279,12 +273,14 @@ export default function PerfilPage() {
             <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="relative h-20 w-20 shrink-0">
                 {/* A key recria o avatar quando a foto muda: o Avatar do Radix guarda
-                    "imagem carregada" e, sem isso, ao remover a foto as iniciais não
-                    voltavam — o círculo ficava vazio. */}
+                    "imagem carregada" e, sem isso, ao remover a foto o ícone não
+                    voltava — o círculo ficava vazio. */}
                 <Avatar key={perfil.avatar_url ?? "sem-foto"} className="h-20 w-20" aria-busy={enviandoFoto}>
                   {perfil.avatar_url ? <AvatarImage src={perfil.avatar_url} alt="Foto de perfil" /> : null}
-                  <AvatarFallback className="bg-viaja-green text-xl text-white">
-                    {iniciais(perfil.full_name)}
+                  {/* Sem foto, um ícone de pessoa, e não as iniciais: decisão do Micael,
+                      depois de ver nome com emoji virar caractere quebrado na bolinha. */}
+                  <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
+                    <UserRound className="h-10 w-10" aria-hidden />
                   </AvatarFallback>
                 </Avatar>
                 {enviandoFoto ? (
