@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page, type Response } from "@playwright/test"
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
+import { entrarPorConvite } from "../tests/rls/convite"
 
 /**
  * @RF06.9 tipo de rateio: igual, por peso ou por valor exato
@@ -9,7 +10,7 @@ import { exigirLocal } from "../tests/rls/guarda-ambiente"
  * Rateio na criação da despesa, pela tela, com uma viagem de três membros
  * reais: Ana (seed, dona), Bruno (seed) e uma terceira conta criada pelo
  * cadastro — o seed só tem duas, e "R$ 10,00 entre 3" precisa de três.
- * Bruno e a terceira conta entram como membros pela dona (ver `adicionarMembros`).
+ * Bruno e a terceira conta entram pelo convite (ver `adicionarMembros`).
  *
  * Cada cenário confere a prévia na tela E o que o servidor gravou: as partes
  * devolvidas pelo POST são as recalculadas no servidor, não as do navegador.
@@ -38,19 +39,22 @@ async function logar(email: string) {
 }
 
 /**
- * Os membros entram pela dona, direto em `trip_members` sob a policy
- * `trip_members_insert` (`is_trip_owner`) — o mesmo preparo de
- * `tests/rls/02-rateio.test.ts`. O caminho do convite não serve aqui:
- * `POST /api/invitations/[id]/accept` lê o convite com `trips!inner`, e quem
- * ainda não é membro não enxerga a viagem pela RLS de `trips`, então o aceite
- * devolve 404 (PGRST116). Isso é defeito do RF04, fora do escopo do rateio.
+ * Os membros entram pelo convite, o único caminho que a RLS aceita: a dona
+ * convida e cada um se insere enquanto o convite está pendente — o mesmo
+ * preparo de `tests/rls/02-rateio.test.ts`.
  */
 async function adicionarMembros(emails: string[]) {
   const ana = await logar("teste.a@viajamais.local")
   for (const email of emails) {
-    const { id } = await logar(email)
-    const { error } = await ana.cliente.from("trip_members").insert({ trip_id: tripId, user_id: id, role: "member" })
-    if (error) throw new Error(`Ana não conseguiu adicionar ${email}: ${error.message}`)
+    const membro = await logar(email)
+    await entrarPorConvite({
+      dona: ana.cliente,
+      idDona: ana.id,
+      convidado: membro.cliente,
+      idConvidado: membro.id,
+      emailConvidado: email,
+      tripId,
+    })
   }
 }
 

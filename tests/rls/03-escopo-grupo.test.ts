@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { entrarPorConvite } from "./convite"
 import { selecaoPorViagem, selecaoDeViagens, FILTRO_POR_VIAGEM, FILTRO_EM_VIAGENS } from "@/lib/trips/escopo"
 
 /**
@@ -104,12 +105,14 @@ beforeAll(async () => {
   compartilhada = await viagem("Viagem compartilhada")
   particular = await viagem("Viagem particular da Ana")
 
-  const { error } = await ana.from("trip_members").insert({
-    trip_id: compartilhada,
-    user_id: usuarioBruno.id,
-    role: "member",
+  await entrarPorConvite({
+    dona: ana,
+    idDona: usuarioAna.id,
+    convidado: bruno,
+    idConvidado: usuarioBruno.id,
+    emailConvidado: BRUNO.email,
+    tripId: compartilhada,
   })
-  if (error) throw new Error(`Ana não adicionou o Bruno: ${error.message}`)
 
   await povoar(compartilhada, TITULO_COMPARTILHADO)
   await povoar(particular, TITULO_PARTICULAR)

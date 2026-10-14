@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { entrarPorConvite } from "./convite"
 
 /**
  * Rateio: isolamento e integridade, contra Postgres real.
@@ -101,12 +102,14 @@ beforeAll(async () => {
   viagemCompartilhada = await criarViagem("Viagem com o Bruno")
   despesaCompartilhada = await criarDespesa(viagemCompartilhada, 300)
 
-  const { error: erroMembro } = await ana.from("trip_members").insert({
-    trip_id: viagemCompartilhada,
-    user_id: usuarioBruno.id,
-    role: "member",
+  await entrarPorConvite({
+    dona: ana,
+    idDona: usuarioAna.id,
+    convidado: bruno,
+    idConvidado: usuarioBruno.id,
+    emailConvidado: BRUNO.email,
+    tripId: viagemCompartilhada,
   })
-  if (erroMembro) throw new Error(`Ana não conseguiu adicionar o Bruno: ${erroMembro.message}`)
 })
 
 describe("isolamento das partes do rateio", () => {
