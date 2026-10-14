@@ -1,7 +1,7 @@
 # Matriz de Rastreabilidade
 
 > Gerado por `npm run pfc:rastreabilidade`. Não edite à mão.
-> Última geração: 2026-09-30
+> Última geração: 2026-10-14
 
 Requisitos são marcados no código e nos testes com uma tag em comentário
 (`// @RF03.4 — permite editar viagem`). Este arquivo cruza essas tags com o
@@ -61,19 +61,19 @@ catálogo das seções 14 e 15.
 | RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | — | — | — |
 | RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | — | — | — |
 | RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | — | — | — |
-| RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
-| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
-| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
-| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 07f46b2 |
-| RF-07.5 | O usuário deve poder editar reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`lib/schemas/reserva.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
-| RF-07.6 | O usuário deve poder excluir reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | — |
-| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`components/booking-list.tsx` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 07f46b2 |
-| RF-08.1 | O usuário deve poder buscar lugares | Parcial | — | — | — |
-| RF-08.2 | O usuário deve poder salvar lugares favoritos | Parcial | — | — | — |
-| RF-08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | — | — | — |
-| RF-08.4 | O usuário deve poder marcar lugares como visitados | Parcial | — | — | — |
+| RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
+| RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
+| RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
+| RF-07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
+| RF-07.5 | O usuário deve poder editar reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`lib/schemas/reserva.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
+| RF-07.6 | O usuário deve poder excluir reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
+| RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`components/booking-list.tsx` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
+| RF-08.1 | O usuário deve poder buscar lugares | Parcial | `app/dashboard/trips/[id]/places/page.tsx` | — | c44332b |
+| RF-08.2 | O usuário deve poder salvar lugares favoritos | Parcial | `app/api/trips/[tripId]/places/route.ts`<br>`app/dashboard/trips/[id]/places/page.tsx`<br>`lib/schemas/lugar.ts` | `tests/api/places-route.test.ts` | 07f46b2 |
+| RF-08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | `app/api/trips/[tripId]/places/route.ts`<br>`app/dashboard/trips/[id]/places/page.tsx`<br>`lib/schemas/lugar.ts` | `tests/api/places-route.test.ts` | 07f46b2 |
+| RF-08.4 | O usuário deve poder marcar lugares como visitados | Existente | `app/api/trips/[tripId]/places/[placeId]/route.ts`<br>`lib/schemas/lugar.ts`<br>`components/place-list.tsx` | `tests/api/place-item-route.test.ts`<br>`e2e/lugares.spec.ts` | — |
 | RF-08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | — | — | — |
-| RF-08.6 | O usuário deve poder excluir lugares salvos | Parcial | — | — | — |
+| RF-08.6 | O usuário deve poder excluir lugares salvos | Existente | `app/api/trips/[tripId]/places/[placeId]/route.ts`<br>`components/place-list.tsx` | `tests/api/place-item-route.test.ts`<br>`e2e/lugares.spec.ts` | — |
 | RF-09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Não iniciado | — | — | — |
 | RF-09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Não iniciado | — | — | — |
 | RF-09.3 | O dono de um perfil privado deve poder visualizar suas solicitações pendentes | Não iniciado | — | — | — |
@@ -133,7 +133,7 @@ catálogo das seções 14 e 15.
 ## Resumo
 
 - Requisitos no catálogo: **120**
-- Com implementação marcada: **27**
-- Com teste marcado: **21**
+- Com implementação marcada: **32**
+- Com teste marcado: **25**
 
 _Nenhuma inconsistência._
