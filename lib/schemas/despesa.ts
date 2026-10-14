@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { PESO_MAXIMO, pesoParaCentesimos, reaisParaCentavos } from "@/lib/finance/rateio"
 
 /**
  * Contrato de entrada da criação de despesa.
@@ -28,6 +29,59 @@ export const CATEGORIAS_DESPESA = [
   "other",
 ] as const
 
+/**
+ * Rateio enviado junto da despesa. Leva só a **intenção** — quem participa e,
+ * conforme o tipo, o peso ou o valor de cada um. As partes em centavos são
+ * recalculadas no servidor por `lib/finance/rateio.ts`; nada que o navegador
+ * calculou é gravado sem passar por lá.
+ *
+ * `tipo` usa os mesmos valores do CHECK de `expenses.split_type`.
+ *
+ * @RF06.9 tipo de rateio: igual, por peso ou por valor exato
+ */
+const participanteId = z.string().uuid("participante inválido")
+
+// Mesma regra de `reaisParaCentavos`: número não negativo com até duas casas.
+const valorMonetario = z.union([z.string(), z.number()]).refine(
+  (v) => reaisParaCentavos(v) !== null,
+  "informe um valor maior ou igual a zero, com até duas casas",
+)
+
+const peso = z.coerce
+  .number()
+  .finite("informe um peso numérico")
+  .refine((v) => pesoParaCentesimos(v) !== null, `o peso deve ser maior que zero e até ${PESO_MAXIMO}, com até duas casas`)
+
+function semRepetidos(participantes: { user_id: string }[]) {
+  return new Set(participantes.map((p) => p.user_id)).size === participantes.length
+}
+
+export const rateioSchema = z
+  .discriminatedUnion("tipo", [
+    z.object({
+      tipo: z.literal("equal"),
+      participantes: z.array(z.object({ user_id: participanteId })).min(1, "selecione ao menos um participante"),
+    }),
+    z.object({
+      tipo: z.literal("weight"),
+      participantes: z
+        .array(z.object({ user_id: participanteId, peso }))
+        .min(1, "selecione ao menos um participante"),
+    }),
+    z.object({
+      tipo: z.literal("exact"),
+      participantes: z
+        .array(z.object({ user_id: participanteId, valor: valorMonetario }))
+        .min(1, "selecione ao menos um participante"),
+    }),
+  ])
+  .refine((r) => semRepetidos(r.participantes), {
+    message: "participante repetido no rateio",
+    path: ["participantes"],
+  })
+
+export type Rateio = z.infer<typeof rateioSchema>
+
 export const criarDespesaSchema = z.object({
   title: z.string().trim().min(1, "informe uma descrição").max(120),
 
@@ -50,6 +104,10 @@ export const criarDespesaSchema = z.object({
   // Opcionais na tabela; o formulário envia `null` quando em branco.
   payment_method: z.string().trim().max(120).optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+
+  // Opcional: despesa sem rateio é estado legítimo no banco ("lançada e ainda
+  // não rateada" — ver a constraint trigger de `expense_shares`).
+  rateio: rateioSchema.optional(),
 })
 
 export type CriarDespesa = z.infer<typeof criarDespesaSchema>
