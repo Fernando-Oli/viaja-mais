@@ -22,6 +22,7 @@ const h = vi.hoisted(() => ({
   updates: [] as Record<string, unknown>[],
   deletes: 0,
   filtros: [] as [string, string][],
+  partes: [] as { id: string }[],
 }))
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -34,6 +35,14 @@ vi.mock("@/lib/supabase/server", () => ({
             eq: () => ({
               eq: () => ({ maybeSingle: async () => h.papel }),
             }),
+          }),
+        }
+      }
+
+      if (tabela === "expense_shares") {
+        return {
+          select: () => ({
+            eq: () => ({ limit: async () => ({ data: h.partes, error: null }) }),
           }),
         }
       }
@@ -111,6 +120,7 @@ beforeEach(() => {
   h.updates.length = 0
   h.deletes = 0
   h.filtros.length = 0
+  h.partes = []
 })
 
 describe("PATCH /api/trips/[tripId]/expenses/[expenseId]", () => {
@@ -193,6 +203,29 @@ describe("PATCH /api/trips/[tripId]/expenses/[expenseId]", () => {
     const resposta = await PATCH(requisicao("PATCH", { title: "Jantar remarcado" }), contexto())
 
     expect(resposta.status).toBe(404)
+  })
+
+  // @RNF08.1 regressão: a trigger da soma das partes não dispara em `expenses.amount`.
+  it("409: despesa já rateada não muda de valor, e nada é gravado", async () => {
+    logadoComoAutor()
+    h.linha = { id: EXPENSE_ID, title: "Jantar", user_id: "user-1", amount: 100 }
+    h.partes = [{ id: "share-1" }]
+
+    const resposta = await PATCH(requisicao("PATCH", { amount: "150" }), contexto())
+
+    expect(resposta.status).toBe(409)
+    expect(h.updates).toEqual([])
+  })
+
+  it("200: despesa rateada ainda edita título e aceita o mesmo valor", async () => {
+    logadoComoAutor()
+    h.linha = { id: EXPENSE_ID, title: "Jantar", user_id: "user-1", amount: 100 }
+    h.partes = [{ id: "share-1" }]
+
+    const resposta = await PATCH(requisicao("PATCH", { title: "Jantar no centro", amount: "100.00" }), contexto())
+
+    expect(resposta.status).toBe(200)
+    expect(h.updates).toEqual([expect.objectContaining({ title: "Jantar no centro" })])
   })
 
   it("filtra por trip_id e id, e descarta trip_id/user_id/id do corpo (sem mass-assignment)", async () => {
