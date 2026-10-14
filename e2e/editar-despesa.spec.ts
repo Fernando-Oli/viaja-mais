@@ -42,10 +42,10 @@ test("membro cria, edita e exclui despesa a partir da aba da viagem", async ({ p
   await page.getByRole("button", { name: "Salvar Despesa" }).click()
 
   // Volta direto na aba Despesas, com o valor exatamente como foi digitado.
-  await page.waitForURL(/\/dashboard\/trips\/[^/]+\?tab=expenses$/)
+  await page.waitForURL(/\/dashboard\/trips\/[^/]+\?aba=despesas$/)
   await page.goto(`/dashboard/trips/${tripId}?aba=despesas`)
   await expect(page.getByRole("heading", { name: titulo })).toBeVisible()
-  await expect(page.getByText(/95,50/)).toBeVisible()
+  await expect(page.getByLabel("Despesas").getByText(/95,50/)).toBeVisible()
 
   const projeto = test.info().project.name
   await page.screenshot({ path: `docs/pfc/evidencias/S03-Ab-despesa-criada-${projeto}.png`, fullPage: true })
@@ -61,7 +61,7 @@ test("membro cria, edita e exclui despesa a partir da aba da viagem", async ({ p
   await page.getByRole("button", { name: "Salvar alterações" }).click()
   await page.waitForURL(/\?aba=despesas$/)
   await expect(page.getByRole("heading", { name: novoTitulo })).toBeVisible()
-  await expect(page.getByText(/120,00/)).toBeVisible()
+  await expect(page.getByLabel("Despesas").getByText(/120,00/)).toBeVisible()
 
   // Excluir: cancelar no modal mantém a despesa; confirmar remove.
   await page.getByRole("button", { name: "Excluir" }).click()
