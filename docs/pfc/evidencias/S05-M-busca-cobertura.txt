@@ -1,0 +1,7 @@
+# S05-M-busca-pessoas — cobertura dos arquivos da atividade (2026-10-21 10:59)
+npx vitest run tests/lib/busca.test.ts tests/api/social-perfis-busca-route.test.ts --coverage (include nos 3 arquivos abaixo)
+
+total                                      linhas 100% | ramos 100% | funções 100%
+app/api/social/perfis/route.ts             linhas 100% | ramos 100% | funções 100%
+lib/schemas/busca.ts                       linhas 100% | ramos 100% | funções 100%
+lib/social/busca.ts                        linhas 100% | ramos 100% | funções 100%

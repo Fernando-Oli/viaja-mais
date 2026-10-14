@@ -1,0 +1,25 @@
+◇ injected env (11) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+
+Running 16 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ok  1 [chromium] › e2e\rede-social.spec.ts:37:5 › a aba Rede social fica logo abaixo de Reservas e abre o feed (3.0s)
+  ok  2 [chromium] › e2e\rede-social.spec.ts:50:5 › busca por nome e por @usuário, marca o perfil privado e não mostra quem busca (5.5s)
+  ok  3 [chromium] › e2e\rede-social.spec.ts:86:5 › o _ é procurado como _, e os curingas do LIKE são recusados (1.6s)
+  ok  4 [chromium] › e2e\rede-social.spec.ts:104:5 › o painel recolhe e expande no desktop, sem perder o foco nem o que foi buscado (1.9s)
+  ok  5 [chromium] › e2e\rede-social.spec.ts:127:5 › uma resposta atrasada não aparece no lugar da busca mais nova (4.5s)
+  ok  6 [chromium] › e2e\rede-social.spec.ts:151:5 › sessão expirada leva ao login, em vez de erro sem saída (1.3s)
+  ok  7 [chromium] › e2e\rede-social.spec.ts:171:5 › mostra o erro da busca e deixa tentar de novo (2.2s)
+  ok  8 [chromium] › e2e\rede-social.spec.ts:188:5 › sem sessão, a aba manda para o login e a busca responde 401 (594ms)
+◇ injected env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok  9 [mobile] › e2e\rede-social.spec.ts:37:5 › a aba Rede social fica logo abaixo de Reservas e abre o feed (1.8s)
+  ok 10 [mobile] › e2e\rede-social.spec.ts:50:5 › busca por nome e por @usuário, marca o perfil privado e não mostra quem busca (5.7s)
+  ok 11 [mobile] › e2e\rede-social.spec.ts:86:5 › o _ é procurado como _, e os curingas do LIKE são recusados (2.5s)
+  -  12 [mobile] › e2e\rede-social.spec.ts:104:5 › o painel recolhe e expande no desktop, sem perder o foco nem o que foi buscado
+  ok 13 [mobile] › e2e\rede-social.spec.ts:127:5 › uma resposta atrasada não aparece no lugar da busca mais nova (4.9s)
+  ok 14 [mobile] › e2e\rede-social.spec.ts:151:5 › sessão expirada leva ao login, em vez de erro sem saída (1.5s)
+  ok 15 [mobile] › e2e\rede-social.spec.ts:171:5 › mostra o erro da busca e deixa tentar de novo (2.8s)
+  ok 16 [mobile] › e2e\rede-social.spec.ts:188:5 › sem sessão, a aba manda para o login e a busca responde 401 (1.2s)
+
+  1 skipped
+  15 passed (47.7s)

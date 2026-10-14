@@ -83,6 +83,8 @@ catálogo das seções 14 e 15.
 | RF-09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | — | — | — |
 | RF-09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | — | — | — |
 | RF-09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | `app/api/social/perfis/route.ts`<br>`app/feed/layout.tsx`<br>`app/feed/page.tsx`<br>`app/feed/painel-pessoas.tsx`<br>`lib/schemas/busca.ts`<br>`lib/social/busca.ts` | `tests/api/social-perfis-busca-route.test.ts`<br>`tests/lib/busca.test.ts`<br>`e2e/rede-social.spec.ts` | — |
+| RF-09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | — | — | — |
 | RF-10.1 | O usuário deve poder curtir uma publicação | Não iniciado | — | — | — |
 | RF-10.2 | O usuário deve poder remover a própria curtida | Não iniciado | — | — | — |
 | RF-10.3 | O usuário deve poder comentar em uma publicação | Não iniciado | — | — | — |
@@ -112,7 +114,7 @@ catálogo das seções 14 e 15.
 | RNF-02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Planejado | — | — | — |
 | RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | — | — | — |
 | RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | `tests/lib/supabase-admin.test.ts` | — |
-| RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/foto/route.ts`<br>`app/api/social/perfil/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-foto-route.test.ts`<br>`tests/api/social-perfil-route.test.ts` | d1d638e |
+| RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/foto/route.ts`<br>`app/api/social/perfil/route.ts`<br>`app/api/social/perfis/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-foto-route.test.ts`<br>`tests/api/social-perfil-route.test.ts`<br>`tests/api/social-perfis-busca-route.test.ts` | d1d638e |
 | RNF-02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | — | — | — |
 | RNF04 | _(fora do catálogo)_ | — | — | `tests/lib/env.test.ts` | — |
 | RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | — | — | — |
@@ -133,9 +135,9 @@ catálogo das seções 14 e 15.
 
 ## Resumo
 
-- Requisitos no catálogo: **120**
-- Com implementação marcada: **41**
-- Com teste marcado: **42**
+- Requisitos no catálogo: **122**
+- Com implementação marcada: **42**
+- Com teste marcado: **43**
 
 ## Inconsistências
 

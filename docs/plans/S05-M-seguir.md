@@ -20,6 +20,11 @@ status: backlog
 
 Base do feed.
 
+Recebe a página do perfil de **outra** pessoa (`/u/<username>`), que saiu da parte 2 da
+`S04-M-perfil-publico`: ela é aberta pelos resultados da busca da `S05-M-busca-pessoas`,
+dentro da aba Rede social, com Seguir/Solicitar, contadores e as viagens publicadas.
+Desenho definido pelo Micael em 14/10; o plano completo é escrito ao abrir a atividade.
+
 ## 2. Arquivos afetados
 
 _A preencher antes de comecar: caminhos concretos, incluindo migration se houver dado novo._
