@@ -1,81 +1,45 @@
-import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
+import { ErroHttp, naoAutenticado, naoEncontrado, respostaDeErro } from "@/lib/http"
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ userId: string }> }
-) {
+/**
+ * Dados básicos de um perfil, por id. Quem consome é `context/auth-context.tsx`,
+ * para o nome e o avatar do cabeçalho — por isso a resposta continua `{ profile }`.
+ *
+ * No molde de app/api/trips/[tripId]/route.ts: `await params`, `getUser()`,
+ * erro do banco pelo `respostaDeErro`, sem a mensagem crua do Postgres. Não há
+ * `exigirMembro`/`exigirDono`: perfil não é recurso de viagem, e os dados
+ * básicos são visíveis a qualquer autenticado (detalhamento do RF02).
+ *
+ * A edição do perfil mora em /api/social/perfil (S04-M). O PATCH que existia
+ * aqui gravava o corpo inteiro no UPDATE (mass-assignment) e nenhuma tela o usava.
+ *
+ * @RF02.1 visualizar perfil · @RNF02.11 erro do banco não vaza
+ */
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export async function GET(_request: Request, { params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params
   try {
-    const resolvedParams = await params;
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw naoAutenticado()
 
-    const { userId } = resolvedParams;
-
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!userId || userId === "undefined" || !uuidRegex.test(userId)) {
-      console.error("[v0] Profile route - Invalid userId:", userId);
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
-
-    const supabase = await createClient();
+    if (!UUID.test(userId)) throw new ErroHttp(400, "Identificador de usuário inválido")
 
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("id, full_name, avatar_url, created_at, updated_at")
       .eq("id", userId)
-      .single();
+      .maybeSingle()
 
-    if (error) {
-      console.error("[v0] Profile fetch error:", error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ profile });
-  } catch (error) {
-    console.error("[v0] Profile route error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
-
-  try {
-    const supabase = await createClient();
-    const body = await request.json();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user || user.id !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Mass-assignment: `body` vem do cliente e vai inteiro para o UPDATE, o que
-    // permite reescrever colunas que não deveriam ser editáveis.
-    // TODO(S02/T1): validar com zod e extrair campo a campo — ver CLAUDE.md.
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .update(body)
-      .eq("id", userId)
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ profile });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    if (error) throw error
+    if (!profile) throw naoEncontrado("Perfil")
+    return NextResponse.json({ profile })
+  } catch (erro) {
+    return respostaDeErro(erro)
   }
 }
