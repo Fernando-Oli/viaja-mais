@@ -1,0 +1,16 @@
+◇ injected env (11) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+Running 8 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+  ok 1 [chromium] › e2e\foto-perfil.spec.ts:60:5 › enquadra a foto no modal, envia o que está no círculo e remove (8.2s)
+  ok 2 [chromium] › e2e\foto-perfil.spec.ts:123:5 › Cancelar no modal não envia nada (2.6s)
+  ok 3 [chromium] › e2e\foto-perfil.spec.ts:147:9 › recusa o que não é imagem › PDF (2.4s)
+  ok 4 [chromium] › e2e\foto-perfil.spec.ts:147:9 › recusa o que não é imagem › PDF renomeado para .png (2.5s)
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+  ok 5 [mobile] › e2e\foto-perfil.spec.ts:60:5 › enquadra a foto no modal, envia o que está no círculo e remove (7.5s)
+  ok 6 [mobile] › e2e\foto-perfil.spec.ts:123:5 › Cancelar no modal não envia nada (3.5s)
+  ok 7 [mobile] › e2e\foto-perfil.spec.ts:147:9 › recusa o que não é imagem › PDF (2.9s)
+  ok 8 [mobile] › e2e\foto-perfil.spec.ts:147:9 › recusa o que não é imagem › PDF renomeado para .png (2.6s)
+
+  8 passed (38.5s)

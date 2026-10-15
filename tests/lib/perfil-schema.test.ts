@@ -105,14 +105,12 @@ describe("atualizarPerfilSchema — campos", () => {
   it("aceita um payload completo", () => {
     const r = atualizarPerfilSchema.parse({
       full_name: "  Bruno Teste  ",
-      avatar_url: "https://exemplo.com/foto.jpg",
       username: "Bruno",
       bio: "Gosto de trilha.",
       is_public: false,
     })
     expect(r).toEqual({
       full_name: "Bruno Teste",
-      avatar_url: "https://exemplo.com/foto.jpg",
       username: "bruno",
       bio: "Gosto de trilha.",
       is_public: false,
@@ -137,34 +135,9 @@ describe("atualizarPerfilSchema — campos", () => {
     expect(atualizarPerfilSchema.parse({ bio: null }).bio).toBeNull()
   })
 
-  it("avatar: aceita https, e vazio ou nulo vira nulo (apagar)", () => {
-    expect(atualizarPerfilSchema.parse({ avatar_url: " https://exemplo.com/a.png " }).avatar_url).toBe(
-      "https://exemplo.com/a.png",
-    )
-    expect(atualizarPerfilSchema.parse({ avatar_url: "" }).avatar_url).toBeNull()
-    expect(atualizarPerfilSchema.parse({ avatar_url: "   " }).avatar_url).toBeNull()
-    expect(atualizarPerfilSchema.parse({ avatar_url: null }).avatar_url).toBeNull()
-  })
-
-  it("avatar: recusa http, outro esquema e texto que não é URL", () => {
-    expect(erroDe(atualizarPerfilSchema.safeParse({ avatar_url: "http://exemplo.com/a.png" }))).toContain("https://")
-    expect(atualizarPerfilSchema.safeParse({ avatar_url: "javascript:alert(1)" }).success).toBe(false)
-    expect(erroDe(atualizarPerfilSchema.safeParse({ avatar_url: "minha foto" }))).toContain("URL válida")
-  })
-
-  it.each([
-    ["https://usuario:senha@exemplo.com/a.png", "credencial embutida"],
-    ["https://localhost/a.png", "localhost"],
-    ["https://painel.localhost/a.png", "subdomínio de localhost"],
-    ["https://169.254.169.254/a.png", "IPv4 literal"],
-    ["https://[::1]/a.png", "IPv6 literal"],
-  ])("avatar: recusa %s (%s)", (url) => {
-    expect(erroDe(atualizarPerfilSchema.safeParse({ avatar_url: url }))).toContain("endereço público")
-  })
-
-  it("avatar: recusa URL acima do limite", () => {
-    const enorme = `https://exemplo.com/${"a".repeat(2048)}`
-    expect(erroDe(atualizarPerfilSchema.safeParse({ avatar_url: enorme }))).toContain("2048")
+  it("avatar_url no corpo é descartado: a foto só muda pelas rotas de foto", () => {
+    expect(atualizarPerfilSchema.parse({ avatar_url: "https://exemplo.com/a.png", bio: "ok" })).toEqual({ bio: "ok" })
+    expect(atualizarPerfilSchema.safeParse({ avatar_url: "https://exemplo.com/a.png" }).success).toBe(false)
   })
 
   it("is_public: só booleano, não texto", () => {

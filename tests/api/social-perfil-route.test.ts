@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
+import { env } from "@/lib/env"
 
 /**
  * @RF02.1 @RF02.2 @RF02.5 @RF02.6 @RF02.7 @RNF02.11 — ler e editar o próprio perfil.
@@ -96,6 +97,19 @@ describe("GET /api/social/perfil", () => {
     expect(h.filtros).toEqual([["id", BRUNO]])
   })
 
+  it("200: o caminho da foto no bucket volta como URL pública; URL antiga volta nula", async () => {
+    logadoComo(BRUNO)
+    const caminho = `${BRUNO}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
+    h.leitura = { data: { ...perfilBruno, avatar_url: caminho }, error: null }
+    // Montado a partir de lib/env: no CI a URL do Supabase não é a local.
+    expect((await (await GET()).json()).perfil.avatar_url).toBe(
+      `${env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/avatars/${caminho}`,
+    )
+
+    h.leitura = { data: { ...perfilBruno, avatar_url: "https://exemplo.com/antiga.png" }, error: null }
+    expect((await (await GET()).json()).perfil.avatar_url).toBeNull()
+  })
+
   it("401: sem sessão não chega a consultar", async () => {
     semSessao()
 
@@ -131,7 +145,7 @@ describe("PATCH /api/social/perfil", () => {
 
     expect(resposta.status).toBe(200)
     expect(h.updates).toEqual([
-      { full_name: undefined, avatar_url: undefined, username: "bruno_2", bio: "Nova bio", is_public: true },
+      { full_name: undefined, username: "bruno_2", bio: "Nova bio", is_public: true },
     ])
     expect(h.tabelas).toEqual(["profiles"])
     expect(h.filtros).toEqual([["id", BRUNO]])
@@ -161,6 +175,13 @@ describe("PATCH /api/social/perfil", () => {
     const resposta = await PATCH(requisicao({ username: "admin" }))
 
     expect(resposta.status).toBe(400)
+    expect(h.updates).toHaveLength(0)
+  })
+
+  it("400: só avatar_url no corpo — a foto muda pelas rotas de foto", async () => {
+    logadoComo(BRUNO)
+
+    expect((await PATCH(requisicao({ avatar_url: "https://exemplo.com/a.png" }))).status).toBe(400)
     expect(h.updates).toHaveLength(0)
   })
 
