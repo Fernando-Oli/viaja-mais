@@ -51,12 +51,18 @@ export const env = analisePublica.data
 /* Servidor — nunca chega ao navegador                                         */
 /* -------------------------------------------------------------------------- */
 
+// O .env.example traz as opcionais como `CHAVE=`: copiado sem preencher, o valor
+// chega como "" e não como ausente. Vazia tem de valer o mesmo que ausente, senão
+// uma chave de IA não usada derruba toda rota que lê o ambiente do servidor.
+const vazioComoAusente = (v: unknown) => (v === "" ? undefined : v)
+const opcional = z.preprocess(vazioComoAusente, z.string().min(1).optional())
+
 const esquemaServidor = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  DATABASE_URL: z.string().min(1).optional(),
-  AI_PROVIDER: z.enum(["fake", "gemini", "anthropic"]).default("fake"),
-  GEMINI_API_KEY: z.string().min(1).optional(),
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: opcional,
+  DATABASE_URL: opcional,
+  AI_PROVIDER: z.preprocess(vazioComoAusente, z.enum(["fake", "gemini", "anthropic"]).default("fake")),
+  GEMINI_API_KEY: opcional,
+  ANTHROPIC_API_KEY: opcional,
 })
 
 type EnvServidor = z.infer<typeof esquemaServidor>
