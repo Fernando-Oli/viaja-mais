@@ -1,0 +1,39 @@
+
+> viaja-mais@0.1.0 test:rls
+> vitest run --config vitest.rls.config.mts
+
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+
+ Test Files  8 passed (8)
+      Tests  128 passed (128)
+   Start at  17:35:17
+   Duration  12.46s (transform 336ms, setup 131ms, import 1.76s, tests 7.42s, environment 2ms)
+
+
+# Detalhe da contar_rede e do upsert da rota (--reporter=verbose, só esses blocos)
+ ✓ tests/rls/04-social.test.ts > seguir perfil público (efeito imediato) > Bruno segue a Ana (pública) e o vínculo nasce aceito (RF09.1) 33ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil público (efeito imediato) > seguir de novo levanta erro de chave (a idempotência é do route handler) 19ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil público (efeito imediato) > o upsert da rota (ON CONFLICT DO NOTHING) segue de novo sem erro e sem duplicar (S05-M-seguir) 22ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o cliente não escolhe status nem datas ao seguir (grant de coluna) 49ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > nem pelo upsert da rota (ON CONFLICT DO NOTHING) o cliente manda status (S05-M-seguir) 30ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > Ana solicita seguir o Bruno (privado) e o vínculo nasce pendente (RF09.2) 28ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o solicitante (Ana) não se auto-aprova por UPDATE 15ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o solicitante (Ana) não se auto-aprova por upsert 30ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não enxerga a solicitação pendente (RF09.3) 13ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não aprova nem apaga a solicitação alheia 38ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono (Bruno) vê a solicitação e a aprova, e o updated_at avança (RF09.3, RF09.4) 29ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > uma terceira (Carla) não desfaz um vínculo aceito alheio, que ela enxerga 38ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono não rebaixa um vínculo aceito para pendente 26ms
+ ✓ tests/rls/04-social.test.ts > seguir perfil privado (solicitação pendente) > o dono não reponta follower_id via UPDATE (grant de coluna) 27ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — só os aceitos, os mesmos números para todos > Carla solicita ao Bruno (privado): a solicitação pendente não conta 57ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — só os aceitos, os mesmos números para todos > Bruno aprova, e os números sobem para quem quer que conte 50ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — só os aceitos, os mesmos números para todos > por que a função existe: entre dois perfis privados, a RLS esconde o vínculo da Ana, e a contagem daria zero 84ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — só os aceitos, os mesmos números para todos > o dono e um terceiro recebem a mesma linha, só com os dois números 53ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — só os aceitos, os mesmos números para todos > UUID que ninguém usa dá zero e zero, como uma conta sem vínculos 16ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — quem pode chamar > visitante sem sessão recebe 42501, e não números 33ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — quem pode chamar > sem auth.uid(), o corpo não devolve linha, mesmo com EXECUTE (a segunda barreira) 12ms
+ ✓ tests/rls/07-contar-rede.test.ts > contar_rede — quem pode chamar > no catálogo: SECURITY DEFINER, STABLE, search_path vazio, EXECUTE só para authenticated 4ms
+ Test Files  2 passed (2)
+      Tests  22 passed | 32 skipped (54)

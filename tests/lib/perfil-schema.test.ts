@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest"
-import { atualizarPerfilSchema, usernameSchema, LIMITE_BIO, LIMITE_NOME } from "@/lib/schemas/perfil"
+import {
+  atualizarPerfilSchema,
+  formatoUsernameSchema,
+  usernameSchema,
+  LIMITE_BIO,
+  LIMITE_NOME,
+} from "@/lib/schemas/perfil"
 
 /**
  * O schema é a primeira linha de defesa do perfil: normaliza o que dá para
@@ -47,6 +53,25 @@ describe("usernameSchema", () => {
 
   it("não confunde reservado com nome que só o contém (fora a marca)", () => {
     expect(usernameSchema.parse("admin_da_silva")).toBe("admin_da_silva")
+  })
+})
+
+// @RF02.8 — a leitura por username (o perfil de outra pessoa) usa só o formato.
+describe("formatoUsernameSchema", () => {
+  it("normaliza como o usernameSchema", () => {
+    expect(formatoUsernameSchema.parse("  Ana_Viaja  ")).toBe("ana_viaja")
+  })
+
+  it("recusa o que está fora do formato", () => {
+    for (const nome of ["ab", "ana.b", "../ana", "com espaco", "a".repeat(31), ""]) {
+      expect(formatoUsernameSchema.safeParse(nome).success).toBe(false)
+    }
+  })
+
+  it("aceita nome reservado: a lista é regra de escrita, não de leitura", () => {
+    expect(formatoUsernameSchema.parse("Admin")).toBe("admin")
+    expect(formatoUsernameSchema.parse("viajamais_oficial")).toBe("viajamais_oficial")
+    expect(usernameSchema.safeParse("admin").success).toBe(false)
   })
 })
 

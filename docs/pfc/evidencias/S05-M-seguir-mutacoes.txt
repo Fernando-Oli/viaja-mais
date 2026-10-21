@@ -1,0 +1,39 @@
+# S05-M-seguir — testes de mutação (2026-10-21 17:34)
+Cada proteção sabotada sozinha e desfeita em seguida. MORTA = algum teste falhou (bom); VIVA = nenhum teste percebeu.
+Refeita depois das duas rodadas da revisão independente: contagem pela função contar_rede (com a sessão), upsert com ON CONFLICT DO NOTHING, dublês preguiçosos e EXECUTE só para authenticated.
+Alvos: lib/social/perfil-visto.ts (visto), app/api/social/perfis/[username]/route.ts (ver), .../seguir/route.ts (seguir) e a migration 20261021165006 (banco).
+
+# Código (tests/api/social-perfil-visto-route.test.ts e tests/api/social-seguir-route.test.ts)
+
+MORTA  visto   pendente vira seguindo
+MORTA  visto   o próprio perfil não é reconhecido
+MORTA  visto   conta outro perfil (argumento errado)
+MORTA  visto   erro da contagem ignorado
+MORTA  visto   falha na contagem derruba o perfil
+MORTA  visto   cliente de serviço criado mesmo sem foto
+MORTA  visto   resposta espalha a linha do banco (id vaza)
+MORTA  visto   foto sem assinar
+MORTA  ver     leitura recusa nome reservado
+MORTA  ver     sem o cabeçalho sem cache
+MORTA  seguir  vínculo em nome do alvo, e não da sessão
+MORTA  seguir  upsert sem ignoreDuplicates (vira DO UPDATE)
+MORTA  seguir  sem o await no upsert
+MORTA  seguir  erro ao gravar ignorado
+MORTA  seguir  deixa seguir a si mesmo
+MORTA  seguir  desfazer sem filtrar pela sessão
+MORTA  seguir  sem o await no delete
+MORTA  seguir  seguir sem o cabeçalho sem cache
+
+# Banco (tests/rls/07-contar-rede.test.ts, com a função sabotada no banco local e restaurada pela própria migration)
+
+MORTA  banco   conta pendentes também
+MORTA  banco   seguidores sempre zero
+MORTA  banco   sem a checagem de sessão no corpo
+MORTA  banco   SECURITY INVOKER (conta pela RLS de quem chama)
+MORTA  banco   EXECUTE para anon
+MORTA  banco   EXECUTE para service_role
+MORTA  banco   search_path mutável
+MORTA  banco   VOLATILE
+
+Resultado: 26 de 26 mortas.
+As duas sem o await só morrem porque os dublês ficaram preguiçosos como o builder real (achado M5 da primeira rodada).

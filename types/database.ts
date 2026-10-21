@@ -529,6 +529,13 @@ export type Database = {
         Args: { trip_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      contar_rede: {
+        Args: { perfil: string }
+        Returns: {
+          seguidores: number
+          seguindo: number
+        }[]
+      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string

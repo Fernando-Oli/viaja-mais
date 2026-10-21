@@ -51,13 +51,22 @@ const FORMATO_USERNAME = new RegExp(`^[a-z0-9_]{${USERNAME_MIN},${USERNAME_MAX}}
 /**
  * O banco só aceita minúsculas; normalizar aqui deixa a pessoa digitar `Ana` e
  * gravar `ana`, em vez de receber erro por uma diferença que ela nem vê.
+ *
+ * Só o formato, sem a lista de reservados: é o que a leitura por username usa
+ * (o perfil de outra pessoa, S05-M-seguir). A lista é regra de escrita: se ela
+ * crescer, quem já tem o nome continua sendo encontrado, em vez de sumir.
  */
-export const usernameSchema = z
+export const formatoUsernameSchema = z
   .string()
   .trim()
   .toLowerCase()
   .regex(FORMATO_USERNAME, `use de ${USERNAME_MIN} a ${USERNAME_MAX} caracteres: letras, números e _`)
-  .refine((u) => !USERNAMES_RESERVADOS.includes(u) && !u.includes(MARCA), "esse nome de usuário é reservado")
+
+/** Para gravar: o formato e, além dele, fora dos nomes reservados. */
+export const usernameSchema = formatoUsernameSchema.refine(
+  (u) => !USERNAMES_RESERVADOS.includes(u) && !u.includes(MARCA),
+  "esse nome de usuário é reservado",
+)
 
 /**
  * Saem do texto os caracteres de formatação Unicode (categoria Cf: espaço de

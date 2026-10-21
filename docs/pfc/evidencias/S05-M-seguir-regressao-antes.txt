@@ -1,0 +1,46 @@
+# S05-M-seguir — testes de regressão, ANTES da correção (2026-10-21 16:50)
+npx playwright test e2e/seguir.spec.ts, contra o build de produção sem as correções da revisão independente.
+Os três achados da revisão (M2 gaveta, M7 foco e sessão vencida) viraram teste e falham aqui, como devem.
+
+    Error: expect(locator).toBeFocused() failed
+    Expected: focused
+    Received: inactive
+    > 76 |     await expect(perfil.getByRole("button", { name: "Seguindo" })).toBeFocused()
+    test-results\seguir-abre-o-perfil-públi-4f024-sca-segue-e-deixa-de-seguir-chromium\test-failed-1.png
+
+    Error: expect(locator).toBeVisible() failed
+    Error: element(s) not found
+    > 108 |   await expect(aviso).toBeVisible()
+    test-results\seguir-com-a-sessão-vencida-seguir-oferece-entrar-de-novo-chromium\test-failed-1.png
+
+    Error: expect(locator).toHaveValue(expected) failed
+    Expected: "carla"
+    Received: ""
+    > 60 |       await expect(area.getByRole("searchbox", { name: "Buscar pessoas" })).toHaveValue("carla")
+    test-results\seguir-abre-o-perfil-públi-4f024-sca-segue-e-deixa-de-seguir-mobile\test-failed-1.png
+
+    Error: expect(locator).toBeVisible() failed
+    Error: element(s) not found
+    > 108 |   await expect(aviso).toBeVisible()
+    test-results\seguir-com-a-sessão-vencida-seguir-oferece-entrar-de-novo-mobile\test-failed-1.png
+
+  4 failed
+  8 passed (1.0m)
+
+# Segunda rodada da revisão independente (M1): o foco quando seguir FALHA (2026-10-21 17:40)
+npx playwright test e2e/seguir.spec.ts -g "se seguir falha|sessão vencida", contra o build sem a correção.
+
+    Error: expect(locator).toBeFocused() failed
+    Expected: focused
+    Received: inactive
+    > 110 |     await expect(perfil.getByRole("button", { name: "Seguir" })).toBeFocused()
+    test-results\seguir-se-seguir-falha-o-foco-volta-ao-botão-e-nada-muda-chromium\test-failed-1.png
+
+    Error: expect(locator).toBeFocused() failed
+    Expected: focused
+    Received: inactive
+    > 110 |     await expect(perfil.getByRole("button", { name: "Seguir" })).toBeFocused()
+    test-results\seguir-se-seguir-falha-o-foco-volta-ao-botão-e-nada-muda-mobile\test-failed-1.png
+
+  2 failed
+  2 passed (31.9s)

@@ -24,6 +24,7 @@ catálogo das seções 14 e 15.
 | RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Existente | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | d1d638e |
 | RF-02.6 | O usuário deve poder escrever uma biografia | Existente | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | d1d638e |
 | RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Existente | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | d1d638e |
+| RF-02.8 | O usuário deve poder visualizar o perfil de outro usuário | Não iniciado | `app/(rede-social)/layout.tsx`<br>`app/(rede-social)/painel-pessoas.tsx`<br>`app/(rede-social)/u/[username]/page.tsx`<br>`app/api/social/perfis/[username]/route.ts`<br>`lib/social/perfil-visto.ts` | `tests/api/social-perfil-visto-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/07-contar-rede.test.ts`<br>`e2e/seguir.spec.ts` | — |
 | RF-03.1 | O usuário deve poder criar nova viagem | Parcial | `app/api/trips/route.ts` | `tests/api/trips-post.test.ts` | 47dbca9 |
 | RF-03.2 | O usuário deve poder editar viagem | Existente | `app/api/trips/[tripId]/route.ts` | `tests/api/trips-patch.test.ts`<br>`e2e/editar-viagem.spec.ts` | 6d9496d |
 | RF-03.3 | O usuário deve poder excluir viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
@@ -74,16 +75,16 @@ catálogo das seções 14 e 15.
 | RF-08.4 | O usuário deve poder marcar lugares como visitados | Parcial | — | — | — |
 | RF-08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | — | — | — |
 | RF-08.6 | O usuário deve poder excluir lugares salvos | Parcial | — | — | — |
-| RF-09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
-| RF-09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Não iniciado | `app/(rede-social)/u/[username]/page.tsx`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`lib/social/perfil-visto.ts` | `tests/api/social-seguir-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/seguir.spec.ts` | — |
+| RF-09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Não iniciado | `app/(rede-social)/u/[username]/page.tsx`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`lib/social/perfil-visto.ts` | `tests/api/social-seguir-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/seguir.spec.ts` | — |
 | RF-09.3 | O dono de um perfil privado deve poder visualizar suas solicitações pendentes | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
 | RF-09.4 | O dono deve poder aprovar ou recusar uma solicitação | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
-| RF-09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
+| RF-09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Não iniciado | `app/(rede-social)/u/[username]/page.tsx`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`lib/social/perfil-visto.ts` | `tests/api/social-seguir-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/seguir.spec.ts` | — |
 | RF-09.6 | O usuário deve poder visualizar a lista de quem segue e de quem o segue | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
 | RF-09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | — | — | — |
 | RF-09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | — | — | — |
 | RF-09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | — | `tests/rls/04-social.test.ts` | — |
-| RF-09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | `app/api/social/perfis/route.ts`<br>`app/feed/layout.tsx`<br>`app/feed/page.tsx`<br>`app/feed/painel-pessoas.tsx`<br>`lib/schemas/busca.ts`<br>`lib/social/busca.ts` | `tests/api/social-perfis-busca-route.test.ts`<br>`tests/lib/busca.test.ts`<br>`e2e/rede-social.spec.ts` | — |
+| RF-09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | `app/(rede-social)/feed/page.tsx`<br>`app/(rede-social)/layout.tsx`<br>`app/(rede-social)/painel-pessoas.tsx`<br>`app/api/social/perfis/route.ts`<br>`lib/schemas/busca.ts`<br>`lib/social/busca.ts` | `tests/api/social-perfis-busca-route.test.ts`<br>`tests/lib/busca.test.ts`<br>`e2e/rede-social.spec.ts` | — |
 | RF-09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | — | — | — |
 | RF-10.1 | O usuário deve poder curtir uma publicação | Não iniciado | — | — | — |
 | RF-10.2 | O usuário deve poder remover a própria curtida | Não iniciado | — | — | — |
@@ -107,14 +108,14 @@ catálogo das seções 14 e 15.
 | RNF-02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | — | — | — |
 | RNF-02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | — | — | — |
 | RNF-02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | — | — | — |
-| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/05-avatares.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts` | — |
+| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/05-avatares.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts`<br>`tests/rls/07-contar-rede.test.ts` | — |
 | RNF-02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | — | — | — |
 | RNF-02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | — | — | — |
 | RNF-02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | — | — | — |
 | RNF-02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Planejado | — | — | — |
 | RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | — | — | — |
 | RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | `tests/lib/supabase-admin.test.ts` | — |
-| RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/foto/route.ts`<br>`app/api/social/perfil/route.ts`<br>`app/api/social/perfis/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-foto-route.test.ts`<br>`tests/api/social-perfil-route.test.ts`<br>`tests/api/social-perfis-busca-route.test.ts` | d1d638e |
+| RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/foto/route.ts`<br>`app/api/social/perfil/route.ts`<br>`app/api/social/perfis/route.ts`<br>`app/api/social/perfis/[username]/route.ts`<br>`app/api/social/perfis/[username]/seguir/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-foto-route.test.ts`<br>`tests/api/social-perfil-route.test.ts`<br>`tests/api/social-perfil-visto-route.test.ts`<br>`tests/api/social-perfis-busca-route.test.ts`<br>`tests/api/social-seguir-route.test.ts` | d1d638e |
 | RNF-02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | — | — | — |
 | RNF04 | _(fora do catálogo)_ | — | — | `tests/lib/env.test.ts` | — |
 | RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | — | — | — |
@@ -135,9 +136,9 @@ catálogo das seções 14 e 15.
 
 ## Resumo
 
-- Requisitos no catálogo: **122**
-- Com implementação marcada: **42**
-- Com teste marcado: **43**
+- Requisitos no catálogo: **123**
+- Com implementação marcada: **46**
+- Com teste marcado: **44**
 
 ## Inconsistências
 

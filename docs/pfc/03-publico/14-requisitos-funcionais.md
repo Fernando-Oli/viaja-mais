@@ -20,6 +20,7 @@ grupo RF01.
 | RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Existente | Alta |
 | RF02.6 | O usuário deve poder escrever uma biografia | Existente | Média |
 | RF02.7 | O usuário deve poder tornar o perfil público ou privado | Existente | Alta |
+| RF02.8 | O usuário deve poder visualizar o perfil de outro usuário | Não iniciado | Alta |
 
 **Detalhamento:** aplicamos a este grupo o critério de status descrito em RF01 e
 RF04. O perfil tem página própria (`app/dashboard/perfil`), que lê e grava pela
@@ -39,10 +40,17 @@ publicadas são visíveis a qualquer usuário autenticado, e o ato de seguir tem
 efeito imediato. Em um perfil privado, os dados básicos — nome, username, avatar
 e biografia — permanecem visíveis, mas as publicações só são acessíveis ao
 próprio dono e aos seguidores aprovados, e seguir exige solicitação e aprovação
-(conforme RF09). A exclusão de conta (RF02.4) remove em cascata o perfil, os
-vínculos de seguir, as publicações, as curtidas e os arquivos de foto do usuário
-no armazenamento. Como decisão de dado a cargo da plataforma, a tabela
-`profiles` recebe as colunas `username` (única), `bio` e `is_public`.
+(conforme RF09). O perfil de outro usuário (RF02.8) é aberto a partir da busca de
+pessoas (RF09.10) e mostra os dados básicos, a quantidade de seguidores e de
+perfis seguidos e a situação do vínculo de quem o visita; em perfil privado, as
+quantidades permanecem visíveis, e as publicações e a lista de seguidores ficam
+restritas aos seguidores aprovados, com uma exceção equivalente à do Instagram:
+o vínculo de um seguidor de perfil público aparece na lista de perfis seguidos
+por ele, visível a qualquer usuário autenticado. A exclusão de conta (RF02.4) remove em
+cascata o perfil, os vínculos de seguir, as publicações, as curtidas e os
+arquivos de foto do usuário no armazenamento. Como decisão de dado a cargo da
+plataforma, a tabela `profiles` recebe as colunas `username` (única), `bio` e
+`is_public`.
 
 ## 14.1 Existentes (reaproveitados de `docs/ARCHITECTURE.md` §6, status corrigido)
 

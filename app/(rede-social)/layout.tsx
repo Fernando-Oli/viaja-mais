@@ -3,13 +3,16 @@ import DashboardLayout from "@/app/dashboard/layout";
 import { PainelPessoas } from "./painel-pessoas";
 
 /**
- * A aba Rede social: o painel de pessoas à esquerda e o conteúdo (o feed) ao lado.
+ * A aba Rede social: o painel de pessoas à esquerda e o conteúdo ao lado — o
+ * feed (/feed) ou o perfil de outra pessoa (/u/<username>).
  *
- * Mora em /feed, o caminho do domínio Social no CLAUDE.md, e reaproveita o
- * layout do painel por import, para manter o menu lateral. O
+ * Os dois moram num grupo de rotas do Next, `(rede-social)`, que não muda
+ * endereço nenhum: servem para dividirem este layout. Assim o painel, com o
+ * termo e os resultados, continua montado quando se abre um perfil pela busca.
+ * Reaproveita o layout do painel por import, para manter o menu lateral; o
  * app/dashboard/layout.tsx, que é compartilhado, só ganhou a linha do menu.
  *
- * @RF09.10 buscar pessoas
+ * @RF09.10 buscar pessoas · @RF02.8 perfil de outro usuário
  */
 export default function RedeSocialLayout({ children }: { children: React.ReactNode }) {
   return (

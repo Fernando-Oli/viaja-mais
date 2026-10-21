@@ -23,10 +23,14 @@ import { BUSCA_MAX, BUSCA_MIN, normalizarTermo, TERMO_PERMITIDO } from "@/lib/so
  * @usuário, por GET /api/social/perfis, sem cliente Supabase na tela.
  *
  * No desktop é uma coluna à esquerda do feed, que recolhe e expande; no celular,
- * um botão que abre a mesma busca numa gaveta. Os resultados ainda não abrem
- * nada: viram links para o perfil da pessoa na S05-M-seguir, junto com a página.
+ * um botão que abre a mesma busca numa gaveta. Cada resultado abre o perfil da
+ * pessoa (/u/<username>, S05-M-seguir); no celular, a gaveta fecha ao escolher.
  *
- * @RF09.10 buscar pessoas
+ * O termo e os resultados moram no painel, que o layout da aba mantém montado
+ * entre o feed e os perfis, e não na busca: a gaveta desmonta o que tem dentro
+ * quando fecha, e a busca reabre do jeito que ficou.
+ *
+ * @RF09.10 buscar pessoas · @RF02.8 perfil de outro usuário
  */
 
 type PessoaEncontrada = {
@@ -47,13 +51,15 @@ const ESPERA_MS = 300;
 
 export function PainelPessoas() {
   const [recolhido, setRecolhido] = useState(false);
+  const [gavetaAberta, setGavetaAberta] = useState(false);
   const idConteudo = useId();
+  const busca = useBusca();
 
   return (
     <>
       {/* Celular: um botão que abre a busca numa gaveta. */}
       <div className="md:hidden">
-        <Sheet>
+        <Sheet open={gavetaAberta} onOpenChange={setGavetaAberta}>
           <SheetTrigger asChild>
             <Button variant="outline" className="w-full justify-start gap-2">
               <Search className="h-4 w-4" aria-hidden />
@@ -66,7 +72,7 @@ export function PainelPessoas() {
               <SheetDescription>Encontre outras pessoas pelo nome ou pelo @usuário.</SheetDescription>
             </SheetHeader>
             <div className="px-4 pb-4">
-              <BuscaDePessoas />
+              <BuscaDePessoas busca={busca} aoEscolher={() => setGavetaAberta(false)} />
             </div>
           </SheetContent>
         </Sheet>
@@ -94,7 +100,7 @@ export function PainelPessoas() {
             </Button>
           </div>
           <div id={idConteudo} hidden={recolhido}>
-            <BuscaDePessoas />
+            <BuscaDePessoas busca={busca} />
           </div>
         </Card>
       </aside>
@@ -102,8 +108,8 @@ export function PainelPessoas() {
   );
 }
 
-function BuscaDePessoas() {
-  const id = useId();
+/** O termo, a resposta e a busca em si, ligados ao painel e não à vista. */
+function useBusca() {
   const [termo, setTermo] = useState("");
   // A resposta guarda o termo a que responde: uma resposta atrasada de um termo
   // antigo nunca aparece no lugar da do termo atual.
@@ -147,6 +153,13 @@ function BuscaDePessoas() {
     setResposta(null);
     setTentativa((t) => t + 1);
   }
+
+  return { termo, setTermo, normalizado, curto, longo, permitido, atual, tentarDeNovo };
+}
+
+function BuscaDePessoas({ busca, aoEscolher }: { busca: ReturnType<typeof useBusca>; aoEscolher?: () => void }) {
+  const id = useId();
+  const { termo, setTermo, normalizado, curto, longo, permitido, atual, tentarDeNovo } = busca;
 
   // Leitor de tela: só o resumo do que foi achado, numa região só.
   let anuncio = "";
@@ -212,7 +225,7 @@ function BuscaDePessoas() {
       ) : (
         <ul aria-label="Pessoas encontradas" className="space-y-1">
           {atual.pessoas.map((pessoa) => (
-            <ItemPessoa key={pessoa.username} pessoa={pessoa} />
+            <ItemPessoa key={pessoa.username} pessoa={pessoa} aoEscolher={aoEscolher} />
           ))}
         </ul>
       )}
@@ -220,27 +233,33 @@ function BuscaDePessoas() {
   );
 }
 
-function ItemPessoa({ pessoa }: { pessoa: PessoaEncontrada }) {
+function ItemPessoa({ pessoa, aoEscolher }: { pessoa: PessoaEncontrada; aoEscolher?: () => void }) {
   const nome = pessoa.full_name || pessoa.username;
   return (
-    <li className="flex items-center gap-3 rounded-lg px-2 py-2">
-      <Avatar className="h-10 w-10">
-        {pessoa.avatar_url ? <AvatarImage src={pessoa.avatar_url} alt={`Foto de ${nome}`} /> : null}
-        <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
-          <UserRound className="h-5 w-5" aria-hidden />
-        </AvatarFallback>
-      </Avatar>
-      <div className="min-w-0">
-        <p className="flex items-center gap-1 text-sm font-medium text-viaja-navy">
-          <span className="truncate">{nome}</span>
-          {pessoa.is_public ? null : (
-            <span role="img" aria-label="Perfil privado" title="Perfil privado" className="shrink-0">
-              <Lock className="h-3.5 w-3.5 text-gray-500" aria-hidden />
-            </span>
-          )}
-        </p>
-        <p className="truncate text-xs text-gray-500">@{pessoa.username}</p>
-      </div>
+    <li>
+      <Link
+        href={`/u/${pessoa.username}`}
+        onClick={aoEscolher}
+        className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-100 focus-visible:bg-gray-100"
+      >
+        <Avatar className="h-10 w-10">
+          {pessoa.avatar_url ? <AvatarImage src={pessoa.avatar_url} alt={`Foto de ${nome}`} /> : null}
+          <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
+            <UserRound className="h-5 w-5" aria-hidden />
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <p className="flex items-center gap-1 text-sm font-medium text-viaja-navy">
+            <span className="truncate">{nome}</span>
+            {pessoa.is_public ? null : (
+              <span role="img" aria-label="Perfil privado" title="Perfil privado" className="shrink-0">
+                <Lock className="h-3.5 w-3.5 text-gray-500" aria-hidden />
+              </span>
+            )}
+          </p>
+          <p className="truncate text-xs text-gray-500">@{pessoa.username}</p>
+        </div>
+      </Link>
     </li>
   );
 }
