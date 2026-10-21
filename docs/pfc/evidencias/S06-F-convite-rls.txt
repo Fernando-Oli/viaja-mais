@@ -1,0 +1,4 @@
+# S06-F — suíte de RLS com a migration plataforma_membros_por_convite_e_cadastro (2026-10-14 20:19)
+# Sem a migration, 06-plataforma-convite: 5 falharam | 4 passaram (as 5 explorações passavam).
+ Test Files  5 passed (5)
+      Tests  47 passed (47)

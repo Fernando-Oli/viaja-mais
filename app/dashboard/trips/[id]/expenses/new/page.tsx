@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, use } from "react"
+import { useEffect, useMemo, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -11,14 +11,96 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Spinner } from "@/components/ui/spinner"
+import { ExpenseSplit, type MembroRateio } from "@/components/expense-split"
+import { useAuth } from "@/context/auth-context"
+import { avaliarRateio, type ParticipanteFormulario, type TipoRateio } from "@/lib/finance/rateio"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+
+type EstadoMembros = "carregando" | "erro" | "pronto"
+
+interface MembroApi {
+  user_id: string
+  role: string
+}
+
+async function buscarMembros(tripId: string): Promise<MembroApi[]> {
+  const resposta = await fetch(`/api/trips/${tripId}`)
+  const dados: { trip?: { trip_members?: MembroApi[] } } = await resposta.json().catch(() => ({}))
+  if (!resposta.ok || !dados.trip?.trip_members?.length) throw new Error("Falha ao carregar os participantes")
+  return dados.trip.trip_members
+}
+
+/**
+ * Participantes na ordem em que aparecem: quem está lançando primeiro, depois o
+ * dono, depois os demais. Ordem estável, para a prévia não pular de lugar.
+ *
+ * Os nomes dos outros membros não são legíveis daqui: a policy de `profiles`
+ * só libera o próprio perfil. Por isso o rótulo é "Você" / "Participante N".
+ */
+function montarMembros(lista: MembroApi[], meuId: string | undefined): MembroRateio[] {
+  const ordenados = [...lista].sort((a, b) => {
+    if (a.user_id === meuId) return -1
+    if (b.user_id === meuId) return 1
+    if (a.role !== b.role) return a.role === "owner" ? -1 : 1
+    return a.user_id.localeCompare(b.user_id)
+  })
+  return ordenados.map((m, i) => ({
+    userId: m.user_id,
+    rotulo: m.user_id === meuId ? "Você" : `Participante ${i + 1}`,
+    papel: m.role === "owner" ? "owner" : "member",
+  }))
+}
 
 export default function NewExpensePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+
+  const [estadoMembros, setEstadoMembros] = useState<EstadoMembros>("carregando")
+  const [membrosApi, setMembrosApi] = useState<MembroApi[]>([])
+  const [tipoRateio, setTipoRateio] = useState<TipoRateio>("equal")
+  const [participantes, setParticipantes] = useState<ParticipanteFormulario[]>([])
+
+  // O rótulo depende do usuário da sessão, que o contexto carrega à parte;
+  // derivar aqui evita buscar de novo (e apagar o que foi digitado) quando ele chega.
+  const membros = useMemo(() => montarMembros(membrosApi, user?.id), [membrosApi, user?.id])
+
+  // Membros vêm da API da viagem, que já exige participação no servidor.
+  // `tentativa` existe para o botão "Tentar novamente" disparar a busca outra vez.
+  const [tentativa, setTentativa] = useState(0)
+
+  useEffect(() => {
+    let ativo = true
+    buscarMembros(id).then(
+      (lista) => {
+        if (!ativo) return
+        setMembrosApi(lista)
+        setParticipantes(lista.map((m) => ({ userId: m.user_id, selecionado: true, peso: "1", valor: "" })))
+        setEstadoMembros("pronto")
+      },
+      () => {
+        if (!ativo) return
+        setEstadoMembros("erro")
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os participantes da viagem",
+          variant: "destructive",
+        })
+      },
+    )
+    return () => {
+      ativo = false
+    }
+  }, [id, tentativa, toast])
+
+  function tentarDeNovo() {
+    setEstadoMembros("carregando")
+    setTentativa((n) => n + 1)
+  }
 
   const [formData, setFormData] = useState({
     title: "",
@@ -30,8 +112,47 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
     notes: "",
   })
 
+  // Na ordem exibida: é ela que decide quem recebe o centavo que sobra, e o
+  // servidor recebe a mesma ordem — prévia e gravação não podem divergir.
+  const participantesOrdenados = useMemo(
+    () =>
+      membros
+        .map((m) => participantes.find((p) => p.userId === m.userId))
+        .filter((p): p is ParticipanteFormulario => p !== undefined),
+    [membros, participantes],
+  )
+
+  const avaliacao = useMemo(
+    () => avaliarRateio(formData.amount, tipoRateio, participantesOrdenados, formData.currency),
+    [formData.amount, tipoRateio, participantesOrdenados, formData.currency],
+  )
+  const podeEnviar = estadoMembros === "pronto" && avaliacao.valido && !isLoading
+
+  // Só a intenção vai para a API; as partes em centavos são recalculadas lá.
+  function montarRateio() {
+    const selecionados = participantesOrdenados.filter((p) => p.selecionado)
+    if (tipoRateio === "weight") {
+      return { tipo: tipoRateio, participantes: selecionados.map((p) => ({ user_id: p.userId, peso: p.peso })) }
+    }
+    if (tipoRateio === "exact") {
+      return {
+        tipo: tipoRateio,
+        participantes: selecionados.map((p) => ({ user_id: p.userId, valor: p.valor.trim() || "0" })),
+      }
+    }
+    return { tipo: tipoRateio, participantes: selecionados.map((p) => ({ user_id: p.userId })) }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!podeEnviar) {
+      toast({
+        title: "Rateio inválido",
+        description: avaliacao.erro ?? "Confira a divisão da despesa",
+        variant: "destructive",
+      })
+      return
+    }
     setIsLoading(true)
 
     try {
@@ -48,6 +169,7 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
           date: formData.date,
           payment_method: formData.payment_method || null,
           notes: formData.notes || null,
+          rateio: montarRateio(),
         }),
       })
 
@@ -65,10 +187,10 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
 
       toast({
         title: "Despesa adicionada",
-        description: "O gasto foi registrado na viagem.",
+        description: "O gasto e a divisão foram registrados na viagem.",
       })
 
-      router.push(`/dashboard/trips/${id}?tab=expenses`)
+      router.push(`/dashboard/trips/${id}?aba=despesas`)
       router.refresh()
     } catch (err: any) {
       toast({
@@ -197,8 +319,38 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
               />
             </div>
 
-            <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading} className="bg-viaja-orange">
+            {estadoMembros === "carregando" && (
+              <div role="status" className="flex items-center gap-2 rounded-lg border p-4 text-sm text-slate-600">
+                <Spinner />
+                Carregando participantes...
+              </div>
+            )}
+
+            {estadoMembros === "erro" && (
+              <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <span className="flex-1">Não foi possível carregar os participantes da viagem.</span>
+                <Button type="button" variant="outline" size="sm" onClick={tentarDeNovo}>
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+
+            {estadoMembros === "pronto" && (
+              <ExpenseSplit
+                membros={membros}
+                moeda={formData.currency}
+                totalTexto={formData.amount}
+                tipo={tipoRateio}
+                participantes={participantes}
+                avaliacao={avaliacao}
+                desabilitado={isLoading}
+                onTipoChange={setTipoRateio}
+                onParticipantesChange={setParticipantes}
+              />
+            )}
+
+            <div className="flex flex-wrap gap-4">
+              <Button type="submit" disabled={!podeEnviar} className="bg-viaja-orange">
                 {isLoading ? "Salvando..." : "Salvar Despesa"}
               </Button>
               <Button type="button" variant="outline" asChild>

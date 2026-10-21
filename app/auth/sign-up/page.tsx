@@ -112,6 +112,7 @@ export default function SignUpPage() {
                     type="text"
                     placeholder="João Silva"
                     required
+                    maxLength={120}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />

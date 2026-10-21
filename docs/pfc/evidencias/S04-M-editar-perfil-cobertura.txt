@@ -1,0 +1,8 @@
+# S04-M parte 1 — cobertura dos arquivos da atividade (2026-10-08 17:30)
+npx vitest run tests/api/profile-userid-route.test.ts tests/api/social-perfil-route.test.ts tests/lib/perfil-schema.test.ts --coverage (include nos 4 arquivos abaixo)
+
+total                                      linhas 100% | ramos 100% | funções 100%
+app/api/profile/[userId]/route.ts          linhas 100% | ramos 100% | funções 100%
+app/api/social/perfil/route.ts             linhas 100% | ramos 100% | funções 100%
+lib/schemas/perfil-limites.ts              linhas 100% | ramos 100% | funções 100%
+lib/schemas/perfil.ts                      linhas 100% | ramos 100% | funções 100%

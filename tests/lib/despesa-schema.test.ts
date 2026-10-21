@@ -117,3 +117,51 @@ describe("criarDespesaSchema — anti mass-assignment", () => {
     )
   })
 })
+
+/**
+ * Contrato do rateio enviado junto da despesa. O servidor recalcula as partes;
+ * o schema só garante que a intenção é bem formada.
+ *
+ * @RF06.9
+ */
+describe("criarDespesaSchema — rateio", () => {
+  const A = "11111111-1111-4111-8111-111111111111"
+  const B = "22222222-2222-4222-8222-222222222222"
+
+  it("é opcional", () => {
+    expect(criarDespesaSchema.parse(valida).rateio).toBeUndefined()
+  })
+
+  it("aceita os três tipos", () => {
+    expect(criarDespesaSchema.parse({ ...valida, rateio: { tipo: "equal", participantes: [{ user_id: A }] } }).rateio?.tipo).toBe("equal")
+
+    const peso = criarDespesaSchema.parse({
+      ...valida,
+      rateio: { tipo: "weight", participantes: [{ user_id: A, peso: "2" }, { user_id: B, peso: 1.5 }] },
+    }).rateio
+    expect(peso?.tipo === "weight" && peso.participantes.map((p) => p.peso)).toEqual([2, 1.5])
+
+    expect(
+      criarDespesaSchema.parse({
+        ...valida,
+        rateio: { tipo: "exact", participantes: [{ user_id: A, valor: "40.00" }, { user_id: B, valor: 2.5 }] },
+      }).rateio?.tipo,
+    ).toBe("exact")
+  })
+
+  it.each([
+    ["tipo desconhecido", { tipo: "percent", participantes: [{ user_id: A }] }],
+    ["sem participantes", { tipo: "equal", participantes: [] }],
+    ["participante que não é uuid", { tipo: "equal", participantes: [{ user_id: "abc" }] }],
+    ["participante repetido", { tipo: "equal", participantes: [{ user_id: A }, { user_id: A }] }],
+    ["peso zero", { tipo: "weight", participantes: [{ user_id: A, peso: 0 }] }],
+    ["peso negativo", { tipo: "weight", participantes: [{ user_id: A, peso: -1 }] }],
+    ["peso acima do teto", { tipo: "weight", participantes: [{ user_id: A, peso: 10000 }] }],
+    ["peso ausente", { tipo: "weight", participantes: [{ user_id: A }] }],
+    ["valor negativo", { tipo: "exact", participantes: [{ user_id: A, valor: "-1" }] }],
+    ["valor com três casas", { tipo: "exact", participantes: [{ user_id: A, valor: "1.005" }] }],
+    ["valor em texto", { tipo: "exact", participantes: [{ user_id: A, valor: "abc" }] }],
+  ])("recusa %s", (_caso, rateio) => {
+    expect(criarDespesaSchema.safeParse({ ...valida, rateio }).success).toBe(false)
+  })
+})

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { PESO_MAXIMO, pesoParaCentesimos, reaisParaCentavos } from "@/lib/finance/rateio"
 
 /**
  * Contrato de entrada da criação de despesa.
@@ -28,7 +29,60 @@ export const CATEGORIAS_DESPESA = [
   "other",
 ] as const
 
-export const criarDespesaSchema = z.object({
+/**
+ * Rateio enviado junto da despesa. Leva só a **intenção** — quem participa e,
+ * conforme o tipo, o peso ou o valor de cada um. As partes em centavos são
+ * recalculadas no servidor por `lib/finance/rateio.ts`; nada que o navegador
+ * calculou é gravado sem passar por lá.
+ *
+ * `tipo` usa os mesmos valores do CHECK de `expenses.split_type`.
+ *
+ * @RF06.9 tipo de rateio: igual, por peso ou por valor exato
+ */
+const participanteId = z.string().uuid("participante inválido")
+
+// Mesma regra de `reaisParaCentavos`: número não negativo com até duas casas.
+const valorMonetario = z.union([z.string(), z.number()]).refine(
+  (v) => reaisParaCentavos(v) !== null,
+  "informe um valor maior ou igual a zero, com até duas casas",
+)
+
+const peso = z.coerce
+  .number()
+  .finite("informe um peso numérico")
+  .refine((v) => pesoParaCentesimos(v) !== null, `o peso deve ser maior que zero e até ${PESO_MAXIMO}, com até duas casas`)
+
+function semRepetidos(participantes: { user_id: string }[]) {
+  return new Set(participantes.map((p) => p.user_id)).size === participantes.length
+}
+
+export const rateioSchema = z
+  .discriminatedUnion("tipo", [
+    z.object({
+      tipo: z.literal("equal"),
+      participantes: z.array(z.object({ user_id: participanteId })).min(1, "selecione ao menos um participante"),
+    }),
+    z.object({
+      tipo: z.literal("weight"),
+      participantes: z
+        .array(z.object({ user_id: participanteId, peso }))
+        .min(1, "selecione ao menos um participante"),
+    }),
+    z.object({
+      tipo: z.literal("exact"),
+      participantes: z
+        .array(z.object({ user_id: participanteId, valor: valorMonetario }))
+        .min(1, "selecione ao menos um participante"),
+    }),
+  ])
+  .refine((r) => semRepetidos(r.participantes), {
+    message: "participante repetido no rateio",
+    path: ["participantes"],
+  })
+
+export type Rateio = z.infer<typeof rateioSchema>
+
+const base = {
   title: z.string().trim().min(1, "informe uma descrição").max(120),
 
   // `coerce` porque o formulário manda o valor como texto do `<input type="number">`.
@@ -41,7 +95,7 @@ export const criarDespesaSchema = z.object({
     .positive("o valor deve ser maior que zero")
     .max(99_999_999.99, "valor acima do limite"),
 
-  currency: z.string().trim().length(3, "use o código ISO de 3 letras").toUpperCase().default("BRL"),
+  currency: z.string().trim().length(3, "use o código ISO de 3 letras").toUpperCase(),
 
   category: z.enum(CATEGORIAS_DESPESA),
 
@@ -50,6 +104,34 @@ export const criarDespesaSchema = z.object({
   // Opcionais na tabela; o formulário envia `null` quando em branco.
   payment_method: z.string().trim().max(120).optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+}
+
+export const criarDespesaSchema = z.object({
+  ...base,
+  currency: base.currency.default("BRL"),
+
+  // Opcional: despesa sem rateio é estado legítimo no banco ("lançada e ainda
+  // não rateada" — ver a constraint trigger de `expense_shares`).
+  rateio: rateioSchema.optional(),
 })
 
+/**
+ * Atualização parcial: editar o formulário inteiro ou só um campo passam pelo
+ * mesmo schema. Sem default em `currency` aqui — campo ausente não é alterado.
+ *
+ * @RF06.2 editar despesa
+ */
+export const atualizarDespesaSchema = z
+  .object({
+    title: base.title.optional(),
+    amount: base.amount.optional(),
+    currency: base.currency.optional(),
+    category: base.category.optional(),
+    date: base.date.optional(),
+    payment_method: base.payment_method,
+    notes: base.notes,
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "envie ao menos um campo para atualizar" })
+
 export type CriarDespesa = z.infer<typeof criarDespesaSchema>
+export type AtualizarDespesa = z.infer<typeof atualizarDespesaSchema>
