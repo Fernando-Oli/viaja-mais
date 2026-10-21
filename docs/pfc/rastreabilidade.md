@@ -58,9 +58,9 @@ catálogo das seções 14 e 15.
 | RF-06.8 | Usuário deve poder indicar quem pagou a despesa (`paid_by`) | Planejado | — | — | — |
 | RF-06.9 | Usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Planejado | — | — | — |
 | RF-06.10 | Sistema deve calcular o valor devido por membro (`expense_shares`), conforme o tipo de rateio | Planejado | — | — | — |
-| RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | — | — | — |
+| RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | `app/api/trips/[tripId]/acerto/route.ts`<br>`app/dashboard/trips/[id]/acerto/page.tsx`<br>`lib/finance/acerto.ts`<br>`lib/finance/balances.ts`<br>`components/acerto-contas.tsx` | `tests/api/acerto-route.test.ts`<br>`tests/components/acerto-contas.test.tsx`<br>`tests/lib/finance-acerto.test.ts`<br>`tests/lib/finance-balances.test.ts`<br>`e2e/acerto-contas.spec.ts` | — |
 | RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | — | — | — |
-| RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | — | — | — |
+| RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | `app/api/trips/[tripId]/acerto/route.ts`<br>`app/dashboard/trips/[id]/acerto/page.tsx`<br>`lib/finance/acerto.ts`<br>`lib/finance/balances.ts`<br>`components/acerto-contas.tsx` | `tests/api/acerto-route.test.ts`<br>`tests/components/acerto-contas.test.tsx`<br>`tests/lib/finance-acerto.test.ts`<br>`tests/lib/finance-balances.test.ts`<br>`e2e/acerto-contas.spec.ts` | — |
 | RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
 | RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
 | RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |

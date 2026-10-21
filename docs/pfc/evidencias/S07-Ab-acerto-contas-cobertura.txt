@@ -1,0 +1,11 @@
+# S07-Ab-acerto-contas — cobertura dos arquivos da atividade (2026-10-21 18:02)
+npx vitest run tests/lib/finance-acerto.test.ts tests/api/acerto-route.test.ts tests/components/acerto-contas.test.tsx --coverage (include nos 3 arquivos abaixo)
+
+total                                      linhas 100% | ramos 96.1%  | funções 100%
+lib/finance/acerto.ts                      linhas 100% | ramos 100%   | funções 100%
+components/acerto-contas.tsx               linhas 100% | ramos 100%   | funções 100%
+app/api/trips/[tripId]/acerto/route.ts     linhas 100% | ramos 84.21% | funções 100%
+
+Meta da regra de negócio (lib/finance/acerto.ts): >= 70% — atingido 100% em linhas, ramos e funções.
+route.ts: os 3 ramos não cobertos são os fallbacks `data ?? []` (linhas 59-61), quando o Supabase devolve data nula sem erro.
+lib/finance/balances.ts e lib/finance/rateio.ts não foram alterados nesta atividade (só consumidos).

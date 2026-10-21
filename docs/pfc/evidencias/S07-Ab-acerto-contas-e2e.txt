@@ -1,0 +1,19 @@
+# S07-Ab-acerto-contas — E2E contra o Supabase local, projetos chromium e mobile (2026-10-21 18:02)
+npx playwright test e2e/acerto-contas.spec.ts --project=chromium --project=mobile --reporter=list
+
+Running 12 tests using 1 worker
+
+  ✓   1 [chromium] › e2e\acerto-contas.spec.ts:183:7 › acerto de contas › saldos e transferências sugeridas, a partir da aba Despesas (1.0s)
+  ✓   2 [chromium] › e2e\acerto-contas.spec.ts:208:7 › acerto de contas › quem tem a receber vê as transferências chegando para si (654ms)
+  ✓   3 [chromium] › e2e\acerto-contas.spec.ts:219:7 › acerto de contas › viagem sem despesas (623ms)
+  ✓   4 [chromium] › e2e\acerto-contas.spec.ts:233:7 › acerto de contas › todos os saldos zerados (654ms)
+  ✓   5 [chromium] › e2e\acerto-contas.spec.ts:249:7 › acerto de contas › erro da API e recuperação com Tentar novamente (727ms)
+  ✓   6 [chromium] › e2e\acerto-contas.spec.ts:281:7 › acerto de contas › quem não participa da viagem não consulta o acerto (634ms)
+  ✓   7 [mobile] › e2e\acerto-contas.spec.ts:183:7 › acerto de contas › saldos e transferências sugeridas, a partir da aba Despesas (896ms)
+  ✓   8 [mobile] › e2e\acerto-contas.spec.ts:208:7 › acerto de contas › quem tem a receber vê as transferências chegando para si (680ms)
+  ✓   9 [mobile] › e2e\acerto-contas.spec.ts:219:7 › acerto de contas › viagem sem despesas (708ms)
+  ✓  10 [mobile] › e2e\acerto-contas.spec.ts:233:7 › acerto de contas › todos os saldos zerados (804ms)
+  ✓  11 [mobile] › e2e\acerto-contas.spec.ts:249:7 › acerto de contas › erro da API e recuperação com Tentar novamente (777ms)
+  ✓  12 [mobile] › e2e\acerto-contas.spec.ts:281:7 › acerto de contas › quem não participa da viagem não consulta o acerto (646ms)
+
+  12 passed (19.9s)
