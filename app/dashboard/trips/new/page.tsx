@@ -26,9 +26,12 @@ import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { Textarea } from "@/components/ui/textarea";
 import { PlaceAutocomplete } from "@/components/place-autocomplete";
+import { useToast } from "@/hooks/use-toast";
+
 export default function NewTripPage() {
   const router = useRouter();
   const { addTrip } = useAuth();
+  const { toast } = useToast();
   const [loading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,14 +60,17 @@ export default function NewTripPage() {
     setError(null);
 
     try {
-      addTrip({
+      const viagem = await addTrip({
         ...formData,
       });
 
-      router.push("/dashboard/");
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Erro ao criar viagem");
+      toast({ title: "Viagem criada", description: "Agora convide quem vai com você." });
+      // Direto para o detalhe: é lá que fica o convite, o próximo passo do grupo.
+      router.push(`/dashboard/trips/${viagem.id}`);
+    } catch (err) {
+      const mensagem = err instanceof Error ? err.message : "Erro ao criar viagem";
+      setError(mensagem);
+      toast({ title: "Erro", description: mensagem, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +116,8 @@ export default function NewTripPage() {
               <div className="space-y-2">
                 <Label htmlFor="destination">Destino *</Label>
                 <PlaceAutocomplete
+                  id="destination"
+                  required
                   handleInputChangeAutocomplete={handleInputChange}
                   query={formData.destination}
                 />

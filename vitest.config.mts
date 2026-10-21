@@ -16,6 +16,10 @@ export default defineConfig({
     // `// @vitest-environment jsdom` no topo do arquivo — assim o jsdom (que
     // custa ~50s de setup) só carrega onde é necessário.
     environment: "node",
+    // 15s em vez dos 5s padrão: teste de tela que digita com `userEvent`
+    // (ex.: os 130 caracteres do cadastro) passa sozinho em ~1s, mas estoura
+    // os 5s quando a suíte inteira disputa CPU com vários jsdom ao mesmo tempo.
+    testTimeout: 15_000,
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx", "lib/**/*.test.ts"],

@@ -170,7 +170,7 @@ data de criação.
 
 ID | Descrição | Status | Prioridade
 --- | --- | --- | ---
-| RF03.1 | O usuário deve poder criar nova viagem | Parcial | Alta
+| RF03.1 | O usuário deve poder criar nova viagem | Existente | Alta
 | RF03.2 | O usuário deve poder editar viagem | Existente | Alta
 | RF03.3 | O usuário deve poder excluir viagem | Parcial | Média
 | RF03.4 | O usuário deve poder visualizar lista de viagens | Parcial | Alta
@@ -179,7 +179,7 @@ ID | Descrição | Status | Prioridade
 | RF03.7 | O usuário deve poder adicionar imagem de capa | Parcial | Baixa
 | RF03.8 | O usuário deve poder alterar status da viagem | Parcial | Média
 
-Detalhamento: aplicamos a este grupo o mesmo critério de status descrito em RF01 e RF04 — **Existente** exige implementação e teste automatizado que a exercite. O RF03.2 passou a atendê-lo com a tela `app/dashboard/trips/[id]/edit`, que usa a rota de atualização restrita ao dono da viagem e é coberta por teste de integração (`tests/api/trips-patch.test.ts`) e por teste ponta a ponta em navegador de computador e de celular (`e2e/editar-viagem.spec.ts`). Os demais requisitos têm implementação, mas ainda não têm teste que os exercite por completo — o RF03.1, por exemplo, tem a rota testada, mas não a tela —, e por isso permanecem como parciais. O defeito de vínculo do proprietário com os membros da viagem, antes citado aqui, foi corrigido na correção dos defeitos P0 (versão 2.4 da Parte 00).
+Detalhamento: aplicamos a este grupo o mesmo critério de status descrito em RF01 e RF04 — **Existente** exige implementação e teste automatizado que a exercite. O RF03.2 passou a atendê-lo com a tela `app/dashboard/trips/[id]/edit`, que usa a rota de atualização restrita ao dono da viagem e é coberta por teste de integração (`tests/api/trips-patch.test.ts`) e por teste ponta a ponta em navegador de computador e de celular (`e2e/editar-viagem.spec.ts`). O RF03.1 também o atende: além da rota, testada por integração (`tests/api/trips-post.test.ts`), a tela `app/dashboard/trips/new` é exercitada pelo teste ponta a ponta do fluxo de grupo (`e2e/grupo-convite.spec.ts`), que cria a viagem pelo formulário em navegador de computador e de celular. Os demais requisitos têm implementação, mas ainda não têm teste que os exercite por completo, e por isso permanecem como parciais. O defeito de vínculo do proprietário com os membros da viagem, antes citado aqui, foi corrigido na correção dos defeitos P0 (versão 2.4 da Parte 00).
 
 ## RF05 — Itinerário
 

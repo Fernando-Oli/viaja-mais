@@ -11,6 +11,7 @@ import { BookingList } from "@/components/booking-list"
 import { PlaceList } from "@/components/place-list"
 import { ExpenseList } from "@/components/expense-list"
 import { TripMembers } from "@/components/trip-members"
+import { nomesDosPerfis } from "@/lib/social/perfis"
 
 function parseLocalDate(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
@@ -67,13 +68,19 @@ export default async function TripDetailPage({
     redirect("/dashboard/trips")
   }
 
-  const { data: members } = await supabase
+  // O nome vem numa segunda consulta: o embed `profiles(...)` direto daqui
+  // falhava com PGRST200 e a lista chegava vazia, sem nem a dona.
+  const { data: participantes } = await supabase
     .from("trip_members")
-    .select(`
-      *,
-      profiles(full_name, email)
-    `)
+    .select("id, user_id, role")
     .eq("trip_id", id)
+    .order("joined_at", { ascending: true })
+
+  const nomes = await nomesDosPerfis(supabase, (participantes ?? []).map((p) => p.user_id))
+  const members = (participantes ?? []).map((p) => ({
+    ...p,
+    profiles: { full_name: nomes.get(p.user_id) ?? null },
+  }))
 
   const isOwner = trip.user_id === user.id
 
