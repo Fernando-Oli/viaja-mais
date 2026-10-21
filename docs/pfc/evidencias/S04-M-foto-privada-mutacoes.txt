@@ -1,0 +1,60 @@
+# S04-M-foto-privada — testes de mutação (2026-10-21 09:17)
+Cada proteção sabotada sozinha e desfeita em seguida. MORTA = algum teste falhou (bom); VIVA = nenhum teste percebeu.
+Desenho final: link de 10 min, reaproveitado por 5, cliente de serviço só quando há foto, pasta do dono, Cache-Control private, no-store.
+
+# Código (tests/lib/avatar.test.ts, tests/lib/foto.test.ts e os 3 testes de rota de perfil)
+
+MORTA  avatar     assina sem conferir o formato
+MORTA  avatar     assina foto na pasta de outra pessoa
+MORTA  avatar     assina caminho repetido várias vezes
+MORTA  avatar     sem reaproveitar o link
+MORTA  avatar     reaproveita para sempre
+MORTA  avatar     sem teto de links guardados
+MORTA  avatar     cria o cliente de serviço mesmo sem foto
+MORTA  avatar     falha do Storage derruba a resposta
+MORTA  avatar     item com erro vira URL
+MORTA  avatar     cabeçalho permite cache compartilhado
+MORTA  foto       validade de 1 hora
+MORTA  foto       reuso de 1 hora
+MORTA  rotaFoto   resposta da foto com o caminho cru
+MORTA  rotaFoto   resposta da foto sem o cabeçalho sem cache
+MORTA  rotaPerfil resposta do perfil com o caminho cru
+MORTA  rotaPerfil perfil sem o cabeçalho sem cache
+MORTA  rotaPerfil perfil cria o cliente de serviço antes de saber se há foto
+MORTA  rotaId     menu lateral com o caminho cru
+MORTA  rotaId     menu lateral sem o cabeçalho sem cache
+
+# Storage e bucket (tests/rls/05-avatares.test.ts, com a proposta aplicada)
+
+## M1 bucket público de novo
+    × é privado, com 2 MB e só JPEG, PNG e WebP 16ms
+    × a URL pública não abre para o visitante, para a dona nem para outro usuário logado 35ms
+    × ninguém lê pela API com o próprio JWT — nem a Ana a própria foto 21ms
+    Tests  3 failed | 24 passed (27)
+
+## M2 policy de leitura para qualquer autenticado no bucket
+    × não há policy nenhuma em storage.objects 15ms
+    × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz 32ms
+    × ninguém lê pela API com o próprio JWT — nem a Ana a própria foto 25ms
+    × ninguém gera URL assinada com o próprio JWT — nem a Ana para a própria foto 21ms
+    Tests  4 failed | 23 passed (27)
+
+## M3 policy 'a dona lê a própria pasta'
+    × não há policy nenhuma em storage.objects 27ms
+    × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz 34ms
+    × ninguém lê pela API com o próprio JWT — nem a Ana a própria foto 28ms
+    × ninguém gera URL assinada com o próprio JWT — nem a Ana para a própria foto 25ms
+    Tests  4 failed | 23 passed (27)
+
+## M4 policy de leitura para o visitante (anon)
+    × não há policy nenhuma em storage.objects 19ms
+    × ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz 88ms
+    × ninguém lê pela API com o próprio JWT — nem a Ana a própria foto 93ms
+    × ninguém gera URL assinada com o próprio JWT — nem a Ana para a própria foto 90ms
+    Tests  4 failed | 23 passed (27)
+
+## M5 policy de leitura só para .webp (o formato das fotos reais; o arquivo de teste é .png)
+    × não há policy nenhuma em storage.objects 18ms
+    Tests  1 failed | 26 passed (27)
+
+Estado depois das mutações: bucket avatars privado, nenhuma policy em storage.objects.

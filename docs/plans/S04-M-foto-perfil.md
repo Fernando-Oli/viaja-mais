@@ -121,8 +121,15 @@ tipo declarado).
   a foto sem sessão, e o caminho leva o id do usuário. A escolha evita URL assinada que
   expira. Pesa enquanto o pré-requisito da plataforma da S03 (RPCs respondendo a anon)
   não estiver corrigido.
+  > **Tratado na `S04-M-foto-privada`** (pedido do Micael em 14/10): bucket privado, foto
+  > servida por URL assinada de 10 minutos, gerada só no servidor. O SQL segue como proposta
+  > até o aval do Fernando.
 - **Remover a foto não é instantâneo para quem já a viu**: o Storage serve com cache de
   1 hora, e navegador/CDN podem continuar mostrando até lá.
+  > **Tratado em parte na `S04-M-foto-privada`**: o Storage para de servir a URL assinada
+  > assim que o arquivo é apagado, e o navegador que já tinha a foto a guarda só até o link
+  > vencer, em até 10 minutos, em vez de 1 hora. Telas já abertas continuam mostrando a foto
+  > até recarregar.
 - **Metadados (EXIF, GPS)** saem quando a tela recorta a foto no canvas. Quem chamar a
   rota direto com um JPEG mantém os metadados no arquivo.
 - **A checagem de tipo confere a assinatura do arquivo, não decodifica a imagem.**
