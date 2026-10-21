@@ -13,26 +13,36 @@ grupo RF01.
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
-| RF02.1 | O usuário deve poder visualizar seu perfil | Parcial | Alta |
-| RF02.2 | O usuário deve poder editar nome e avatar | Parcial | Alta |
+| RF02.1 | O usuário deve poder visualizar seu perfil | Existente | Alta |
+| RF02.2 | O usuário deve poder editar nome e avatar | Existente | Alta |
 | RF02.3 | O usuário deve poder alterar a senha | Parcial | Média |
 | RF02.4 | O usuário deve poder excluir a conta | Não iniciado | Baixa |
-| RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Não iniciado | Alta |
-| RF02.6 | O usuário deve poder escrever uma biografia | Não iniciado | Média |
-| RF02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | Alta |
+| RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Existente | Alta |
+| RF02.6 | O usuário deve poder escrever uma biografia | Existente | Média |
+| RF02.7 | O usuário deve poder tornar o perfil público ou privado | Existente | Alta |
 
-**Detalhamento:** os requisitos RF02.1 a RF02.3 possuem rota implementada
-(`app/api/profile/[userId]`, `app/api/profile/update` e
-`app/api/auth/change-password`), porém ainda sem teste automatizado; por isso
-estão marcados como Parcial. Em um perfil público, o nome, o username, a
-biografia e as viagens publicadas são visíveis a qualquer usuário autenticado, e
-o ato de seguir tem efeito imediato. Em um perfil privado, os dados básicos —
-nome, username, avatar e biografia — permanecem visíveis, mas as publicações só
-são acessíveis ao próprio dono e aos seguidores aprovados, e seguir exige
-solicitação e aprovação (conforme RF09). A exclusão de conta (RF02.4) remove em
-cascata o perfil, os vínculos de seguir, as publicações e as curtidas. Como
-decisão de dado a cargo da plataforma, a tabela `profiles` recebe as colunas
-`username` (única), `bio` e `is_public`.
+**Detalhamento:** aplicamos a este grupo o critério de status descrito em RF01 e
+RF04. O perfil tem página própria (`app/dashboard/perfil`), que lê e grava pela
+rota `app/api/social/perfil`; a rota valida os dados e grava apenas os campos
+previstos, e o identificador do perfil vem sempre da sessão, de modo que ninguém
+edita o perfil de outra pessoa. A foto de perfil é enviada pela rota
+`app/api/social/perfil/foto`, que confere o conteúdo do arquivo e o grava em
+área privada do armazenamento; a imagem só chega ao navegador por um endereço
+temporário, emitido pelo servidor a quem está autenticado. O nome de usuário é
+único, segue um formato definido e não admite nomes reservados, regra verificada
+também no banco. Essas funcionalidades estão cobertas por testes de unidade, de
+integração, de políticas de acesso e ponta a ponta, o que classifica RF02.1,
+RF02.2, RF02.5, RF02.6 e RF02.7 como existentes. O RF02.3 permanece parcial: a
+alteração de senha tem rota, a cargo da plataforma, mas ainda sem teste
+automatizado. Em um perfil público, o nome, o username, a biografia e as viagens
+publicadas são visíveis a qualquer usuário autenticado, e o ato de seguir tem
+efeito imediato. Em um perfil privado, os dados básicos — nome, username, avatar
+e biografia — permanecem visíveis, mas as publicações só são acessíveis ao
+próprio dono e aos seguidores aprovados, e seguir exige solicitação e aprovação
+(conforme RF09). A exclusão de conta (RF02.4) remove em cascata o perfil, os
+vínculos de seguir, as publicações, as curtidas e os arquivos de foto do usuário
+no armazenamento. Como decisão de dado a cargo da plataforma, a tabela
+`profiles` recebe as colunas `username` (única), `bio` e `is_public`.
 
 ## 14.1 Existentes (reaproveitados de `docs/ARCHITECTURE.md` §6, status corrigido)
 

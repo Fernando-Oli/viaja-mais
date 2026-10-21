@@ -10,7 +10,7 @@ secoes_doc: [18, 20, 21, 22.1, 25]
 branch: feat/S04-M-foto-perfil
 tipo: [migration, rls, route-handler, regra-de-negocio, tela]
 depende_de: [S03-M-migration-social, S04-M-perfil-publico]
-status: em-desenvolvimento
+status: concluido
 ---
 # Foto de perfil por upload
 
@@ -175,6 +175,18 @@ tipo declarado).
   usada "exclusivamente" para a API administrativa do GoTrue (`auth.admin.*`). Com este
   PR, ela também é usada no Storage, pela rota da foto, para enviar e apagar no bucket
   `avatars`. Vale ajustar o comentário, para a narrativa da seção 25 bater com o código.
+- **Reprocessar a foto no servidor** (ação 2 dos riscos, registrada pelo Micael em 21/10
+  para não segurar a S04). Hoje a rota confere só os primeiros bytes do arquivo. A proposta é
+  decodificar e gerar uma imagem nova com o `sharp`: girar pelo EXIF, 512×512, WebP, sem
+  metadados e com `limitInputPixels`. O `sharp` já está no `node_modules` como dependência
+  opcional do Next 16, mas precisa ser declarado no `package.json`, que é compartilhado. Fica
+  à espera de um PR dedicado, com o aval do Fernando.
+- **Apagar a pasta da foto ao excluir a conta** (ação 4 dos riscos, registrada pelo Micael em
+  21/10). A exclusão de conta (RF02.4) não existe e cruza domínios: as viagens que a pessoa
+  possui caem em cascata, e `expenses.paid_by` é `ON DELETE RESTRICT`. O fluxo é da
+  plataforma. A parte do Micael é um helper em `lib/social/` que lista a pasta da pessoa e a
+  apaga pela API do Storage, em lotes de até 1000. Um `DELETE` em `storage.objects` pelo SQL
+  não apaga o arquivo. O helper é feito junto com o fluxo, quando ele existir.
 - **Bolinha sem foto: ícone de pessoa no lugar das iniciais.** O Perfil passou a mostrar
   o ícone (decisão do Micael em 14/10). Para o app ficar igual, o pedido é fazer o mesmo
   no menu lateral (`app/dashboard/layout.tsx`, compartilhado) e na lista de participantes
