@@ -10,7 +10,7 @@ secoes_doc: [22.1]
 branch: feat/S04-M-perfil-publico
 tipo: [regra-de-negocio, route-handler, tela]
 depende_de: [S03-M-migration-social]
-status: em-desenvolvimento
+status: concluido
 ---
 # Perfil público em /u/[username]
 
@@ -33,7 +33,14 @@ passaria de ~1.000 linhas, e o limite combinado é ~400 por PR:
 | PR | Branch | Conteúdo |
 |---|---|---|
 | Parte 1 — editar perfil | `feat/S04-M-perfil-publico` | schema zod, rota GET/PATCH do próprio perfil, página Perfil |
-| Parte 2 — página pública | `feat/S04-M-perfil-publico-pagina` | rota GET por username, tela `/u/[username]` |
+| ~~Parte 2 — página pública~~ | — | **substituída**, ver abaixo |
+
+> **A parte 2 não existe mais (decisão do Micael em 14/10).** A primeira versão abria
+> `/u/<username>` a partir do próprio Perfil, só para ver como ele aparece para os
+> outros, e foi desfeita: o cartão do Perfil já mostra isso. O perfil público passou a
+> morar na aba **Rede social**: a busca de pessoas está na `S05-M-busca-pessoas`, e o
+> perfil de **outra** pessoa, aberto pela busca e com seguir, na `S05-M-seguir`. Esta
+> atividade termina na parte 1.
 
 **Dependência:** as colunas `username`, `bio` e `is_public` vêm da migration da S03
 (`20261007105848_social_perfil_e_follows.sql`), que subiu no #27 com o aval do
@@ -96,11 +103,8 @@ outra pessoa no corpo **não tem efeito**.
   atividade corrigiu um bug nele; o Micael pediu para desfazer, e o formulário voltou
   a ser idêntico ao da `main`. O bug fica registrado abaixo como achado para o dono.
 
-**Parte 2 — página pública**
-- `app/api/social/perfis/[username]/route.ts` (criar) — GET por username.
-- `app/u/[username]/page.tsx` (criar) — client component no padrão das telas da
-  Audrey (`use(params)` + `fetch` da rota): nenhum `supabase.from` na tela.
-- `tests/api/social-perfis-route.test.ts` (criar) e `e2e/perfil-publico.spec.ts` (criar).
+**Parte 2 — página pública:** substituída pela `S05-M-busca-pessoas` e pela
+`S05-M-seguir` (ver o bloco 1).
 
 **As duas:** `docs/pfc/05-arquitetura/22-implementacao.md` (seção 22.1) e o status de
 RF02 no catálogo da seção 14, via `/pfc-secao` depois do merge.
@@ -133,9 +137,8 @@ RF02 no catálogo da seção 14, via `/pfc-secao` depois do merge.
 2. Rota `app/api/social/perfil` (GET, PATCH) + integração.
 3. Tela de edição (local a decidir) + faxina das rotas antigas.
 4. E2E da edição; `npm run verify`; PR da parte 1.
-5. Rota `app/api/social/perfis/[username]` + integração.
-6. Tela `/u/[username]` (estados de carregando, erro e não encontrado).
-7. E2E da página pública; `npm run verify`; PR da parte 2.
+5. ~~Rota por username, tela `/u/[username]` e E2E da página pública~~ — passaram para a
+   `S05-M-seguir` (ver o bloco 1).
 
 ## 4. O que testar
 
@@ -149,13 +152,13 @@ Obrigatórios pelo tipo (`regra-de-negocio, route-handler, tela`):
 - [ ] Integração das rotas: 200 feliz · 401 sem sessão · 400 payload inválido · e,
   no lugar do 403 (não há perfil-alvo na URL), o corpo não reescreve `id`/`created_at`
   e o update é sempre filtrado pelo `id` da sessão. Mais 409 (username em uso) no
-  PATCH e 404 (username inexistente) no GET por username
+  PATCH
   — parte 1: `tests/api/social-perfil-route.test.ts` e `tests/api/profile-userid-route.test.ts`,
-  100% de linhas e ramos nas duas rotas; o GET por username é da parte 2
-- [ ] E2E da edição e da página pública, com screenshot em `docs/pfc/evidencias/`
-  (projetos `chromium` e `mobile`), incluindo o estado de erro da tela
+  100% de linhas e ramos nas duas rotas; o GET por username passou para a `S05-M-seguir`
+- [ ] E2E da edição, com screenshot em `docs/pfc/evidencias/` (projetos `chromium` e
+  `mobile`), incluindo o estado de erro da tela
   — parte 1: `e2e/editar-perfil.spec.ts` (entrada pelo menu do usuário, edição, Configurações
-  isolada e estado de erro); a página pública é da parte 2
+  isolada e estado de erro); a página pública passou para a `S05-M-seguir`
 
 **Roteiro de teste manual** — passo a passo reproduzível, com o resultado esperado
 de cada passo. Quem revisa precisa conseguir repetir sem perguntar nada.
@@ -175,16 +178,13 @@ Pré-requisito: `npm run setup` nesta branch (a migration da S03 vem junto) e
 4. Tentar o username `Admin` e depois `ab`. → Erro de validação (reservado; curto demais).
    Apagar o username e salvar. → Aviso de que não dá para deixar em branco; nada muda.
    Salvar sem mudar nada. → Toast "Nada para salvar".
-5. Abrir `/u/davi` (parte 2). → Avatar, nome, @davi, bio e o link "Editar perfil" (é você).
-6. Sair, entrar como `teste.a@viajamais.local` e abrir `/u/bruno`. → Dados básicos e o
-   selo "Perfil privado"; sem "Editar perfil".
-7. Abrir `/u/nao_existe`. → Mensagem de perfil não encontrado.
-8. Sair e abrir `/u/bruno` sem sessão. → Redireciona para o login (proxy).
-9. Repetir os passos 1, 2 e 6 no DevTools em modo celular (ex.: Pixel 7). → Layout
+5. Repetir os passos 1 e 2 no DevTools em modo celular (ex.: Pixel 7). → Layout
    utilizável, sem rolagem horizontal.
-10. Abrir Configurações. → Só Conta e Segurança, com o link "Meu perfil".
-11. No DevTools, aba Network, salvar o perfil. → `PATCH /api/social/perfil`, e nenhuma
-    requisição direta ao Supabase (`/rest/v1/profiles`).
+6. Abrir Configurações. → Só Conta e Segurança, com o link "Meu perfil".
+7. No DevTools, aba Network, salvar o perfil. → `PATCH /api/social/perfil`, e nenhuma
+   requisição direta ao Supabase (`/rest/v1/profiles`).
+
+Os passos da página `/u/...` saíram com a parte 2 e voltam no roteiro da `S05-M-seguir`.
 
 ## 5. O que validar
 
@@ -198,9 +198,9 @@ critério combinado depois que já existe código para defender deixa de ser cri
 > mandado ao login pelo proxy. "Autorização via `exigirMembro`/`exigirDono`" virou o
 > equivalente para perfil.
 
-- [ ] Perfil privado mostra só os dados básicos (nome, username, avatar, bio) e o selo
-  de privado; publicações e contadores ficam para a S06 e a S05
-- [ ] Sem sessão, `/u/...` redireciona para o login e as rotas respondem 401
+- [ ] ~~Perfil privado mostra só os dados básicos (nome, username, avatar, bio) e o selo
+  de privado~~ — passou para a `S05-M-seguir`, com a página do perfil de outra pessoa
+- [ ] Sem sessão, as rotas de perfil respondem 401
 - [ ] Username único, minúsculo, no formato e fora da lista de reservados; repetido dá 409
 - [ ] Username não pode ser apagado: a tela avisa, em vez de mostrar "salvo" sem salvar
 - [ ] A tela envia só o que mudou; sem mudança, nada vai ao servidor

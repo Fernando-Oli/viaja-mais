@@ -1,0 +1,9 @@
+# S04-M-foto-privada — cobertura dos arquivos da atividade (2026-10-21 09:15)
+npx vitest run tests/lib/avatar.test.ts tests/lib/foto.test.ts e os 3 testes de rota de perfil --coverage (include nos arquivos abaixo)
+
+total                                      linhas 100% | ramos 97.65% | funções 100%
+app/api/profile/[userId]/route.ts          linhas 100% | ramos 100% | funções 100%
+app/api/social/perfil/route.ts             linhas 100% | ramos 100% | funções 100%
+app/api/social/perfil/foto/route.ts        linhas 100% | ramos 94.44% | funções 100%
+lib/social/avatar.ts                       linhas 100% | ramos 100% | funções 100%
+lib/social/foto.ts                         linhas 100% | ramos 100% | funções 100%

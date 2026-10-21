@@ -10,7 +10,7 @@ secoes_doc: [18, 25]
 branch: feat/S03-M-migration-social
 tipo: [migration, rls]
 depende_de: [S03-F-schema-base]
-status: em-desenvolvimento
+status: concluido
 ---
 # Migration do social: perfil público e follows
 

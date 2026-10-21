@@ -1,0 +1,13 @@
+
+> viaja-mais@0.1.0 test:rls
+> vitest run --config vitest.rls.config.mts
+
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+
+ Test Files  7 passed (7)
+      Tests  118 passed (118)
+   Start at  10:06:42
+   Duration  11.40s (transform 332ms, setup 130ms, import 1.62s, tests 6.84s, environment 1ms)
+

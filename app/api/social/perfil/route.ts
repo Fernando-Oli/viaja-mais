@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { ErroHttp, naoAutenticado, naoEncontrado, respostaDeErro, respostaInvalida } from "@/lib/http"
 import { atualizarPerfilSchema } from "@/lib/schemas/perfil"
-import { avatarPublico } from "@/lib/social/avatar"
+import { SEM_CACHE_COMPARTILHADO, assinarAvatar } from "@/lib/social/avatar"
 
 /**
  * Perfil da própria pessoa: ler para o formulário de edição e editar.
@@ -19,7 +20,9 @@ import { avatarPublico } from "@/lib/social/avatar"
  *     (`profiles_update_proprio`) é a segunda linha.
  *
  * A foto não muda aqui: `avatar_url` guarda o caminho no bucket e só as rotas de
- * /api/social/perfil/foto o alteram. Na resposta, o caminho vira URL pública.
+ * /api/social/perfil/foto o alteram. Na resposta, o caminho vira URL assinada
+ * (bucket privado, S04-M-foto-privada): a chave de serviço só assina, e quem lê
+ * e grava o perfil continua sendo a sessão do usuário, com a RLS.
  *
  * Erro do banco nunca volta cru para o cliente: username repetido vira 409 com
  * mensagem própria, e o resto cai no 500 genérico de `respostaDeErro`.
@@ -33,9 +36,9 @@ const COLUNAS = "id, full_name, avatar_url, username, bio, is_public"
 /** Violação de unicidade. Em `profiles`, a única unique editável é o username. */
 const VIOLA_UNICIDADE = "23505"
 
-/** O banco guarda o caminho no bucket; a tela recebe a URL pública. */
-function paraResposta<T extends { avatar_url: string | null }>(perfil: T): T {
-  return { ...perfil, avatar_url: avatarPublico(perfil.avatar_url) }
+/** O banco guarda o caminho no bucket; a tela recebe a URL assinada. */
+async function paraResposta<T extends { id: string; avatar_url: string | null }>(perfil: T): Promise<T> {
+  return { ...perfil, avatar_url: await assinarAvatar(criarClienteAdmin, perfil) }
 }
 
 async function usuarioAtual(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -55,7 +58,7 @@ export async function GET() {
 
     if (error) throw error
     if (!perfil) throw naoEncontrado("Perfil")
-    return NextResponse.json({ perfil: paraResposta(perfil) })
+    return NextResponse.json({ perfil: await paraResposta(perfil) }, { headers: SEM_CACHE_COMPARTILHADO })
   } catch (erro) {
     return respostaDeErro(erro)
   }
@@ -86,7 +89,7 @@ export async function PATCH(request: Request) {
     if (error?.code === VIOLA_UNICIDADE) throw new ErroHttp(409, "Esse nome de usuário já está em uso")
     if (error) throw error
     if (!perfil) throw naoEncontrado("Perfil")
-    return NextResponse.json({ perfil: paraResposta(perfil) })
+    return NextResponse.json({ perfil: await paraResposta(perfil) }, { headers: SEM_CACHE_COMPARTILHADO })
   } catch (erro) {
     return respostaDeErro(erro)
   }

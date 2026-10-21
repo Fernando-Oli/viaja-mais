@@ -6,7 +6,9 @@
  * apontar o avatar para um servidor de terceiro que veria o IP de quem visita o
  * perfil (migration social_avatares). O formato é o mesmo que o trigger do
  * banco exige; o que não casar com ele não vira URL — nem URL antiga, nem
- * `javascript:`, nem `../`.
+ * `javascript:`, nem `../`. O bucket é privado: a URL que o navegador recebe é
+ * assinada pelo servidor (lib/social/avatar.ts), nunca montada a partir do
+ * caminho.
  *
  * @RF02.2 foto de perfil
  */
@@ -15,6 +17,26 @@ export const BUCKET_AVATARES = "avatars"
 
 /** Espelha o `file_size_limit` do bucket. A tela manda 512×512 recortado (~100 KB). */
 export const LIMITE_FOTO_BYTES = 2 * 1024 * 1024
+
+/**
+ * Quanto vale a URL assinada de uma foto (S04-M-foto-privada), em segundos.
+ *
+ * É também quanto o navegador guarda a foto: o Storage serve a URL assinada com
+ * `Expires` no fim da validade e sem `Cache-Control`, e ignora o `cacheControl`
+ * gravado no arquivo. Por isso a validade é curta (decisão do Micael em 21/10):
+ * removida a foto, quem carrega de novo não a vê mais, e quem já a tinha numa
+ * tela aberta deixa de vê-la em até 10 minutos. Quem copiar o link abre a foto
+ * sem login até ele expirar.
+ */
+export const VALIDADE_URL_AVATAR_S = 10 * 60
+
+/**
+ * Por quanto tempo o servidor devolve o mesmo link para a mesma foto, em
+ * segundos. Cada assinatura nova é uma URL nova, e URL nova é download novo no
+ * navegador: reaproveitar evita baixar a foto a cada página. Metade da
+ * validade, para o link entregue ainda valer pelo menos 5 minutos.
+ */
+export const REUSO_URL_AVATAR_S = 5 * 60
 
 export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp"] as const
 export type TipoFoto = (typeof TIPOS_FOTO)[number]
@@ -55,16 +77,6 @@ export function tipoDaImagem(bytes: Uint8Array): TipoFoto | null {
 /** Caminho do arquivo novo: sempre na pasta de quem envia, com nome que não se repete. */
 export function caminhoDaNovaFoto(userId: string, nome: string, tipo: TipoFoto): string {
   return `${userId}/${nome}.${EXTENSAO[tipo]}`
-}
-
-/**
- * Monta a URL pública a partir do que está em `avatar_url`. Só o caminho no
- * formato exato vira URL; qualquer outra coisa devolve nulo e a tela mostra as
- * iniciais.
- */
-export function urlPublicaDoAvatar(valor: string | null, urlDoProjeto: string): string | null {
-  if (!valor || !FORMATO_CAMINHO.test(valor)) return null
-  return `${urlDoProjeto.replace(/\/+$/, "")}/storage/v1/object/public/${BUCKET_AVATARES}/${valor}`
 }
 
 /**
