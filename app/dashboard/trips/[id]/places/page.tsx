@@ -1,34 +1,51 @@
 "use client"
 
 import { use, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, MapPin, Star, Loader2, Trash2 } from "lucide-react"
+import { ArrowLeft, Star, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { PlaceAutocompleteMap } from "@/components/place-autcomplete-map"
+import { PlaceList, type Place } from "@/components/place-list"
+import { useToast } from "@/hooks/use-toast"
 
+/**
+ * Busca e salva lugares da viagem. Leitura e escrita passam pelas rotas
+ * `/api/trips/[tripId]/places`, que conferem a participação na viagem.
+ *
+ * @RF08.1 buscar lugares · @RF08.2 salvar lugar · @RF08.3 notas no lugar
+ */
 export default function TripPlacesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const router = useRouter()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const [places, setPlaces] = useState<any[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [erroAoCarregar, setErroAoCarregar] = useState<string | null>(null)
+  const [places, setPlaces] = useState<Place[]>([])
   const [selectedPlace, setSelectedPlace] = useState<any>(null)
   const [notes, setNotes] = useState("")
-  const [trip, setTrip] = useState<any>(null)
+  const [trip, setTrip] = useState<{ destination?: string | null } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
-      const supabase = createClient()
-      const { data: tripData } = await supabase.from("trips").select("*").eq("id", id).single()
-      const { data: placesData } = await supabase.from("places").select("*").eq("trip_id", id)
-
-      setTrip(tripData)
-      setPlaces(placesData || [])
+      try {
+        const [respostaViagem, respostaLugares] = await Promise.all([
+          fetch(`/api/trips/${id}`),
+          fetch(`/api/trips/${id}/places`),
+        ])
+        if (!respostaLugares.ok) {
+          const dados: { error?: string } = await respostaLugares.json().catch(() => ({}))
+          throw new Error(dados.error || "Não foi possível carregar os lugares")
+        }
+        if (respostaViagem.ok) setTrip((await respostaViagem.json()).trip)
+        setPlaces((await respostaLugares.json()).places || [])
+      } catch (erro) {
+        setErroAoCarregar(erro instanceof Error ? erro.message : "Não foi possível carregar os lugares")
+      } finally {
+        setCarregando(false)
+      }
     }
 
     fetchData()
@@ -43,54 +60,35 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
 
     setIsLoading(true)
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const resposta = await fetch(`/api/trips/${id}/places`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedPlace.name,
+          address: selectedPlace.address,
+          latitude: selectedPlace.latitude,
+          longitude: selectedPlace.longitude,
+          place_id: selectedPlace.place_id,
+          category: selectedPlace.category,
+          rating: selectedPlace.rating,
+          notes: notes || null,
+        }),
+      })
+      if (!resposta.ok) {
+        const dados: { error?: string } = await resposta.json().catch(() => ({}))
+        throw new Error(dados.error || "Erro ao salvar lugar")
+      }
+      const { place }: { place: Place } = await resposta.json()
 
-      if (!user) throw new Error("Usuário não autenticado")
-
-      const { data, error } = await supabase
-        .from("places")
-        .insert([
-          {
-            trip_id: id,
-            user_id: user.id,
-            name: selectedPlace.name,
-            address: selectedPlace.address,
-            latitude: selectedPlace.latitude,
-            longitude: selectedPlace.longitude,
-            place_id: selectedPlace.place_id,
-            category: selectedPlace.category,
-            rating: selectedPlace.rating,
-            notes: notes || null,
-          },
-        ])
-        .select()
-
-      if (error) throw error
-
-      setPlaces([...places, data[0]])
+      setPlaces((atual) => [place, ...atual])
       setSelectedPlace(null)
       setNotes("")
-    } catch (err: any) {
-      console.error(err)
+      toast({ title: "Lugar salvo", description: "O lugar foi incluído na viagem." })
+    } catch (erro) {
+      const mensagem = erro instanceof Error ? erro.message : "Erro ao salvar lugar"
+      toast({ title: "Erro", description: mensagem, variant: "destructive" })
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleDeletePlace = async (placeId: string) => {
-    if (!confirm("Tem certeza que deseja remover este lugar?")) return
-
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.from("places").delete().eq("id", placeId)
-
-      if (error) throw error
-      setPlaces(places.filter((p) => p.id !== placeId))
-    } catch (err: any) {
-      alert("Erro ao remover lugar: " + err.message)
     }
   }
 
@@ -98,7 +96,7 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
     <div className="space-y-6">
       <div>
         <Button variant="ghost" asChild className="mb-4">
-          <Link href={`/dashboard/trips/${id}`}>
+          <Link href={`/dashboard/trips/${id}?aba=lugares`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Link>
@@ -186,53 +184,20 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
         <Card>
           <CardHeader>
             <CardTitle>Lugares Salvos ({places.length})</CardTitle>
-            <CardDescription>Todos os lugares que você adicionou a esta viagem</CardDescription>
+            <CardDescription>Todos os lugares que o grupo adicionou a esta viagem</CardDescription>
           </CardHeader>
           <CardContent>
-            {places.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <MapPin className="mb-4 h-12 w-12 text-gray-300" />
-                <p className="text-sm text-gray-600">Nenhum lugar salvo ainda</p>
-                <p className="mt-1 text-xs text-gray-500">Use a busca ao lado para adicionar lugares</p>
+            {carregando ? (
+              <div className="flex items-center justify-center py-12 text-gray-600">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Carregando lugares...
               </div>
+            ) : erroAoCarregar ? (
+              <p role="alert" className="py-12 text-center text-sm text-red-600">
+                {erroAoCarregar}
+              </p>
             ) : (
-              <div className="space-y-3">
-                {places.map((place) => (
-                  <div
-                    key={place.id}
-                    className="rounded-lg border border-gray-200 p-4 hover:border-viaja-orange/30 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-viaja-navy">{place.name}</h4>
-                        {place.address && <p className="mt-1 text-sm text-gray-600 line-clamp-2">{place.address}</p>}
-                        {place.notes && <p className="mt-2 text-sm text-gray-700 italic">{place.notes}</p>}
-                        <div className="mt-3 flex items-center gap-2 flex-wrap">
-                          {place.category && (
-                            <Badge variant="secondary" className="text-xs">
-                              {place.category}
-                            </Badge>
-                          )}
-                          {place.rating && (
-                            <div className="flex items-center gap-1 text-sm text-amber-600">
-                              <Star className="h-3 w-3 fill-current" />
-                              <span>{place.rating}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeletePlace(place.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <PlaceList places={places} tripId={id} onChange={setPlaces} />
             )}
           </CardContent>
         </Card>

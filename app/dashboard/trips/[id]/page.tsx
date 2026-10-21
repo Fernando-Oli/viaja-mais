@@ -8,6 +8,7 @@ import Link from "next/link"
 import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned, Pencil } from "lucide-react"
 import { ItineraryList } from "@/components/itinerary-list"
 import { BookingList } from "@/components/booking-list"
+import { PlaceList } from "@/components/place-list"
 import { ExpenseList } from "@/components/expense-list"
 import { TripMembers } from "@/components/trip-members"
 
@@ -280,7 +281,7 @@ export default async function TripDetailPage({
         <TabsContent value="places" className="mt-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <CardTitle>Lugares Salvos</CardTitle>
                   <CardDescription>Pontos turísticos e locais de interesse</CardDescription>
@@ -294,37 +295,7 @@ export default async function TripDetailPage({
               </div>
             </CardHeader>
             <CardContent>
-              {!places || places.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <MapPinned className="mb-4 h-12 w-12 text-gray-300" />
-                  <h3 className="mb-2 text-lg font-semibold text-viaja-navy">Nenhum lugar salvo</h3>
-                  <p className="text-center text-gray-600">Adicione lugares que deseja visitar</p>
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {places.map((place) => (
-                    <div key={place.id} className="rounded-lg border border-gray-200 p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-viaja-navy">{place.name}</h4>
-                          {place.address && <p className="mt-1 text-sm text-gray-600">{place.address}</p>}
-                          {place.category && (
-                            <Badge variant="secondary" className="mt-2">
-                              {place.category}
-                            </Badge>
-                          )}
-                        </div>
-                        {place.rating && (
-                          <div className="flex items-center gap-1 text-sm font-medium text-amber-600">
-                            <span>⭐</span>
-                            <span>{place.rating}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <PlaceList places={places || []} tripId={id} />
             </CardContent>
           </Card>
         </TabsContent>

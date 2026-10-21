@@ -216,11 +216,11 @@ ID | Descrição | Status | Prioridade
 | RF08.1 | O usuário deve poder buscar lugares | Parcial | Alta
 | RF08.2 | O usuário deve poder salvar lugares favoritos | Parcial | Alta
 | RF08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | Média
-| RF08.4 | O usuário deve poder marcar lugares como visitados | Parcial | Média
+| RF08.4 | O usuário deve poder marcar lugares como visitados | Existente | Média
 | RF08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | Média
-| RF08.6 | O usuário deve poder excluir lugares salvos | Parcial | Média
+| RF08.6 | O usuário deve poder excluir lugares salvos | Existente | Média
 
-Detalhamento: o domínio de lugares possui implementação existente, porém ainda há funcionalidades incompletas. O estado de lugar visitado já é exibido, mas atualmente não existe uma interface que permita alterá-lo e persistir essa mudança. Por isso, os requisitos permanecem classificados de forma conservadora como parciais.
+Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. Salvar, marcar como visitado e excluir lugares passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/places/` e `.../[placeId]/`), que validam os dados, gravam apenas os campos previstos e tomam o autor da sessão. Essas operações estão cobertas por testes de integração (`tests/api/places-route.test.ts` e `tests/api/place-item-route.test.ts`) e por teste ponta a ponta (`e2e/lugares.spec.ts`), que marca um lugar como visitado pela interface, confirma que o estado persiste após recarregar a página, desmarca e exclui o lugar — o que classifica RF08.4 e RF08.6 como existentes. A busca (RF08.1), o salvamento (RF08.2), as notas (RF08.3) e o mapa (RF08.5) dependem do componente de busca do Google Maps, que não carrega com a chave usada nos testes; o salvamento e as notas têm a rota testada, mas não a tela, e por isso esses requisitos permanecem parciais.
 
 ## RF01 — Autenticação e Acesso
 
