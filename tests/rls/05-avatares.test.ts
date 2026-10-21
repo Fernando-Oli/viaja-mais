@@ -16,9 +16,8 @@ import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
  * listar, apagar, ler ou assinar — e que a URL assinada pelo servidor abre, e
  * deixa de abrir quando o arquivo é apagado.
  *
- * Enquanto a proposta docs/plans/S04-M-foto-privada.proposta.sql não virar
- * migration, a parte "privado" deste arquivo só passa com a proposta aplicada
- * no banco local (ver o plano).
+ * O bucket fica privado na migration social_avatares_privado, que corrige para
+ * a frente a social_avatares (que o criou público).
  *
  * O arquivo de teste é criado pela API do Storage com a chave de serviço, para
  * existir de verdade: linha em storage.objects e arquivo no disco. Uma linha

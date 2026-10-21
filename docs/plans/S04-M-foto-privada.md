@@ -68,24 +68,35 @@ Com isso, quando a foto é removida:
 Cada pessoa baixa a mesma foto no máximo a cada 5 a 10 minutos. O reaproveitamento fica na
 memória de cada instância do servidor.
 
-**SQL como proposta.** Por decisão do Micael, o SQL nasce em `docs/plans/` e é aplicado só numa
-cópia local para os testes, como na S03. A migration `20261007200000_social_avatares.sql` já
-está na `main` e não se edita. Com o aval do Fernando, a proposta vira uma migration **nova**,
-criada com `npx supabase migration new`.
+**O SQL: de proposta a migration, como na S03.** O SQL nasceu como proposta em `docs/plans/`,
+aplicado só numa cópia local e exercitado pelo teste de RLS e pela mutação. Em 21/10, o Micael
+decidiu seguir o mesmo caminho da S03: a proposta vira a migration
+`20261021130434_social_avatares_privado.sql`, criada com `npx supabase migration new`, e sobe
+no PR. O CI precisa ficar verde, e o merge espera a revisão do Fernando, porque migration e
+política de acesso são da plataforma. A migration `20261007200000_social_avatares.sql`, que já
+está na `main`, não foi editada: a nova a corrige para a frente. O SQL é o mesmo da proposta;
+só o cabeçalho mudou.
 
-Como no S03, o teste de RLS desta atividade exige o bucket privado. Enquanto a migration não
-existir, o job "Migrations e RLS" do CI fica vermelho. Por isso o commit fica local, e o push só
-acontece depois do aval.
-
-**Fora desta ação**, cada uma com aval próprio: reprocessar a imagem no servidor (`sharp`,
-`package.json` compartilhado), os ajustes finais da remoção imediata e o helper que apaga a
-pasta na exclusão de conta (RF02.4, da plataforma). Posts de viagem (S06) decidem de novo a
-forma de servir a imagem, porque a regra lá é mais sensível.
+**Fora desta ação**, registradas como pendências na `S04-M-foto-perfil` por decisão do Micael
+em 21/10, para não segurar a S04: reprocessar a imagem no servidor (`sharp`, com o
+`package.json` compartilhado) e o helper que apaga a pasta na exclusão de conta (RF02.4, da
+plataforma). Os ajustes da remoção imediata ficaram dentro desta ação; só a atualização ao vivo
+de telas abertas, que exige o Realtime, fica para a S07. Posts de viagem (S06) decidem de novo
+a forma de servir a imagem, porque a regra lá é mais sensível.
 
 ## 2. Arquivos afetados
 
-- `docs/plans/S04-M-foto-privada.proposta.sql` (criar): `update storage.buckets set public =
-  false where id = 'avatars'`. Nenhuma policy nova.
+- `supabase/migrations/20261021130434_social_avatares_privado.sql` (criar; nasceu como
+  `docs/plans/S04-M-foto-privada.proposta.sql`): `update storage.buckets set public = false
+  where id = 'avatars'`. Nenhuma policy nova. O `types/database.ts` não muda: bucket não aparece
+  nos tipos do schema `public`. Isso foi conferido gerando os tipos de novo.
+- Fechamento da S04 (pedido do Micael em 21/10):
+  - `docs/pfc/03-publico/14-requisitos-funcionais.md` ganha o status real do grupo RF02 e um
+    novo detalhamento;
+  - `S03-M-migration-social`, `S04-M-perfil-publico` e `S04-M-foto-perfil` passam a
+    `concluido`;
+  - a parte 2 da `S04-M-perfil-publico` aparece como substituída;
+  - as ações 2 e 4 dos riscos ficam como pendências na `S04-M-foto-perfil`.
 - `lib/social/foto.ts` (editar):
   - sai `urlPublicaDoAvatar`, para ninguém voltar a montar URL pública;
   - entram as constantes `VALIDADE_URL_AVATAR_S` (10 min) e `REUSO_URL_AVATAR_S` (5 min).
@@ -127,7 +138,8 @@ forma de servir a imagem, porque a regra lá é mais sensível.
 
 ## 3. Passos
 
-1. Proposta de SQL. `db reset` e a proposta aplicada numa cópia local.
+1. Proposta de SQL. `db reset` e a proposta aplicada numa cópia local. Depois, a proposta vira
+   migration, e se repete o `db reset` limpo com as 7 migrations.
 2. Teste de RLS do Storage, com a mutação das proteções.
 3. `assinarAvatares` e as constantes, com os testes de unidade.
 4. As três rotas e o cache do envio, com a integração.
@@ -145,7 +157,8 @@ forma de servir a imagem, porque a regra lá é mais sensível.
 
 **Testes automatizados** (obrigatórios pelo `tipo`):
 
-- [ ] Aplicação limpa: `db reset` com as migrations da `main` e a proposta aplicada por cima.
+- [ ] Aplicação limpa: `db reset` com as 7 migrations, a nova inclusa, sem nada aplicado à mão;
+  o bucket nasce privado e sem policy.
 - [ ] RLS do Storage (`tests/rls/05-avatares.test.ts`), com dois usuários e visitante:
   - o bucket `avatars` é privado, mantendo os 2 MB e os três tipos;
   - a URL pública de uma foto que existe não abre para o visitante, para a dona nem para
@@ -173,7 +186,7 @@ forma de servir a imagem, porque a regra lá é mais sensível.
   - falha do Storage e falta da chave de serviço devolvem 200 com a foto nula;
   - os caminhos existentes de 401, 400 e 409 continuam passando.
 - [ ] E2E (`e2e/foto-perfil.spec.ts` e `e2e/editar-perfil.spec.ts`, `chromium` e `mobile`),
-  contra o banco com a proposta:
+  contra o banco com as migrations:
   - a foto enviada aparece no cartão e no menu lateral, nos dois por URL assinada;
   - a URL pública da mesma foto não abre;
   - removida a foto, o Storage para de servir o link.
@@ -187,9 +200,8 @@ forma de servir a imagem, porque a regra lá é mais sensível.
 
 **Roteiro de teste manual** — passo a passo reproduzível.
 
-Pré-requisito: `npm run setup` nesta branch, a proposta aplicada (`docker exec -i
-supabase_db_viaja-mais psql -U postgres < docs/plans/S04-M-foto-privada.proposta.sql`) e
-`npm run dev`.
+Pré-requisito: `npm run setup` nesta branch, que aplica as 7 migrations, a do bucket
+privado inclusa, e `npm run dev`.
 
 1. Entrar como `teste.d@viajamais.local` / `viajamais123` e abrir **Meu perfil**. Enviar uma
    foto pelo lápis. → A foto aparece no cartão e no menu lateral.
@@ -217,7 +229,7 @@ supabase_db_viaja-mais psql -U postgres < docs/plans/S04-M-foto-privada.proposta
 > navegador, e pelo reaproveitamento do link. Também entraram a ausência da chave e o
 > cabeçalho sem cache.
 
-- [ ] `storage.buckets.public` é `false` para `avatars` (com a proposta aplicada)
+- [ ] `storage.buckets.public` é `false` para `avatars` depois de um `db reset` limpo
 - [ ] `GET /storage/v1/object/public/avatars/<caminho existente>` falha para visitante e para
   usuário logado
 - [ ] Usuário logado não gera URL assinada pela API do Storage, nem para a própria foto
@@ -234,8 +246,8 @@ supabase_db_viaja-mais psql -U postgres < docs/plans/S04-M-foto-privada.proposta
 - [ ] A chave de serviço só aparece em `lib/supabase/admin.ts`, e a rota passa a fábrica ao
   helper; nenhuma policy em `storage.objects`
 - [ ] A foto aparece no Perfil e no menu lateral, e some ao remover (E2E, mobile e desktop)
-- [ ] O commit com a proposta e o teste de RLS só vai para a `main` junto com a migration,
-  depois do aval do Fernando
+- [ ] A migration sobe no PR, o job "Migrations e RLS" do CI passa, e o merge espera a
+  revisão do Fernando
 
 ## 6. Riscos e pendências (insumo da seção 25)
 
@@ -284,7 +296,9 @@ supabase_db_viaja-mais psql -U postgres < docs/plans/S04-M-foto-privada.proposta
 ## 7. Evidência
 
 - [ ] Saída dos testes em `docs/pfc/evidencias/S04-M-foto-privada-*`:
-  - RLS: `-rls.txt`, 118 de 118 nos 7 arquivos, com a proposta aplicada;
+  - RLS: `-rls.txt`, 118 de 118 nos 7 arquivos, sobre um `db reset` limpo com a migration;
+  - advisors do Supabase: nenhum aviso nos objetos desta mudança (os 152 do banco são de
+    outras tabelas);
   - integração e unit: `-integracao.txt`, 111 de 111. A suíte de unidade inteira deu 444 de
     444;
   - E2E da foto e do perfil: `-e2e.txt`, 14 de 14 no build de produção. A suíte inteira deu
