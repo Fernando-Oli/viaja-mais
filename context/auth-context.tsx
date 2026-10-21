@@ -46,7 +46,7 @@ interface AuthContextType {
   refreshTrips: () => Promise<void>;
   refreshInvitations: () => Promise<void>;
   deleteTrip: (tripId: string) => Promise<boolean>;
-  addTrip: (trip: TripCreate) => void;
+  addTrip: (trip: TripCreate) => Promise<Trip>;
   updateTrip: (trip: Trip) => void;
 }
 
@@ -155,29 +155,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // <CHANGE> Added addTrip function to update local state without refetching
-  const addTrip = async (trip: TripCreate) => {
-    try {
-      const res = await fetch(`/api/trips`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(trip),
-      });
+  // Lança em vez de engolir o erro: antes a tela de nova viagem seguia para o
+  // dashboard como se tivesse gravado, e o usuário só via que não gravou depois.
+  const addTrip = async (trip: TripCreate): Promise<Trip> => {
+    const res = await fetch(`/api/trips`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(trip),
+    });
 
-
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("Erro da API:", err);
-        return;
-      }
-
-      const { data } = await res.json();
-      // Atualiza estado com o trip criado no backend (garante id, user_id etc)
-      setTrips((prev) => [data[0], ...prev]);
-    } catch (error) {
-      console.error("Erro on create trip", error);
+    const corpo: { data?: Trip[]; error?: string } = await res.json().catch(() => ({}));
+    if (!res.ok || !corpo.data?.[0]) {
+      throw new Error(corpo.error || "Erro ao criar viagem");
     }
+
+    const criada = corpo.data[0];
+    // Atualiza estado com o trip criado no backend (garante id, user_id etc)
+    setTrips((prev) => [criada, ...prev]);
+    return criada;
   };
 
   // <CHANGE> Added updateTrip function to update local state without refetching

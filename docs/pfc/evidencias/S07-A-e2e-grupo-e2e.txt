@@ -1,0 +1,2 @@
+Suite E2E completa em 21/10/2026, chromium e mobile (Pixel 7):
+48 passed (5.7m) - inclui e2e/grupo-convite.spec.ts nos dois projetos.

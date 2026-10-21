@@ -7,6 +7,8 @@ import { MapPin, Loader2 } from "lucide-react";
 import { env } from "@/lib/env";
 
 interface PlaceAutocompleteProps {
+  id?: string;
+  required?: boolean;
   defaultLocation?: { lat: number; lng: number };
   placeholder?: string;
   handleInputChangeAutocomplete: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -39,6 +41,8 @@ interface PlaceAutocompleteProps {
  */
 
 export function PlaceAutocomplete({
+  id,
+  required,
   placeholder = "Buscar lugares, atrações, restaurantes...",
   handleInputChangeAutocomplete,
   query,
@@ -138,11 +142,14 @@ export function PlaceAutocomplete({
   return (
     <div className="relative space-y-2">
       <div className="relative">
+        {/* Sem `disabled` enquanto o Maps não carrega: se o script falhar (rede,
+            chave inválida), o campo vira texto livre em vez de travar o formulário. */}
         <Input
+          id={id}
+          required={required}
           placeholder={placeholder}
           value={query}
           onChange={(e) => handleInputChange(e)}
-          disabled={!isScriptLoaded}
           className="pr-10"
           name="destination"
         />
