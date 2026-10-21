@@ -1,0 +1,59 @@
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+ ✓ tests/lib/busca.test.ts > normalizarTermo > apara, junta espaços repetidos e tira o @ do começo 3ms
+ ✓ tests/lib/busca.test.ts > normalizarTermo > só o primeiro @ sai; um @ no meio fica (e o schema recusa) 1ms
+ ✓ tests/lib/busca.test.ts > normalizarTermo > acento digitado como letra + sinal vira o mesmo caractere gravado (NFC) 1ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > aceita nome com acento, apóstrofo, hífen, ponto e número 4ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > aceita username com _ e o @ do começo 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > aceita os limites de 2 e 60 caracteres, depois de normalizar 2ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa curto e longo demais 1ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa % (curinga do LIKE) 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa * (o PostgREST troca por %) 1ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa \ (escape do LIKE) 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa vírgula 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa parênteses 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa ponto e vírgula 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa aspas duplas 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa @ no meio 0ms
+ ✓ tests/lib/busca.test.ts > buscaPessoasSchema > recusa o que não é texto 1ms
+ ✓ tests/lib/busca.test.ts > TERMO_PERMITIDO > é a mesma regra que a tela usa para decidir se busca 0ms
+ ✓ tests/lib/busca.test.ts > padraoContem > cerca o termo de % para achar em qualquer posição 0ms
+ ✓ tests/lib/busca.test.ts > padraoContem > escapa o _, que no LIKE casaria qualquer caractere 0ms
+ ✓ tests/lib/busca.test.ts > juntarResultados > a mesma pessoa achada pelas duas consultas aparece uma vez 17ms
+ ✓ tests/lib/busca.test.ts > juntarResultados > ordena por nome sem diferenciar maiúscula nem acento, e desempata por username 0ms
+ ✓ tests/lib/busca.test.ts > juntarResultados > nome vazio vai antes, sem quebrar; dois sem nome se ordenam pelo username 1ms
+ ✓ tests/lib/busca.test.ts > juntarResultados > respeita o limite, 20 por padrão 1ms
+ ✓ tests/lib/busca.test.ts > juntarResultados > quem tem exatamente o username buscado vem primeiro, mesmo com o nome no fim da ordem 1ms
+ ✓ tests/lib/busca.test.ts > juntarResultados > sem nada achado, devolve lista vazia 0ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: acha pelo nome e devolve só os dados básicos 31ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: uma consulta por critério, com o termo como valor, em ordem de nome antes do limite 3ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: quem busca e as contas sem username ficam de fora, nas três consultas 3ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: acha pelo username, e a mesma pessoa achada duas vezes aparece uma vez 2ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: o username exato vem primeiro, mesmo com o nome no fim da ordem 2ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: perfil privado aparece, marcado como privado 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: o @ do começo sai, e o _ do username é procurado como _ 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: a resposta não leva id nem datas, mesmo que o banco as devolva 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: as fotos voltam como URL assinada, numa chamada só; URL antiga e pasta alheia voltam nulas 4ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: sem nenhuma foto, não vai ao Storage 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > a resposta com os links assinados não vai para cache compartilhado 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 200: nada achado devolve lista vazia 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 401: sem sessão não chega a consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 401 vem antes do 400: sem sessão, nem o termo é avaliado 0ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (sem o parâmetro) é recusado sem consultar 2ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (vazio) é recusado sem consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (curto demais) é recusado sem consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (longo demais) é recusado sem consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (curinga %) é recusado sem consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (curinga *) é recusado sem consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (barra invertida) é recusado sem consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 400: termo inválido (vírgula e parêntese) é recusado sem consultar 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 500: erro do banco na consulta exato não volta cru 3ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 500: erro do banco na consulta full_name não volta cru 1ms
+ ✓ tests/api/social-perfis-busca-route.test.ts > GET /api/social/perfis?busca= > 500: erro do banco na consulta username não volta cru 2ms
+
+ Test Files  2 passed (2)
+      Tests  50 passed (50)
+   Start at  10:59:47
+   Duration  1.51s (transform 346ms, setup 1.23s, import 526ms, tests 115ms, environment 0ms)
+

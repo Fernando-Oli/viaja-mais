@@ -86,6 +86,8 @@ no armazenamento. Como decisão de dado a cargo da plataforma, a tabela
 | RF09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | Alta |
 | RF09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | Alta |
 | RF09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | Média |
+| RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | Alta |
+| RF09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | Média |
 
 **Detalhamento:** seguir um perfil público cria o vínculo já no estado aceito;
 seguir um perfil privado cria um vínculo pendente, que só se torna aceito após a
@@ -100,9 +102,18 @@ o sistema não notifica o removido — e não impõe barreira: o removido pode v
 a seguir, se o perfil for público, ou solicitar novamente, se for privado, e é
 essa ausência de barreira que mantém a remoção indetectável; remover apenas
 desfaz o vínculo aceito, e em um perfil privado o removido perde o acesso às
-publicações. Bloquear usuário está fora do escopo deste período. Como decisão de
-dado a cargo da plataforma, criam-se a tabela `follows`, com estado pendente ou
-aceito, e a tabela `trip_posts`.
+publicações. Bloquear usuário está fora do escopo deste período. A busca de
+usuários (RF09.10) exige sessão autenticada e devolve os dados básicos de cada
+perfil encontrado — nome, username e foto — e a indicação de perfil público ou
+privado, inclusive de perfis privados, que permanecem encontráveis; nunca
+devolve o e-mail e não traz o identificador interno como campo da resposta,
+embora esse identificador componha o endereço temporário da foto de perfil; e não
+inclui o próprio usuário que realiza a busca. Nas sugestões do feed (RF09.11),
+somente publicações de perfis públicos podem ser sugeridas; uma publicação de
+perfil privado nunca é sugerida a quem não é seguidor aprovado. Como decisão de
+dado a cargo da plataforma,
+criam-se a tabela `follows`, com estado pendente ou aceito, e a tabela
+`trip_posts`.
 
 ## RF10 — Interação Social
 
