@@ -113,9 +113,26 @@ function exigirParticipantes(ids: string[]): void {
 }
 
 /**
+ * Ordem de desempate do rateio: `user_id` crescente, por comparação simples de
+ * string. Não usa `localeCompare`, que depende do locale e do ICU de cada
+ * ambiente e poderia ordenar diferente no navegador e no servidor. Para UUID
+ * em minúsculas, é a mesma ordem do `order by user_id` do Postgres.
+ */
+function compararIds(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
+/**
  * Divisão igual. O resto da divisão inteira é distribuído um centavo por vez,
- * a partir do primeiro participante: R$ 10,00 / 3 = 3,34 + 3,33 + 3,33.
+ * seguindo os participantes em ordem crescente de `user_id`:
+ * R$ 10,00 / 3 = 3,34 + 3,33 + 3,33, e o 3,34 fica com o menor id.
  * Ninguém paga mais de um centavo acima de outro, e a soma fecha sempre.
+ *
+ * A ordem de entrada não muda o valor de ninguém, só a ordem da lista
+ * devolvida. Sem isso, a criação (ordem do formulário) e a edição (partes
+ * lidas do banco) davam o centavo a pessoas diferentes (Issue #36).
+ *
+ * @RNF08.1 cálculo do rateio determinístico
  */
 export function dividirIgual(totalCentavos: number, userIds: string[]): Parte[] {
   exigirTotal(totalCentavos)
@@ -123,17 +140,21 @@ export function dividirIgual(totalCentavos: number, userIds: string[]): Parte[] 
 
   const base = Math.floor(totalCentavos / userIds.length)
   const resto = totalCentavos - base * userIds.length
+  const comCentavoExtra = new Set([...userIds].sort(compararIds).slice(0, resto))
 
-  return userIds.map((userId, i) => ({ userId, centavos: base + (i < resto ? 1 : 0), peso: null }))
+  return userIds.map((userId) => ({ userId, centavos: base + (comCentavoExtra.has(userId) ? 1 : 0), peso: null }))
 }
 
 /**
  * Divisão proporcional ao peso, pelo método do maior resto: cada um recebe a
  * parte inteira da sua cota, e os centavos que sobram vão para quem teve a
- * maior fração descartada (empate: ordem de entrada).
+ * maior fração descartada. Empate de fração: `user_id` crescente, a mesma
+ * ordem da divisão igual, para o resultado não depender da ordem de entrada.
  *
  * Em `BigInt` porque total (até ~10¹⁰ centavos) × peso (até ~10⁶ centésimos)
  * passa de `Number.MAX_SAFE_INTEGER`.
+ *
+ * @RNF08.1 cálculo do rateio determinístico
  */
 export function dividirPorPeso(totalCentavos: number, entradas: { userId: string; peso: number }[]): Parte[] {
   exigirTotal(totalCentavos)
@@ -152,11 +173,13 @@ export function dividirPorPeso(totalCentavos: number, entradas: { userId: string
 
   const cotas = centesimos.map((p, i) => {
     const bruto = total * p
-    return { i, inteiro: bruto / somaPesos, resto: bruto % somaPesos }
+    return { i, userId: entradas[i].userId, inteiro: bruto / somaPesos, resto: bruto % somaPesos }
   })
 
   let sobra = total - cotas.reduce((a, c) => a + c.inteiro, BigInt(0))
-  const porResto = [...cotas].sort((a, b) => (a.resto === b.resto ? a.i - b.i : a.resto > b.resto ? -1 : 1))
+  const porResto = [...cotas].sort((a, b) =>
+    a.resto === b.resto ? compararIds(a.userId, b.userId) : a.resto > b.resto ? -1 : 1,
+  )
   const extra = new Array<number>(entradas.length).fill(0)
   for (const cota of porResto) {
     if (sobra <= BigInt(0)) break

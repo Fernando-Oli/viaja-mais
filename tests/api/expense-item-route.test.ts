@@ -248,6 +248,24 @@ describe("PATCH /api/trips/[tripId]/expenses/[expenseId]", () => {
       expect(soma(h.upserts[0])).toBe(10001)
     })
 
+    // @RNF08.1 regressão da Issue #36: o centavo seguia a ordem em que as partes
+    // chegavam do banco, e editar o valor podia trocá-lo de pessoa.
+    it("200: a ordem em que as partes chegam não decide quem leva o centavo", async () => {
+      const centavoPorUsuario = () =>
+        Object.fromEntries(h.upserts.at(-1)!.map((l) => [l.user_id, Math.round(Number(l.amount) * 100)]))
+
+      // R$ 70,00 / 3 = 23,34 + 23,33 + 23,33: o centavo é do menor user_id.
+      const esperado = { a: 2334, b: 2333, c: 2333 }
+
+      for (const ordem of [["c", "a", "b"], ["b", "c", "a"], ["a", "b", "c"]]) {
+        h.partes = ordem.map((id) => parte(id))
+        const resposta = await PATCH(requisicao("PATCH", { amount: "70" }), contexto())
+
+        expect(resposta.status).toBe(200)
+        expect(centavoPorUsuario()).toEqual(esperado)
+      }
+    })
+
     it("200: rateio por peso mantém os pesos", async () => {
       h.linha = { ...h.linha, split_type: "weight" }
       h.partes = [parte("a", 2), parte("b", 1)]
