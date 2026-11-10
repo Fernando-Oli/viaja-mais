@@ -1,0 +1,31 @@
+
+> viaja-mais@0.1.0 test:rls
+> vitest run --config vitest.rls.config.mts
+
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+
+ Test Files  10 passed (10)
+      Tests  163 passed (163)
+   Start at  12:13:58
+   Duration  19.08s (transform 443ms, setup 157ms, import 2.37s, tests 12.34s, environment 2ms)
+
+
+# Detalhe das solicitações (--reporter=verbose)
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — o dono resolve as próprias > o Bruno vê a solicitação da Ana na lista, com o total, e a Ana vê o próprio pedido pendente 106ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — o dono resolve as próprias > o Bruno aprova: o vínculo vira aceito, sai da lista, e aprovar de novo não acha pendente 117ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — o dono resolve as próprias > o Bruno recusa: a solicitação some, e a Ana pode pedir de novo 143ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — o dono resolve as próprias > recusar não apaga um vínculo já aceito: para isso existe remover seguidor 93ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — ninguém mais resolve > quem pediu não se auto-aprova: o UPDATE da Ana não acha linha, e o vínculo continua pendente 81ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — ninguém mais resolve > a Carla não vê a solicitação da Ana ao Bruno 72ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — ninguém mais resolve > a Carla não aprova nem recusa a solicitação alheia 77ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — ninguém mais resolve > o Bruno não troca quem pediu: o follower_id não é gravável (42501) 65ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — ninguém mais resolve > o Bruno não rebaixa um vínculo aceito para pendente (42501) 87ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — ninguém mais resolve > visitante sem sessão não lê as solicitações 59ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — a lista do dono > traz só as pendentes em que ele é o followee, da mais recente, sem vínculo aceito 95ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — a lista do dono > conta sem username não aparece nem conta, porque não tem endereço para ser aprovada 107ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — a lista do dono > a contagem do sino conta só as pendentes do dono, e acompanha aprovar e recusar 161ms
+ ✓ tests/rls/09-solicitacoes.test.ts > solicitações — a lista do dono > visitante sem sessão não conta: 401 sem número, e a função lança em vez de devolver zero 65ms
+ Test Files  1 passed (1)
+      Tests  14 passed (14)

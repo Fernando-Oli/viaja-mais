@@ -199,7 +199,11 @@ ou por atualização periódica. Ficam fora do escopo deste período as notifica
 de curtida, comentário e nova publicação, deliberadamente omitidas pelo alto
 volume que gerariam. Como decisão de dado a cargo da plataforma, cria-se a tabela
 `notifications`, com usuário destino, tipo, ator, referência, marcação de lida e
-data de criação.
+data de criação. A seção de solicitações (RF13.2) não depende dessa tabela: cada
+solicitação é o próprio vínculo pendente de seguir, lido pelo dono do perfil, e
+deixa de existir quando ele a aprova ou recusa. A central é aberta por um sino no
+canto superior direito da aba Rede social, com a quantidade de solicitações
+pendentes.
 
 ## RF03 — Gestão de Viagens
 

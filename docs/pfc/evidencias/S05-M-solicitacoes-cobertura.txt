@@ -1,0 +1,9 @@
+# S05-M-solicitacoes — cobertura dos arquivos da atividade (2026-11-10 12:14)
+npx vitest run tests/api/social-solicitacoes-route.test.ts --coverage (include nos arquivos abaixo)
+As telas (sino e Notificações) são cobertas pelo E2E; o banco, pelos testes de RLS da S03 e do 09-solicitacoes.
+
+total                                              linhas 100% | ramos 100% | funções 100%
+app/api/social/solicitacoes/route.ts               linhas 100% | ramos 100% | funções 100%
+app/api/social/solicitacoes/[username]/route.ts    linhas 100% | ramos 100% | funções 100%
+lib/schemas/solicitacoes.ts                        linhas 100% | ramos 100% | funções 100%
+lib/social/solicitacoes.ts                         linhas 100% | ramos 100% | funções 100%

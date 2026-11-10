@@ -1,0 +1,63 @@
+# S05-M-solicitacoes — testes de mutação (2026-11-10 12:14)
+Cada proteção do código sabotada sozinha e desfeita em seguida. MORTA = algum teste falhou (bom); VIVA = nenhum teste percebeu.
+Alvos: lib/social/solicitacoes.ts (lib), lib/schemas/solicitacoes.ts (schema), app/api/social/solicitacoes/route.ts (rota)
+e .../[username]/route.ts (rotaU). Sem migration nova: a RLS e os grants de follows são os da S03, mutados na S03 e
+provados de novo em tests/rls/09-solicitacoes.test.ts.
+Segunda rodada: depois das correções da revisão independente (M1, M2, M3 e M5), com as mutações do modo só de
+contagem e dos códigos dos dois 404.
+
+# Código (tests/api/social-solicitacoes-route.test.ts)
+
+MORTA  lib    lista sem o filtro do dono
+MORTA  lib    lista sem o filtro de pendente (aceitos aparecem)
+MORTA  lib    lista sem o filtro de username
+MORTA  lib    lista sem o !inner (o filtro de username não vale para o total)
+MORTA  lib    total sem a contagem do banco
+MORTA  lib    total ignora o banco
+MORTA  lib    lista na ordem errada
+MORTA  lib    lista além do teto de 50
+MORTA  lib    resposta com o id
+MORTA  lib    foto sem assinar
+MORTA  lib    erro da lista ignorado
+MORTA  lib    contagem sem o filtro do dono
+MORTA  lib    contagem sem o filtro de pendente
+MORTA  lib    contagem sem o filtro de username
+MORTA  lib    contagem sem o !inner
+MORTA  lib    contagem traz as linhas (sem head)
+MORTA  lib    contagem sem count exato
+MORTA  lib    erro da contagem ignorado
+MORTA  lib    contagem nula vira outro número
+MORTA  lib    aprovar sem o filtro do dono
+MORTA  lib    aprovar sem o filtro de quem pediu
+MORTA  lib    aprovar sem o filtro de pendente
+MORTA  lib    aprovar grava outro status
+MORTA  lib    aprovar sempre acha
+MORTA  lib    erro do aprovar ignorado
+MORTA  lib    recusar sem o filtro do dono
+MORTA  lib    recusar sem o filtro de quem pediu
+MORTA  lib    recusar sem o filtro de pendente (apaga seguidor aceito)
+MORTA  lib    recusar sempre acha
+MORTA  lib    erro do recusar ignorado
+MORTA  rota   contagem ignora o parâmetro (manda a lista)
+MORTA  rota   contagem sem o cabeçalho sem cache
+MORTA  rota   consulta sem validar
+MORTA  schema contagem aceita qualquer valor
+MORTA  rota   pendentes sem o cabeçalho sem cache
+MORTA  rota   pendentes sem sessão
+MORTA  rotaU  sem validar o username
+MORTA  rotaU  sem o 404 do username que ninguém usa
+MORTA  rotaU  sem o 404 de quando não há pendente
+MORTA  rotaU  códigos dos dois 404 trocados
+MORTA  rotaU  404 sem o código
+MORTA  rotaU  dono e quem pediu trocados
+MORTA  rotaU  POST recusa em vez de aprovar
+MORTA  rotaU  DELETE aprova em vez de recusar
+MORTA  rotaU  sem sessão
+
+Resultado: 45 de 45 mortas.
+
+# O que a mutação achou na primeira rodada (corrigido)
+- 'erro da lista ignorado', 'erro do aprovar ignorado' e 'erro do recusar ignorado' sobreviviam: sem o throw, o
+  código quebrava logo depois com TypeError (data nulo) e a resposta continuava 500 genérica, então o teste não
+  distinguia. A diferença real é o log do servidor, que perderia a causa. Os testes de 500 passaram a conferir
+  que o erro do banco é o que vai ao log.
