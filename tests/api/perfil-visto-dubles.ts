@@ -41,6 +41,9 @@ export const estado = {
   usuario: null as { id: string } | null,
   perfil: null as PerfilNoBanco | null,
   erroPerfil: null as Erro,
+  /** O username de quem está na sessão (a leitura de `profiles` pelo `id`); nulo = conta sem username. */
+  usernameDaSessao: "davi" as string | null,
+  erroUsernameDaSessao: null as Erro,
   vinculo: null as { status: "pending" | "accepted" } | null,
   erroVinculo: null as Erro,
   erroGravacao: null as Erro,
@@ -62,6 +65,8 @@ export function reiniciar() {
   estado.usuario = null
   estado.perfil = null
   estado.erroPerfil = null
+  estado.usernameDaSessao = "davi"
+  estado.erroUsernameDaSessao = null
   estado.vinculo = null
   estado.erroVinculo = null
   estado.erroGravacao = null
@@ -94,6 +99,11 @@ export function clienteDaSessao() {
           return cadeia
         },
         async maybeSingle() {
+          if (tabela === "profiles" && consulta.filtros.some(([coluna]) => coluna === "id")) {
+            return estado.erroUsernameDaSessao
+              ? { data: null, error: estado.erroUsernameDaSessao }
+              : { data: { username: estado.usernameDaSessao }, error: null }
+          }
           if (tabela === "profiles") return { data: estado.perfil, error: estado.erroPerfil }
           return { data: estado.vinculo, error: estado.erroVinculo }
         },

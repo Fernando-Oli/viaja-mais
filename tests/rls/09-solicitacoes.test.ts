@@ -228,20 +228,18 @@ describe("solicitações — a lista do dono", () => {
     expect(await listarSolicitacoes(ana, semStorage, idAna)).toEqual({ solicitacoes: [], total: 0 })
   })
 
-  it("conta sem username não aparece nem conta, porque não tem endereço para ser aprovada", async () => {
+  it("quem pediu não fica sem username depois de pedir, e a lista e a contagem não divergem", async () => {
+    // Antes da migration 20261110200043, a Ana zerava o próprio username pela Data
+    // API, sumia da lista e continuava contando (S05-M-listas, I1). Agora o banco
+    // recusa, e a conta sem username nem chega a pedir (tests/rls/11).
     await pedir(carla, idCarla, idBruno)
     const { error } = await ana.from("profiles").update({ username: null }).eq("id", idAna)
-    expect(error).toBeNull()
-    try {
-      expect(await listarSolicitacoes(bruno, semStorage, idBruno)).toEqual({
-        solicitacoes: [expect.objectContaining({ username: "carla" })],
-        total: 1,
-      })
-      expect(await contarSolicitacoes(bruno, idBruno)).toBe(1)
-    } finally {
-      const { data, error: erroRestaurar } = await ana.from("profiles").update({ username: "ana" }).eq("id", idAna).select("id")
-      if (erroRestaurar || data?.length !== 1) throw new Error(`não restaurou o username da Ana: ${erroRestaurar?.message}`)
-    }
+    expect(error?.code).toBe("23514")
+
+    const { solicitacoes, total } = await listarSolicitacoes(bruno, semStorage, idBruno)
+    expect(solicitacoes.map((s) => s.username).sort()).toEqual(["ana", "carla"])
+    expect(total).toBe(2)
+    expect(await contarSolicitacoes(bruno, idBruno)).toBe(2)
   })
 
   it("a contagem do sino conta só as pendentes do dono, e acompanha aprovar e recusar", async () => {

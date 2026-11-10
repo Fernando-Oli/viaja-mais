@@ -34,7 +34,13 @@ import { useToast } from "@/hooks/use-toast";
  * região de status, para quem usa teclado ou leitor de tela não ficar perdido. Com a sessão vencida (401), a tela
  * oferece entrar de novo, como o painel de busca.
  *
- * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir
+ * Quem ainda não tem username vê, no lugar do Seguir/Solicitar, o aviso para
+ * escolher um, com o link para o Perfil: sem ele, ninguém entra na rede.
+ *
+ * Os contadores levam às listas de seguidores e de seguindo (S05-M-listas)
+ * quando a rede do perfil é visível a quem vê.
+ *
+ * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir · @RF09.6 listas
  */
 
 type Vinculo = "proprio" | "nenhum" | "solicitado" | "seguindo";
@@ -48,6 +54,7 @@ type PerfilVisto = {
   vinculo: Vinculo;
   seguidores: number | null;
   seguindo: number | null;
+  sem_username: boolean;
 };
 
 type Estado =
@@ -189,6 +196,10 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
   const { perfil } = estado;
   const nome = perfil.full_name || perfil.username;
   const podeVerViagens = perfil.vinculo === "proprio" || perfil.vinculo === "seguindo" || perfil.is_public;
+  // Os mesmos três casos da função `pode_ver_rede` do banco: o dono, quem segue
+  // com vínculo aceito, ou perfil público. Fora deles os contadores não viram
+  // link; quem decide de verdade é a rota das listas (403).
+  const podeVerRede = podeVerViagens;
 
   return (
     <div className="space-y-6">
@@ -213,8 +224,21 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
             <p className="text-sm text-gray-500">@{perfil.username}</p>
             {perfil.bio ? <p className="whitespace-pre-line break-words text-gray-700">{perfil.bio}</p> : null}
             <p className="flex gap-4 text-sm text-gray-700">
-              <span>{contador(perfil.seguidores, "seguidor", "seguidores")}</span>
-              <span>{perfil.seguindo === null ? "—" : numero.format(perfil.seguindo)} seguindo</span>
+              {podeVerRede ? (
+                <>
+                  <Link href={`/u/${perfil.username}/seguidores`} className="rounded-sm hover:underline">
+                    {contador(perfil.seguidores, "seguidor", "seguidores")}
+                  </Link>
+                  <Link href={`/u/${perfil.username}/seguindo`} className="rounded-sm hover:underline">
+                    {perfil.seguindo === null ? "—" : numero.format(perfil.seguindo)} seguindo
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <span>{contador(perfil.seguidores, "seguidor", "seguidores")}</span>
+                  <span>{perfil.seguindo === null ? "—" : numero.format(perfil.seguindo)} seguindo</span>
+                </>
+              )}
             </p>
           </div>
           <div className="shrink-0">
@@ -276,6 +300,20 @@ function BotaoDoVinculo({
           Editar perfil
         </Link>
       </Button>
+    );
+  }
+
+  // Sem username, ninguém entra na rede de ninguém (S05-M-listas, I1; decisão do
+  // Micael, como no Instagram): no lugar do Seguir, o caminho para escolher um.
+  // Deixar de seguir e cancelar, abaixo, continuam.
+  if (perfil.vinculo === "nenhum" && perfil.sem_username) {
+    return (
+      <div className="max-w-xs space-y-2 text-sm text-gray-600">
+        <p>Escolha um nome de usuário para seguir pessoas.</p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/dashboard/perfil">Escolher nome de usuário</Link>
+        </Button>
+      </div>
     );
   }
 

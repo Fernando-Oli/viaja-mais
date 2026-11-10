@@ -4,7 +4,7 @@ import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { ErroHttp, naoAutenticado, naoEncontrado, respostaDeErro, respostaInvalida } from "@/lib/http"
 import { formatoUsernameSchema } from "@/lib/schemas/perfil"
 import { SEM_CACHE_COMPARTILHADO } from "@/lib/social/avatar"
-import { buscarPerfilPorUsername, montarPerfilVisto, type PerfilAlvo } from "@/lib/social/perfil-visto"
+import { buscarPerfilPorUsername, montarPerfilVisto, temUsername, type PerfilAlvo } from "@/lib/social/perfil-visto"
 
 /**
  * Seguir (POST) e deixar de seguir (DELETE) o perfil do username.
@@ -25,12 +25,18 @@ import { buscarPerfilPorUsername, montarPerfilVisto, type PerfilAlvo } from "@/l
  *   Apagar o que não existe também é sucesso.
  * - O próprio perfil é 400, antes de ir ao banco (que também recusa seguir a
  *   si mesmo, por constraint).
+ * - Sem username, a sessão não segue ninguém: 403 com o código `sem_username`
+ *   (S05-M-listas, I1; decisão do Micael, como no Instagram). Sem ele, o
+ *   seguidor ficaria invisível na lista do dono e não poderia ser removido. A
+ *   policy `follows_insert` recusa o mesmo no banco (migration 20261110200043).
+ *   Deixar de seguir e cancelar continuam livres.
  *
  * As duas devolvem o perfil atualizado (lib/social/perfil-visto.ts), para a tela
  * mostrar o botão e os contadores novos sem outra requisição.
  *
  * @RF09.1 seguir perfil público · @RF09.2 solicitar perfil privado
- * @RF09.5 deixar de seguir ou cancelar · @RNF02.11 erro do banco não vaza
+ * @RF09.5 deixar de seguir ou cancelar · @RF09.9 sem username, fora da rede
+ * @RNF02.11 erro do banco não vaza
  */
 
 type Supabase = Awaited<ReturnType<typeof createClient>>
@@ -72,6 +78,13 @@ export async function POST(_request: Request, contexto: Contexto): Promise<NextR
     const preparo = await prepararVinculo(contexto, "Você não pode seguir a si mesmo")
     if (!preparo.ok) return preparo.resposta
     const { supabase, user, perfil } = preparo
+
+    if (!(await temUsername(supabase, user.id))) {
+      return NextResponse.json(
+        { error: "Escolha um nome de usuário para seguir alguém", codigo: "sem_username" },
+        { status: 403 },
+      )
+    }
 
     // Campo a campo, e só os dois que o grant de INSERT aceita: status e datas
     // são do trigger. `ignoreDuplicates` é o ON CONFLICT DO NOTHING; sem ele, o

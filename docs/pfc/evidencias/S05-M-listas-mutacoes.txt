@@ -1,0 +1,78 @@
+# S05-M-listas — testes de mutação (2026-11-10, depois da revisão independente)
+Cada proteção do código sabotada sozinha e desfeita em seguida. MORTA = algum teste falhou (bom); VIVA = nenhum teste percebeu.
+Cada sabotagem roda contra a integração (social-rede, social-seguir e social-perfil-visto) e, se ela não perceber, contra a RLS 10.
+Alvos: lib/social/rede.ts (lib), lista-da-rede.ts (lista), seguindo/route.ts (seguindo), seguidores/[username]/route.ts (remover),
+lib/schemas/rede.ts (schema), seguir/route.ts (seguir) e lib/social/perfil-visto.ts (visto).
+
+MORTA  lib      pode_ver_rede: nulo conta como sim  (integração)
+MORTA  lib      pode_ver_rede: erro ignorado  (integração)
+MORTA  lista    sem o 403 da rede privada  (integração)
+MORTA  lista    pode_ver_rede perguntada sobre a sessão, e não sobre o perfil  (integração)
+MORTA  lib      lista sem o filtro do dono  (integração)
+MORTA  lib      lista sem o filtro de aceito (pendentes aparecem)  (integração)
+MORTA  lib      lista sem o filtro de username  (integração)
+MORTA  lib      seguidores sem o !inner  (integração)
+MORTA  lib      seguindo sem o !inner  (integração)
+MORTA  lib      seguidores com o dono do lado errado  (integração)
+MORTA  lib      seguindo pela FK errada  (integração)
+MORTA  seguindo rota de seguindo lista os seguidores  (integração)
+MORTA  lib      primeira página na ordem errada  (integração)
+MORTA  lib      primeira página sem o desempate por username  (integração)
+MORTA  lib      pede só 20 (não sabe se há mais)  (integração)
+MORTA  lib      erro da primeira página ignorado  (integração)
+MORTA  lib      erro ao achar o cursor ignorado  (integração)
+MORTA  lib      cursor que não existe não devolve null  (integração)
+MORTA  lib      empatados sem o filtro do momento  (integração)
+MORTA  lib      empatados sem o depois do cursor (duplica)  (integração)
+MORTA  lib      empatados sem ordem  (integração)
+MORTA  lib      erro dos empatados ignorado  (integração)
+MORTA  lib      nunca lê os mais antigos (salta)  (integração)
+MORTA  lib      antigos sem o antes do cursor (duplica)  (integração)
+MORTA  lib      antigos sem descontar os empatados  (integração)
+MORTA  lib      erro dos antigos ignorado  (integração)
+MORTA  lib      próximo sempre nulo  (integração)
+MORTA  lib      cursor é a primeira pessoa, e não a última  (integração)
+MORTA  lib      página com 21  (integração)
+MORTA  lib      resposta com o id  (integração)
+MORTA  lib      foto sem assinar  (integração)
+MORTA  lista    sem o cabeçalho sem cache  (integração)
+MORTA  lista    proprio sempre verdadeiro  (integração)
+MORTA  lista    cursor não repassado à lib  (integração)
+MORTA  lista    sem o 400 do cursor inválido  (integração)
+MORTA  lista    400 do cursor sem o código  (integração)
+MORTA  lista    username sem validar  (integração)
+MORTA  lista    consulta sem validar  (integração)
+MORTA  lista    sem o 404 do perfil  (integração)
+MORTA  lista    sem sessão  (integração)
+MORTA  schema   cursor sem o formato de username  (integração)
+MORTA  lib      remover sem o filtro do dono  (integração)
+MORTA  lib      remover sem o filtro do seguidor (apaga todos)  (integração)
+MORTA  lib      remover leva também a pendente  (integração)
+MORTA  lib      erro ao remover ignorado  (integração)
+MORTA  remover  dono e seguidor trocados  (integração)
+MORTA  remover  sem o 404 de quem não segue  (integração)
+MORTA  remover  códigos dos dois 404 trocados  (integração)
+MORTA  remover  sem o 404 do perfil  (integração)
+MORTA  remover  username sem validar  (integração)
+MORTA  remover  sem sessão  (integração)
+MORTA  seguir   seguir sem exigir username  (integração)
+MORTA  seguir   username perguntado sobre o perfil, e não sobre a sessão  (integração)
+MORTA  seguir   403 sem o código  (integração)
+MORTA  visto    temUsername: erro ignorado  (integração)
+MORTA  visto    temUsername: qualquer linha conta como username  (integração)
+MORTA  visto    sem_username sempre falso  (integração)
+MORTA  visto    temUsername sobre o perfil, e não sobre quem vê  (integração)
+
+Resultado: 58 de 58 mortas no código.
+
+# O que a mutação achou (corrigido)
+- 'username perguntado sobre o perfil, e não sobre a sessão' sobrevivia na primeira rodada: o dublê responde o mesmo
+  username a qualquer leitura por id, e o teste do 403 não conferia qual id foi lido. O teste passou a conferir que o
+  username lido é o de quem está na sessão.
+
+# Mutação da migration 20261110200043: NÃO EXECUTADA
+As 10 sabotagens do banco estão escritas em .micael/s05/mutar-listas.cjs (só com MUTAR_BANCO=1): a policy sem
+exigir username de cada ponta, a policy sem o dono, o trigger que deixa voltar a nulo, com outro errcode ou não criado,
+a contar_rede contando cada ponta sem username, e o legado não apagado ou apagando tudo. A execução foi negada pela
+trava de permissão do ambiente, porque derruba e recria o trigger e a função e reescreve a migration no disco a cada
+sabotagem (restaurando no fim). Fica para o Micael autorizar.

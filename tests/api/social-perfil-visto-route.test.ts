@@ -68,17 +68,25 @@ describe("GET /api/social/perfis/[username]", () => {
         vinculo: "nenhum",
         seguidores: 3,
         seguindo: 1,
+        sem_username: false,
       },
     })
   })
 
-  it("procura pelo username e lê o vínculo de quem vê, com a sessão", async () => {
+  it("procura pelo username e lê o vínculo e o username de quem vê, com a sessão", async () => {
     await ver(" Carla ")
 
     expect(estado.consultas).toEqual([
       { tabela: "profiles", colunas: "id, username, full_name, avatar_url, bio, is_public", filtros: [["username", "carla"]] },
       { tabela: "follows", colunas: "status", filtros: [["follower_id", DAVI], ["followee_id", CARLA]] },
+      { tabela: "profiles", colunas: "username", filtros: [["id", DAVI]] },
     ])
+  })
+
+  it("@RF09.9 quem vê sem username recebe sem_username, para a tela trocar o Seguir pelo aviso", async () => {
+    estado.usernameDaSessao = null
+
+    expect((await (await ver("carla")).json()).perfil.sem_username).toBe(true)
   })
 
   it.each([
@@ -97,6 +105,8 @@ describe("GET /api/social/perfis/[username]", () => {
     const { perfil } = await (await ver("carla")).json()
 
     expect(perfil.vinculo).toBe("proprio")
+    // Nem o username de quem vê é lido de novo: é o da própria página.
+    expect(perfil.sem_username).toBe(false)
     expect(estado.consultas.map((c) => c.tabela)).toEqual(["profiles"])
   })
 
@@ -134,7 +144,7 @@ describe("GET /api/social/perfis/[username]", () => {
     const { perfil } = await (await ver("carla")).json()
 
     expect(Object.keys(perfil).sort()).toEqual(
-      ["avatar_url", "bio", "full_name", "is_public", "seguidores", "seguindo", "username", "vinculo"].sort(),
+      ["avatar_url", "bio", "full_name", "is_public", "seguidores", "seguindo", "sem_username", "username", "vinculo"].sort(),
     )
   })
 

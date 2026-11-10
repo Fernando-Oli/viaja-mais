@@ -65,6 +65,34 @@ beforeEach(() => {
 })
 
 describe("POST /api/social/perfis/[username]/seguir", () => {
+  it("403 sem_username: a sessão sem nome de usuário não segue ninguém, e nada é gravado (regressão)", async () => {
+    estado.usernameDaSessao = null
+
+    const resposta = await pedido("POST", "carla")
+
+    expect(resposta.status).toBe(403)
+    expect(await resposta.json()).toEqual({
+      error: "Escolha um nome de usuário para seguir alguém",
+      codigo: "sem_username",
+    })
+    expect(estado.gravacoes).toEqual([])
+    // O username lido é o de quem está na sessão, e não o do perfil seguido.
+    expect(estado.consultas).toContainEqual({ tabela: "profiles", colunas: "username", filtros: [["id", DAVI]] })
+  })
+
+  it("500: erro ao ler o username da sessão não volta cru, e nada é gravado", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
+    estado.erroUsernameDaSessao = { message: 'relation "profiles" x' }
+
+    const resposta = await pedido("POST", "carla")
+
+    expect(resposta.status).toBe(500)
+    expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
+    expect(log).toHaveBeenCalledWith("[erro não tratado]", estado.erroUsernameDaSessao)
+    expect(estado.gravacoes).toEqual([])
+    log.mockRestore()
+  })
+
   it("200: cria o vínculo em nome da sessão e devolve o perfil atualizado, sem cache compartilhado", async () => {
     // Depois do insert, o banco tem o vínculo aceito (o trigger decide pelo is_public).
     estado.vinculo = { status: "accepted" }

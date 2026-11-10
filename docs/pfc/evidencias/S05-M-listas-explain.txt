@@ -1,0 +1,187 @@
+# S05-M-listas — EXPLAIN das listas sob RLS (2026-11-10)
+Como authenticated, com o JWT da Ana, e enable_seqscan = off (a tabela local é pequena). A consulta é a que o PostgREST
+monta para a lib: follows com o perfil da outra pessoa embutido (!inner), os filtros e a ordem do keyset.
+
+-- seguidores da Carla (primeira página), como a lib pede, com a sessão da Ana, sob RLS
+                                                                                                   QUERY PLAN                                                                                                   
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   InitPlan 1
+     ->  Result
+   InitPlan 2
+     ->  Result
+   ->  Sort
+         Sort Key: f.created_at DESC, p.username
+         ->  Hash Join
+               Hash Cond: (p.id = f.follower_id)
+               ->  Bitmap Heap Scan on profiles p
+                     Recheck Cond: (username IS NOT NULL)
+                     ->  Bitmap Index Scan on profiles_username_key
+                           Index Cond: (username IS NOT NULL)
+               ->  Hash
+                     ->  Index Scan using follows_followee_recentes_idx on follows f
+                           Index Cond: (followee_id = '33333333-3333-4333-8333-333333333333'::uuid)
+                           Filter: ((status = 'accepted'::text) AND (((InitPlan 1).col1 = follower_id) OR ((InitPlan 2).col1 = followee_id) OR ((status = 'accepted'::text) AND ((SubPlan 3) OR (SubPlan 4)))))
+                           SubPlan 3
+                             ->  Result
+                           SubPlan 4
+                             ->  Result
+(21 rows)
+
+-- seguindo da Carla (primeira página)
+                                                                                                   QUERY PLAN                                                                                                   
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   InitPlan 1
+     ->  Result
+   InitPlan 2
+     ->  Result
+   ->  Sort
+         Sort Key: f.created_at DESC, p.username
+         ->  Hash Join
+               Hash Cond: (p.id = f.followee_id)
+               ->  Bitmap Heap Scan on profiles p
+                     Recheck Cond: (username IS NOT NULL)
+                     ->  Bitmap Index Scan on profiles_username_key
+                           Index Cond: (username IS NOT NULL)
+               ->  Hash
+                     ->  Index Scan using follows_pkey on follows f
+                           Index Cond: (follower_id = '33333333-3333-4333-8333-333333333333'::uuid)
+                           Filter: ((status = 'accepted'::text) AND (((InitPlan 1).col1 = follower_id) OR ((InitPlan 2).col1 = followee_id) OR ((status = 'accepted'::text) AND ((SubPlan 3) OR (SubPlan 4)))))
+                           SubPlan 3
+                             ->  Result
+                           SubPlan 4
+                             ->  Result
+(21 rows)
+
+-- página seguinte: os mais antigos que o cursor
+                                                                                                   QUERY PLAN                                                                                                   
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   InitPlan 1
+     ->  Result
+   InitPlan 2
+     ->  Result
+   ->  Sort
+         Sort Key: f.created_at DESC, p.username
+         ->  Hash Join
+               Hash Cond: (p.id = f.follower_id)
+               ->  Bitmap Heap Scan on profiles p
+                     Recheck Cond: (username IS NOT NULL)
+                     ->  Bitmap Index Scan on profiles_username_key
+                           Index Cond: (username IS NOT NULL)
+               ->  Hash
+                     ->  Index Scan using follows_followee_recentes_idx on follows f
+                           Index Cond: ((followee_id = '33333333-3333-4333-8333-333333333333'::uuid) AND (created_at < now()))
+                           Filter: ((status = 'accepted'::text) AND (((InitPlan 1).col1 = follower_id) OR ((InitPlan 2).col1 = followee_id) OR ((status = 'accepted'::text) AND ((SubPlan 3) OR (SubPlan 4)))))
+                           SubPlan 3
+                             ->  Result
+                           SubPlan 4
+                             ->  Result
+(21 rows)
+
+
+Seguidores usam follows_followee_recentes_idx (followee_id, created_at desc), e o created_at do cursor entra como condição
+do índice. Seguindo usa a PK (follower_id, followee_id): não há índice por (follower_id, created_at), e o sort é sobre os
+vínculos de uma pessoa. Com volume, um índice (follower_id, created_at desc) fica como sugestão para a plataforma (migration).
+A policy de SELECT da S03 avalia a pode_ver_rede por linha (SubPlan 3 e 4) quando quem vê não é parte do vínculo.
+
+# Depois da revisão independente: a policy follows_insert e a contar_rede da migration 20261110200043
+Como authenticated, com o JWT da Carla. Com a tabela local pequena (67 perfis), o planejador lê profiles por
+varredura sequencial; com enable_seqscan = off, pelo índice de username; com enable_bitmapscan também desligado,
+pela PK (profiles_pkey). São duas buscas de uma linha por INSERT, uma por ponta.
+
+-- seguir pela Data API: a WITH CHECK da follows_insert, com a sessão da Carla seguindo a Ana
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Insert on follows (actual rows=0 loops=1)
+   InitPlan 1
+     ->  Result (actual rows=1 loops=1)
+   ->  Result (actual rows=1 loops=1)
+   SubPlan 3
+     ->  Seq Scan on profiles p (actual rows=24 loops=1)
+           Filter: (username IS NOT NULL)
+           Rows Removed by Filter: 43
+   SubPlan 5
+     ->  Seq Scan on profiles p_1 (actual rows=24 loops=1)
+           Filter: (username IS NOT NULL)
+           Rows Removed by Filter: 43
+ Trigger for constraint follows_follower_id_fkey: calls=1
+ Trigger for constraint follows_followee_id_fkey: calls=1
+ Trigger follows_estado_inicial: calls=1
+(15 rows)
+
+-- o que a WITH CHECK consulta: profiles pela PK, uma vez para cada ponta
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Result
+   InitPlan 1
+     ->  Seq Scan on profiles p
+           Filter: ((username IS NOT NULL) AND (id = '33333333-3333-4333-8333-333333333333'::uuid))
+   InitPlan 2
+     ->  Seq Scan on profiles p_1
+           Filter: ((username IS NOT NULL) AND (id = '11111111-1111-4111-8111-111111111111'::uuid))
+(7 rows)
+
+-- contar_rede: seguidores da Ana, com o join em profiles
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Aggregate
+   ->  Hash Join
+         Hash Cond: (p.id = f.follower_id)
+         ->  Seq Scan on profiles p
+               Filter: (username IS NOT NULL)
+         ->  Hash
+               ->  Seq Scan on follows f
+                     Filter: ((followee_id = '11111111-1111-4111-8111-111111111111'::uuid) AND (status = 'accepted'::text))
+(8 rows)
+
+
+-- enable_seqscan = off: o INSERT pela Data API, sob a follows_insert
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Insert on follows (actual rows=0 loops=1)
+   InitPlan 1
+     ->  Result (actual rows=1 loops=1)
+   ->  Result (actual rows=1 loops=1)
+   SubPlan 2
+     ->  Bitmap Heap Scan on profiles p (actual rows=1 loops=1)
+           Recheck Cond: (username IS NOT NULL)
+           Filter: (id = follows.follower_id)
+           Rows Removed by Filter: 7
+           Heap Blocks: exact=1
+           ->  Bitmap Index Scan on profiles_username_key (actual rows=24 loops=1)
+                 Index Cond: (username IS NOT NULL)
+   SubPlan 4
+     ->  Bitmap Heap Scan on profiles p_1 (actual rows=1 loops=1)
+           Recheck Cond: (username IS NOT NULL)
+           Filter: (id = follows.followee_id)
+           Heap Blocks: exact=1
+           ->  Bitmap Index Scan on profiles_username_key (actual rows=24 loops=1)
+                 Index Cond: (username IS NOT NULL)
+ Trigger for constraint follows_follower_id_fkey: calls=1
+ Trigger for constraint follows_followee_id_fkey: calls=1
+ Trigger follows_estado_inicial: calls=1
+(22 rows)
+
+-- enable_seqscan = off: contar_rede (seguidores da Ana)
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Aggregate
+   ->  Hash Join
+         Hash Cond: (p.id = f.follower_id)
+         ->  Bitmap Heap Scan on profiles p
+               Recheck Cond: (username IS NOT NULL)
+               ->  Bitmap Index Scan on profiles_username_key
+                     Index Cond: (username IS NOT NULL)
+         ->  Hash
+               ->  Index Scan using follows_followee_recentes_idx on follows f
+                     Index Cond: (followee_id = '11111111-1111-4111-8111-111111111111'::uuid)
+                     Filter: (status = 'accepted'::text)
+(11 rows)
+
+
+-- a mesma busca com enable_seqscan e enable_bitmapscan desligados
+ Index Scan using profiles_pkey on profiles p
+   Index Cond: (id = '33333333-3333-4333-8333-333333333333'::uuid)
+   Filter: (username IS NOT NULL)

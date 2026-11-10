@@ -19,10 +19,14 @@ import { assinarAvatar } from "./avatar"
  * - A foto vai como URL assinada (lib/social/avatar.ts). É o único uso da chave
  *   de serviço, e só quando há foto.
  *
+ * - `sem_username` diz se quem vê ainda não escolheu um nome de usuário: sem
+ *   ele, ninguém entra na rede de ninguém (migration 20261110200043,
+ *   S05-M-listas), e a tela mostra o aviso no lugar do Seguir.
+ *
  * A resposta é montada campo a campo: o `id` serve às consultas e não sai como
  * campo (o caminho da foto assinada o contém, e ele não é segredo desde a S03).
  *
- * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir
+ * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir · @RF09.9 sem username, fora da rede
  */
 
 type ClienteDaSessao = Pick<SupabaseClient, "from" | "rpc">
@@ -40,6 +44,7 @@ export type PerfilVisto = {
   vinculo: Vinculo
   seguidores: number | null
   seguindo: number | null
+  sem_username: boolean
 }
 
 export type PerfilAlvo = {
@@ -58,6 +63,16 @@ export async function buscarPerfilPorUsername(supabase: ClienteDaSessao, usernam
   const { data, error } = await supabase.from("profiles").select(COLUNAS).eq("username", username).maybeSingle()
   if (error) throw error
   return (data as PerfilAlvo | null) ?? null
+}
+
+/**
+ * Se a pessoa já escolheu um username. Sem ele, ela não segue ninguém: a rota de
+ * seguir recusa antes, e a policy `follows_insert` recusa no banco.
+ */
+export async function temUsername(supabase: ClienteDaSessao, id: string): Promise<boolean> {
+  const { data, error } = await supabase.from("profiles").select("username").eq("id", id).maybeSingle()
+  if (error) throw error
+  return data?.username != null
 }
 
 async function vinculoCom(supabase: ClienteDaSessao, quemVe: string, alvo: string): Promise<Vinculo> {
@@ -91,10 +106,12 @@ export async function montarPerfilVisto(
   quemVe: string,
   perfil: PerfilAlvo,
 ): Promise<PerfilVisto> {
-  const [contagem, vinculo, avatar_url] = await Promise.all([
+  // No próprio perfil o username é o da página, então não precisa ler de novo.
+  const [contagem, vinculo, avatar_url, comUsername] = await Promise.all([
     contarRede(supabase, perfil.id),
     vinculoCom(supabase, quemVe, perfil.id),
     assinarAvatar(criarAdmin, perfil),
+    quemVe === perfil.id ? true : temUsername(supabase, quemVe),
   ])
 
   return {
@@ -106,5 +123,6 @@ export async function montarPerfilVisto(
     vinculo,
     seguidores: contagem.seguidores,
     seguindo: contagem.seguindo,
+    sem_username: !comUsername,
   }
 }

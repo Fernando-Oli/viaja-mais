@@ -1,0 +1,14 @@
+# S05-M-listas — advisors da Supabase e db lint (2026-11-10, CLI 2.120.0, depois da migration 20261110200043)
+
+## npx supabase db advisors --local --type all --level info, filtrado pelos objetos da migration
+Objetos: a policy follows_insert, a função e o trigger social_username_nao_volta_a_nulo / profiles_username_nao_volta_a_nulo
+e a função contar_rede. Nenhum dos 166 avisos do banco cita algum deles. Os demais são herdados da base
+(auth_rls_initplan, multiple_permissive_policies, unindexed_foreign_keys, function_search_path_mutable em funções
+antigas) e não entram na conta.
+
+## npx supabase db lint --local --schema public (plpgsql_check)
+{"results":[],"message":"db lint"}
+
+## types/database.ts
+npx supabase gen types typescript --local + prettier: idêntico ao commitado. A contar_rede mantém a assinatura, e
+funções de trigger não entram nos tipos. Nada a regenerar.

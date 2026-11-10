@@ -1,0 +1,39 @@
+
+> viaja-mais@0.1.0 test:rls
+> vitest run --config vitest.rls.config.mts
+
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+
+ Test Files  12 passed (12)
+      Tests  185 passed (185)
+   Start at  17:31:47
+   Duration  21.97s (transform 520ms, setup 172ms, import 2.69s, tests 14.46s, environment 2ms)
+
+
+# Detalhe das listas e do exigir username (--reporter=verbose)
+ ✓ tests/rls/10-listas.test.ts > listas — quem vê a rede > a Carla não vê o vínculo do Bruno (privado) com um perfil privado, e a pode_ver_rede lhe diz não 87ms
+ ✓ tests/rls/10-listas.test.ts > listas — quem vê a rede > a Ana, seguidora aceita, e o próprio Bruno veem a lista inteira dele, com a conta privada 126ms
+ ✓ tests/rls/10-listas.test.ts > listas — quem vê a rede > a lista de seguindo de um perfil público mostra o vínculo com o privado, a quem pode ver a do público 40ms
+ ✓ tests/rls/10-listas.test.ts > listas — quem vê a rede > pendentes não aparecem para terceiros, nem nas listas, nem na lista do próprio dono 54ms
+ ✓ tests/rls/10-listas.test.ts > listas — quem vê a rede > visitante sem sessão não lê os vínculos nem pergunta à pode_ver_rede 50ms
+ ✓ tests/rls/10-listas.test.ts > listas — remover seguidor > só o followee remove: a Carla apagando o vínculo da Ana com o Bruno não afeta linha nenhuma 36ms
+ ✓ tests/rls/10-listas.test.ts > listas — remover seguidor > o Bruno não mexe num vínculo alheio, nem dizendo ser o dono dele 23ms
+ ✓ tests/rls/10-listas.test.ts > listas — remover seguidor > removerSeguidor não leva uma solicitação pendente 23ms
+ ✓ tests/rls/10-listas.test.ts > listas — remover seguidor > o Bruno remove a Ana, em silêncio, e ela pode pedir de novo 56ms
+ ✓ tests/rls/10-listas.test.ts > listas — paginação contra o PostgREST de verdade > seguidores: páginas de 20, os empatados em ordem de username, depois os antigos, sem duplicata nem salto 67ms
+ ✓ tests/rls/10-listas.test.ts > listas — paginação contra o PostgREST de verdade > seguindo: páginas de 20, os empatados em ordem de username, depois os antigos, sem duplicata nem salto 68ms
+ ✓ tests/rls/10-listas.test.ts > listas — paginação contra o PostgREST de verdade > a primeira página termina no meio dos empatados, e o cursor é o username da 20ª pessoa 18ms
+ ✓ tests/rls/10-listas.test.ts > listas — paginação contra o PostgREST de verdade > o cursor de quem não está na lista volta como inválido (null), e a lib não inventa uma página 34ms
+ ✓ tests/rls/10-listas.test.ts > listas — paginação contra o PostgREST de verdade > a pendente não aparece em página nenhuma, e só os aceitos com username entram 65ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — quem entra na rede > uma conta sem username não segue ninguém pela Data API (regressão) 28ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — quem entra na rede > ninguém segue uma conta sem username (regressão) 45ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — quem entra na rede > com username escolhido, a mesma conta segue: a primeira escolha continua livre 15ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — quem já tem não volta a nulo > o seguidor aceito não zera o próprio username pela Data API (regressão) 40ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — quem já tem não volta a nulo > vale também para quem grava sem a Data API: o SQL direto também é recusado (regressão) 8ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — quem já tem não volta a nulo > trocar um username por outro continua livre 6ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — a contagem e o legado > a contar_rede não conta um seguidor sem username, como a lista não o mostra (regressão) 14ms
+ ✓ tests/rls/11-exigir-username.test.ts > exigir username — a contagem e o legado > a migration apaga os vínculos legados com uma ponta sem username, e só eles (regressão) 20ms
+ Test Files  2 passed (2)
+      Tests  22 passed (22)

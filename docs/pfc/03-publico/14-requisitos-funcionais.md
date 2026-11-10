@@ -111,7 +111,17 @@ o sistema não notifica o removido — e não impõe barreira: o removido pode v
 a seguir, se o perfil for público, ou solicitar novamente, se for privado, e é
 essa ausência de barreira que mantém a remoção indetectável; remover apenas
 desfaz o vínculo aceito, e em um perfil privado o removido perde o acesso às
-publicações. Bloquear usuário está fora do escopo deste período. A busca de
+publicações. As listas de seguidores e de seguindo (RF09.6) abrem pelos
+contadores do perfil e mostram somente vínculos aceitos, nunca solicitações
+pendentes; são visíveis ao próprio dono, a quem o segue com vínculo aceito e,
+em perfil público, a qualquer usuário autenticado. Em perfil privado, os
+contadores continuam visíveis, mas as listas não. Cada pessoa da lista aparece
+com os mesmos dados básicos da busca, sem o identificador interno nem a data do
+vínculo. Que um perfil público segue um privado permanece visível, porque o
+vínculo está na lista do perfil público. Somente quem já escolheu um nome de
+usuário segue ou é seguido, porque sem ele a pessoa não tem página nem aparece
+nas listas; quem tem nome de usuário pode trocá-lo, mas não apagá-lo, e os
+contadores contam somente as pessoas que as listas mostram. Bloquear usuário está fora do escopo deste período. A busca de
 usuários (RF09.10) exige sessão autenticada e devolve os dados básicos de cada
 perfil encontrado — nome, username e foto — e a indicação de perfil público ou
 privado, inclusive de perfis privados, que permanecem encontráveis; nunca
