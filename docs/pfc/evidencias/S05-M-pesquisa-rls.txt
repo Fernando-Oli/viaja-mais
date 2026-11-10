@@ -1,0 +1,38 @@
+
+> viaja-mais@0.1.0 test:rls
+> vitest run --config vitest.rls.config.mts
+
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+
+ Test Files  9 passed (9)
+      Tests  149 passed (149)
+   Start at  09:00:40
+   Duration  15.93s (transform 382ms, setup 137ms, import 2.10s, tests 10.05s, environment 2ms)
+
+
+# Detalhe do histórico de pesquisa (--reporter=verbose)
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > Ana registra a Carla e depois o Bruno, e lê os dois, do mais recente para o mais antigo 54ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > Bruno não lê o histórico da Ana 15ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > Bruno não grava no histórico da Ana (user_id forjado) 19ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > Bruno não apaga o histórico da Ana: o DELETE não acha linha nenhuma 22ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > nem sem filtro: um DELETE sem WHERE do Bruno só leva o histórico dele 16ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > a data não é do cliente: searched_at no corpo dá 42501, e não existe UPDATE 34ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > ninguém registra a si mesmo (constraint) 18ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > a mesma pessoa duas vezes esbarra na chave: por isso a rota apaga antes de gravar 19ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > o upsert da rota (ON CONFLICT DO NOTHING) passa pelos grants e não duplica 31ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > Ana apaga uma entrada e depois o resto, só no próprio histórico 48ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — cada um só o próprio > visitante sem sessão não lê nem grava 31ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — 15 entradas e 30 dias > o 16º registro apaga o mais antigo: ficam 15 43ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — 15 entradas e 30 dias > o que tem mais de 30 dias sai no próximo registro de outra pessoa 15ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — 15 entradas e 30 dias > o dono enxerga o próprio vencido: reabrir a mesma pessoa a traz de volta, e Limpar tudo o apaga (regressão) 24ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — 15 entradas e 30 dias > o teto de 15 vale também com dois registros ao mesmo tempo (regressão) 423ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — 15 entradas e 30 dias > a poda de um registro não toca o histórico de outra pessoa 14ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — 15 entradas e 30 dias > o job diário do pg_cron existe e apaga só o vencido, de todo mundo 21ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — some com as contas > apagar a conta leva as entradas dela e as entradas em que ela foi aberta 15ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — catálogo > a poda é SECURITY INVOKER (a RLS vale dentro dela), com search_path vazio, e ninguém da Data API a executa 4ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — catálogo > o pg_cron continua reconfigurável: um novo CREATE EXTENSION não quebra (regressão) 21ms
+ ✓ tests/rls/08-historico-pesquisa.test.ts > histórico — catálogo > só authenticated tem acesso, e o INSERT só nas duas colunas 2ms
+ Test Files  1 passed (1)
+      Tests  21 passed (21)

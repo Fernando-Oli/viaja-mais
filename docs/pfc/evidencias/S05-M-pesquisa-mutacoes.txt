@@ -1,0 +1,65 @@
+# S05-M-pesquisa — testes de mutação (2026-11-10 08:56)
+Cada proteção sabotada sozinha e desfeita em seguida. MORTA = algum teste falhou (bom); VIVA = nenhum teste percebeu.
+Alvos: lib/social/pesquisas.ts (lib), app/api/social/pesquisas/route.ts (rota), .../[username]/route.ts (rotaX) e a migration 20261021191609 (banco).
+Rodada final, depois das duas rodadas da revisão independente (B1 do campo e m2 do teste da poda incluídos).
+
+# Código (tests/api/social-pesquisas-route.test.ts)
+
+MORTA  lib    lista sem o filtro do dono
+MORTA  lib    recentes sem o filtro de 30 dias (o vencido aparece)
+MORTA  lib    validade de 300 dias
+MORTA  lib    lista na ordem errada
+MORTA  lib    lista além do teto de 15
+MORTA  lib    resposta com o id
+MORTA  lib    foto sem assinar
+MORTA  lib    conta sem username aparece
+MORTA  lib    não apaga a entrada antiga (não vai ao topo)
+MORTA  lib    erro ao apagar a antiga ignorado
+MORTA  lib    upsert sem ignoreDuplicates
+MORTA  lib    grava em nome do perfil, e não do dono
+MORTA  lib    sem o await no upsert
+MORTA  lib    o X sem o filtro do perfil (apaga tudo)
+MORTA  lib    limpar sem o filtro do dono
+MORTA  lib    erro do X ignorado
+MORTA  rota   deixa registrar o próprio perfil
+MORTA  rota   sem o 404 do username que ninguém usa
+MORTA  rota   dono lido do corpo
+MORTA  rota   corpo sem validar
+MORTA  rota   recentes sem o cabeçalho sem cache
+MORTA  rotaX  o X sem validar o username
+
+# Banco (tests/rls/08-historico-pesquisa.test.ts, migration recriada a cada sabotagem)
+
+MORTA  banco  leitura sem o filtro do dono
+MORTA  banco  leitura volta a esconder o vencido (a versão com defeito)
+MORTA  banco  gravação em nome de qualquer um
+MORTA  banco  DELETE de qualquer histórico
+MORTA  banco  data gravável pelo cliente
+MORTA  banco  UPDATE concedido
+MORTA  banco  anon lê
+MORTA  banco  sem a constraint de si mesmo
+MORTA  banco  teto de 20 em vez de 15
+MORTA  banco  poda sem o filtro do dono
+MORTA  banco  poda sem os 30 dias (o vencido fica entre as 15)
+MORTA  banco  poda sem o lock por dono
+MORTA  banco  poda como SECURITY DEFINER
+MORTA  banco  poda executável por authenticated
+MORTA  banco  sem cascata da pessoa aberta
+MORTA  banco  job semanal em vez de diário
+MORTA  banco  grants manuais no cron (a versão com defeito)
+MORTA  banco  job apaga tudo
+
+Resultado: 40 de 40 mortas.
+
+# O que a mutação achou nas rodadas anteriores (corrigido)
+- 'DELETE de qualquer histórico' sobrevivia: o teste só apagava com WHERE, e com WHERE a policy de SELECT já
+  esconde as linhas alheias. Virou o teste do DELETE sem WHERE.
+- 'poda sem os 30 dias' sobrevivia: a condição era redundante. O trigger ficou com uma condição só.
+- Os grants manuais no schema cron, copiados da documentação, quebravam o event trigger da Supabase
+  (issue_pg_cron_access) com 'dependent privileges exist'. Saíram, e a versão com defeito virou sabotagem.
+- A sabotagem 'sem cascata' deixava contas descartáveis no banco (a limpeza do teste de concorrência dependia
+  da cascata). A limpeza passou a tirar as entradas antes das contas.
+- 'poda sem o filtro do dono' morria só por acaso (achado m2 da 2ª revisão): agindo como authenticated, a RLS
+  já esconde o histórico alheio, e o filtro só pesa para quem grava sem RLS. O teste "a poda de um registro
+  não toca o histórico de outra pessoa" passou a registrar com o papel do banco e agora a mata de propósito
+  (conferido em 10/11: caem ele e, por acaso, o teste de cascata).

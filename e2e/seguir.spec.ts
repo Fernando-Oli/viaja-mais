@@ -18,8 +18,6 @@ async function entrarComoDavi(page: Page) {
   await page.waitForURL("/dashboard")
 }
 
-const noCelular = () => test.info().project.name === "mobile"
-
 async function desfazerVinculos(page: Page) {
   // Só depois do login: sem sessão o DELETE daria 401 e esconderia a falha real.
   for (const username of ["carla", "bruno"]) {
@@ -38,34 +36,26 @@ test("abre o perfil público pela busca, segue e deixa de seguir", async ({ page
   // Passo 9 do roteiro: nada sai do navegador direto para a tabela (regra 1 do CLAUDE.md).
   const direto: string[] = []
   page.on("request", (pedido) => {
-    if (pedido.url().includes("/rest/v1/follows")) direto.push(`${pedido.method()} ${pedido.url()}`)
+    if (/\/rest\/v1\/(follows|search_history)/.test(pedido.url())) direto.push(`${pedido.method()} ${pedido.url()}`)
   })
 
   await entrarComoDavi(page)
   try {
-    await page.goto("/feed")
-    if (noCelular()) await page.getByRole("button", { name: "Buscar pessoas" }).click()
-    const area = noCelular() ? page.getByRole("dialog", { name: "Pessoas" }) : page.getByRole("complementary", { name: "Pessoas" })
+    // Pela pesquisa (S05-M-pesquisa): o termo fica no endereço, e voltar do
+    // perfil devolve a pesquisa como estava.
+    await page.goto("/pesquisar")
+    const area = page.getByRole("main")
     await area.getByRole("searchbox", { name: "Buscar pessoas" }).fill("carla")
+    await area.getByRole("link", { name: /Carla Teste/ }).click()
+    await page.waitForURL("/u/carla")
+    await page.goBack()
+    await page.waitForURL("/pesquisar?q=carla")
+    await expect(area.getByRole("searchbox", { name: "Buscar pessoas" })).toHaveValue("carla")
     await area.getByRole("link", { name: /Carla Teste/ }).click()
     await page.waitForURL("/u/carla")
 
     const perfil = page.getByRole("region", { name: "Perfil de @carla" })
     await expect(perfil.getByRole("heading", { name: "Carla Teste" })).toBeVisible()
-    if (noCelular()) {
-      // No celular a gaveta fecha ao escolher a pessoa, e reabre com o termo e os
-      // resultados (regressão: a busca desmontava com a gaveta e perdia tudo).
-      await expect(page.getByRole("dialog", { name: "Pessoas" })).toHaveCount(0)
-      await page.getByRole("button", { name: "Buscar pessoas" }).click()
-      await expect(area.getByRole("searchbox", { name: "Buscar pessoas" })).toHaveValue("carla")
-      await expect(area.getByRole("link", { name: /Carla Teste/ })).toBeVisible()
-      await page.keyboard.press("Escape")
-      await expect(page.getByRole("dialog", { name: "Pessoas" })).toHaveCount(0)
-    } else {
-      // No desktop o painel continua lá, com o termo e o resultado.
-      await expect(area.getByRole("searchbox", { name: "Buscar pessoas" })).toHaveValue("carla")
-      await expect(area.getByRole("link", { name: /Carla Teste/ })).toBeVisible()
-    }
     await expect(page.getByRole("region", { name: "Viagens publicadas" }).getByText("Nenhuma viagem publicada ainda.")).toBeVisible()
 
     const antes = await seguidores(perfil)
@@ -87,9 +77,11 @@ test("abre o perfil público pela busca, segue e deixa de seguir", async ({ page
     await expect(perfil.getByRole("button", { name: "Seguir" })).toBeFocused()
     await expect(perfil.getByRole("status")).toHaveText("Você deixou de seguir @carla.")
 
-    expect(direto, "nenhuma requisição do navegador a /rest/v1/follows").toEqual([])
+    expect(direto, "nenhuma requisição do navegador a /rest/v1/follows nem a /rest/v1/search_history").toEqual([])
   } finally {
     await desfazerVinculos(page)
+    // Abrir a Carla pela pesquisa a pôs no histórico do Davi.
+    expect((await page.request.delete("/api/social/pesquisas")).ok()).toBeTruthy()
   }
 })
 

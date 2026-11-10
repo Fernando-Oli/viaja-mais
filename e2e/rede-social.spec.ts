@@ -7,9 +7,9 @@ import { test, expect, type Locator, type Page } from "@playwright/test"
  * e este spec só lê. Ana, Bruno e Carla continuam como o seed os deixa
  * (supabase/seed.sql): Bruno é o perfil privado.
  *
- * No desktop a busca fica no painel à esquerda do feed; no celular, numa gaveta
- * aberta pelo botão "Buscar pessoas". `abrirBusca` devolve a área certa para cada
- * projeto do Playwright.
+ * Desde a S05-M-pesquisa a busca mora na tela /pesquisar, aberta pelo menu da
+ * aba (no celular, a barra do rodapé). O histórico de pesquisa tem o próprio spec
+ * (e2e/pesquisa.spec.ts); aqui ficam as regras da busca em si.
  */
 
 async function entrarComoDavi(page: Page) {
@@ -20,14 +20,9 @@ async function entrarComoDavi(page: Page) {
   await page.waitForURL("/dashboard")
 }
 
-const noCelular = () => test.info().project.name === "mobile"
-
 async function abrirBusca(page: Page): Promise<Locator> {
-  if (noCelular()) {
-    await page.getByRole("button", { name: "Buscar pessoas" }).click()
-    return page.getByRole("dialog", { name: "Pessoas" })
-  }
-  return page.getByRole("complementary", { name: "Pessoas" })
+  await page.goto("/pesquisar")
+  return page.getByRole("main")
 }
 
 async function buscar(area: Locator, termo: string) {
@@ -45,11 +40,19 @@ test("a aba Rede social fica logo abaixo de Reservas e abre o feed", async ({ pa
   await page.waitForURL("/feed")
   await expect(page.getByRole("heading", { name: "Rede social" })).toBeVisible()
   await expect(page.getByRole("region", { name: "Feed" }).getByText("Seu feed ainda está vazio")).toBeVisible()
+
+  // O menu da aba (no celular, os ícones do rodapé) troca entre o Início e a pesquisa.
+  const menu = page.getByRole("navigation", { name: "Rede social" })
+  await expect(menu.getByRole("link", { name: "Início" })).toHaveAttribute("aria-current", "page")
+  await menu.getByRole("link", { name: "Pesquisar" }).click()
+  await page.waitForURL("/pesquisar")
+  await expect(page.getByRole("heading", { name: "Pesquisar" })).toBeVisible()
+  await expect(menu.getByRole("link", { name: "Pesquisar" })).toHaveAttribute("aria-current", "page")
+  await expect(menu.getByRole("link", { name: "Início" })).not.toHaveAttribute("aria-current", "page")
 })
 
 test("busca por nome e por @usuário, marca o perfil privado e não mostra quem busca", async ({ page }) => {
   await entrarComoDavi(page)
-  await page.goto("/feed")
   const area = await abrirBusca(page)
   const encontradas = area.getByRole("list", { name: "Pessoas encontradas" })
 
@@ -80,12 +83,11 @@ test("busca por nome e por @usuário, marca o perfil privado e não mostra quem 
   await expect(encontradas.getByRole("listitem").first()).toContainText("Ana Teste")
 
   const projeto = test.info().project.name
-  await page.screenshot({ path: `docs/pfc/evidencias/S05-M-busca-pessoas-${projeto}.png`, fullPage: true })
+  await page.screenshot({ path: `docs/pfc/evidencias/S05-M-pesquisa-resultados-${projeto}.png`, fullPage: true })
 })
 
 test("o _ é procurado como _, e os curingas do LIKE são recusados", async ({ page }) => {
   await entrarComoDavi(page)
-  await page.goto("/feed")
   const area = await abrirBusca(page)
 
   // Sem o escape, "n_" acharia Ana e Bruno ("na", "no"). Contra o banco de verdade.
@@ -101,32 +103,8 @@ test("o _ é procurado como _, e os curingas do LIKE são recusados", async ({ p
   expect(await (await page.request.get("/api/social/perfis?busca=n_")).json()).toEqual({ pessoas: [] })
 })
 
-test("o painel recolhe e expande no desktop, sem perder o foco nem o que foi buscado", async ({ page }) => {
-  test.skip(noCelular(), "no celular a busca abre numa gaveta, sem recolher")
-  await entrarComoDavi(page)
-  await page.goto("/feed")
-
-  const area = page.getByRole("complementary", { name: "Pessoas" })
-  const campo = area.getByRole("searchbox", { name: "Buscar pessoas" })
-  await buscar(area, "carla")
-  await expect(area.getByText("Carla Teste")).toBeVisible()
-
-  // Pelo teclado: o foco continua no botão, que troca de nome.
-  await area.getByRole("button", { name: "Recolher a busca de pessoas" }).focus()
-  await page.keyboard.press("Enter")
-  await expect(campo).toBeHidden()
-  await expect(area.getByRole("button", { name: "Expandir a busca de pessoas" })).toBeFocused()
-  await expect(page.getByRole("region", { name: "Feed" })).toBeVisible()
-
-  await page.keyboard.press("Enter")
-  await expect(area.getByRole("button", { name: "Recolher a busca de pessoas" })).toBeFocused()
-  await expect(campo).toHaveValue("carla")
-  await expect(area.getByText("Carla Teste")).toBeVisible()
-})
-
 test("uma resposta atrasada não aparece no lugar da busca mais nova", async ({ page }) => {
   await entrarComoDavi(page)
-  await page.goto("/feed")
   const area = await abrirBusca(page)
 
   // A busca por "bru" demora 2 s; antes disso a pessoa já trocou para "carla".
@@ -150,7 +128,6 @@ test("uma resposta atrasada não aparece no lugar da busca mais nova", async ({ 
 
 test("sessão expirada leva ao login, em vez de erro sem saída", async ({ page }) => {
   await entrarComoDavi(page)
-  await page.goto("/feed")
   const area = await abrirBusca(page)
 
   // A rota responde 401 como se a sessão tivesse expirado. Apagar os cookies não
@@ -170,7 +147,6 @@ test("sessão expirada leva ao login, em vez de erro sem saída", async ({ page 
 
 test("mostra o erro da busca e deixa tentar de novo", async ({ page }) => {
   await entrarComoDavi(page)
-  await page.goto("/feed")
   const area = await abrirBusca(page)
 
   const daBusca = (url: URL) => url.pathname === "/api/social/perfis"
@@ -188,6 +164,11 @@ test("mostra o erro da busca e deixa tentar de novo", async ({ page }) => {
 test("sem sessão, a aba manda para o login e a busca responde 401", async ({ page }) => {
   await page.goto("/feed")
   await page.waitForURL("/auth/login")
+  // Pelo caminho: o proxy leva a query da página original para o login
+  // (/auth/login?q=carla), junto da pendência da plataforma de o login voltar à
+  // URL de origem.
+  await page.goto("/pesquisar?q=carla")
+  await page.waitForURL((url) => url.pathname === "/auth/login")
 
   expect((await page.request.get("/api/social/perfis?busca=carla")).status()).toBe(401)
 })

@@ -1,10 +1,13 @@
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Newspaper } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Newspaper, Search } from "lucide-react";
 
 /**
- * O centro da aba Rede social. Por enquanto, o estado vazio: as viagens
+ * O Início da aba Rede social. Por enquanto, o estado vazio: as viagens
  * publicadas chegam com a S06 (publicar viagem) e o feed com a S07, com as
- * sugestões intercaladas (RF09.8 e RF09.11).
+ * sugestões intercaladas (RF09.8 e RF09.11). Para achar quem seguir, a
+ * pesquisa (/pesquisar, S05-M-pesquisa).
  *
  * @RF09.10 buscar pessoas
  */
@@ -20,9 +23,15 @@ export default function FeedPage() {
           <Newspaper className="h-10 w-10 text-gray-400" aria-hidden />
           <p className="text-lg font-semibold text-viaja-navy">Seu feed ainda está vazio</p>
           <p className="max-w-md text-sm text-gray-600">
-            Quando as pessoas que você segue publicarem viagens, elas aparecem aqui. Use a busca de pessoas para
-            encontrar quem seguir.
+            Quando as pessoas que você segue publicarem viagens, elas aparecem aqui. Pesquise pessoas para encontrar
+            quem seguir.
           </p>
+          <Button asChild variant="outline">
+            <Link href="/pesquisar">
+              <Search className="mr-2 h-4 w-4" aria-hidden />
+              Pesquisar pessoas
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -396,6 +396,40 @@ export type Database = {
         }
         Relationships: []
       }
+      search_history: {
+        Row: {
+          profile_id: string
+          searched_at: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          profile_id: string
+          searched_at?: string
+          user_id: string
+        }
+        Update: {
+          profile_id?: string
+          searched_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_invitations: {
         Row: {
           created_at: string

@@ -96,6 +96,7 @@ plataforma, a tabela `profiles` recebe as colunas `username` (única), `bio` e
 | RF09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | Média |
 | RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | Alta |
 | RF09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | Média |
+| RF09.12 | O usuário deve poder ver, reabrir e apagar o histórico dos perfis que abriu pela pesquisa | Não iniciado | Média |
 
 **Detalhamento:** seguir um perfil público cria o vínculo já no estado aceito;
 seguir um perfil privado cria um vínculo pendente, que só se torna aceito após a
@@ -116,12 +117,17 @@ perfil encontrado — nome, username e foto — e a indicação de perfil públi
 privado, inclusive de perfis privados, que permanecem encontráveis; nunca
 devolve o e-mail e não traz o identificador interno como campo da resposta,
 embora esse identificador componha o endereço temporário da foto de perfil; e não
-inclui o próprio usuário que realiza a busca. Nas sugestões do feed (RF09.11),
+inclui o próprio usuário que realiza a busca. O histórico de pesquisa (RF09.12)
+guarda os perfis que o usuário abriu a partir da pesquisa, do mais recente para
+o mais antigo, com no máximo quinze entradas, e apaga as entradas com mais de
+trinta dias; é visível somente ao próprio usuário, acompanha a conta em qualquer
+dispositivo, não notifica a pessoa pesquisada e pode ser apagado entrada a
+entrada ou por inteiro. Nas sugestões do feed (RF09.11),
 somente publicações de perfis públicos podem ser sugeridas; uma publicação de
 perfil privado nunca é sugerida a quem não é seguidor aprovado. Como decisão de
 dado a cargo da plataforma,
-criam-se a tabela `follows`, com estado pendente ou aceito, e a tabela
-`trip_posts`.
+criam-se a tabela `follows`, com estado pendente ou aceito, a tabela
+`trip_posts` e a tabela `search_history`, do histórico de pesquisa.
 
 ## RF10 — Interação Social
 

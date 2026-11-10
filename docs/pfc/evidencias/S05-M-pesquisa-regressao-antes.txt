@@ -1,0 +1,48 @@
+# S05-M-pesquisa — testes de regressão, ANTES da correção (2026-10-21 20:18)
+Achados da revisão independente que viraram teste e falham contra a migration sem a correção:
+- I1: o dono não apagava o próprio vencido (a policy de SELECT o escondia, e DELETE com WHERE passa por ela);
+- M1: o teto de 15 estourava com dois registros ao mesmo tempo (sem lock por dono).
+
+npx vitest run --config vitest.rls.config.mts tests/rls/08-historico-pesquisa.test.ts
+
+     × o dono enxerga o próprio vencido: reabrir a mesma pessoa a traz de volta, e Limpar tudo o apaga (regressão) 30ms
+     × o teto de 15 vale também com dois registros ao mesmo tempo (regressão) 442ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: a Carla voltou ao histórico, com a data de agora: expected [] to deeply equal [ { recente: true } ]
+- Expected
++ Received
+AssertionError: expected 16 to be 15 // Object.is equality
+- Expected
++ Received
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)
+
+# Tela: M2 (termo do menu), M3 (foco e anúncio) e M4 (clique do meio), ANTES da correção (2026-10-21)
+npx playwright test e2e/pesquisa.spec.ts, contra o build sem a correção.
+
+    Error: expect(locator).toBeFocused() failed            (M3, chromium e mobile: depois do X, o foco no body)
+    Expected: focused
+    Received: inactive
+    Error: expect(locator).toHaveValue(expected) failed    (M2, chromium e mobile: Pesquisar no menu)
+    Expected: ""
+    Received: "carla"
+    > 134 |   await expect(campo).toHaveValue("")
+    TimeoutError: page.waitForResponse: Timeout 5000ms exceeded while waiting for event "response"   (M4, chromium)
+    > 148 |     const registro = page.waitForResponse(
+
+  5 failed
+  1 skipped (o clique do meio não existe no celular)
+  6 passed (1.3m)
+
+# Segunda rodada da revisão (B1, bloqueante): o campo voltava ao valor anterior a cada tecla, ANTES da correção (2026-10-21)
+A primeira correção do M2 sincronizava o campo com o ?q= a cada tecla; o Next atualiza o useSearchParams numa
+transição, e o campo era reescrito com o valor antigo antes do novo. O cursor no meio pulava para o fim, e a
+composição do teclado (Gboard, tecla morta) se embaralhava. Os outros testes usavam fill(), um evento só.
+
+npx playwright test e2e/pesquisa.spec.ts -g "tecla a tecla", contra o build sem a correção:
+
+    Error: expect(received).toBe(expected) // Object.is equality       (chromium e mobile)
+    Expected: 2
+    Received: 6
+    > 156 |   expect(await campo.evaluate((c: HTMLInputElement) => c.selectionStart)).toBe(2)
+  2 failed
