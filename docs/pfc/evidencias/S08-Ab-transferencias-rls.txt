@@ -1,0 +1,136 @@
+# S08-Ab-transferencias â€” RLS contra o Supabase local, banco recriado do zero com as 7 migrations (2026-11-11 16:59)
+npx vitest run --config vitest.rls.config.mts --reporter=verbose
+
+ RUN  v4.1.11 C:/Users/AbnerCosmo/Desktop/viaja-mais
+
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > Bruno vÃª os dados bÃ¡sicos do perfil pÃºblico da Ana 16ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > Ana vÃª os dados bÃ¡sicos mesmo de um perfil privado (Bruno) 16ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > visitante sem sessÃ£o nÃ£o tem acesso nenhum a profiles 15ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > Bruno nÃ£o edita o perfil da Ana 10ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > Bruno nÃ£o cria um perfil em nome da Ana 5ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > cada um continua editando o prÃ³prio perfil (RF02.6) 12ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > ninguÃ©m reescreve o created_at do prÃ³prio perfil (grant de coluna) 4ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > o updated_at do perfil Ã© do servidor, mesmo que o cliente mande outro 5ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > username Ã© Ãºnico (RF02.5) 7ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > busca por username ignora maiÃºsculas: /u/Ana encontra ana (citext) 4ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > username fora do formato Ã© recusado (RF02.5) 31ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > username reservado Ã© recusado pelo banco, mesmo sem passar pela rota (RF02.5) 28ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > bio acima de 280 caracteres Ã© recusada (RF02.6) 6ms
+ âœ“ tests/rls/04-social.test.ts > perfil â€” dados bÃ¡sicos visÃ­veis, escrita restrita > nome acima de 120 caracteres Ã© recusado 7ms
+ âœ“ tests/rls/04-social.test.ts > estrutura de profiles > as colunas de profiles sÃ£o exatamente as conhecidas 9ms
+ âœ“ tests/rls/04-social.test.ts > estrutura de profiles > contas novas nascem pÃºblicas (RF02.7) 3ms
+ âœ“ tests/rls/04-social.test.ts > estrutura de profiles > contas que jÃ¡ existiam antes do social ficaram privadas (RF02.7) 1ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil pÃºblico (efeito imediato) > Bruno segue a Ana (pÃºblica) e o vÃ­nculo nasce aceito (RF09.1) 13ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil pÃºblico (efeito imediato) > seguir de novo levanta erro de chave (a idempotÃªncia Ã© do route handler) 4ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > o cliente nÃ£o escolhe status nem datas ao seguir (grant de coluna) 16ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > Ana solicita seguir o Bruno (privado) e o vÃ­nculo nasce pendente (RF09.2) 11ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > o solicitante (Ana) nÃ£o se auto-aprova por UPDATE 7ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > o solicitante (Ana) nÃ£o se auto-aprova por upsert 10ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > uma terceira (Carla) nÃ£o enxerga a solicitaÃ§Ã£o pendente (RF09.3) 4ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > uma terceira (Carla) nÃ£o aprova nem apaga a solicitaÃ§Ã£o alheia 22ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > o dono (Bruno) vÃª a solicitaÃ§Ã£o e a aprova, e o updated_at avanÃ§a (RF09.3, RF09.4) 17ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > uma terceira (Carla) nÃ£o desfaz um vÃ­nculo aceito alheio, que ela enxerga 17ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > o dono nÃ£o rebaixa um vÃ­nculo aceito para pendente 13ms
+ âœ“ tests/rls/04-social.test.ts > seguir perfil privado (solicitaÃ§Ã£o pendente) > o dono nÃ£o reponta follower_id via UPDATE (grant de coluna) 8ms
+ âœ“ tests/rls/04-social.test.ts > estado inicial imposto pelo trigger > mesmo escrevendo direto no banco, status e datas sÃ£o do servidor 5ms
+ âœ“ tests/rls/04-social.test.ts > rede de perfil privado > quem nÃ£o segue nenhum dos dois nÃ£o vÃª o vÃ­nculo entre perfis privados 5ms
+ âœ“ tests/rls/04-social.test.ts > rede de perfil privado > as partes continuam vendo o prÃ³prio vÃ­nculo 7ms
+ âœ“ tests/rls/04-social.test.ts > rede de perfil privado > seguidora aceita do Bruno passa a ver a rede dele (RF09.6) 16ms
+ âœ“ tests/rls/04-social.test.ts > recusar e remover seguidor â€” o dono desfaz o vÃ­nculo > Bruno recusa a solicitaÃ§Ã£o da Carla, que some para os dois (RF09.4) 14ms
+ âœ“ tests/rls/04-social.test.ts > recusar e remover seguidor â€” o dono desfaz o vÃ­nculo > Bruno remove a Carla jÃ¡ aceita, e ela pode solicitar de novo (RF09.9) 27ms
+ âœ“ tests/rls/04-social.test.ts > forjar vÃ­nculo > Bruno nÃ£o cria um follow com o follower_id da Ana 9ms
+ âœ“ tests/rls/04-social.test.ts > forjar vÃ­nculo > ninguÃ©m segue a si mesmo 4ms
+ âœ“ tests/rls/04-social.test.ts > forjar vÃ­nculo > visitante sem sessÃ£o nÃ£o segue ninguÃ©m nem lÃª vÃ­nculos 9ms
+ âœ“ tests/rls/04-social.test.ts > listas pÃºblicas e nÃ£o sobre-correÃ§Ã£o > um vÃ­nculo aceito com perfil pÃºblico Ã© visÃ­vel para quem nÃ£o Ã© parte (RF09.6) 10ms
+ âœ“ tests/rls/04-social.test.ts > listas pÃºblicas e nÃ£o sobre-correÃ§Ã£o > deixar de seguir Ã© DELETE da prÃ³pria linha e continua permitido (RF09.5) 5ms
+ âœ“ tests/rls/04-social.test.ts > exclusÃ£o de conta > apagar a conta apaga o perfil e os vÃ­nculos nos dois papÃ©is (cascade, base do RF02.4) 11ms
+ âœ“ tests/rls/04-social.test.ts > revisÃ£o da S03 â€” pode_ver_rede e o teto de full_name > visitante sem sessÃ£o nÃ£o chama pode_ver_rede por RPC (@RNF02.4) 11ms
+ âœ“ tests/rls/04-social.test.ts > revisÃ£o da S03 â€” pode_ver_rede e o teto de full_name > autenticado continua chamando pode_ver_rede â€” as policies de follows dependem dela (@RNF02.4) 6ms
+ âœ“ tests/rls/04-social.test.ts > revisÃ£o da S03 â€” pode_ver_rede e o teto de full_name > o teto de 120 caracteres em full_name entra vÃ¡lido, nÃ£o NOT VALID (@RF02.2) 1ms
+ âœ“ tests/rls/05-avatares.test.ts > bucket avatars â€” configuraÃ§Ã£o > Ã© pÃºblico para leitura, com 2 MB e sÃ³ JPEG, PNG e WebP 4ms
+ âœ“ tests/rls/05-avatares.test.ts > bucket avatars â€” nenhum usuÃ¡rio escreve, lista ou apaga pela API > o arquivo de teste existe de verdade: linha no banco e bytes no Storage 15ms
+ âœ“ tests/rls/05-avatares.test.ts > bucket avatars â€” nenhum usuÃ¡rio escreve, lista ou apaga pela API > Ana nÃ£o envia nem na prÃ³pria pasta (sÃ³ a rota envia) 11ms
+ âœ“ tests/rls/05-avatares.test.ts > bucket avatars â€” nenhum usuÃ¡rio escreve, lista ou apaga pela API > Ana nÃ£o envia na pasta do Bruno, e o visitante nÃ£o envia em lugar nenhum 18ms
+ âœ“ tests/rls/05-avatares.test.ts > bucket avatars â€” nenhum usuÃ¡rio escreve, lista ou apaga pela API > ninguÃ©m lista o bucket: nem a prÃ³pria pasta, nem a dos outros, nem a raiz 23ms
+ âœ“ tests/rls/05-avatares.test.ts > bucket avatars â€” nenhum usuÃ¡rio escreve, lista ou apaga pela API > ninguÃ©m apaga pela API: nem a Ana o prÃ³prio arquivo, nem o Bruno o dela 21ms
+ âœ“ tests/rls/05-avatares.test.ts > bucket avatars â€” nenhum usuÃ¡rio escreve, lista ou apaga pela API > ninguÃ©m sobrescreve, move nem copia â€” nem a Ana dentro da prÃ³pria pasta 44ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa URL externa, mesmo pelo PostgREST direto 16ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa URL externa imitando o caminho do bucket, mesmo pelo PostgREST direto 4ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa arquivo na pasta de outra pessoa, mesmo pelo PostgREST direto 5ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa arquivo fora de pasta, mesmo pelo PostgREST direto 4ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa subpasta, mesmo pelo PostgREST direto 5ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa nome que nÃ£o Ã© uuid, mesmo pelo PostgREST direto 4ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa extensÃ£o que nÃ£o Ã© imagem, mesmo pelo PostgREST direto 4ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa extensÃ£o disfarÃ§ada no fim, mesmo pelo PostgREST direto 4ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa subida de pasta depois do nome, mesmo pelo PostgREST direto 4ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa quebra de linha no fim, mesmo pelo PostgREST direto 3ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > recusa maiÃºsculas, mesmo pelo PostgREST direto 4ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > aceita um arquivo no formato da rota, na prÃ³pria pasta, e aceita nulo 13ms
+ âœ“ tests/rls/05-avatares.test.ts > profiles.avatar_url â€” sÃ³ arquivo no formato da rota, na prÃ³pria pasta > vale tambÃ©m no INSERT do perfil 4ms
+ âœ“ tests/rls/01-isolamento.test.ts > viagem > Bruno nÃ£o lÃª a viagem da Ana 18ms
+ âœ“ tests/rls/01-isolamento.test.ts > viagem > Bruno nÃ£o altera a viagem da Ana 11ms
+ âœ“ tests/rls/01-isolamento.test.ts > viagem > Bruno nÃ£o apaga a viagem da Ana 8ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o lÃª expenses da viagem da Ana 6ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o lÃª bookings da viagem da Ana 7ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o lÃª itinerary_items da viagem da Ana 8ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o lÃª places da viagem da Ana 5ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o cria despesa na viagem da Ana 7ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o cria reserva na viagem da Ana 7ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o cria item de itinerÃ¡rio na viagem da Ana 8ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o cria lugar na viagem da Ana 7ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o altera a despesa da Ana 13ms
+ âœ“ tests/rls/01-isolamento.test.ts > dados dentro da viagem da Ana > Bruno nÃ£o apaga dados da Ana 34ms
+ âœ“ tests/rls/01-isolamento.test.ts > participaÃ§Ã£o na viagem > Bruno nÃ£o lÃª a lista de membros da viagem da Ana 6ms
+ âœ“ tests/rls/01-isolamento.test.ts > participaÃ§Ã£o na viagem > Bruno nÃ£o convida ninguÃ©m para a viagem da Ana 5ms
+ âœ“ tests/rls/01-isolamento.test.ts > participaÃ§Ã£o na viagem > Bruno nÃ£o se auto-adiciona como membro da viagem da Ana 5ms
+ âœ“ tests/rls/01-isolamento.test.ts > membro legÃ­timo > Bruno passa a enxergar a viagem depois de adicionado 5ms
+ âœ“ tests/rls/01-isolamento.test.ts > membro legÃ­timo > Bruno nÃ£o se promove a dono da viagem da Ana 9ms
+ âœ“ tests/rls/01-isolamento.test.ts > membro legÃ­timo > Bruno continua podendo sair da viagem por conta prÃ³pria 8ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > entrar numa viagem Ã© aceitar um convite > a dona nÃ£o pÃµe o Bruno na viagem sem convite, e a viagem nÃ£o aparece para ele 47ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > entrar numa viagem Ã© aceitar um convite > a dona tambÃ©m nÃ£o o pÃµe quando hÃ¡ convite pendente: quem aceita Ã© ele 16ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > entrar numa viagem Ã© aceitar um convite > com convite recusado, o Bruno nÃ£o entra 21ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > entrar numa viagem Ã© aceitar um convite > com convite pendente, o Bruno aceita e passa a ver a viagem 24ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > entrar numa viagem Ã© aceitar um convite > criar viagem continua pondo a dona como membro 10ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > as funÃ§Ãµes de participaÃ§Ã£o sÃ³ respondem sobre quem pergunta > visitante sem login nÃ£o descobre que a Ana participa da viagem 14ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > as funÃ§Ãµes de participaÃ§Ã£o sÃ³ respondem sobre quem pergunta > o Bruno logado nÃ£o descobre que a Ana Ã© dona da viagem 13ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > as funÃ§Ãµes de participaÃ§Ã£o sÃ³ respondem sobre quem pergunta > sobre si mesma, a Ana recebe a resposta certa 3ms
+ âœ“ tests/rls/06-plataforma-convite.test.ts > cadastro com nome longo > cria a conta e guarda os 120 primeiros caracteres do nome 103ms
+ âœ“ tests/rls/02-rateio.test.ts > isolamento das partes do rateio > Bruno nÃ£o lÃª as partes de uma viagem da qual nÃ£o participa 18ms
+ âœ“ tests/rls/02-rateio.test.ts > isolamento das partes do rateio > Bruno nÃ£o cria parte numa despesa de viagem da qual nÃ£o participa 6ms
+ âœ“ tests/rls/02-rateio.test.ts > isolamento das partes do rateio > Bruno nÃ£o apaga parte de viagem da qual nÃ£o participa 14ms
+ âœ“ tests/rls/02-rateio.test.ts > isolamento das partes do rateio > membro convidado enxerga o rateio inteiro, nÃ£o sÃ³ a prÃ³pria parte 16ms
+ âœ“ tests/rls/02-rateio.test.ts > isolamento das partes do rateio > membro marca a prÃ³pria parte como quitada 14ms
+ âœ“ tests/rls/02-rateio.test.ts > a soma das partes fecha com o valor da despesa > rejeita rateio que nÃ£o soma o total 20ms
+ âœ“ tests/rls/02-rateio.test.ts > a soma das partes fecha com o valor da despesa > aceita rateio que soma o total, inserido em partes 15ms
+ âœ“ tests/rls/02-rateio.test.ts > a soma das partes fecha com o valor da despesa > despesa sem rateio nenhum continua vÃ¡lida 5ms
+ âœ“ tests/rls/02-rateio.test.ts > a soma das partes fecha com o valor da despesa > a mesma pessoa nÃ£o entra duas vezes no mesmo rateio 13ms
+ âœ“ tests/rls/03-escopo-grupo.test.ts > o convidado enxerga o que Ã© do grupo > vÃª a viagem compartilhada na lista, e nÃ£o a particular 52ms
+ âœ“ tests/rls/03-escopo-grupo.test.ts > o convidado enxerga o que Ã© do grupo > vÃª a despesa que a Ana lanÃ§ou 79ms
+ âœ“ tests/rls/03-escopo-grupo.test.ts > o convidado enxerga o que Ã© do grupo > vÃª a reserva que a Ana cadastrou 64ms
+ âœ“ tests/rls/03-escopo-grupo.test.ts > o convidado enxerga o que Ã© do grupo > vÃª o lugar que a Ana salvou 64ms
+ âœ“ tests/rls/03-escopo-grupo.test.ts > o escopo nÃ£o vira porta dos fundos > a mesma consulta nÃ£o devolve dado de viagem alheia 9ms
+ âœ“ tests/rls/03-escopo-grupo.test.ts > o escopo nÃ£o vira porta dos fundos > nem sem o filtro de participaÃ§Ã£o, porque a RLS Ã© a segunda linha 7ms
+ âœ“ tests/rls/07-settlements.test.ts > leitura dos pagamentos > membro lÃª os pagamentos da prÃ³pria viagem, inclusive os de outra pessoa 6ms
+ âœ“ tests/rls/07-settlements.test.ts > leitura dos pagamentos > quem nÃ£o participa da viagem nÃ£o lÃª nenhum pagamento dela 8ms
+ âœ“ tests/rls/07-settlements.test.ts > leitura dos pagamentos > visitante anÃ´nimo nÃ£o lÃª pagamento nenhum 4ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > o pagador registra o prÃ³prio pagamento numa viagem da qual participa 7ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > ninguÃ©m registra pagamento em nome de outra pessoa 3ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > quem nÃ£o participa da viagem nÃ£o registra pagamento nela, nem em nome prÃ³prio 10ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > o cliente nÃ£o escolhe id nem data do registro 3ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > a mesma chave de registro do mesmo pagador nÃ£o grava duas vezes 11ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > o banco recusa valor zero 3ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > o banco recusa valor negativo 5ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > o banco recusa pagador igual ao recebedor 4ms
+ âœ“ tests/rls/07-settlements.test.ts > registro de pagamento > o banco recusa moeda fora do formato 5ms
+ âœ“ tests/rls/07-settlements.test.ts > pagamento registrado Ã© imutÃ¡vel > nem quem pagou altera o valor 8ms
+ âœ“ tests/rls/07-settlements.test.ts > pagamento registrado Ã© imutÃ¡vel > outro membro tambÃ©m nÃ£o altera 3ms
+ âœ“ tests/rls/07-settlements.test.ts > pagamento registrado Ã© imutÃ¡vel > ninguÃ©m apaga, nem quem pagou 11ms
+ âœ“ tests/rls/00-estrutura.test.ts > migrations versionadas > existe pelo menos uma migration no repositÃ³rio 2ms
+ âœ“ tests/rls/00-estrutura.test.ts > migrations versionadas > os nomes seguem o padrÃ£o <timestamp>_<dominio>_<descricao>.sql 1ms
+ âœ“ tests/rls/00-estrutura.test.ts > banco aplicado > toda tabela do schema public tem RLS habilitada 4ms
+ âœ“ tests/rls/00-estrutura.test.ts > banco aplicado > toda tabela com RLS tem ao menos uma policy 2ms
+
+ Test Files  8 passed (8)
+      Tests  126 passed (126)
+   Start at  17:00:01
+   Duration  5.56s (transform 164ms, setup 81ms, import 971ms, tests 2.67s, environment 1ms)

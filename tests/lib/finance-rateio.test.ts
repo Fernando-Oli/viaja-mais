@@ -24,6 +24,13 @@ import {
 
 const soma = (partes: Parte[]) => partes.reduce((a, p) => a + p.centavos, 0)
 const centavos = (partes: Parte[]) => partes.map((p) => p.centavos)
+const porUsuario = (partes: Parte[]) => Object.fromEntries(partes.map((p) => [p.userId, p.centavos]))
+
+/** Todas as ordens possíveis da lista. */
+function permutacoes<T>(lista: T[]): T[][] {
+  if (lista.length <= 1) return [lista]
+  return lista.flatMap((item, i) => permutacoes([...lista.slice(0, i), ...lista.slice(i + 1)]).map((resto) => [item, ...resto]))
+}
 
 describe("reaisParaCentavos", () => {
   it.each([
@@ -114,6 +121,47 @@ describe("dividirIgual", () => {
     expect(() => dividirIgual(100, [])).toThrow("Selecione ao menos um participante")
     expect(() => dividirIgual(100, ["a", "a"])).toThrow("Participante repetido")
   })
+
+  // @RNF08.1 regressão da Issue #36: o centavo seguia a ordem de entrada, e a
+  // criação e a edição da mesma despesa o davam a pessoas diferentes.
+  describe("centavo extra determinístico (Issue #36)", () => {
+    it("participantes fora de ordem: o centavo vai para o menor user_id, e a lista mantém a ordem de entrada", () => {
+      const partes = dividirIgual(1000, ["c", "a", "b"])
+      expect(porUsuario(partes)).toEqual({ a: 334, b: 333, c: 333 })
+      expect(partes.map((p) => p.userId)).toEqual(["c", "a", "b"])
+    })
+
+    it("toda permutação da lista dá o mesmo valor para cada participante", () => {
+      for (const total of [1000, 1001, 2, 9_999_999_999]) {
+        const esperado = porUsuario(dividirIgual(total, ["a", "b", "c", "d"]))
+        for (const ordem of permutacoes(["a", "b", "c", "d"])) {
+          expect(porUsuario(dividirIgual(total, ordem))).toEqual(esperado)
+        }
+      }
+    })
+
+    it("com mais de um centavo de resto, os extras seguem a ordem crescente de user_id", () => {
+      // 1002 / 4 = 250 com resto 2: os dois menores ids levam 251.
+      expect(porUsuario(dividirIgual(1002, ["d", "b", "c", "a"]))).toEqual({ a: 251, b: 251, c: 250, d: 250 })
+    })
+
+    it("a soma continua exatamente igual ao total em qualquer ordem", () => {
+      for (const ordem of permutacoes(["u3", "u1", "u2", "u0"])) {
+        for (const total of [1, 7, 999, 1001, 33333]) {
+          expect(soma(dividirIgual(total, ordem))).toBe(total)
+        }
+      }
+    })
+
+    it("compara user_id como string simples, sem depender de locale", () => {
+      // Com `localeCompare`, "B" e "a" sairiam em ordem alfabética; por code
+      // unit, maiúscula vem antes. UUIDs reais são minúsculos e não mudam nada.
+      expect(porUsuario(dividirIgual(1001, ["a", "B"]))).toEqual({ B: 501, a: 500 })
+      const uuidMaior = "f0000000-0000-4000-8000-000000000000"
+      const uuidMenor = "0a000000-0000-4000-8000-000000000000"
+      expect(porUsuario(dividirIgual(1001, [uuidMaior, uuidMenor]))).toEqual({ [uuidMenor]: 501, [uuidMaior]: 500 })
+    })
+  })
 })
 
 describe("dividirPorPeso", () => {
@@ -163,6 +211,58 @@ describe("dividirPorPeso", () => {
       { userId: "c", peso: 3333.33 },
     ])
     expect(soma(partes)).toBe(total)
+  })
+
+  // @RNF08.1 regressão da Issue #36: empate de fração era decidido pela ordem de entrada.
+  describe("empate de fração resolvido por user_id (Issue #36)", () => {
+    it("empate entre todos: o centavo vai para o menor user_id, qualquer que seja a ordem", () => {
+      const partes = dividirPorPeso(1000, [
+        { userId: "c", peso: 1 },
+        { userId: "a", peso: 1 },
+        { userId: "b", peso: 1 },
+      ])
+      expect(porUsuario(partes)).toEqual({ a: 334, b: 333, c: 333 })
+      expect(partes.map((p) => p.userId)).toEqual(["c", "a", "b"])
+    })
+
+    it("empate só entre parte dos participantes: desempata pelo menor user_id entre os empatados", () => {
+      // 1002 com pesos 1, 2, 1: 250,5 · 501 · 250,5 — sobra 1 centavo, empate entre a e c.
+      const partes = dividirPorPeso(1002, [
+        { userId: "c", peso: 1 },
+        { userId: "b", peso: 2 },
+        { userId: "a", peso: 1 },
+      ])
+      expect(porUsuario(partes)).toEqual({ a: 251, b: 501, c: 250 })
+      expect(soma(partes)).toBe(1002)
+    })
+
+    it("o maior resto continua mandando: o id só desempata", () => {
+      // 1001 com pesos 2, 1, 1: 500,5 · 250,25 · 250,25 — o centavo vai para c, mesmo com o maior id.
+      const partes = dividirPorPeso(1001, [
+        { userId: "c", peso: 2 },
+        { userId: "b", peso: 1 },
+        { userId: "a", peso: 1 },
+      ])
+      expect(porUsuario(partes)).toEqual({ a: 250, b: 250, c: 501 })
+    })
+
+    it("toda permutação da entrada dá o mesmo valor e o mesmo peso para cada participante", () => {
+      const entradas = [
+        { userId: "a", peso: 1 },
+        { userId: "b", peso: 1.5 },
+        { userId: "c", peso: 1 },
+        { userId: "d", peso: 1.5 },
+      ]
+      for (const total of [1000, 1001, 1003, 7]) {
+        const esperado = dividirPorPeso(total, entradas)
+        for (const ordem of permutacoes(entradas)) {
+          const partes = dividirPorPeso(total, ordem)
+          expect(porUsuario(partes)).toEqual(porUsuario(esperado))
+          expect(Object.fromEntries(partes.map((p) => [p.userId, p.peso]))).toEqual({ a: 1, b: 1.5, c: 1, d: 1.5 })
+          expect(soma(partes)).toBe(total)
+        }
+      }
+    })
   })
 
   it.each([[0], [-1], [10000], [1.234], [Number.NaN]])("recusa peso %j", (peso) => {

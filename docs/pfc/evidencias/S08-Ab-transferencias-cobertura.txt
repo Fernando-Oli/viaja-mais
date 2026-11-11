@@ -1,0 +1,20 @@
+# S08-Ab-transferencias — cobertura dos arquivos da atividade (2026-11-11 16:58)
+npx vitest run --coverage (include nos arquivos abaixo; suíte completa, 552 testes)
+
+total                                                    linhas 99.36% | ramos 96.49% | funções 98.93%
+lib/finance/transferencia.ts                             linhas 100%   | ramos 100%   | funções 100%
+lib/finance/acerto.ts                                    linhas 100%   | ramos 100%   | funções 100%
+lib/schemas/transferencia.ts                             linhas 100%   | ramos 100%   | funções 100%
+app/api/trips/[tripId]/acerto/route.ts                   linhas 100%   | ramos 100%   | funções 100%
+app/api/trips/[tripId]/acerto/carregar-acerto.ts         linhas 100%   | ramos 71.42% | funções 100%
+app/api/trips/[tripId]/acerto/transferencias/route.ts    linhas 97.29% | ramos 96.15% | funções 100%
+components/acerto-contas.tsx                             linhas 100%   | ramos 100%   | funções 100%
+components/registrar-pagamento.tsx                       linhas 93.33% | ramos 86.36% | funções 85.71%
+lib/finance/balances.ts (não alterado)                   linhas 100%   | ramos 100%   | funções 100%
+lib/finance/rateio.ts (não alterado)                     linhas 100%   | ramos 98.8%  | funções 100%
+
+Meta da regra de negócio (lib/finance/transferencia.ts e lib/finance/acerto.ts): >= 70% — atingido 100% em linhas, ramos e funções.
+carregar-acerto.ts: os ramos não cobertos são os fallbacks `data ?? []` (linhas 44-47), quando o Supabase devolve data nula sem erro.
+transferencias/route.ts: a linha 97 é o repasse de um erro que não é `ErroTransferencia` — defensivo, `validarTransferencia()` só lança esse tipo.
+registrar-pagamento.tsx: a linha 48 é o fechamento do diálogo pelo X, Esc ou clique fora; os testes fecham pelo botão "Cancelar".
+lib/finance/balances.ts e lib/finance/rateio.ts não foram alterados nesta atividade (só consumidos).
