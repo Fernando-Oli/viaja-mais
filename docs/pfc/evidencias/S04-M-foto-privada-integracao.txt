@@ -1,0 +1,132 @@
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > reconhece JPEG, PNG e WebP pela assinatura 4ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa PDF 1ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa GIF 1ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa SVG 0ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa RIFF que não é WebP (WAV) 0ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa vazio 0ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa PNG truncado 0ms
+ ✓ tests/lib/foto.test.ts > tipoDaImagem — pelo conteúdo, não pelo nome > recusa JPEG truncado 0ms
+ ✓ tests/lib/foto.test.ts > caminhoDaNovaFoto > fica na pasta de quem envia, com a extensão do tipo real 1ms
+ ✓ tests/lib/foto.test.ts > bucket privado — validade do link e cache (S04-M-foto-privada) > a URL assinada vale 10 minutos, e o mesmo link é reaproveitado por 5 1ms
+ ✓ tests/lib/foto.test.ts > bucket privado — validade do link e cache (S04-M-foto-privada) > não existe mais quem monte URL pública a partir do caminho 0ms
+ ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > aceita um arquivo no formato da rota, na pasta dela 1ms
+ ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa nulo 0ms
+ ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa URL antiga 0ms
+ ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa pasta de outra pessoa 0ms
+ ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa subpasta 0ms
+ ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa nome fora do formato 0ms
+ ✓ tests/lib/foto.test.ts > caminhoApagavel — só o que é da pessoa > recusa prefixo parecido 0ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > assina no bucket avatars, com a validade da constante, e devolve na ordem pedida 6ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > a mesma foto pedida duas vezes é assinada uma vez só, numa chamada só 2ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (URL antiga (o pixel rastreador)) vira nulo sem ir ao Storage 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (URL pública do próprio bucket) vira nulo sem ir ao Storage 0ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (javascript:) vira nulo sem ir ao Storage 0ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (URL sem esquema) vira nulo sem ir ao Storage 0ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (subida de pasta) vira nulo sem ir ao Storage 0ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (nome que não é uuid) vira nulo sem ir ao Storage 0ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (extensão disfarçada) vira nulo sem ir ao Storage 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (quebra de linha no fim) vira nulo sem ir ao Storage 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (maiúsculas) vira nulo sem ir ao Storage 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > valor fora do formato (vazio) vira nulo sem ir ao Storage 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > foto na pasta de outra pessoa não é assinada, mesmo no formato 0ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — o que vai ao Storage > sem nenhuma foto, não cria o cliente de serviço nem chama o Storage 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — reaproveitar o link > devolve o mesmo link enquanto não passa o tempo de reuso, sem nova chamada 5ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — reaproveitar o link > passado o tempo de reuso, assina de novo e devolve um link novo 2ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — reaproveitar o link > numa resposta com fotos novas e já assinadas, só as novas vão ao Storage 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — reaproveitar o link > foto trocada é outro caminho: o link da antiga nunca é devolvido para a nova 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — reaproveitar o link > guarda no máximo 1000 links: acima disso, o mais antigo sai 6ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — falhas não derrubam a resposta > sem a chave de serviço, as fotos vêm nulas e o erro vai ao log, sem lançar 7ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — falhas não derrubam a resposta > se a chamada falha, as fotos vêm nulas e o erro vai ao log 2ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — falhas não derrubam a resposta > se o Storage não devolve nada, sem erro, as fotos também vêm nulas 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — falhas não derrubam a resposta > falha não fica guardada: na próxima resposta, tenta assinar de novo 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — falhas não derrubam a resposta > se um item falha (arquivo que não existe), só ele vem nulo, com log 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — falhas não derrubam a resposta > item com erro vem nulo mesmo que traga uma URL junto 1ms
+ ✓ tests/lib/avatar.test.ts > assinarAvatares — falhas não derrubam a resposta > item devolvido sem caminho não vira URL de ninguém 1ms
+ ✓ tests/lib/avatar.test.ts > SEM_CACHE_COMPARTILHADO > é privado e sem armazenamento: o link assinado vale como senha 0ms
+stderr | tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 500: erro do banco não vaza a mensagem crua
+[erro não tratado] { code: '42501', message: 'permission denied for table profiles' }
+
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 200: autenticado lê os dados básicos de um perfil 11ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 200: o caminho da foto no bucket volta como URL assinada, numa assinatura só 2ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 200: sem foto não vai ao Storage; com o Storage fora do ar, a foto volta nula 3ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 200: sem a chave de serviço, o menu continua com nome; a foto é que vem nula 2ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > a resposta com o link assinado não vai para cache compartilhado 1ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 401: sem sessão não chega a consultar 2ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 400: id inválido (undefined) não chega a consultar 1ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 400: id inválido (nao-e-uuid) não chega a consultar 1ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 400: id inválido (1111) não chega a consultar 1ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 404: id sem perfil 1ms
+ ✓ tests/api/profile-userid-route.test.ts > GET /api/profile/[userId] > 500: erro do banco não vaza a mensagem crua 3ms
+stderr | tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 500: erro do banco na leitura não vaza a mensagem crua
+[erro não tratado] { code: '42P01', message: 'relation "profiles" does not exist' }
+
+stderr | tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500: outro erro do banco não vaza a mensagem crua (RNF02.11)
+[erro não tratado] {
+  code: '23514',
+  message: 'new row violates check constraint "profiles_bio_tamanho"'
+}
+
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: devolve o perfil da sessão, filtrado pelo id dela 10ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: o caminho da foto volta como URL assinada, numa assinatura só, com a validade da constante 2ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: sem foto, ou com URL antiga, a foto volta nula sem ir ao Storage 2ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: se o Storage falha ao assinar, o perfil volta com a foto nula, sem derrubar a página 2ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 200: sem a chave de serviço, o perfil sem foto responde normalmente, e o com foto vem sem ela 1ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > a resposta com o link assinado não vai para cache compartilhado 6ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 401: sem sessão não chega a consultar 2ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 404: sessão sem linha em profiles 1ms
+ ✓ tests/api/social-perfil-route.test.ts > GET /api/social/perfil > 500: erro do banco na leitura não vaza a mensagem crua 3ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 200: edita o próprio perfil, com o username normalizado 3ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 401: sem sessão não chega a atualizar 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: payload inválido (bio acima do limite) 2ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: username reservado 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: só avatar_url no corpo — a foto muda pelas rotas de foto 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: corpo vazio 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 400: JSON malformado é payload inválido, não erro do servidor 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > o corpo não escolhe o perfil nem reescreve id/created_at (no lugar do 403) 2ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 404: o update não encontrou a linha da sessão 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 409: username em uso, sem a mensagem do Postgres 1ms
+ ✓ tests/api/social-perfil-route.test.ts > PATCH /api/social/perfil > 500: outro erro do banco não vaza a mensagem crua (RNF02.11) 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 200: envia para a pasta da sessão, troca a anterior por ela e devolve a URL assinada 23ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > a resposta com o link assinado não vai para cache compartilhado 4ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > o tipo e a extensão vêm dos bytes, não do que o cliente declarou 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > sem foto anterior, o update exige avatar_url nulo 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > aceita exatamente 2 MB 8ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 401: sem sessão não envia nada 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: sem o campo foto 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: arquivo vazio 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: um byte acima de 2 MB 6ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 413: content-length grande é recusado sem processar o multipart 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: PDF declarado como image/png é recusado pelo conteúdo 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: corpo que não é multipart 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é URL antiga 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é arquivo de outra pasta 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > não apaga a anterior quando ela é nome fora do formato da rota 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > se a foto anterior não for apagada, responde 200 e registra no log 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 409: outra aba trocou a foto no meio — a nova é apagada e a anterior fica 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o banco falha, a foto recém-enviada é apagada e o erro não vaza 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 500: se o Storage falha, nada é gravado no perfil e o erro não vaza 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 404: sessão sem linha em profiles não envia nada 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > 400: campo foto enviado como texto, não como arquivo (@RF02.2) 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > POST /api/social/perfil/foto > lê a foto atual em profiles, pelo id da sessão, e grava em profiles (@RF02.2) 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 200: limpa avatar_url, condicionado à foto atual, e apaga o arquivo 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 401: sem sessão não mexe em nada 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 404: sessão sem linha em profiles 0ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 409: a foto mudou no meio — nada é apagado 0ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > DELETE /api/social/perfil/foto > 500: erro do banco não vaza e não apaga a foto 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > POST apaga da pasta as fotos antigas que não são a nova 2ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > POST não apaga o que foi criado depois da foto nova, nem no mesmo instante 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > DELETE apaga as fotos mais antigas que a removida e deixa a que outra aba enviou depois 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > DELETE sem foto anterior não varre: nulo para nulo não barra um envio em andamento 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > nome fora do formato da rota, subida de pasta e subpasta não são apagados 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > sem a foto de referência na página, não apaga nada além da anterior 1ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > falha no list não derruba a resposta: só vai para o log 3ms
+ ✓ tests/api/social-perfil-foto-route.test.ts > varredura da pasta depois da troca (@RF02.2) > se as sobras não forem apagadas, responde 200 e registra no log 2ms
+
+ Test Files  5 passed (5)
+      Tests  111 passed (111)
+   Start at  09:14:52
+   Duration  1.61s (transform 1.19s, setup 3.05s, import 1.71s, tests 245ms, environment 1ms)
+

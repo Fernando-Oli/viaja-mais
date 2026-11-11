@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { env } from "@/lib/env"
+import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
+import { esquecerLinksEmitidos } from "@/lib/social/avatar"
 
 /**
  * @RF02.1 @RF02.2 @RF02.5 @RF02.6 @RF02.7 @RNF02.11 — ler e editar o próprio perfil.
@@ -51,6 +52,38 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }))
 
+/**
+ * Storage falso do cliente de serviço: registra cada assinatura (bucket,
+ * caminhos e validade) e devolve URLs assinadas previsíveis. `falha` simula o
+ * Storage fora do ar.
+ */
+const s = vi.hoisted(() => ({
+  URL_ASSINADA: "https://storage.teste/storage/v1/object/sign/avatars/",
+  assinaturas: [] as { bucket: string; caminhos: string[]; validade: number }[],
+  falha: null as { message: string } | null,
+  /** Sem SUPABASE_SERVICE_ROLE_KEY: criar o cliente de serviço lança, como no lib/env. */
+  semChave: false,
+}))
+
+vi.mock("@/lib/supabase/admin", () => ({
+  criarClienteAdmin: () => {
+    if (s.semChave) throw new Error("SUPABASE_SERVICE_ROLE_KEY não configurada")
+    return {
+    storage: {
+      from: (bucket: string) => ({
+        async createSignedUrls(caminhos: string[], validade: number) {
+          s.assinaturas.push({ bucket, caminhos, validade })
+          if (s.falha) return { data: null, error: s.falha }
+          return {
+            data: caminhos.map((path) => ({ path, signedUrl: `${s.URL_ASSINADA}${path}?token=tk`, error: null })),
+            error: null,
+          }
+        },
+      }),
+    },
+    }
+  },
+}))
 import { GET, PATCH } from "@/app/api/social/perfil/route"
 
 const BRUNO = "22222222-2222-4222-8222-222222222222"
@@ -78,6 +111,10 @@ beforeEach(() => {
   h.tabelas.length = 0
   h.filtros.length = 0
   h.updates.length = 0
+  s.assinaturas.length = 0
+  s.falha = null
+  s.semChave = false
+  esquecerLinksEmitidos()
   h.leitura = { data: perfilBruno, error: null }
   h.escrita = { data: perfilBruno, error: null }
 })
@@ -97,17 +134,61 @@ describe("GET /api/social/perfil", () => {
     expect(h.filtros).toEqual([["id", BRUNO]])
   })
 
-  it("200: o caminho da foto no bucket volta como URL pública; URL antiga volta nula", async () => {
+  it("200: o caminho da foto volta como URL assinada, numa assinatura só, com a validade da constante", async () => {
     logadoComo(BRUNO)
     const caminho = `${BRUNO}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
     h.leitura = { data: { ...perfilBruno, avatar_url: caminho }, error: null }
-    // Montado a partir de lib/env: no CI a URL do Supabase não é a local.
-    expect((await (await GET()).json()).perfil.avatar_url).toBe(
-      `${env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/avatars/${caminho}`,
-    )
+
+    const { perfil } = await (await GET()).json()
+
+    expect(perfil.avatar_url).toBe(`${s.URL_ASSINADA}${caminho}?token=tk`)
+    expect(perfil.avatar_url).not.toContain("/object/public/")
+    expect(s.assinaturas).toEqual([{ bucket: "avatars", caminhos: [caminho], validade: VALIDADE_URL_AVATAR_S }])
+  })
+
+  it("200: sem foto, ou com URL antiga, a foto volta nula sem ir ao Storage", async () => {
+    logadoComo(BRUNO)
+    expect((await (await GET()).json()).perfil.avatar_url).toBeNull()
 
     h.leitura = { data: { ...perfilBruno, avatar_url: "https://exemplo.com/antiga.png" }, error: null }
     expect((await (await GET()).json()).perfil.avatar_url).toBeNull()
+    expect(s.assinaturas).toEqual([])
+  })
+
+  it("200: se o Storage falha ao assinar, o perfil volta com a foto nula, sem derrubar a página", async () => {
+    logadoComo(BRUNO)
+    const silenciar = vi.spyOn(console, "error").mockImplementation(() => {})
+    s.falha = { message: "storage fora do ar" }
+    h.leitura = { data: { ...perfilBruno, avatar_url: `${BRUNO}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp` }, error: null }
+
+    const resposta = await GET()
+
+    expect(resposta.status).toBe(200)
+    expect((await resposta.json()).perfil).toEqual({ ...perfilBruno, avatar_url: null })
+    expect(silenciar).toHaveBeenCalled()
+    silenciar.mockRestore()
+  })
+
+  it("200: sem a chave de serviço, o perfil sem foto responde normalmente, e o com foto vem sem ela", async () => {
+    logadoComo(BRUNO)
+    s.semChave = true
+
+    // Sem foto, o cliente de serviço nem é criado.
+    expect((await GET()).status).toBe(200)
+
+    const silenciar = vi.spyOn(console, "error").mockImplementation(() => {})
+    h.leitura = { data: { ...perfilBruno, avatar_url: `${BRUNO}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp` }, error: null }
+    const resposta = await GET()
+    expect(resposta.status).toBe(200)
+    expect((await resposta.json()).perfil.avatar_url).toBeNull()
+    silenciar.mockRestore()
+  })
+
+  it("a resposta com o link assinado não vai para cache compartilhado", async () => {
+    logadoComo(BRUNO)
+
+    expect((await GET()).headers.get("cache-control")).toBe("private, no-store")
+    expect((await PATCH(requisicao({ bio: "Outra bio" }))).headers.get("cache-control")).toBe("private, no-store")
   })
 
   it("401: sem sessão não chega a consultar", async () => {

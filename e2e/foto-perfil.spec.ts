@@ -92,28 +92,46 @@ test("enquadra a foto no modal, envia o que está no círculo e remove", async (
     await expect(page.getByText("Foto atualizada").first()).toBeVisible()
     await expect(modal).toBeHidden()
 
-    // A foto vem do bucket do projeto, na pasta do Davi, em 512×512…
+    // A foto vem do bucket do projeto, na pasta do Davi, por URL assinada
+    // (bucket privado, S04-M-foto-privada), em 512×512…
     const foto = cartao.getByRole("img", { name: "Foto de perfil", exact: true })
-    await expect(foto).toHaveAttribute("src", /\/storage\/v1\/object\/public\/avatars\/44444444-4444-4444-8444-444444444444\//)
+    await expect(foto).toHaveAttribute(
+      "src",
+      /\/storage\/v1\/object\/sign\/avatars\/44444444-4444-4444-8444-444444444444\/[0-9a-f-]{36}\.webp\?token=/,
+    )
     await expect.poll(() => foto.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight])).toEqual([512, 512])
+
+    // …e a mesma foto pela URL pública não abre: o bucket não é público.
+    const assinada = (await foto.getAttribute("src"))!
+    const publica = assinada.replace("/object/sign/", "/object/public/").split("?")[0]
+    expect((await page.request.get(publica)).ok(), "a URL pública não pode abrir a foto").toBe(false)
 
     // …e é o pedaço enquadrado: arrastado (centro) e com zoom (borda).
     const { centro, borda } = await vermelhoNaLinhaDoMeio(page, (await foto.getAttribute("src"))!)
     expect(centro, "arrastar para a direita deveria enquadrar a parte esquerda, menos vermelha").toBeLessThan(105)
     expect(borda, "o zoom 2 deveria cortar a faixa da esquerda: sem zoom, a borda fica em ~0").toBeGreaterThan(25)
 
-    // O menu lateral também troca as iniciais pela foto.
-    await expect(page.locator("aside img[src*='/avatars/']")).toBeVisible()
+    // O menu lateral também troca as iniciais pela foto, e também por URL assinada.
+    await expect(page.locator("aside img[src*='/object/sign/avatars/'][src*='?token=']")).toBeVisible()
 
     // Recarregar prova que ficou gravado.
     await page.reload()
     await expect(cartao.getByRole("img", { name: "Foto de perfil", exact: true })).toBeVisible()
     await page.screenshot({ path: `docs/pfc/evidencias/S04-M-foto-perfil-${projeto}.png`, fullPage: true })
 
+    // O link assinado da foto que está na tela ainda vale (dentro dos 10 minutos)…
+    const linkAtual = (await cartao.getByRole("img", { name: "Foto de perfil", exact: true }).getAttribute("src"))!
+    expect((await page.request.get(linkAtual)).ok()).toBe(true)
+
     await escolherNoMenu(page, "Remover foto")
     await expect(page.getByText("Foto removida").first()).toBeVisible()
     await expect(cartao.getByRole("img", { name: "Foto de perfil", exact: true })).toHaveCount(0)
     await expect(cartao.getByRole("img", { name: "Sem foto de perfil" })).toBeVisible()
+
+    // …e, removida a foto, o Storage para de servir o mesmo link na hora. Um
+    // navegador que já tinha a imagem pode reaproveitá-la do cache até o link
+    // vencer: isso este pedido direto não prova (ver o plano).
+    expect((await page.request.get(linkAtual)).ok(), "o link da foto removida não pode abrir").toBe(false)
   } finally {
     // Só depois do login: deixa o Davi sem foto para a próxima execução.
     await page.request.delete("/api/social/perfil/foto")

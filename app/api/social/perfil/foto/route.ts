@@ -3,8 +3,14 @@ import { randomUUID } from "node:crypto"
 import { createClient } from "@/lib/supabase/server"
 import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { ErroHttp, naoAutenticado, naoEncontrado, respostaDeErro } from "@/lib/http"
-import { avatarPublico } from "@/lib/social/avatar"
-import { BUCKET_AVATARES, LIMITE_FOTO_BYTES, caminhoApagavel, caminhoDaNovaFoto, tipoDaImagem } from "@/lib/social/foto"
+import { SEM_CACHE_COMPARTILHADO, assinarAvatar } from "@/lib/social/avatar"
+import {
+  BUCKET_AVATARES,
+  LIMITE_FOTO_BYTES,
+  caminhoApagavel,
+  caminhoDaNovaFoto,
+  tipoDaImagem,
+} from "@/lib/social/foto"
 
 /**
  * Foto do próprio perfil: enviar (POST, multipart com o campo `foto`) e
@@ -25,6 +31,9 @@ import { BUCKET_AVATARES, LIMITE_FOTO_BYTES, caminhoApagavel, caminhoDaNovaFoto,
  * O perfil, ao contrário, é atualizado com a sessão do usuário: a RLS de
  * `profiles` e o trigger de `avatar_url` continuam valendo.
  *
+ * O bucket é privado (S04-M-foto-privada): a resposta leva a foto como URL
+ * assinada, que vale 10 minutos e não pode ir para cache compartilhado.
+ *
  * Erro do Storage ou do banco cai no 500 genérico de `respostaDeErro`.
  *
  * @RF02.2 foto de perfil · @RNF02.11 erro do banco não vaza
@@ -36,7 +45,7 @@ const COLUNAS = "id, full_name, avatar_url, username, bio, is_public"
 const FOLGA_MULTIPART = 64 * 1024
 
 type Supabase = Awaited<ReturnType<typeof createClient>>
-type Perfil = { avatar_url: string | null } & Record<string, unknown>
+type Perfil = { id: string; avatar_url: string | null } & Record<string, unknown>
 
 async function usuarioAtual(supabase: Supabase) {
   const {
@@ -46,9 +55,9 @@ async function usuarioAtual(supabase: Supabase) {
   return user
 }
 
-/** O banco guarda o caminho no bucket; a tela recebe a URL pública. */
-function paraResposta(perfil: Perfil) {
-  return { ...perfil, avatar_url: avatarPublico(perfil.avatar_url) }
+/** O banco guarda o caminho no bucket; a tela recebe a URL assinada. */
+async function paraResposta(admin: ReturnType<typeof criarClienteAdmin>, perfil: Perfil) {
+  return { ...perfil, avatar_url: await assinarAvatar(() => admin, perfil) }
 }
 
 async function avatarAtual(supabase: Supabase, userId: string) {
@@ -198,7 +207,7 @@ export async function POST(request: Request) {
     const anteriorApagavel = caminhoApagavel(anterior, user.id)
     await varrerPasta(admin, user.id, caminho, anteriorApagavel)
     await apagar(admin, anteriorApagavel)
-    return NextResponse.json({ perfil: paraResposta(perfil) })
+    return NextResponse.json({ perfil: await paraResposta(admin, perfil) }, { headers: SEM_CACHE_COMPARTILHADO })
   } catch (erro) {
     return respostaDeErro(erro)
   }
@@ -218,7 +227,7 @@ export async function DELETE() {
     const anteriorApagavel = caminhoApagavel(anterior, user.id)
     await varrerPasta(admin, user.id, anteriorApagavel, anteriorApagavel)
     await apagar(admin, anteriorApagavel)
-    return NextResponse.json({ perfil: paraResposta(perfil) })
+    return NextResponse.json({ perfil: await paraResposta(admin, perfil) }, { headers: SEM_CACHE_COMPARTILHADO })
   } catch (erro) {
     return respostaDeErro(erro)
   }
