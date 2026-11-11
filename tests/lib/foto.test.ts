@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest"
 import {
+  REUSO_URL_AVATAR_S,
+  VALIDADE_URL_AVATAR_S,
   caminhoApagavel,
   caminhoDaNovaFoto,
   tipoDaImagem,
-  urlPublicaDoAvatar,
 } from "@/lib/social/foto"
-import { avatarPublico } from "@/lib/social/avatar"
-import { env } from "@/lib/env"
+import * as regrasDaFoto from "@/lib/social/foto"
 
 /**
  * Regras da foto de perfil: o tipo vem dos bytes, o caminho fica na pasta de
@@ -52,40 +52,19 @@ describe("caminhoDaNovaFoto", () => {
   })
 })
 
-describe("urlPublicaDoAvatar — só o caminho no formato exato vira URL", () => {
-  it("monta a URL pública a partir do caminho no bucket", () => {
-    expect(urlPublicaDoAvatar(CAMINHO_DA_ANA, "http://127.0.0.1:54321")).toBe(
-      `http://127.0.0.1:54321/storage/v1/object/public/avatars/${CAMINHO_DA_ANA}`,
-    )
+describe("bucket privado — validade do link e cache (S04-M-foto-privada)", () => {
+  it("a URL assinada vale 10 minutos, e o mesmo link é reaproveitado por 5", () => {
+    // A validade é também quanto o navegador guarda a foto: o Storage serve a
+    // URL assinada com Expires no fim dela (decisão do Micael em 21/10).
+    expect(VALIDADE_URL_AVATAR_S).toBe(10 * 60)
+    expect(REUSO_URL_AVATAR_S).toBe(5 * 60)
+    expect(REUSO_URL_AVATAR_S).toBeLessThan(VALIDADE_URL_AVATAR_S)
   })
 
-  it("não duplica a barra quando a URL do projeto termina com ela", () => {
-    expect(urlPublicaDoAvatar(CAMINHO_DA_ANA, "https://projeto.supabase.co/")).toBe(
-      `https://projeto.supabase.co/storage/v1/object/public/avatars/${CAMINHO_DA_ANA}`,
-    )
-  })
-
-  it.each([
-    ["nulo", null],
-    ["vazio", ""],
-    ["URL antiga (o pixel rastreador)", "https://exemplo.com/a.png"],
-    ["URL http", "http://exemplo.com/a.png"],
-    ["javascript:", "javascript:alert(1)"],
-    ["URL sem esquema", "//exemplo.com/a.png"],
-    ["subida de pasta", `${ANA}/../../../rest/v1/profiles`],
-    ["nome que não é uuid", `${ANA}/foto.webp`],
-    ["extensão disfarçada", `${CAMINHO_DA_ANA}.svg`],
-    ["quebra de linha no fim", `${CAMINHO_DA_ANA}\n`],
-    ["maiúsculas", CAMINHO_DA_ANA.toUpperCase()],
-  ])("devolve nulo para %s", (_caso, valor) => {
-    expect(urlPublicaDoAvatar(valor, "http://x")).toBeNull()
-  })
-
-  it("avatarPublico monta com o endereço do projeto em lib/env", () => {
-    expect(avatarPublico(CAMINHO_DA_ANA)).toBe(
-      `${env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/avatars/${CAMINHO_DA_ANA}`,
-    )
-    expect(avatarPublico("https://exemplo.com/a.png")).toBeNull()
+  it("não existe mais quem monte URL pública a partir do caminho", () => {
+    // O bucket é privado: uma URL /object/public/ não abre. Quem precisa da foto
+    // pede a URL assinada (lib/social/avatar.ts).
+    expect("urlPublicaDoAvatar" in regrasDaFoto).toBe(false)
   })
 })
 

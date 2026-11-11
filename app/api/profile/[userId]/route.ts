@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { ErroHttp, naoAutenticado, naoEncontrado, respostaDeErro } from "@/lib/http"
-import { avatarPublico } from "@/lib/social/avatar"
+import { SEM_CACHE_COMPARTILHADO, assinarAvatar } from "@/lib/social/avatar"
 
 /**
  * Dados básicos de um perfil, por id. Quem consome é `context/auth-context.tsx`,
@@ -13,12 +14,14 @@ import { avatarPublico } from "@/lib/social/avatar"
  * básicos são visíveis a qualquer autenticado (detalhamento do RF02).
  *
  * `avatar_url` guarda o caminho da foto no bucket; a resposta devolve a URL
- * pública, que é o que o cabeçalho põe no <img>.
+ * assinada (lib/social/avatar.ts), que é o que o cabeçalho põe no <img>. O
+ * bucket é privado, e a chave de serviço só assina: quem lê o perfil continua
+ * sendo a sessão do usuário, com a RLS.
  *
  * A edição do perfil mora em /api/social/perfil (S04-M). O PATCH que existia
  * aqui gravava o corpo inteiro no UPDATE (mass-assignment) e nenhuma tela o usava.
  *
- * @RF02.1 visualizar perfil · @RNF02.11 erro do banco não vaza
+ * @RF02.1 visualizar perfil · @RF02.2 foto de perfil · @RNF02.11 erro do banco não vaza
  */
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -42,9 +45,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ use
 
     if (error) throw error
     if (!profile) throw naoEncontrado("Perfil")
-    return NextResponse.json({
-      profile: { ...profile, avatar_url: avatarPublico(profile.avatar_url) },
-    })
+    return NextResponse.json(
+      { profile: { ...profile, avatar_url: await assinarAvatar(criarClienteAdmin, profile) } },
+      { headers: SEM_CACHE_COMPARTILHADO },
+    )
   } catch (erro) {
     return respostaDeErro(erro)
   }

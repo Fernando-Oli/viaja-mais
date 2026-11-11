@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { env } from "@/lib/env"
 
 /**
  * @RF02.2 @RNF02.11 — enviar e remover a foto do próprio perfil.
@@ -29,6 +28,8 @@ const h = vi.hoisted(() => ({
   /** O Storage do supabase-js real responde sem erro e com lista vazia quando não apaga nada. */
   removeVazio: false,
   envios: [] as { caminho: string; tipo: string; upsert: unknown; tamanho: number }[],
+  /** Cada chamada de assinatura: os caminhos e a validade pedida. */
+  assinaturas: [] as { caminhos: string[]; validade: number }[],
   remocoes: [] as string[][],
   updates: [] as Record<string, unknown>[],
   condicoes: [] as string[],
@@ -99,6 +100,14 @@ vi.mock("@/lib/supabase/admin", () => ({
             h.remocoes.push(caminhos)
             return { data: h.removeVazio ? [] : caminhos.map((name) => ({ name })), error: null }
           },
+          // A resposta leva a foto como URL assinada (bucket privado).
+          async createSignedUrls(caminhos: string[], validade: number) {
+            h.assinaturas.push({ caminhos, validade })
+            return {
+              data: caminhos.map((path) => ({ path, signedUrl: `${URL_ASSINADA}${path}?token=tk`, error: null })),
+              error: null,
+            }
+          },
           // Varredura da pasta depois da troca. Estado em `varredura`, logo abaixo.
           async list(pasta: string, opcoes: unknown) {
             varredura.listagens.push({ pasta, opcoes })
@@ -111,6 +120,9 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }))
 
+/** Prefixo das URLs que o Storage falso assina. */
+const URL_ASSINADA = vi.hoisted(() => "https://storage.teste/storage/v1/object/sign/avatars/")
+
 type ObjetoNaPasta = { name: string; id: string | null; created_at: string | null }
 
 /** O que o `list` do Storage devolve. Calculado na hora, porque o nome da foto nova só existe depois do envio. */
@@ -122,12 +134,13 @@ const varredura = vi.hoisted(() => ({
 }))
 
 import { POST, DELETE } from "@/app/api/social/perfil/foto/route"
+import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
+import { esquecerLinksEmitidos } from "@/lib/social/avatar"
 
 const DAVI = "44444444-4444-4444-8444-444444444444"
 const OUTRO = "22222222-2222-4222-8222-222222222222"
 const ANTERIOR = `${DAVI}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])
-const URL_DO_BUCKET = `${env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/avatars/`
 
 function envio(conteudo: Uint8Array | null, tipoDeclarado = "image/png") {
   const formulario = new FormData()
@@ -155,6 +168,8 @@ beforeEach(() => {
   h.erroEnvio = null
   h.removeVazio = false
   h.envios.length = 0
+  h.assinaturas.length = 0
+  esquecerLinksEmitidos()
   h.remocoes.length = 0
   h.updates.length = 0
   h.condicoes.length = 0
@@ -162,7 +177,7 @@ beforeEach(() => {
 })
 
 describe("POST /api/social/perfil/foto", () => {
-  it("200: envia para a pasta da sessão, troca a anterior por ela e devolve a URL pública", async () => {
+  it("200: envia para a pasta da sessão, troca a anterior por ela e devolve a URL assinada", async () => {
     logado()
 
     const resposta = await POST(envio(PNG))
@@ -178,7 +193,19 @@ describe("POST /api/social/perfil/foto", () => {
     // Condicional à foto lida no começo: id da sessão e avatar_url anterior.
     expect(h.condicoes).toEqual([`id=${DAVI}`, `avatar_url=${ANTERIOR}`])
     expect(h.remocoes).toEqual([[ANTERIOR]])
-    expect(corpo.perfil.avatar_url).toBe(`${URL_DO_BUCKET}${caminho}`)
+    expect(corpo.perfil.avatar_url).toBe(`${URL_ASSINADA}${caminho}?token=tk`)
+    // Uma assinatura só, da foto nova, com a validade da constante.
+    expect(h.assinaturas).toEqual([{ caminhos: [caminho], validade: VALIDADE_URL_AVATAR_S }])
+  })
+
+  it("a resposta com o link assinado não vai para cache compartilhado", async () => {
+    logado()
+
+    const resposta = await POST(envio(PNG))
+
+    expect(resposta.status).toBe(200)
+    expect(resposta.headers.get("cache-control")).toBe("private, no-store")
+    expect((await DELETE()).headers.get("cache-control")).toBe("private, no-store")
   })
 
   it("o tipo e a extensão vêm dos bytes, não do que o cliente declarou", async () => {
@@ -368,6 +395,8 @@ describe("DELETE /api/social/perfil/foto", () => {
     expect(h.condicoes).toEqual([`id=${DAVI}`, `avatar_url=${ANTERIOR}`])
     expect(h.remocoes).toEqual([[ANTERIOR]])
     expect((await resposta.json()).perfil.avatar_url).toBeNull()
+    // Sem foto, nada a assinar: nenhuma chamada ao Storage para isso.
+    expect(h.assinaturas).toEqual([])
   })
 
   it("401: sem sessão não mexe em nada", async () => {

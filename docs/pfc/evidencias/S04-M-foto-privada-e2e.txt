@@ -1,0 +1,22 @@
+◇ injected env (11) from .env.local // tip: ⌘ suppress logs { quiet: true }
+
+Running 14 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok  1 [chromium] › e2e\editar-perfil.spec.ts:27:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco (20.0s)
+  ok  2 [chromium] › e2e\editar-perfil.spec.ts:89:5 › Configurações fica só com conta e senha, e aponta para o Perfil (1.3s)
+  ok  3 [chromium] › e2e\editar-perfil.spec.ts:101:5 › mostra o erro quando o perfil não carrega (1.2s)
+  ok  4 [chromium] › e2e\foto-perfil.spec.ts:60:5 › enquadra a foto no modal, envia o que está no círculo e remove (4.0s)
+  ok  5 [chromium] › e2e\foto-perfil.spec.ts:141:5 › Cancelar no modal não envia nada (1.9s)
+  ok  6 [chromium] › e2e\foto-perfil.spec.ts:165:9 › recusa o que não é imagem › PDF (1.6s)
+  ok  7 [chromium] › e2e\foto-perfil.spec.ts:165:9 › recusa o que não é imagem › PDF renomeado para .png (1.5s)
+◇ injected env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok  8 [mobile] › e2e\editar-perfil.spec.ts:27:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco (4.1s)
+  ok  9 [mobile] › e2e\editar-perfil.spec.ts:89:5 › Configurações fica só com conta e senha, e aponta para o Perfil (1.6s)
+  ok 10 [mobile] › e2e\editar-perfil.spec.ts:101:5 › mostra o erro quando o perfil não carrega (1.4s)
+  ok 11 [mobile] › e2e\foto-perfil.spec.ts:60:5 › enquadra a foto no modal, envia o que está no círculo e remove (4.3s)
+  ok 12 [mobile] › e2e\foto-perfil.spec.ts:141:5 › Cancelar no modal não envia nada (2.2s)
+  ok 13 [mobile] › e2e\foto-perfil.spec.ts:165:9 › recusa o que não é imagem › PDF (1.6s)
+  ok 14 [mobile] › e2e\foto-perfil.spec.ts:165:9 › recusa o que não é imagem › PDF renomeado para .png (1.5s)
+
+  14 passed (54.4s)
