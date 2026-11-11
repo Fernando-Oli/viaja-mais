@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import ConfirmModal from "@/components/ui/confirm-modal"
+import { PlaceReviews } from "@/components/place-reviews"
 import { useToast } from "@/hooks/use-toast"
 import { CheckCircle2, Circle, Loader2, MapPin, Star, Trash2 } from "lucide-react"
 
@@ -15,6 +16,8 @@ export interface Place {
   rating: number | null
   notes: string | null
   visited: boolean | null
+  /** Identificador do Google; sem ele o lugar não pode ser avaliado. */
+  place_id?: string | null
 }
 
 interface PlaceListProps {
@@ -33,7 +36,7 @@ async function lerErro(resposta: Response, padrao: string) {
  * Lugares de uma viagem, com marcar visitado e excluir. Toda escrita passa pela
  * rota `/api/trips/[tripId]/places/[placeId]`, que confere a participação na viagem.
  *
- * @RF08.4 marcar visitado · @RF08.6 excluir lugar
+ * @RF08.4 marcar visitado · @RF08.6 excluir lugar · @RF11.1 avaliar
  */
 export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
   const { toast } = useToast()
@@ -130,7 +133,8 @@ export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1">
+                  {place.place_id && <PlaceReviews tripId={tripId} placeId={place.id} placeName={place.name} />}
                   <Button
                     variant="outline"
                     size="sm"

@@ -1,0 +1,39 @@
+
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+ ✓ tests/lib/avaliacoes.test.ts > resumirAvaliacoes > sem avaliações, média nula e total zero 3ms
+ ✓ tests/lib/avaliacoes.test.ts > resumirAvaliacoes > uma nota é a própria média 1ms
+ ✓ tests/lib/avaliacoes.test.ts > resumirAvaliacoes > arredonda a média para uma casa decimal 1ms
+ ✓ tests/lib/avaliacoes.test.ts > resumirAvaliacoes > ignora nota fora de 1 a 5 ou não inteira 1ms
+ ✓ tests/lib/avaliacoes.test.ts > resumirAvaliacoes > só notas inválidas contam como nenhuma avaliação 0ms
+ ✓ tests/lib/avaliacoes.test.ts > avaliacaoSchema > aceita nota de 1 a 5 com ou sem comentário 3ms
+ ✓ tests/lib/avaliacoes.test.ts > avaliacaoSchema > recusa nota 0, 6, fracionária ou ausente 2ms
+ ✓ tests/lib/avaliacoes.test.ts > avaliacaoSchema > recusa comentário com mais de 1000 caracteres 1ms
+ ✓ tests/lib/avaliacoes.test.ts > avaliacaoSchema > descarta campos fora do contrato 1ms
+ ✓ tests/api/place-reviews-route.test.ts > GET /api/trips/[tripId]/places/[placeId]/reviews > 200: lista as avaliações do lugar, com autor, marcação da própria e resumo 17ms
+ ✓ tests/api/place-reviews-route.test.ts > GET /api/trips/[tripId]/places/[placeId]/reviews > 200: sem avaliações, lista vazia e média nula 2ms
+ ✓ tests/api/place-reviews-route.test.ts > GET /api/trips/[tripId]/places/[placeId]/reviews > 401: sem sessão 1ms
+ ✓ tests/api/place-reviews-route.test.ts > GET /api/trips/[tripId]/places/[placeId]/reviews > 403: quem não participa da viagem 1ms
+ ✓ tests/api/place-reviews-route.test.ts > GET /api/trips/[tripId]/places/[placeId]/reviews > 404: lugar de outra viagem (o filtro inclui trip_id e id) 2ms
+ ✓ tests/api/place-reviews-route.test.ts > GET /api/trips/[tripId]/places/[placeId]/reviews > 400: lugar sem identificador do Google 1ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 201: primeira avaliação grava campo a campo, com user_id da sessão e lugar do banco 4ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 200: avaliar de novo edita a avaliação existente, só nota e comentário 1ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 409: envio duplicado simultâneo esbarra na unique 2ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 401: sem sessão 1ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 403: quem não participa da viagem não avalia 1ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 400: nota 0 2ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 400: nota 6 1ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 400: nota fracionária 1ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 400: sem nota 3ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 400: comentário longo 1ms
+ ✓ tests/api/place-reviews-route.test.ts > PUT /api/trips/[tripId]/places/[placeId]/reviews > 404: lugar de outra viagem não é avaliado 1ms
+ ✓ tests/api/place-reviews-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId]/reviews > 200: exclui só a avaliação de quem pede 1ms
+ ✓ tests/api/place-reviews-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId]/reviews > 404: não há avaliação própria para excluir 0ms
+ ✓ tests/api/place-reviews-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId]/reviews > 401: sem sessão 0ms
+ ✓ tests/api/place-reviews-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId]/reviews > 403: quem não participa da viagem 0ms
+
+ Test Files  2 passed (2)
+      Tests  30 passed (30)
+   Start at  09:23:22
+   Duration  1.85s (transform 300ms, setup 1.52s, import 481ms, tests 68ms, environment 0ms)
+

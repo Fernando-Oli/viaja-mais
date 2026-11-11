@@ -1,7 +1,7 @@
 # Matriz de Rastreabilidade
 
 > Gerado por `npm run pfc:rastreabilidade`. Não edite à mão.
-> Última geração: 2026-10-21
+> Última geração: 2026-11-11
 
 Requisitos são marcados no código e nos testes com uma tag em comentário
 (`// @RF03.4 — permite editar viagem`). Este arquivo cruza essas tags com o
@@ -87,9 +87,9 @@ catálogo das seções 14 e 15.
 | RF-10.2 | O usuário deve poder remover a própria curtida | Não iniciado | — | — | — |
 | RF-10.3 | O usuário deve poder comentar em uma publicação | Não iniciado | — | — | — |
 | RF-10.4 | O usuário deve poder excluir o próprio comentário | Não iniciado | — | — | — |
-| RF-11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Não iniciado | — | — | — |
-| RF-11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Não iniciado | — | — | — |
-| RF-11.3 | O usuário deve poder editar ou excluir a própria avaliação | Não iniciado | — | — | — |
+| RF-11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-list.tsx`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
+| RF-11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/lugares/avaliacoes.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
+| RF-11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
 | RF-12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Não iniciado | — | — | — |
 | RF-12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | — | — | — |
 | RF-12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | — | — | — |
@@ -105,7 +105,7 @@ catálogo das seções 14 e 15.
 | RNF-02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | — | — | — |
 | RNF-02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | — | — | — |
 | RNF-02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | — | — | — |
-| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/05-avatares.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts` | — |
+| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/05-avatares.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts`<br>`tests/rls/07-avaliacoes.test.ts` | — |
 | RNF-02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | — | — | — |
 | RNF-02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | — | — | — |
 | RNF-02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | — | — | — |
@@ -134,8 +134,8 @@ catálogo das seções 14 e 15.
 ## Resumo
 
 - Requisitos no catálogo: **120**
-- Com implementação marcada: **46**
-- Com teste marcado: **46**
+- Com implementação marcada: **49**
+- Com teste marcado: **49**
 
 ## Inconsistências
 

@@ -1,0 +1,19 @@
+S09-A-avaliacoes — prova de mutação da RLS de place_reviews (2026-11-11)
+Cada sabotagem é aplicada no banco local, a suíte 07 roda, e o banco é recriado com npx supabase@2 db reset.
+
+### Mutação 1 — policy de INSERT sem a exigência de participação
+drop policy place_reviews_insert on public.place_reviews; create policy place_reviews_insert on public.place_reviews for insert to authenticated with check (user_id = (select auth.uid()));
+     × B, sem o lugar em viagem nenhuma, não avalia 78ms
+     × B lê a avaliação de A (pública a autenticados, por decisão do RF11) 25ms
+     × B passa a poder avaliar depois de entrar na viagem que tem o lugar 52ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 11 passed (14)
+
+### Mutação 2 — grant de UPDATE em todas as colunas (em vez de só rating e comment)
+grant update on public.place_reviews to authenticated;
+     × A não move a própria avaliação para outro lugar 27ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 13 passed (14)
+
+### Banco restaurado
+      Tests  14 passed (14)

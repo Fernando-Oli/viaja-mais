@@ -1,0 +1,21 @@
+◇ injected env (11) from .env.local // tip: ⌘ override existing { override: true }
+[WebServer] (node:22028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:16528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\HOME because it is outside the current Git repository (C:\Users\HOME\Desktop\viaja-mais).
+[WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
+[WebServer] 
+
+Running 2 tests using 1 worker
+
+(node:20936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+  ✓  1 [chromium] › e2e\avaliacoes.spec.ts:42:5 › avaliar, editar, ver a avaliação de outra pessoa e excluir (18.7s)
+(node:1492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from .env.local // tip: ⌘ override existing { override: true }
+  ✓  2 [mobile] › e2e\avaliacoes.spec.ts:42:5 › avaliar, editar, ver a avaliação de outra pessoa e excluir (15.9s)
+
+  2 passed (41.1s)

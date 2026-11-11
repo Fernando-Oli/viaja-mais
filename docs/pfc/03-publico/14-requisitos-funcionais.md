@@ -115,9 +115,9 @@ do projeto.
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
-| RF11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Não iniciado | Média |
-| RF11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Não iniciado | Média |
-| RF11.3 | O usuário deve poder editar ou excluir a própria avaliação | Não iniciado | Baixa |
+| RF11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | Média |
+| RF11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | Média |
+| RF11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | Baixa |
 
 **Detalhamento:** este grupo atende à promessa da página inicial "Avaliações e
 Reviews — compartilhe experiências e ajude outros viajantes". Quanto à
@@ -125,7 +125,7 @@ visibilidade, as avaliações são públicas a qualquer usuário autenticado, po
 alimentam a descoberta; cada usuário edita ou exclui apenas a própria. A nota é
 numérica, de 1 a 5, com texto opcional. A tela de lugar pertence ao domínio de
 Viagem & Itinerário; a ação de avaliar pertence a este domínio. Como decisão de
-dado a cargo da plataforma, cria-se a tabela `place_reviews`.
+dado a cargo da plataforma, cria-se a tabela `place_reviews`. A tabela foi criada em `supabase/migrations/20261111120000_viagem_place_reviews.sql`, com leitura aberta a autenticados, escrita restrita a quem tem o lugar salvo em uma viagem da qual participa e edição e exclusão restritas ao autor, provadas por `tests/rls/07-avaliacoes.test.ts`. Avaliar, editar e excluir passam pela rota `app/api/trips/[tripId]/places/[placeId]/reviews/`, coberta por teste de integração (`tests/api/place-reviews-route.test.ts`) e por teste ponta a ponta (`e2e/avaliacoes.spec.ts`), no qual uma segunda pessoa, com o mesmo lugar salvo em viagem própria, visualiza a avaliação sem poder alterá-la — o que classifica RF11.1 a RF11.3 como existentes.
 
 ## RF12 — IA de Roteiros
 
