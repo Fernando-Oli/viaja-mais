@@ -81,7 +81,7 @@ catálogo das seções 14 e 15.
 | RF-09.4 | O dono deve poder aprovar ou recusar uma solicitação | Não iniciado | `app/(rede-social)/notificacoes/notificacoes.tsx`<br>`app/api/social/solicitacoes/[username]/route.ts`<br>`lib/social/solicitacoes.ts` | `tests/api/social-solicitacoes-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/09-solicitacoes.test.ts`<br>`e2e/solicitacoes.spec.ts` | 9d2aecc |
 | RF-09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Não iniciado | `app/(rede-social)/u/[username]/page.tsx`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`lib/social/perfil-visto.ts` | `tests/api/social-seguir-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/seguir.spec.ts` | 3cff665 |
 | RF-09.6 | O usuário deve poder visualizar a lista de quem segue e de quem o segue | Não iniciado | `app/(rede-social)/u/[username]/lista-da-rede.tsx`<br>`app/(rede-social)/u/[username]/page.tsx`<br>`app/(rede-social)/u/[username]/seguidores/page.tsx`<br>`app/(rede-social)/u/[username]/seguindo/page.tsx`<br>`app/api/social/perfis/[username]/lista-da-rede.ts`<br>`app/api/social/perfis/[username]/seguidores/route.ts`<br>`app/api/social/perfis/[username]/seguindo/route.ts`<br>`lib/schemas/rede.ts`<br>`lib/social/rede.ts` | `tests/api/social-rede-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/10-listas.test.ts`<br>`e2e/listas.spec.ts` | 3cff665 |
-| RF-09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | — | — | — |
+| RF-09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | — | `tests/rls/12-trip-posts.test.ts` | — |
 | RF-09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | — | — | — |
 | RF-09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | `app/(rede-social)/u/[username]/lista-da-rede.tsx`<br>`app/(rede-social)/u/[username]/seguidores/page.tsx`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`app/api/social/seguidores/[username]/route.ts`<br>`lib/social/perfil-visto.ts`<br>`lib/social/rede.ts` | `tests/api/social-perfil-visto-route.test.ts`<br>`tests/api/social-rede-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/10-listas.test.ts`<br>`tests/rls/11-exigir-username.test.ts`<br>`e2e/listas.spec.ts` | 3cff665 |
 | RF-09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | `app/(rede-social)/feed/page.tsx`<br>`app/(rede-social)/layout.tsx`<br>`app/(rede-social)/navegacao.tsx`<br>`app/(rede-social)/pesquisar/page.tsx`<br>`app/(rede-social)/pesquisar/pesquisa.tsx`<br>`app/api/social/perfis/route.ts`<br>`lib/schemas/busca.ts`<br>`lib/social/busca.ts` | `tests/api/social-perfis-busca-route.test.ts`<br>`tests/lib/busca.test.ts`<br>`e2e/rede-social.spec.ts` | ee55c53 |
@@ -109,7 +109,7 @@ catálogo das seções 14 e 15.
 | RNF-02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | — | — | — |
 | RNF-02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | — | — | — |
 | RNF-02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | — | — | — |
-| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/05-avatares.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts`<br>`tests/rls/07-contar-rede.test.ts`<br>`tests/rls/08-historico-pesquisa.test.ts`<br>`tests/rls/09-solicitacoes.test.ts`<br>`tests/rls/10-listas.test.ts`<br>`tests/rls/11-exigir-username.test.ts` | — |
+| RNF-02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | — | `tests/rls/01-isolamento.test.ts`<br>`tests/rls/02-rateio.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/05-avatares.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts`<br>`tests/rls/07-contar-rede.test.ts`<br>`tests/rls/08-historico-pesquisa.test.ts`<br>`tests/rls/09-solicitacoes.test.ts`<br>`tests/rls/10-listas.test.ts`<br>`tests/rls/11-exigir-username.test.ts`<br>`tests/rls/12-trip-posts.test.ts` | — |
 | RNF-02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | — | — | — |
 | RNF-02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | — | — | — |
 | RNF-02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | — | — | — |
@@ -139,7 +139,7 @@ catálogo das seções 14 e 15.
 
 - Requisitos no catálogo: **124**
 - Com implementação marcada: **53**
-- Com teste marcado: **46**
+- Com teste marcado: **47**
 
 ## Inconsistências
 
