@@ -1,0 +1,57 @@
+# S07-Ab-acerto-contas — unidade, integração e componente (2026-10-21 18:02)
+npx vitest run tests/lib/finance-acerto.test.ts tests/api/acerto-route.test.ts tests/components/acerto-contas.test.tsx --reporter=verbose
+
+ RUN  v4.1.11 C:/Users/AbnerCosmo/Desktop/viaja-mais
+
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — viagem com despesas > saldo positivo para quem tem a receber e negativo para quem deve 2ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — viagem com despesas > sugere as transferências que quitam os saldos 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — viagem com despesas > a soma dos saldos é zero e aplicar as transferências zera todo mundo 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — viagem com despesas > conta as despesas e não marca como acertado enquanto alguém deve 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — rótulos e ordem > "Você" primeiro, depois o dono, depois os demais por id, como "Participante N" 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — rótulos e ordem > as transferências carregam os mesmos rótulos dos saldos 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — rótulos e ordem > a ordem não depende da ordem de entrada das linhas 12ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — rótulos e ordem > quem consulta sendo o dono aparece como Você, e os demais seguem por id 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — membros sem movimento e ex-participantes > membro sem movimento aparece com saldo zero 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — membros sem movimento e ex-participantes > membro que pagou só a própria parte fica zerado 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — membros sem movimento e ex-participantes > quem saiu da viagem com dívida em aberto continua no acerto, como Ex-participante 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — membros sem movimento e ex-participantes > mais de um ex-participante recebe número, para a frase não ficar ambígua 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — despesas sem rateio, quitadas e moedas > despesa sem expense_shares não gera dívida e é contada à parte 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — despesas sem rateio, quitadas e moedas > parte quitada não entra no saldo de nenhum dos dois lados 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — despesas sem rateio, quitadas e moedas > tudo quitado: acertado, e a despesa não é contada como sem rateio 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — despesas sem rateio, quitadas e moedas > parte de despesa que não está na lista é ignorada 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — despesas sem rateio, quitadas e moedas > duas moedas geram dois grupos, sem somar entre si 1ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — despesas sem rateio, quitadas e moedas > despesa sem moeda cai no BRL 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — centavos > R$ 10,00 entre 3 (3,34 + 3,33 + 3,33): saldos fecham em zero no centavo 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — centavos > várias despesas quebradas, pagas por pessoas diferentes, ainda fecham 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — viagem sem despesas e saldos zerados > sem despesas: um grupo em BRL com todos os membros em zero e nenhuma transferência 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — viagem sem despesas e saldos zerados > só despesas sem rateio: usa a moeda delas e não diz que está tudo acertado 0ms
+ ✓ tests/lib/finance-acerto.test.ts > montarAcerto — viagem sem despesas e saldos zerados > cada um pagou R$ 30 entre os três: todos zerados e tudo acertado 0ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — 200 > viagem com despesas: saldo de cada membro e rótulos de quem consulta 8ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — 200 > transferências sugeridas no formato { de, para, valor } e quitando todos os saldos 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — 200 > viagem sem despesas: todos os membros em zero e nenhuma transferência 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — 200 > saldos zerados: cada um pagou a sua parte e ninguém deve nada 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — 200 > parte com settled_at não entra no cálculo 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — 200 > toda leitura escopa pela viagem da URL 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — erros > 401 sem sessão: nada é consultado 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — erros > 403 para quem não participa da viagem, sem nenhum dado financeiro 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — erros > 400 para tripId que não é UUID, antes de qualquer consulta 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — erros > 500 genérico quando o banco falha, sem vazar a mensagem interna 1ms
+ ✓ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto — erros > 500 genérico quando a checagem de participação falha 0ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — carregamento e erro > mostra o carregamento enquanto a API não responde 134ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — carregamento e erro > mostra o erro, avisa por toast e carrega ao tentar novamente 72ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — carregamento e erro > resposta 200 sem o formato esperado também é erro 18ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — carregamento e erro > corpo que não é JSON é tratado como erro, sem quebrar a tela 12ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — saldos e transferências > saldo positivo, negativo e zero, com texto além da cor e valores em R$ 17ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — saldos e transferências > transferências no formato "X paga R$ Y para Z" 15ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — saldos e transferências > link de volta para a aba Despesas da viagem 21ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — saldos e transferências > duas moedas: um bloco por moeda, cada um com o seu símbolo 16ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — estados vazios > viagem sem despesas: mensagem, link para adicionar e todos em R$ 0,00 18ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — estados vazios > saldos zerados: "Tudo acertado" e nenhuma transferência 14ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — estados vazios > avisa quantas despesas ficaram fora por não terem divisão 10ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — estados vazios > uma despesa sem divisão: mensagem no singular 10ms
+ ✓ tests/components/acerto-contas.test.tsx > Acerto de contas — estados vazios > ex-participante aparece identificado 8ms
+
+ Test Files  3 passed (3)
+      Tests  47 passed (47)
+   Start at  18:02:29
+   Duration  1.81s (transform 253ms, setup 587ms, import 455ms, tests 414ms, environment 916ms)

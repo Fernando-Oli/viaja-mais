@@ -430,6 +430,48 @@ export type Database = {
         }
         Relationships: []
       }
+      settlements: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          from_user_id: string
+          id: string
+          idempotency_key: string
+          to_user_id: string
+          trip_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          from_user_id: string
+          id?: string
+          idempotency_key: string
+          to_user_id: string
+          trip_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          from_user_id?: string
+          id?: string
+          idempotency_key?: string
+          to_user_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_invitations: {
         Row: {
           created_at: string
