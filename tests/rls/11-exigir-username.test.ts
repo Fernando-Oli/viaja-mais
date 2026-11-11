@@ -199,6 +199,27 @@ describe("exigir username — a contagem e o legado", () => {
     }
   })
 
+  it("a contar_rede não conta um seguido sem username, como a lista de seguindo não o mostra (regressão)", async () => {
+    // O espelho do teste acima, do lado de quem segue: achado da mutação, que
+    // tirou o filtro de username só da contagem de seguindo e nenhum teste caiu.
+    await db.query("begin")
+    try {
+      await db.query("insert into public.follows (follower_id, followee_id) values ($1, $2)", [idAna, idSemNome])
+      await db.query("update public.follows set status = 'accepted' where follower_id = $1 and followee_id = $2", [idAna, idSemNome])
+      await agirComo(idCarla)
+      const { rows } = await db.query("select seguindo::int from public.contar_rede($1)", [idAna])
+      const { rows: lista } = await db.query(
+        `select count(*)::int as n from public.follows f join public.profiles p on p.id = f.followee_id
+          where f.follower_id = $1 and f.status = 'accepted' and p.username is not null`,
+        [idAna],
+      )
+      expect(rows[0].seguindo).toBe(lista[0].n)
+      expect(rows[0].seguindo).toBe(0)
+    } finally {
+      await db.query("rollback")
+    }
+  })
+
   it("a migration apaga os vínculos legados com uma ponta sem username, e só eles (regressão)", async () => {
     const sql = sqlDaMigration()
     await db.query("begin")

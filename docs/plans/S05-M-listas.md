@@ -263,9 +263,15 @@ o contava. A correção tem três camadas:
 - **Achado da mutação, corrigido:** "username perguntado sobre o perfil, e não sobre a sessão"
   sobrevivia, porque o dublê responde o mesmo username a qualquer `id`. O teste do 403 passou a
   conferir que o username lido é o da sessão.
-- **A mutação da migration não foi executada:** as 10 sabotagens estão no script, atrás de
-  `MUTAR_BANCO=1`, e a execução foi negada pela trava de permissão do ambiente (ela derruba e recria
-  o trigger e a função e reescreve a migration no disco). Pendente da autorização do Micael.
+- **Mutação da migration (rodada pelo Micael em 11/11):** 8 das 10 sabotagens morreram na rodada.
+  - "policy sem o dono" sobrevivia por alcance do script: quem a mata é o teste da S03 "Bruno não cria
+    um follow com o follower_id da Ana" (`04-social`), que o script não rodava. Conferido aplicando só
+    a policy sabotada; o `04-social` entrou no script.
+  - "contar_rede conta seguido sem username" sobrevivia por falta de teste: entrou na RLS 11 o espelho
+    do teste dos seguidores, que passa com a função original e cai com a sabotada.
+  - **Incidente:** a sabotagem "legado apaga tudo" apagou os 92 vínculos da população local, que reaplicar
+    a migration não devolve. Eles foram restaurados do retrato da revisão de 10/11, idênticos, e o script
+    passou a copiar e devolver os vínculos a cada sabotagem do banco. Nada fora do banco local foi afetado.
 - **O `ConfirmModal` (achado m1 da `S05-M-pesquisa`)** devolve o foco ao body no Cancelar também
   aqui. É do componente compartilhado, e não desta atividade.
 - **"Ver mais" no E2E usa respostas simuladas**, porque o seed não tem 20 seguidores de ninguém. A
@@ -276,10 +282,10 @@ o contava. A correção tem três camadas:
 - [ ] Saída dos testes em `docs/pfc/evidencias/S05-M-listas-*`, regravada em 10/11 depois das duas
   rodadas (a da implementação e a da revisão independente):
   - `S05-M-listas-integracao.txt`: 71 de 71 (as listas, seguir e o perfil visto);
-  - `S05-M-listas-rls.txt`: 185 de 185, com o detalhe dos 14 testes das listas e dos 8 do exigir
-    username;
-  - `S05-M-listas-mutacoes.txt`: 58 de 58 mortas no código. A mutação da migration ficou pendente
-    (bloco 6);
+  - `S05-M-listas-rls.txt`: 185 de 185 em 10/11, com o detalhe dos 14 testes das listas e dos 8 do
+    exigir username. Em 11/11, com o teste novo da `contar_rede`, a RLS 11 passou a ter 9;
+  - `S05-M-listas-mutacoes.txt`: 58 de 58 mortas no código; na migration, 8 de 10 na rodada de 11/11,
+    e as 2 vivas fechadas como no bloco 6 (uma pelo `04-social`, outra por um teste novo na RLS 11);
   - `S05-M-listas-regressao-antes.txt`: o nome cortado no celular (1ª rodada) e, da revisão, o I1 na
     integração, na RLS e no E2E, e o m2 no E2E, que **falharam antes**;
   - `S05-M-listas-e2e.txt`: 18 de 18, em `chromium` e `mobile`, no build de produção;

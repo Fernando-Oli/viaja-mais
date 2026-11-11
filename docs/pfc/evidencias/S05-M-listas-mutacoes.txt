@@ -70,9 +70,36 @@ Resultado: 58 de 58 mortas no código.
   username a qualquer leitura por id, e o teste do 403 não conferia qual id foi lido. O teste passou a conferir que o
   username lido é o de quem está na sessão.
 
-# Mutação da migration 20261110200043: NÃO EXECUTADA
-As 10 sabotagens do banco estão escritas em .micael/s05/mutar-listas.cjs (só com MUTAR_BANCO=1): a policy sem
-exigir username de cada ponta, a policy sem o dono, o trigger que deixa voltar a nulo, com outro errcode ou não criado,
-a contar_rede contando cada ponta sem username, e o legado não apagado ou apagando tudo. A execução foi negada pela
-trava de permissão do ambiente, porque derruba e recria o trigger e a função e reescreve a migration no disco a cada
-sabotagem (restaurando no fim). Fica para o Micael autorizar.
+# Mutação da migration 20261110200043 (2026-11-11, rodada pelo Micael com MUTAR_BANCO=1)
+Cada sabotagem grava a migration alterada no disco, reaplica-a no banco local e roda a RLS 11 e, se ela não
+perceber, a RLS 07/09/10. No fim, a migration original volta ao disco e ao banco. A rodada inteira repetiu também
+as 58 sabotagens do código, todas mortas de novo.
+
+MORTA  banco    policy sem exigir username de quem segue  (RLS 11)
+MORTA  banco    policy sem exigir username de quem é seguido  (RLS 11)
+VIVA   banco    policy sem o dono (segue em nome de outro)
+MORTA  banco    trigger deixa voltar a nulo  (RLS 11)
+MORTA  banco    trigger com outro errcode  (RLS 11)
+MORTA  banco    trigger não criado  (RLS 11)
+MORTA  banco    contar_rede conta seguidor sem username  (RLS 11)
+VIVA   banco    contar_rede conta seguido sem username
+MORTA  banco    legado não apagado  (RLS 11)
+MORTA  banco    legado apaga tudo  (RLS 11)
+
+Resultado da rodada: 8 de 10 mortas. As duas vivas foram tratadas assim:
+- 'policy sem o dono' sobrevivia por alcance do script, e não por falta de teste: quem a mata é o teste da S03
+  "Bruno não cria um follow com o follower_id da Ana" (tests/rls/04-social.test.ts), que o script não rodava.
+  Conferido aplicando só a policy sabotada, sem mexer em dados: o teste caiu (1 falha em 46) e a policy voltou.
+  O 04-social entrou na lista do script.
+- 'contar_rede conta seguido sem username' sobrevivia por falta de teste: só o lado dos seguidores era testado.
+  Entrou o teste "a contar_rede não conta um seguido sem username, como a lista de seguindo não o mostra
+  (regressão)" na RLS 11. Conferido trocando só a função: o teste passa com a original (9/9) e cai com a
+  sabotada (1 falha em 9); a função voltou ao texto da migration.
+Com isso, as 10 sabotagens da migration têm um teste que as mata.
+
+# Incidente da rodada (banco local, dados de teste)
+A sabotagem 'legado apaga tudo' reaplica uma migration que apaga todos os vínculos. Reaplicar a original recria
+policy, trigger e função, mas não devolve linhas: os 92 vínculos da população local sumiram. Foram restaurados a
+partir do retrato tirado pela revisão independente em 10/11 (idênticos linha a linha, com estado e datas). O script
+passou a copiar os vínculos antes e devolvê-los depois de cada sabotagem do banco (ida e volta conferida: 92,
+idênticos). Nada fora do banco local foi afetado.
