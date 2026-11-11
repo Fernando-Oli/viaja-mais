@@ -505,6 +505,64 @@ export type Database = {
           },
         ]
       }
+      trip_posts: {
+        Row: {
+          author_id: string
+          cover_path: string | null
+          created_at: string
+          destination: string
+          end_date: string
+          id: string
+          items: NonNullable<Json>
+          start_date: string
+          title: string
+          trip_id: string
+          updated_at: string
+        }
+        ComputedFields: never
+        Insert: {
+          author_id: string
+          cover_path?: string | null
+          created_at?: string
+          destination: string
+          end_date: string
+          id?: string
+          items?: NonNullable<Json>
+          start_date: string
+          title: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          cover_path?: string | null
+          created_at?: string
+          destination?: string
+          end_date?: string
+          id?: string
+          items?: NonNullable<Json>
+          start_date?: string
+          title?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_posts_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           budget: number | null
@@ -584,6 +642,8 @@ export type Database = {
       }
       pode_acessar_despesa: { Args: { expense_uuid: string }; Returns: boolean }
       pode_ver_rede: { Args: { perfil: string }; Returns: boolean }
+      social_itens_do_post_validos: { Args: { itens: Json }; Returns: boolean }
+      social_meu_post_da_viagem: { Args: { viagem: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

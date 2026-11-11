@@ -1,0 +1,50 @@
+# S06-M-publicar-viagem — RLS 12 (trip_posts), 11/11/2026 19:53
+# npx vitest run --config vitest.rls.config.mts tests/rls/12-trip-posts.test.ts --reporter=verbose
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+ ✓ tests/rls/12-trip-posts.test.ts > leitura: a visibilidade segue o perfil do autor > post de autor público é lido por um autenticado sem vínculo nenhum 81ms
+ ✓ tests/rls/12-trip-posts.test.ts > leitura: a visibilidade segue o perfil do autor > post de autor privado é lido pelo próprio autor e pela seguidora aceita 126ms
+ ✓ tests/rls/12-trip-posts.test.ts > leitura: a visibilidade segue o perfil do autor > post de autor privado volta vazio para quem só pediu e para quem não segue 66ms
+ ✓ tests/rls/12-trip-posts.test.ts > leitura: a visibilidade segue o perfil do autor > o visitante sem sessão não lê nada: anon não tem grant 16ms
+ ✓ tests/rls/12-trip-posts.test.ts > leitura: a visibilidade segue o perfil do autor > a seguidora removida perde o acesso, e o autor público continua visível a ela 41ms
+ ✓ tests/rls/12-trip-posts.test.ts > leitura: a visibilidade segue o perfil do autor > o post lido tem só as colunas permitidas, e os itens só as chaves permitidas 18ms
+ ✓ tests/rls/12-trip-posts.test.ts > o trip_id não revela quem viajou junto > um terceiro lê os dois posts, mas não o trip_id 33ms
+ ✓ tests/rls/12-trip-posts.test.ts > o trip_id não revela quem viajou junto > nem o `select=*` devolve o trip_id: ele responde 42501 15ms
+ ✓ tests/rls/12-trip-posts.test.ts > o trip_id não revela quem viajou junto > filtrar pelo trip_id também é recusado, mesmo para o autor 51ms
+ ✓ tests/rls/12-trip-posts.test.ts > o trip_id não revela quem viajou junto > a função do autor devolve o próprio post, e nunca o de outra pessoa 103ms
+ ✓ tests/rls/12-trip-posts.test.ts > o trip_id não revela quem viajou junto > o visitante sem sessão não chama a função 24ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > quem não é membro não publica a viagem 24ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > um membro não publica em nome de outra pessoa 23ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > membro sem username não publica 52ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > a capa não entra no INSERT: só pela rota, depois de conferir os bytes 20ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > dois membros publicam a mesma viagem, cada um o seu post (o caso legítimo) 49ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > o mesmo autor não publica a mesma viagem duas vezes 22ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > o autor atualiza o conteúdo, e o banco acerta o updated_at 40ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > o autor não muda trip_id, author_id nem created_at 68ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > outra pessoa, mesmo membro da viagem, não altera nem apaga o post da autora 80ms
+ ✓ tests/rls/12-trip-posts.test.ts > escrita pela Data API > quem saiu da viagem não atualiza o post, mas ainda o apaga 60ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com notes 22ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com latitude 22ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com longitude 21ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com price 22ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com id do item 22ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com chave desconhecida 23ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com sem título 21ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com título vazio 20ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com campo nulo 21ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com campo que não é texto 22ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com data fora do formato 21ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com hora fora do formato 23ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com categoria inventada 21ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com local acima de 200 22ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item com descrição acima de 2000 17ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > recusa item que não é objeto e itinerário com mais de 200 itens 39ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > aceita o item com todos os campos permitidos, e o itinerário vazio 48ms
+ ✓ tests/rls/12-trip-posts.test.ts > o formato da cópia, mesmo pela Data API > a capa só aceita caminho na pasta do autor, no formato da rota 69ms
+ ✓ tests/rls/12-trip-posts.test.ts > a viagem continua fechada > quem lê o post não lê a viagem nem os membros dela 73ms
+ ✓ tests/rls/12-trip-posts.test.ts > a viagem continua fechada > excluir a viagem apaga os posts dela 16ms
+ ✓ tests/rls/12-trip-posts.test.ts > o bucket da capa > nasce privado, com os limites da foto 4ms
+ ✓ tests/rls/12-trip-posts.test.ts > o bucket da capa > nenhuma policy de storage.objects menciona o bucket: ninguém assina nem envia com o próprio JWT 93ms
+ Test Files  1 passed (1)
+      Tests  43 passed (43)
+   Start at  19:53:19
+   Duration  3.74s (transform 126ms, setup 58ms, import 370ms, tests 2.76s, environment 0ms)
