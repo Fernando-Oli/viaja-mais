@@ -30,6 +30,7 @@ const dona = { userId: ANA, rotulo: "Participante 2", papel: "owner" as const }
 const carla = { userId: CARLA, rotulo: "Participante 3", papel: "member" as const }
 
 const COM_SALDOS: Acerto = {
+  usuarioAtualId: BRUNO,
   totalDespesas: 2,
   despesasSemRateio: 0,
   tudoAcertado: false,
@@ -50,6 +51,7 @@ const COM_SALDOS: Acerto = {
 }
 
 const SEM_DESPESAS: Acerto = {
+  usuarioAtualId: BRUNO,
   totalDespesas: 0,
   despesasSemRateio: 0,
   tudoAcertado: false,
@@ -264,5 +266,181 @@ describe("Acerto de contas — estados vazios", () => {
 
     const linhas = await screen.findAllByTestId("saldo-membro")
     expect(texto(linhas[1])).toBe("Ex-participante Saiu da viagem deve R$ 5,00")
+  })
+})
+
+/**
+ * S08 — registrar pagamento. A tela só envia o pedido e busca o acerto de novo:
+ * o saldo novo vem da API. `fetch` aqui é roteado por método, para provar a
+ * sequência GET → POST → GET.
+ *
+ * @RF06.13 registrar como paga uma transferência do acerto
+ */
+describe("Acerto de contas — registrar pagamento", () => {
+  type Chamada = { url: string; metodo: string; corpo: Record<string, unknown> | null }
+
+  // Uma resposta de POST pode ser uma fábrica: rejeição criada antes da hora
+  // vira "unhandled rejection" no Vitest.
+  type RespostaPost = Resposta | Promise<Resposta> | (() => Promise<Resposta>)
+
+  function rotearFetch(opcoes: { acertos: Acerto[]; post: RespostaPost[] }) {
+    const chamadas: Chamada[] = []
+    const acertos = [...opcoes.acertos]
+    const posts = [...opcoes.post]
+    const fn = vi.fn((url: string, init?: RequestInit) => {
+      const metodo = init?.method ?? "GET"
+      chamadas.push({ url, metodo, corpo: init?.body ? JSON.parse(String(init.body)) : null })
+      if (metodo === "POST") {
+        const resposta = posts.length > 1 ? posts.shift()! : posts[0]
+        return typeof resposta === "function" ? resposta() : Promise.resolve(resposta)
+      }
+      return Promise.resolve(ok(acertos.length > 1 ? acertos.shift()! : acertos[0]))
+    })
+    vi.stubGlobal("fetch", fn)
+    return chamadas
+  }
+
+  const DEPOIS_DO_PAGAMENTO: Acerto = {
+    ...COM_SALDOS,
+    grupos: [
+      {
+        moeda: "BRL",
+        saldos: [
+          { ...voce, valor: 0 },
+          { ...dona, valor: 30 },
+          { ...carla, valor: -30 },
+        ],
+        transferencias: [{ de: carla, para: dona, valor: 30 }],
+      },
+    ],
+  }
+
+  it("o botão aparece só nas transferências que saem de quem consulta", async () => {
+    rotearFetch({ acertos: [COM_SALDOS], post: [] })
+    await abrirPagina()
+
+    const linhas = await screen.findAllByTestId("linha-transferencia")
+    expect(within(linhas[0]).queryByRole("button", { name: "Registrar pagamento" })).not.toBeInTheDocument()
+    expect(within(linhas[1]).getByRole("button", { name: "Registrar pagamento" })).toBeInTheDocument()
+  })
+
+  it("confirma o valor sugerido, desabilita durante o envio, avisa por toast e recarrega o acerto", async () => {
+    let responder: (r: Resposta) => void = () => {}
+    const pendente = new Promise<Resposta>((r) => {
+      responder = r
+    })
+    const chamadas = rotearFetch({ acertos: [COM_SALDOS, DEPOIS_DO_PAGAMENTO], post: [pendente] })
+    const usuario = await abrirPagina()
+
+    await usuario.click(await screen.findByRole("button", { name: "Registrar pagamento" }))
+    const dialogo = await screen.findByRole("dialog")
+    expect(within(dialogo).getByLabelText("Valor pago (BRL)")).toHaveValue("15,00")
+    expect(texto(within(dialogo).getByText(/Confirme quanto você já pagou/))).toContain("para Participante 2")
+
+    await usuario.click(within(dialogo).getByRole("button", { name: "Confirmar pagamento" }))
+
+    expect(within(dialogo).getByRole("button", { name: "Registrando..." })).toBeDisabled()
+    expect(within(dialogo).getByRole("button", { name: "Cancelar" })).toBeDisabled()
+    const post = chamadas.find((c) => c.metodo === "POST")!
+    expect(post.url).toBe(`/api/trips/${TRIP}/acerto/transferencias`)
+    expect(post.corpo).toMatchObject({ de: BRUNO, para: ANA, valor: "15,00", moeda: "BRL" })
+    expect(post.corpo?.chave).toMatch(/^[0-9a-f-]{36}$/)
+
+    responder({ ok: true, status: 201, json: () => Promise.resolve({ transferencia: {} }) })
+
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    expect(h.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Pagamento registrado" }))
+    await vi.waitFor(() =>
+      expect(screen.getAllByTestId("transferencia").map(texto)).toEqual([
+        "Participante 3 paga R$ 30,00 para Participante 2",
+      ]),
+    )
+    expect(texto(screen.getAllByTestId("saldo-membro")[0])).toBe("Você Membro quite R$ 0,00")
+    expect(screen.queryByRole("button", { name: "Registrar pagamento" })).not.toBeInTheDocument()
+    expect(chamadas.map((c) => c.metodo)).toEqual(["GET", "POST", "GET"])
+  })
+
+  it("pagamento parcial: envia o valor editado", async () => {
+    const chamadas = rotearFetch({ acertos: [COM_SALDOS], post: [ok({ transferencia: {} })] })
+    const usuario = await abrirPagina()
+
+    await usuario.click(await screen.findByRole("button", { name: "Registrar pagamento" }))
+    const campo = await screen.findByLabelText("Valor pago (BRL)")
+    await usuario.clear(campo)
+    await usuario.type(campo, "5,50")
+    await usuario.click(screen.getByRole("button", { name: "Confirmar pagamento" }))
+
+    await vi.waitFor(() => expect(chamadas.some((c) => c.metodo === "POST")).toBe(true))
+    expect(chamadas.find((c) => c.metodo === "POST")?.corpo).toMatchObject({ valor: "5,50" })
+  })
+
+  it("valor inválido não é enviado e o campo explica o porquê", async () => {
+    const chamadas = rotearFetch({ acertos: [COM_SALDOS], post: [] })
+    const usuario = await abrirPagina()
+
+    await usuario.click(await screen.findByRole("button", { name: "Registrar pagamento" }))
+    const campo = await screen.findByLabelText("Valor pago (BRL)")
+    await usuario.clear(campo)
+    await usuario.type(campo, "0")
+    await usuario.click(screen.getByRole("button", { name: "Confirmar pagamento" }))
+
+    expect(screen.getByText("Informe um valor maior que zero, com até duas casas.")).toBeInTheDocument()
+    expect(campo).toHaveAttribute("aria-invalid", "true")
+    expect(chamadas.some((c) => c.metodo === "POST")).toBe(false)
+  })
+
+  it("erro da API: toast com a mensagem, diálogo aberto e nova tentativa com a mesma chave", async () => {
+    const chamadas = rotearFetch({
+      acertos: [COM_SALDOS, DEPOIS_DO_PAGAMENTO],
+      post: [falha(422, { error: "O valor passa da dívida atual do pagador (R$ 15,00)" }), ok({ transferencia: {} })],
+    })
+    const usuario = await abrirPagina()
+
+    await usuario.click(await screen.findByRole("button", { name: "Registrar pagamento" }))
+    await usuario.click(await screen.findByRole("button", { name: "Confirmar pagamento" }))
+
+    await vi.waitFor(() =>
+      expect(h.toast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variant: "destructive",
+          description: "O valor passa da dívida atual do pagador (R$ 15,00)",
+        }),
+      ),
+    )
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    await vi.waitFor(() => expect(screen.getByRole("button", { name: "Confirmar pagamento" })).toBeEnabled())
+
+    await usuario.click(screen.getByRole("button", { name: "Confirmar pagamento" }))
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+
+    const posts = chamadas.filter((c) => c.metodo === "POST")
+    expect(posts).toHaveLength(2)
+    expect(posts[1].corpo?.chave).toBe(posts[0].corpo?.chave)
+  })
+
+  it("falha de rede no envio: toast genérico, sem quebrar a tela", async () => {
+    rotearFetch({ acertos: [COM_SALDOS], post: [() => Promise.reject(new TypeError("Failed to fetch"))] })
+    const usuario = await abrirPagina()
+
+    await usuario.click(await screen.findByRole("button", { name: "Registrar pagamento" }))
+    await usuario.click(await screen.findByRole("button", { name: "Confirmar pagamento" }))
+
+    await vi.waitFor(() =>
+      expect(h.toast).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: "destructive", description: "Não foi possível registrar o pagamento" }),
+      ),
+    )
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
+  it("cancelar fecha o diálogo sem enviar nada", async () => {
+    const chamadas = rotearFetch({ acertos: [COM_SALDOS], post: [] })
+    const usuario = await abrirPagina()
+
+    await usuario.click(await screen.findByRole("button", { name: "Registrar pagamento" }))
+    await usuario.click(await screen.findByRole("button", { name: "Cancelar" }))
+
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    expect(chamadas.some((c) => c.metodo === "POST")).toBe(false)
   })
 })

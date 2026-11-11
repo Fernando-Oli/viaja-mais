@@ -6,17 +6,19 @@ O diagrama abaixo usa os nomes de tabela e campo já definidos em `docs/plans/00
 ┌─────────────┐        ┌──────────────────┐        ┌──────────────┐
 │  expenses    │  1   * │  expense_shares   │        │  settlements  │
 │──────────────│───────►│───────────────────│        │───────────────│
-│ id           │        │ expense_id         │        │ trip_id       │
-│ trip_id      │        │ user_id            │        │ de            │
-│ paid_by      │        │ valor              │        │ para          │
-│ valor        │        │ quitado            │        │ valor         │
-└─────────────┘        └──────────────────┘        │ status        │
+│ id           │        │ expense_id         │        │ trip_id        │
+│ trip_id      │        │ user_id            │        │ from_user_id   │
+│ paid_by      │        │ valor              │        │ to_user_id     │
+│ valor        │        │ quitado            │        │ amount         │
+└─────────────┘        └──────────────────┘        │ currency       │
+                                                       │ idempotency_key│
+                                                       │ created_at     │
                                                        └──────────────┘
 \`\`\`
 
 - `expenses.paid_by`: quem pagou a despesa — campo novo na tabela já existente.
 - `expense_shares`: uma linha por membro que deve algo naquela despesa; `valor` é o quanto esse membro deve, `quitado` indica se já foi pago.
-- `settlements`: registra transferências entre membros para zerar o saldo (o acerto de contas), calculadas por `lib/finance/balances.ts::minimizarTransferencias()`.
+- `settlements`: registra pagamentos já feitos entre participantes para reduzir o saldo do acerto de contas (S08, migration `20261111100000_financeiro_settlements.sql`). Cada linha diz que `from_user_id` pagou `amount` na moeda `currency` para `to_user_id`. As colunas seguem a convenção em inglês do schema (`paid_by`, `amount`, `currency`) em vez dos nomes provisórios do plano norte (`de`, `para`, `valor`), e não há `status`: o registro representa um pagamento já realizado, sem fluxo de confirmação. O registro é imutável (sem UPDATE nem DELETE pela aplicação). `idempotency_key` impede que o mesmo envio grave duas vezes. O saldo de cada membro passa a ser calculado a partir das parcelas em aberto mais os pagamentos registrados, e as transferências sugeridas por `lib/finance/balances.ts::minimizarTransferencias()` são recalculadas sobre esse saldo.
 
 **RNE-020 — Soma exata do rateio:** a soma das parcelas atribuídas aos participantes é sempre igual ao valor total da despesa, em centavos. Na divisão igual, o resíduo de arredondamento é distribuído um centavo por participante seguindo ordem determinística por identificador. Na divisão por peso, o resíduo é atribuído conforme o maior resto, com empate resolvido pela mesma ordem determinística.
 

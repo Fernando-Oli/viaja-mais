@@ -1,9 +1,16 @@
 import { describe, it, expect } from "vitest"
-import { montarAcerto, type Acerto, type DespesaLida, type MembroLido, type ParteLida } from "@/lib/finance/acerto"
+import {
+  montarAcerto,
+  type Acerto,
+  type DespesaLida,
+  type MembroLido,
+  type PagamentoLido,
+  type ParteLida,
+} from "@/lib/finance/acerto"
 import { paraCentavos } from "@/lib/finance/balances"
 
 /**
- * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas
+ * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas e pagamentos registrados
  *
  * `montarAcerto()` só adapta e rotula: a conta é de `lib/finance/balances.ts`.
  * Por isso cada cenário confere, além do valor esperado, as duas invariantes do
@@ -329,5 +336,147 @@ describe("montarAcerto — viagem sem despesas e saldos zerados", () => {
     expect(acerto.grupos[0].saldos.map((s) => s.valor)).toEqual([0, 0, 0])
     expect(acerto.grupos[0].transferencias).toEqual([])
     expect(acerto.tudoAcertado).toBe(true)
+  })
+})
+
+/**
+ * S08: pagamentos registrados em `settlements`. Um pagamento `de → para (V)`
+ * entra em `calcularSaldos()` como despesa de `de` com uma única parte de
+ * `para`: a dívida de `de` e o crédito de `para` caem V, e a soma continua 0.
+ */
+const pago = (de: string, para: string, amount: number | string, currency = "BRL"): PagamentoLido => ({
+  from_user_id: de,
+  to_user_id: para,
+  amount,
+  currency,
+})
+
+describe("montarAcerto — pagamentos registrados", () => {
+  it("sem pagamentos, o resultado é o mesmo de antes da S08", () => {
+    const antes = montarAcerto({ ...CENARIO, usuarioAtualId: BRUNO })
+    const depois = montarAcerto({ ...CENARIO, usuarioAtualId: BRUNO, pagamentos: [] })
+    expect(depois).toEqual(antes)
+    expect(depois.usuarioAtualId).toBe(BRUNO)
+  })
+
+  it("pagamento total zera o saldo de quem pagou e tira a transferência dele", () => {
+    const acerto = montarAcerto({ ...CENARIO, usuarioAtualId: BRUNO, pagamentos: [pago(CARLA, ANA, 30)] })
+    expect(saldoDe(acerto, CARLA)).toBe(0)
+    expect(saldoDe(acerto, ANA)).toBe(15)
+    expect(saldoDe(acerto, BRUNO)).toBe(-15)
+    expect(acerto.grupos[0].transferencias.map((t) => [t.de.userId, t.para.userId, t.valor])).toEqual([[BRUNO, ANA, 15]])
+    expect(acerto.tudoAcertado).toBe(false)
+    conferirInvariantes(acerto)
+  })
+
+  it("pagamento parcial reduz a dívida e o crédito no valor exato, e a sugestão diminui", () => {
+    const acerto = montarAcerto({ ...CENARIO, usuarioAtualId: BRUNO, pagamentos: [pago(CARLA, ANA, "12.50")] })
+    expect(saldoDe(acerto, CARLA)).toBe(-17.5)
+    expect(saldoDe(acerto, ANA)).toBe(32.5)
+    expect(acerto.grupos[0].transferencias.map((t) => [t.de.userId, t.para.userId, t.valor])).toEqual([
+      [CARLA, ANA, 17.5],
+      [BRUNO, ANA, 15],
+    ])
+    conferirInvariantes(acerto)
+  })
+
+  it("vários pagamentos se somam, e quitar tudo deixa a viagem acertada", () => {
+    const acerto = montarAcerto({
+      ...CENARIO,
+      usuarioAtualId: ANA,
+      pagamentos: [pago(CARLA, ANA, 10), pago(CARLA, ANA, 20), pago(BRUNO, ANA, 5), pago(BRUNO, ANA, 10)],
+    })
+    expect(acerto.grupos[0].saldos.map((s) => s.valor)).toEqual([0, 0, 0])
+    expect(acerto.grupos[0].transferencias).toEqual([])
+    expect(acerto.tudoAcertado).toBe(true)
+    conferirInvariantes(acerto)
+  })
+
+  it("pagamento em outra moeda não mexe no saldo em real", () => {
+    const acerto = montarAcerto({
+      despesas: [...CENARIO.despesas, despesa("museu", ANA, "EUR")],
+      partes: [...CENARIO.partes, parte("museu", ANA, 10), parte("museu", BRUNO, 10)],
+      membros: MEMBROS,
+      usuarioAtualId: ANA,
+      pagamentos: [pago(BRUNO, ANA, 10, "EUR")],
+    })
+    const [brl, eur] = acerto.grupos
+    expect([brl.moeda, eur.moeda]).toEqual(["BRL", "EUR"])
+    expect(saldoDe(acerto, BRUNO, 0)).toBe(-15)
+    expect(saldoDe(acerto, BRUNO, 1)).toBe(0)
+    expect(eur.transferencias).toEqual([])
+    conferirInvariantes(acerto)
+  })
+
+  it("pagamento numa moeda sem despesa vira um grupo próprio, sem somar ao real", () => {
+    const acerto = montarAcerto({ ...CENARIO, usuarioAtualId: ANA, pagamentos: [pago(BRUNO, ANA, 5, "USD")] })
+    expect(acerto.grupos.map((g) => g.moeda)).toEqual(["BRL", "USD"])
+    expect(saldoDe(acerto, BRUNO, 0)).toBe(-15)
+    expect(saldoDe(acerto, BRUNO, 1)).toBe(5)
+    conferirInvariantes(acerto)
+  })
+
+  it("pagamento sem moeda cai no BRL, como a despesa sem moeda", () => {
+    const acerto = montarAcerto({
+      ...CENARIO,
+      usuarioAtualId: ANA,
+      pagamentos: [{ ...pago(BRUNO, ANA, 15), currency: "" }],
+    })
+    expect(acerto.grupos).toHaveLength(1)
+    expect(saldoDe(acerto, BRUNO)).toBe(0)
+  })
+
+  it("R$ 10,00 entre 3, quitados aos poucos e em centavos, fecham exatamente em zero", () => {
+    const despesas = [despesa("pizza", ANA)]
+    const partes = [parte("pizza", ANA, 3.34), parte("pizza", BRUNO, 3.33), parte("pizza", CARLA, 3.33)]
+    const parcial = montarAcerto({
+      despesas,
+      partes,
+      membros: MEMBROS,
+      usuarioAtualId: ANA,
+      pagamentos: [pago(BRUNO, ANA, 0.01), pago(CARLA, ANA, 3.32)],
+    })
+    expect(saldoDe(parcial, BRUNO)).toBe(-3.32)
+    expect(saldoDe(parcial, CARLA)).toBe(-0.01)
+    expect(saldoDe(parcial, ANA)).toBe(3.33)
+    conferirInvariantes(parcial)
+
+    const quitado = montarAcerto({
+      despesas,
+      partes,
+      membros: MEMBROS,
+      usuarioAtualId: ANA,
+      pagamentos: [pago(BRUNO, ANA, 0.01), pago(CARLA, ANA, 3.32), pago(BRUNO, ANA, 3.32), pago(CARLA, ANA, 0.01)],
+    })
+    expect(quitado.grupos[0].saldos.map((s) => paraCentavos(s.valor))).toEqual([0, 0, 0])
+    expect(quitado.tudoAcertado).toBe(true)
+  })
+
+  it("ex-participante com dívida que já pagou parte continua no acerto com o restante", () => {
+    const acerto = montarAcerto({
+      despesas: [despesa("taxi", ANA)],
+      partes: [parte("taxi", ANA, 20), parte("taxi", EX1, 20)],
+      membros: MEMBROS,
+      usuarioAtualId: ANA,
+      pagamentos: [pago(EX1, ANA, 5)],
+    })
+    const ex = acerto.grupos[0].saldos.find((s) => s.userId === EX1)
+    expect(ex).toMatchObject({ rotulo: "Ex-participante", papel: "ex", valor: -15 })
+    expect(acerto.grupos[0].transferencias.map((t) => [t.de.rotulo, t.valor])).toEqual([["Ex-participante", 15]])
+    conferirInvariantes(acerto)
+  })
+
+  it("ex-participante que recebeu um pagamento aparece mesmo sem despesa aberta", () => {
+    const acerto = montarAcerto({
+      despesas: [despesa("taxi", EX1)],
+      partes: [parte("taxi", EX1, 20), parte("taxi", BRUNO, 20)],
+      membros: MEMBROS,
+      usuarioAtualId: BRUNO,
+      pagamentos: [pago(BRUNO, EX1, 20)],
+    })
+    const ex = acerto.grupos[0].saldos.find((s) => s.userId === EX1)
+    expect(ex).toMatchObject({ papel: "ex", valor: 0 })
+    expect(acerto.tudoAcertado).toBe(true)
+    conferirInvariantes(acerto)
   })
 })

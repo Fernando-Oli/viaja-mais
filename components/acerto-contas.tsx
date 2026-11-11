@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { paraCentavos } from "@/lib/finance/balances"
 import { formatarCentavos } from "@/lib/finance/rateio"
-import type { Acerto, GrupoMoeda, PapelAcerto, SaldoAcerto } from "@/lib/finance/acerto"
+import type { Acerto, GrupoMoeda, PapelAcerto, SaldoAcerto, TransferenciaAcerto } from "@/lib/finance/acerto"
 
 /**
  * Apresentação do acerto de contas. Não calcula nada: saldos e transferências
@@ -14,8 +14,13 @@ import type { Acerto, GrupoMoeda, PapelAcerto, SaldoAcerto } from "@/lib/finance
  * O estado de cada saldo é dito em texto ("a receber", "deve", "quite") além
  * da cor: cor sozinha não chega a quem não distingue verde de vermelho.
  *
- * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas
+ * "Registrar pagamento" só aparece nas transferências que saem de quem
+ * consulta: só o próprio pagador registra (a rota e a RLS exigem o mesmo).
+ *
+ * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas e registro de pagamento
  */
+
+type AoRegistrar = (transferencia: TransferenciaAcerto, moeda: string) => void
 
 const ROTULO_PAPEL: Record<PapelAcerto, string> = {
   owner: "Dono",
@@ -53,7 +58,17 @@ function LinhaSaldo({ saldo, moeda }: { saldo: SaldoAcerto; moeda: string }) {
   )
 }
 
-function GrupoAcerto({ grupo, mostrarMoeda }: { grupo: GrupoMoeda; mostrarMoeda: boolean }) {
+function GrupoAcerto({
+  grupo,
+  mostrarMoeda,
+  usuarioAtualId,
+  onRegistrarPagamento,
+}: {
+  grupo: GrupoMoeda
+  mostrarMoeda: boolean
+  usuarioAtualId?: string
+  onRegistrarPagamento?: AoRegistrar
+}) {
   return (
     <div className="grid gap-6 lg:grid-cols-2" data-testid="grupo-moeda">
       <Card>
@@ -83,15 +98,28 @@ function GrupoAcerto({ grupo, mostrarMoeda }: { grupo: GrupoMoeda; mostrarMoeda:
               {grupo.transferencias.map((t) => (
                 <li
                   key={`${t.de.userId}-${t.para.userId}`}
-                  data-testid="transferencia"
-                  className="flex items-start gap-2 rounded-lg border border-slate-200 p-3 text-sm"
+                  data-testid="linha-transferencia"
+                  className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-                  <p className="min-w-0 break-words">
-                    <span className="font-medium text-viaja-navy">{t.de.rotulo}</span> paga{" "}
-                    <span className="font-semibold">{formatar(t.valor, grupo.moeda)}</span> para{" "}
-                    <span className="font-medium text-viaja-navy">{t.para.rotulo}</span>
-                  </p>
+                  <div className="flex min-w-0 items-start gap-2">
+                    <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                    <p data-testid="transferencia" className="min-w-0 break-words">
+                      <span className="font-medium text-viaja-navy">{t.de.rotulo}</span> paga{" "}
+                      <span className="font-semibold">{formatar(t.valor, grupo.moeda)}</span> para{" "}
+                      <span className="font-medium text-viaja-navy">{t.para.rotulo}</span>
+                    </p>
+                  </div>
+                  {onRegistrarPagamento && usuarioAtualId && t.de.userId === usuarioAtualId && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full shrink-0 sm:w-auto"
+                      onClick={() => onRegistrarPagamento(t, grupo.moeda)}
+                    >
+                      Registrar pagamento
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -102,7 +130,15 @@ function GrupoAcerto({ grupo, mostrarMoeda }: { grupo: GrupoMoeda; mostrarMoeda:
   )
 }
 
-export function AcertoContas({ acerto, tripId }: { acerto: Acerto; tripId: string }) {
+export function AcertoContas({
+  acerto,
+  tripId,
+  onRegistrarPagamento,
+}: {
+  acerto: Acerto
+  tripId: string
+  onRegistrarPagamento?: AoRegistrar
+}) {
   if (acerto.totalDespesas === 0) {
     return (
       <Card>
@@ -147,7 +183,13 @@ export function AcertoContas({ acerto, tripId }: { acerto: Acerto; tripId: strin
       )}
 
       {acerto.grupos.map((grupo) => (
-        <GrupoAcerto key={grupo.moeda} grupo={grupo} mostrarMoeda={mostrarMoeda} />
+        <GrupoAcerto
+          key={grupo.moeda}
+          grupo={grupo}
+          mostrarMoeda={mostrarMoeda}
+          usuarioAtualId={acerto.usuarioAtualId}
+          onRegistrarPagamento={onRegistrarPagamento}
+        />
       ))}
     </div>
   )

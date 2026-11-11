@@ -7,6 +7,9 @@
  * de `lib/finance/balances.ts`. Este módulo só adapta a entrada, separa por
  * moeda e dá nome a cada participante.
  *
+ * Desde a S08, os pagamentos já registrados (`settlements`) também entram no
+ * saldo — ver `montarAcerto()`.
+ *
  * @RF06.11 visualizar o saldo por membro (quem deve a quem)
  * @RF06.13 sugerir transferências para acerto de contas
  */
@@ -29,6 +32,17 @@ export interface ParteLida {
   user_id: string
   amount: number | string
   settled_at: string | null
+}
+
+/**
+ * Pagamento já registrado, como a rota lê de `settlements`: `from_user_id`
+ * pagou `amount` para `to_user_id`. `amount` é numeric: pode chegar como texto.
+ */
+export interface PagamentoLido {
+  from_user_id: string
+  to_user_id: string
+  amount: number | string
+  currency: string
 }
 
 /** Membro como a rota lê de `trip_members`. */
@@ -64,6 +78,8 @@ export interface GrupoMoeda {
 }
 
 export interface Acerto {
+  /** Quem consulta: a tela oferece registrar pagamento só nas transferências que saem dele. */
+  usuarioAtualId: string
   /** Um grupo por moeda: saldo em real e saldo em dólar não se somam. */
   grupos: GrupoMoeda[]
   totalDespesas: number
@@ -123,14 +139,25 @@ function rotularParticipantes(
  * dois lados de uma vez, porque `calcularSaldos()` lança cada parte como
  * crédito do pagador e débito do participante. A rota pode já ter filtrado;
  * filtrar de novo aqui deixa a função correta para qualquer chamador.
+ *
+ * Pagamentos registrados entram como uma "despesa" de quem pagou, com uma
+ * única parte de quem recebeu: `de → para (V)` vira
+ * `{ pagadorId: de, partes: [{ participanteId: para, valor: V }] }`.
+ * `calcularSaldos()` lança isso como +V para `de` (a dívida dele diminui) e −V
+ * para `para` (o crédito dele diminui) — exatamente o efeito do dinheiro que
+ * mudou de mão, sem uma segunda fórmula de saldo e com a soma ainda em zero.
+ * Cada pagamento entra no grupo da própria moeda.
+ *
+ * @RF06.13 transferências registradas como pagas reduzem o saldo
  */
 export function montarAcerto(entrada: {
   despesas: DespesaLida[]
   partes: ParteLida[]
   membros: MembroLido[]
   usuarioAtualId: string
+  pagamentos?: PagamentoLido[]
 }): Acerto {
-  const { despesas, partes, membros, usuarioAtualId } = entrada
+  const { despesas, partes, membros, usuarioAtualId, pagamentos = [] } = entrada
 
   const despesaPorId = new Map(despesas.map((d) => [d.id, d]))
   const comAlgumaParte = new Set<string>()
@@ -155,6 +182,16 @@ export function montarAcerto(entrada: {
     lista.push({
       pagadorId: despesa.paid_by,
       partes: abertas.map((p) => ({ participanteId: p.user_id, valor: Number(p.amount) })),
+    })
+    porMoeda.set(moeda, lista)
+  }
+
+  for (const pagamento of pagamentos) {
+    const moeda = pagamento.currency || MOEDA_PADRAO
+    const lista = porMoeda.get(moeda) ?? []
+    lista.push({
+      pagadorId: pagamento.from_user_id,
+      partes: [{ participanteId: pagamento.to_user_id, valor: Number(pagamento.amount) }],
     })
     porMoeda.set(moeda, lista)
   }
@@ -195,6 +232,7 @@ export function montarAcerto(entrada: {
   })
 
   return {
+    usuarioAtualId,
     grupos: resultado,
     totalDespesas: despesas.length,
     despesasSemRateio: despesas.filter((d) => !comAlgumaParte.has(d.id)).length,

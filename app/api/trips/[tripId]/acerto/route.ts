@@ -3,7 +3,7 @@ import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { exigirMembro } from "@/lib/authz/trip"
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
-import { montarAcerto, type DespesaLida, type MembroLido, type ParteLida } from "@/lib/finance/acerto"
+import { carregarAcerto } from "./carregar-acerto"
 
 /**
  * Acerto de contas de uma viagem: saldo por membro e transferências sugeridas.
@@ -13,12 +13,15 @@ import { montarAcerto, type DespesaLida, type MembroLido, type ParteLida } from 
  *   1. `tripId` validado com zod — id malformado é 400, antes de qualquer consulta.
  *   2. `getUser()`      — valida o token no servidor de auth; sem sessão, 401.
  *   3. `exigirMembro`   — saldo é dado da viagem; quem não participa recebe 403.
- *   4. cliente da sessão, sob RLS — `expenses_select` e `expense_shares_select`
- *                         são a segunda linha de defesa. Sem service role.
+ *   4. cliente da sessão, sob RLS — `expenses_select`, `expense_shares_select`
+ *                         e `settlements_select` são a segunda linha de defesa.
+ *                         Sem service role.
  *   5. a conta é de `lib/finance/` — a rota só lê e entrega.
  *
  * As partes vêm todas, inclusive as quitadas: `montarAcerto()` descarta as que
  * têm `settled_at` e usa as quitadas só para saber que a despesa foi rateada.
+ * Os pagamentos já registrados (`settlements`) entram no saldo desde a S08; a
+ * tela chama esta rota de novo depois de cada pagamento.
  *
  * @RF06.11 visualizar o saldo por membro (quem deve a quem)
  * @RF06.13 sugerir transferências para acerto de contas
@@ -41,28 +44,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tri
 
     await exigirMembro(supabase, tripId, user.id)
 
-    const [despesas, partes, membros] = await Promise.all([
-      supabase.from("expenses").select("id, paid_by, currency").eq("trip_id", tripId),
-      supabase
-        .from("expense_shares")
-        .select("expense_id, user_id, amount, settled_at, expenses!inner(trip_id)")
-        .eq("expenses.trip_id", tripId),
-      supabase.from("trip_members").select("user_id, role").eq("trip_id", tripId),
-    ])
-
-    // Mensagem genérica: a do Postgres pode revelar coluna/constraint.
-    if (despesas.error || partes.error || membros.error) {
-      throw new ErroHttp(500, "Não foi possível carregar o acerto de contas")
-    }
-
-    const acerto = montarAcerto({
-      despesas: (despesas.data ?? []) as DespesaLida[],
-      partes: (partes.data ?? []) as unknown as ParteLida[],
-      membros: (membros.data ?? []) as MembroLido[],
-      usuarioAtualId: user.id,
-    })
-
-    return NextResponse.json(acerto)
+    return NextResponse.json(await carregarAcerto(supabase, tripId, user.id))
   } catch (erro) {
     if (erro instanceof ErroHttp && erro.status >= 500) {
       return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })

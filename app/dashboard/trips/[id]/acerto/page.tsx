@@ -7,14 +7,19 @@ import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AcertoContas } from "@/components/acerto-contas"
-import type { Acerto } from "@/lib/finance/acerto"
+import { RegistrarPagamento, type PagamentoEmEdicao } from "@/components/registrar-pagamento"
+import type { Acerto, TransferenciaAcerto } from "@/lib/finance/acerto"
 
 /**
  * Tela de acerto de contas da viagem. Busca o acerto pronto na API — que exige
  * participação no servidor e faz a conta com `lib/finance/` — e só exibe.
  * Feedback de erro por `toast()`, como a tela de nova despesa.
  *
- * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas
+ * Registrar pagamento (S08): o pagador confirma o valor, a tela envia para
+ * `POST /api/trips/[tripId]/acerto/transferencias` e, com sucesso, busca o
+ * acerto de novo — o saldo novo vem do servidor, a tela não desconta nada.
+ *
+ * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas e registro de pagamento
  */
 
 type Estado = { tipo: "carregando" } | { tipo: "erro" } | { tipo: "pronto"; acerto: Acerto }
@@ -26,13 +31,20 @@ async function buscarAcerto(tripId: string): Promise<Acerto> {
   return dados
 }
 
+/** Pagamento aberto no diálogo, com a chave de idempotência desta tentativa. */
+type PagamentoAberto = PagamentoEmEdicao & { chave: string }
+
 export default function AcertoContasPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { toast } = useToast()
   const [estado, setEstado] = useState<Estado>({ tipo: "carregando" })
 
-  // `tentativa` existe para o botão "Tentar novamente" disparar a busca outra vez.
+  // `tentativa` existe para o botão "Tentar novamente" — e o registro de um
+  // pagamento — dispararem a busca outra vez.
   const [tentativa, setTentativa] = useState(0)
+
+  const [pagamento, setPagamento] = useState<PagamentoAberto | null>(null)
+  const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
     let ativo = true
@@ -58,6 +70,49 @@ export default function AcertoContasPage({ params }: { params: Promise<{ id: str
   function tentarDeNovo() {
     setEstado({ tipo: "carregando" })
     setTentativa((n) => n + 1)
+  }
+
+  function abrirPagamento(transferencia: TransferenciaAcerto, moeda: string) {
+    // Uma chave por abertura: reenviar depois de um erro usa a mesma, e o
+    // servidor não grava o mesmo pagamento duas vezes.
+    setPagamento({ transferencia, moeda, chave: crypto.randomUUID() })
+  }
+
+  async function confirmarPagamento(valorTexto: string) {
+    if (!pagamento || enviando) return
+    setEnviando(true)
+    try {
+      const resposta = await fetch(`/api/trips/${id}/acerto/transferencias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          de: pagamento.transferencia.de.userId,
+          para: pagamento.transferencia.para.userId,
+          valor: valorTexto,
+          moeda: pagamento.moeda,
+          chave: pagamento.chave,
+        }),
+      })
+      const corpo = (await resposta.json().catch(() => null)) as { error?: string } | null
+
+      if (!resposta.ok) {
+        // A mensagem da rota é segura para exibir: erro interno já chega genérico.
+        toast({
+          title: "Erro",
+          description: corpo?.error ?? "Não foi possível registrar o pagamento",
+          variant: "destructive",
+        })
+        return
+      }
+
+      toast({ title: "Pagamento registrado", description: "O acerto de contas foi atualizado." })
+      setPagamento(null)
+      setTentativa((n) => n + 1)
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível registrar o pagamento", variant: "destructive" })
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -92,7 +147,16 @@ export default function AcertoContasPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {estado.tipo === "pronto" && <AcertoContas acerto={estado.acerto} tripId={id} />}
+      {estado.tipo === "pronto" && (
+        <AcertoContas acerto={estado.acerto} tripId={id} onRegistrarPagamento={abrirPagamento} />
+      )}
+
+      <RegistrarPagamento
+        pagamento={pagamento}
+        enviando={enviando}
+        onConfirmar={confirmarPagamento}
+        onCancelar={() => setPagamento(null)}
+      />
     </div>
   )
 }

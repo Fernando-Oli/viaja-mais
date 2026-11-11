@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 
 /**
- * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas
+ * @RF06.11 saldo por membro · @RF06.13 transferências sugeridas e pagamentos registrados
  *
  * `GET /api/trips/[tripId]/acerto`. Mesma técnica de
  * `tests/api/expense-item-route.test.ts`: cliente falso ramificado por tabela,
@@ -17,6 +17,7 @@ const h = vi.hoisted(() => ({
   despesas: { data: [], error: null } as Resultado,
   partes: { data: [], error: null } as Resultado,
   membros: { data: [], error: null } as Resultado,
+  pagamentos: { data: [], error: null } as Resultado,
   consultas: [] as { tabela: string; colunas: string; filtros: [string, string][] }[],
 }))
 
@@ -37,7 +38,13 @@ vi.mock("@/lib/supabase/server", () => ({
           }
 
           const resultado =
-            tabela === "expenses" ? h.despesas : tabela === "expense_shares" ? h.partes : h.membros
+            tabela === "expenses"
+              ? h.despesas
+              : tabela === "expense_shares"
+                ? h.partes
+                : tabela === "settlements"
+                  ? h.pagamentos
+                  : h.membros
           return {
             eq(coluna: string, valor: string) {
               consulta.filtros.push([coluna, valor])
@@ -105,6 +112,7 @@ beforeEach(() => {
   h.despesas = { data: [], error: null }
   h.partes = { data: [], error: null }
   h.membros = { data: MEMBROS, error: null }
+  h.pagamentos = { data: [], error: null }
   h.consultas.length = 0
 })
 
@@ -202,6 +210,56 @@ describe("GET /api/trips/[tripId]/acerto — 200", () => {
     expect(filtros.expenses).toEqual([["trip_id", TRIP_ID]])
     expect(filtros.expense_shares).toEqual([["expenses.trip_id", TRIP_ID]])
     expect(filtros.trip_members).toEqual([["trip_id", TRIP_ID]])
+    expect(filtros.settlements).toEqual([["trip_id", TRIP_ID]])
+  })
+})
+
+describe("GET /api/trips/[tripId]/acerto — pagamentos registrados (S08)", () => {
+  const pagamento = (de: string, para: string, amount: number | string, currency = "BRL") => ({
+    from_user_id: de,
+    to_user_id: para,
+    amount,
+    currency,
+  })
+
+  it("pagamento parcial reduz a dívida de quem pagou e o crédito de quem recebeu", async () => {
+    logado(CARLA)
+    cenarioComDespesas()
+    h.pagamentos = { data: [pagamento(CARLA, ANA, "10.00")], error: null }
+
+    const { status, corpo } = await chamar()
+
+    expect(status).toBe(200)
+    expect(saldos(corpo)).toEqual({ [ANA]: 35, [BRUNO]: -15, [CARLA]: -20 })
+    const transferencias = corpo.grupos[0].transferencias as TransferenciaResposta[]
+    expect(transferencias.map((t) => [t.de.userId, t.para.userId, t.valor])).toEqual([
+      [CARLA, ANA, 20],
+      [BRUNO, ANA, 15],
+    ])
+    expect(corpo.usuarioAtualId).toBe(CARLA)
+  })
+
+  it("pagamentos que quitam tudo: todos zerados, sem transferência e tudo acertado", async () => {
+    logado()
+    cenarioComDespesas()
+    h.pagamentos = { data: [pagamento(CARLA, ANA, 30), pagamento(BRUNO, ANA, 15)], error: null }
+
+    const { corpo } = await chamar()
+
+    expect(saldos(corpo)).toEqual({ [ANA]: 0, [BRUNO]: 0, [CARLA]: 0 })
+    expect(corpo.grupos[0].transferencias).toEqual([])
+    expect(corpo.tudoAcertado).toBe(true)
+  })
+
+  it("500 genérico quando a leitura dos pagamentos falha", async () => {
+    logado()
+    cenarioComDespesas()
+    h.pagamentos = { data: null, error: { message: "permission denied for table settlements" } }
+
+    const { status, corpo } = await chamar()
+
+    expect(status).toBe(500)
+    expect(corpo).toEqual({ error: "Erro interno do servidor" })
   })
 })
 
