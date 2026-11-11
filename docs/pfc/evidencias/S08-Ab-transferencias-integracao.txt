@@ -1,0 +1,236 @@
+# S08-Ab-transferencias â€” unidade, integraÃ§Ã£o e componente (2026-11-11 16:59)
+npx vitest run tests/lib/finance-transferencia.test.ts tests/lib/finance-acerto.test.ts tests/api/acerto-transferencias-route.test.ts tests/api/acerto-route.test.ts tests/components/acerto-contas.test.tsx --reporter=verbose
+
+ RUN  v4.1.11 C:/Users/AbnerCosmo/Desktop/viaja-mais
+
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” viagem com despesas > saldo positivo para quem tem a receber e negativo para quem deve 1ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” viagem com despesas > sugere as transferÃªncias que quitam os saldos 1ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” viagem com despesas > a soma dos saldos Ã© zero e aplicar as transferÃªncias zera todo mundo 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” viagem com despesas > conta as despesas e nÃ£o marca como acertado enquanto alguÃ©m deve 1ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” rÃ³tulos e ordem > "VocÃª" primeiro, depois o dono, depois os demais por id, como "Participante N" 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” rÃ³tulos e ordem > as transferÃªncias carregam os mesmos rÃ³tulos dos saldos 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” rÃ³tulos e ordem > a ordem nÃ£o depende da ordem de entrada das linhas 9ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” rÃ³tulos e ordem > quem consulta sendo o dono aparece como VocÃª, e os demais seguem por id 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” membros sem movimento e ex-participantes > membro sem movimento aparece com saldo zero 1ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” membros sem movimento e ex-participantes > membro que pagou sÃ³ a prÃ³pria parte fica zerado 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” membros sem movimento e ex-participantes > quem saiu da viagem com dÃ­vida em aberto continua no acerto, como Ex-participante 1ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” membros sem movimento e ex-participantes > mais de um ex-participante recebe nÃºmero, para a frase nÃ£o ficar ambÃ­gua 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” despesas sem rateio, quitadas e moedas > despesa sem expense_shares nÃ£o gera dÃ­vida e Ã© contada Ã  parte 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” despesas sem rateio, quitadas e moedas > parte quitada nÃ£o entra no saldo de nenhum dos dois lados 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” despesas sem rateio, quitadas e moedas > tudo quitado: acertado, e a despesa nÃ£o Ã© contada como sem rateio 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” despesas sem rateio, quitadas e moedas > parte de despesa que nÃ£o estÃ¡ na lista Ã© ignorada 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” despesas sem rateio, quitadas e moedas > duas moedas geram dois grupos, sem somar entre si 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” despesas sem rateio, quitadas e moedas > despesa sem moeda cai no BRL 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” centavos > R$ 10,00 entre 3 (3,34 + 3,33 + 3,33): saldos fecham em zero no centavo 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” centavos > vÃ¡rias despesas quebradas, pagas por pessoas diferentes, ainda fecham 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” viagem sem despesas e saldos zerados > sem despesas: um grupo em BRL com todos os membros em zero e nenhuma transferÃªncia 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” viagem sem despesas e saldos zerados > sÃ³ despesas sem rateio: usa a moeda delas e nÃ£o diz que estÃ¡ tudo acertado 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” viagem sem despesas e saldos zerados > cada um pagou R$ 30 entre os trÃªs: todos zerados e tudo acertado 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > sem pagamentos, o resultado Ã© o mesmo de antes da S08 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > pagamento total zera o saldo de quem pagou e tira a transferÃªncia dele 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > pagamento parcial reduz a dÃ­vida e o crÃ©dito no valor exato, e a sugestÃ£o diminui 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > vÃ¡rios pagamentos se somam, e quitar tudo deixa a viagem acertada 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > pagamento em outra moeda nÃ£o mexe no saldo em real 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > pagamento numa moeda sem despesa vira um grupo prÃ³prio, sem somar ao real 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > pagamento sem moeda cai no BRL, como a despesa sem moeda 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > R$ 10,00 entre 3, quitados aos poucos e em centavos, fecham exatamente em zero 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > ex-participante com dÃ­vida que jÃ¡ pagou parte continua no acerto com o restante 0ms
+ âœ“ tests/lib/finance-acerto.test.ts > montarAcerto â€” pagamentos registrados > ex-participante que recebeu um pagamento aparece mesmo sem despesa aberta 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” aceita > transferÃªncia total: zera a dÃ­vida do pagador e o crÃ©dito cai o mesmo valor 12ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” aceita > transferÃªncia parcial: aceita valor menor e a sugestÃ£o diminui 1ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” aceita > um centavo Ã© um pagamento vÃ¡lido 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” aceita > aceita pagar a quem nÃ£o Ã© o par sugerido, se cabe na dÃ­vida e no crÃ©dito 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” aceita > a soma dos saldos continua zero depois do pagamento, inclusive em sequÃªncia 1ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” aceita > ex-participante com dÃ­vida aberta pode ser pagador no acerto 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > valor zero 1ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > valor negativo 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > valor que nÃ£o Ã© centavo inteiro (mais de duas casas) 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > pagador igual ao recebedor 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > valor acima da dÃ­vida do pagador 8ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > valor acima do crÃ©dito do recebedor 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > moeda diferente da de qualquer grupo de saldo 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > pagador sem dÃ­vida (credor ou quite) 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > recebedor sem crÃ©dito (devedor ou quite) 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > pagador ou recebedor que nÃ£o estÃ¡ no acerto (nem membro, nem com saldo aberto) 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > validarTransferencia â€” recusa > depois de quitado, um novo pagamento do mesmo valor Ã© recusado 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > aceita valor em texto com vÃ­rgula ou nÃºmero, e normaliza a moeda 3ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > descarta campos fora do contrato 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa valor zero 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa valor negativo 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa trÃªs casas decimais 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa valor em texto 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa pagador igual ao recebedor 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa pagador que nÃ£o Ã© UUID 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa moeda invÃ¡lida 0ms
+ âœ“ tests/lib/finance-transferencia.test.ts > registrarTransferenciaSchema > recusa sem chave 0ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” 200 > viagem com despesas: saldo de cada membro e rÃ³tulos de quem consulta 8ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” 200 > transferÃªncias sugeridas no formato { de, para, valor } e quitando todos os saldos 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” 200 > viagem sem despesas: todos os membros em zero e nenhuma transferÃªncia 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” 200 > saldos zerados: cada um pagou a sua parte e ninguÃ©m deve nada 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” 200 > parte com settled_at nÃ£o entra no cÃ¡lculo 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” 200 > toda leitura escopa pela viagem da URL 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” pagamentos registrados (S08) > pagamento parcial reduz a dÃ­vida de quem pagou e o crÃ©dito de quem recebeu 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” pagamentos registrados (S08) > pagamentos que quitam tudo: todos zerados, sem transferÃªncia e tudo acertado 0ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” pagamentos registrados (S08) > 500 genÃ©rico quando a leitura dos pagamentos falha 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” erros > 401 sem sessÃ£o: nada Ã© consultado 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” erros > 403 para quem nÃ£o participa da viagem, sem nenhum dado financeiro 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” erros > 400 para tripId que nÃ£o Ã© UUID, antes de qualquer consulta 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” erros > 500 genÃ©rico quando o banco falha, sem vazar a mensagem interna 1ms
+ âœ“ tests/api/acerto-route.test.ts > GET /api/trips/[tripId]/acerto â€” erros > 500 genÃ©rico quando a checagem de participaÃ§Ã£o falha 0ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” sucesso > 201 pagamento total: grava sÃ³ os campos do contrato, com o pagador da sessÃ£o 9ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” sucesso > 201 pagamento parcial: valor menor que a dÃ­vida, convertido sem erro de float 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” sucesso > confere contra o saldo que jÃ¡ inclui os pagamentos registrados 20ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” sucesso > 200 ao reenviar a mesma chave: devolve o pagamento existente sem gravar outro 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” sucesso > 200 quando dois envios com a mesma chave chegam juntos e o unique decide 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” sucesso > 409 se o unique recusou e o registro nÃ£o Ã© visÃ­vel 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” autenticaÃ§Ã£o e autorizaÃ§Ã£o > 401 sem sessÃ£o: nada Ã© consultado nem gravado 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” autenticaÃ§Ã£o e autorizaÃ§Ã£o > 403 para quem nÃ£o participa da viagem, sem ler saldo nem gravar 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” autenticaÃ§Ã£o e autorizaÃ§Ã£o > 403 ao tentar registrar o pagamento de outra pessoa 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > valor zero 2ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > valor negativo 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > trÃªs casas decimais 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > pagador igual ao recebedor 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > recebedor que nÃ£o Ã© UUID 0ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > moeda invÃ¡lida 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > sem chave de registro 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > corpo que nÃ£o Ã© JSON 0ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 400 > tripId que nÃ£o Ã© UUID, antes de qualquer consulta 0ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” regra de negÃ³cio (422) > acima da dÃ­vida do pagador 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” regra de negÃ³cio (422) > moeda sem saldo na viagem 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” regra de negÃ³cio (422) > recebedor sem crÃ©dito 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” regra de negÃ³cio (422) > recebedor fora do acerto 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” regra de negÃ³cio (422) > pagador sem dÃ­vida (credor tentando pagar) 4ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 500 > erro do banco no insert responde genÃ©rico, sem vazar a mensagem interna 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 500 > erro ao ler o acerto responde genÃ©rico e nÃ£o grava 1ms
+ âœ“ tests/api/acerto-transferencias-route.test.ts > POST /api/trips/[tripId]/acerto/transferencias â€” 500 > erro na busca por chave responde genÃ©rico e nÃ£o grava 1ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” carregamento e erro > mostra o carregamento enquanto a API nÃ£o responde 125ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” carregamento e erro > mostra o erro, avisa por toast e carrega ao tentar novamente 75ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” carregamento e erro > resposta 200 sem o formato esperado tambÃ©m Ã© erro 14ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” carregamento e erro > corpo que nÃ£o Ã© JSON Ã© tratado como erro, sem quebrar a tela 13ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” saldos e transferÃªncias > saldo positivo, negativo e zero, com texto alÃ©m da cor e valores em R$ 23ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” saldos e transferÃªncias > transferÃªncias no formato "X paga R$ Y para Z" 20ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” saldos e transferÃªncias > link de volta para a aba Despesas da viagem 26ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” saldos e transferÃªncias > duas moedas: um bloco por moeda, cada um com o seu sÃ­mbolo 18ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” estados vazios > viagem sem despesas: mensagem, link para adicionar e todos em R$ 0,00 18ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” estados vazios > saldos zerados: "Tudo acertado" e nenhuma transferÃªncia 20ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” estados vazios > avisa quantas despesas ficaram fora por nÃ£o terem divisÃ£o 13ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” estados vazios > uma despesa sem divisÃ£o: mensagem no singular 14ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” estados vazios > ex-participante aparece identificado 11ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > o botÃ£o aparece sÃ³ nas transferÃªncias que saem de quem consulta 14ms
+stderr | tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > confirma o valor sugerido, desabilita durante o envio, avisa por toast e recarrega o acerto
+An update to AcertoContasPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AcertoContasPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AcertoContasPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > confirma o valor sugerido, desabilita durante o envio, avisa por toast e recarrega o acerto
+An update to Presence inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Presence inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to FocusScope inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Presence inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Presence inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to DismissableLayer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > confirma o valor sugerido, desabilita durante o envio, avisa por toast e recarrega o acerto
+An update to AcertoContasPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > confirma o valor sugerido, desabilita durante o envio, avisa por toast e recarrega o acerto 149ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > pagamento parcial: envia o valor editado 118ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > valor invÃ¡lido nÃ£o Ã© enviado e o campo explica o porquÃª 89ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > erro da API: toast com a mensagem, diÃ¡logo aberto e nova tentativa com a mesma chave 95ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > falha de rede no envio: toast genÃ©rico, sem quebrar a tela 72ms
+ âœ“ tests/components/acerto-contas.test.tsx > Acerto de contas â€” registrar pagamento > cancelar fecha o diÃ¡logo sem enviar nada 51ms
+
+ Test Files  5 passed (5)
+      Tests  120 passed (120)
+   Start at  16:59:55
+   Duration  3.16s (transform 507ms, setup 1.48s, import 1.07s, tests 1.11s, environment 1.25s)
