@@ -24,7 +24,10 @@ import { avisarTotalDeSolicitacoes } from "../sino";
  *   os dela são soltos quando ele termina: dá para resolver várias em sequência.
  * - Um 404 diz que a tela está velha (já resolvida em outro lugar, ou quem pediu
  *   trocou de username): a lista é recarregada do servidor, em vez de a tela
- *   adivinhar o total.
+ *   adivinhar o total. Se outra ação terminar enquanto essa carga está no ar, a
+ *   resposta dela é descartada e a carga é refeita: ela poderia trazer de volta
+ *   quem acabou de ser resolvido.
+ * - Com a sessão vencida, a bolinha do sino some junto com a lista.
  * - Recusar é silencioso: quem pediu não é avisado e pode pedir de novo.
  *
  * @RF09.3 ver solicitações pendentes · @RF09.4 aprovar ou recusar · @RF13.2 Zona 1 da central
@@ -55,6 +58,10 @@ export function Notificacoes() {
   const [ocupados, setOcupados] = useState<ReadonlySet<string>>(() => new Set());
   const titulo = useRef<HTMLHeadingElement>(null);
   const focarTitulo = useRef(false);
+  // Quantas ações (aprovar ou recusar) já terminaram. Uma carga pedida antes da
+  // última que terminou pode trazer de volta quem acabou de sair: a resposta dela
+  // é descartada, e a carga é refeita (achado m2 da 2ª revisão independente).
+  const concluidas = useRef(0);
 
   useEffect(() => {
     if (!focarTitulo.current) return;
@@ -69,16 +76,20 @@ export function Notificacoes() {
 
   useEffect(() => {
     let ativo = true;
+    const pedidaEm = concluidas.current;
     (async () => {
       try {
         const r = await fetch("/api/social/solicitacoes");
+        if (!ativo) return;
         if (r.status === 401) {
-          if (ativo) setEstado({ tipo: "sessao" });
-          return;
+          // Como em sessaoVencida(), sem pô-la nas dependências do efeito.
+          setEstado({ tipo: "sessao" });
+          return avisarTotalDeSolicitacoes(0);
         }
         if (!r.ok) throw new Error();
         const { solicitacoes, total } = (await r.json()) as { solicitacoes: Solicitacao[]; total: number };
         if (!ativo) return;
+        if (concluidas.current !== pedidaEm) return setTentativa((t) => t + 1);
         setEstado({ tipo: "pronto", solicitacoes, total });
       } catch {
         if (ativo) setEstado({ tipo: "erro" });
@@ -88,6 +99,12 @@ export function Notificacoes() {
       ativo = false;
     };
   }, [tentativa]);
+
+  /** A sessão acabou: a lista dá lugar ao aviso, e a bolinha do sino some com ela. */
+  function sessaoVencida() {
+    setEstado({ tipo: "sessao" });
+    avisarTotalDeSolicitacoes(0);
+  }
 
   function marcarOcupado(username: string, ocupado: boolean) {
     setOcupados((atuais) => {
@@ -104,10 +121,7 @@ export function Notificacoes() {
       const r = await fetch(`/api/social/solicitacoes/${encodeURIComponent(username)}`, {
         method: acao === "aprovar" ? "POST" : "DELETE",
       });
-      if (r.status === 401) {
-        setEstado({ tipo: "sessao" });
-        return;
-      }
+      if (r.status === 401) return sessaoVencida();
       if (r.status === 404) {
         // A tela está velha: quem sabe a lista e o total é o servidor.
         focarTitulo.current = true;
@@ -121,6 +135,7 @@ export function Notificacoes() {
         return;
       }
       if (!r.ok) throw new Error();
+      concluidas.current++;
 
       focarTitulo.current = true;
       // Funcional, e só se a pessoa ainda está na lista: resolver várias em

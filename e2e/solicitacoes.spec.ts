@@ -320,3 +320,131 @@ test("com a sessão vencida, o sino deixa de mostrar a contagem antiga (regress�
     await davi.context().close()
   }
 })
+
+test("com a sessão vencida dentro das Notificações, a bolinha também some (regressão)", async ({ page, browser }) => {
+  const davi = await sessaoDoDavi(browser)
+  try {
+    await daviPede(davi)
+    await entrar(page, BRUNO)
+    await page.goto("/notificacoes")
+    await expect(page.getByTestId("bolinha-notificacoes")).toHaveText("1")
+
+    // A sessão acaba com a página aberta; o aprovar volta 401.
+    await page.context().clearCookies()
+    await page.getByRole("button", { name: "Aprovar @davi" }).click()
+
+    await expect(page.getByRole("alert").filter({ hasText: "Sua sessão expirou." })).toBeVisible()
+    // Regressão: a página avisava da sessão, mas a bolinha continuava com a contagem antiga.
+    await expect(page.getByTestId("bolinha-notificacoes")).toHaveCount(0)
+    await expect(sino(page)).toHaveAccessibleName("Notificações")
+  } finally {
+    await daviDesfaz(davi)
+    await davi.context().close()
+  }
+})
+
+test("uma recarga pedida antes de outra ação terminar não traz de volta quem já foi resolvido (regressão)", async ({
+  page,
+  browser,
+}) => {
+  const davi = await sessaoDoDavi(browser)
+  const ana = await sessao(browser, "teste.a@viajamais.local")
+  let soltarDavi!: () => void
+  const daviSolto = new Promise<void>((r) => (soltarDavi = r))
+  let soltarCarga!: () => void
+  const cargaSolta = new Promise<void>((r) => (soltarCarga = r))
+  let cargaBuscada!: () => void
+  const buscada = new Promise<void>((r) => (cargaBuscada = r))
+  let segurarCarga = false
+  try {
+    await daviPede(davi)
+    await pedeAoBruno(ana)
+    await entrar(page, BRUNO)
+    // O aprovar do Davi fica parado até o teste soltar.
+    await page.route(
+      (url) => url.pathname === "/api/social/solicitacoes/davi",
+      async (rota) => {
+        await daviSolto
+        await rota.continue()
+      },
+    )
+    // A recarga da lista (sem ?contagem) busca no servidor na hora, mas só entrega quando o teste soltar.
+    await page.route(
+      (url) => url.pathname === "/api/social/solicitacoes" && url.search === "",
+      async (rota) => {
+        if (!segurarCarga) return rota.continue()
+        segurarCarga = false
+        const resposta = await rota.fetch()
+        cargaBuscada()
+        await cargaSolta
+        await rota.fulfill({ response: resposta })
+      },
+    )
+    await page.goto("/notificacoes")
+    await expect(page.getByRole("heading", { name: "Solicitações para seguir (2)" })).toBeVisible()
+
+    await page.getByRole("button", { name: "Aprovar @davi" }).click()
+    // A Ana cancela com a tela aberta: o aprovar dela volta 404 e pede a recarga.
+    await desfazComOBruno(ana)
+    segurarCarga = true
+    await page.getByRole("button", { name: "Aprovar @ana" }).click()
+    // O servidor respondeu à recarga com o Davi ainda pendente.
+    await buscada
+    soltarDavi()
+    await expect(page.getByRole("status").filter({ hasText: "@davi agora segue você." })).toBeAttached()
+    soltarCarga()
+
+    // Regressão: a resposta velha da recarga sobrescrevia a tela e o Davi voltava.
+    await expect(page.getByRole("heading", { name: "Solicitações para seguir (0)" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Aprovar @davi" })).toHaveCount(0)
+    await expect(page.getByTestId("bolinha-notificacoes")).toHaveCount(0)
+    expect((await (await davi.request.get("/api/social/perfis/bruno")).json()).perfil.vinculo).toBe("seguindo")
+  } finally {
+    soltarDavi()
+    soltarCarga()
+    await page.unrouteAll({ behavior: "ignoreErrors" })
+    await daviDesfaz(davi)
+    await desfazComOBruno(ana)
+    await davi.context().close()
+    await ana.context().close()
+  }
+})
+
+test("com a sessão vencida na recarga das Notificações, a bolinha some mesmo que o sino tenha contado antes (regressão)", async ({
+  page,
+  browser,
+}) => {
+  const davi = await sessaoDoDavi(browser)
+  try {
+    await daviPede(davi)
+    await entrar(page, BRUNO)
+    // O sino contou 1 antes de a sessão acabar: a contagem dele fica fixa, e só a carga da lista vê o 401.
+    await page.route(
+      (url) => url.pathname === "/api/social/solicitacoes" && url.search === "?contagem=1",
+      (rota) => rota.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ total: 1 }) }),
+    )
+    await page.goto("/notificacoes")
+    await expect(page.getByRole("button", { name: "Aprovar @davi" })).toBeVisible()
+    await expect(page.getByTestId("bolinha-notificacoes")).toHaveText("1")
+
+    // A sessão acaba; o aprovar volta 404 (já resolvida, simulado), e a recarga da lista volta 401.
+    await page.context().clearCookies()
+    await page.route(
+      (url) => url.pathname === "/api/social/solicitacoes/davi",
+      (rota) =>
+        rota.fulfill({
+          status: 404,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Solicitação não encontrada", codigo: "sem_pendente" }),
+        }),
+    )
+    await page.getByRole("button", { name: "Aprovar @davi" }).click()
+
+    await expect(page.getByRole("alert").filter({ hasText: "Sua sessão expirou." })).toBeVisible()
+    await expect(page.getByTestId("bolinha-notificacoes")).toHaveCount(0)
+  } finally {
+    await page.unrouteAll({ behavior: "ignoreErrors" })
+    await daviDesfaz(davi)
+    await davi.context().close()
+  }
+})

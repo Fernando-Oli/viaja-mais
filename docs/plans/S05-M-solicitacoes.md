@@ -208,6 +208,20 @@ e a consulta do `GET` ganhou um schema próprio na correção da revisão (M5).
   - **M4 (registrado, risco aceito, como no Instagram):** quem pediu não é avisado da recusa, mas
     percebe ao reabrir o perfil e ver "Seguir" no lugar de "Solicitado". "Não é avisado" é diferente
     de "não consegue perceber". O catálogo diz "silencioso" no primeiro sentido.
+- **2ª revisão independente (agente `seguranca`) sobre `05cfa58..6703fcd`:** dois Menores nas
+  Notificações, corrigidos num commit novo (o `6703fcd` já estava publicado no PR #45). Os testes de
+  regressão **falharam antes**, em `chromium` e `mobile`:
+  - **m1 (corrigido):** o M3 ficou fechado só em parte. Um 401 dentro de `/notificacoes`, ao aprovar,
+    recusar ou recarregar a lista, mostrava "Sua sessão expirou", mas a bolinha mantinha a contagem
+    antiga. Os dois ramos de 401 agora também zeram o sino. Há dois E2E: um aprova com os cookies
+    apagados; o outro fixa a contagem do sino em 1 e deixa o 401 só na recarga, para isolar o ramo
+    da carga;
+  - **m2 (corrigido):** um 404 pede a recarga da lista, e, se outra ação terminava enquanto a recarga
+    estava no ar, a resposta velha trazia de volta quem acabara de ser resolvido. Entrou a mesma
+    solução da `S05-M-listas`: o contador `concluidas` de ações terminadas. A resposta de uma carga
+    pedida antes da última ação concluída é descartada, e a carga é refeita. O E2E prende o aprovar
+    do Davi, faz a Ana cancelar, segura a recarga do 404 dela (com o servidor respondendo com o Davi
+    ainda pendente) e só a entrega depois de o Davi ser aprovado. O Davi não volta.
 - **Achado para o Fernando (plataforma, `proxy.ts`):** a proteção contra CSRF depende só do
   `SameSite=Lax` padrão dos cookies do `@supabase/ssr`, sem checagem de `Origin`. O revisor testou um
   formulário de outro site e recebeu 401: hoje está protegido. Mas aprovar é o alvo de maior impacto,
@@ -230,22 +244,32 @@ e a consulta do `GET` ganhou um schema próprio na correção da revisão (M5).
   - `S05-M-solicitacoes-integracao.txt`: 29 de 29;
   - `S05-M-solicitacoes-rls.txt`: 163 de 163, com o detalhe dos 14 testes das solicitações. As
     funções da lib rodam contra o PostgREST de verdade, inclusive a contagem do sino;
-  - `S05-M-solicitacoes-mutacoes.txt`: 45 de 45 mortas, só no código (não há migration nova). Na
-    primeira rodada foram 31; a segunda acrescenta o modo só de contagem, o schema da consulta e os
-    códigos dos dois 404;
+  - `S05-M-solicitacoes-mutacoes.txt`: 49 de 49 mortas. São 45 no código e 4 na tela: os dois ramos
+    de 401 e o descarte da carga velha, cada um num build próprio, contra o E2E que o cobre, depois de
+    um controle sem sabotagem que passou. Na primeira rodada foram 31; a segunda acrescentou o modo
+    só de contagem, o schema da consulta e os códigos dos dois 404; a terceira, a tela;
   - `S05-M-solicitacoes-regressao-antes.txt`: os testes que **falharam antes** de cada correção:
     - o nome no celular (1ª rodada; falha no mobile, passa no chromium);
     - M5 e M2 na integração (10 falhas);
     - M1, M2 e M3 no E2E, em `chromium` e `mobile`;
-  - `S05-M-solicitacoes-e2e.txt`: 18 de 18, em `chromium` e `mobile`, no build de produção.
-  - A suíte inteira deu 598 testes de unidade e integração, RLS 163 de 163 e E2E 103 passando, com 1
-    pulado de propósito (o clique do meio da pesquisa). No fim, nenhum vínculo do Bruno sobrou, e os
+    - m1 (os dois ramos de 401) e m2 (a carga velha) no E2E, em `chromium` e `mobile`;
+  - `S05-M-solicitacoes-e2e.txt`: 24 de 24, em `chromium` e `mobile`, no build de produção.
+  - A suíte inteira deu 598 testes de unidade e integração e E2E 109 passando, com 1 pulado de
+    propósito (o clique do meio da pesquisa).
+  - **RLS:** 163 de 163 até a 2ª rodada (evidência em `S05-M-solicitacoes-rls.txt`). Na 3ª, o banco
+    local já tinha a migration `20261110200043_social_exigir_username`, da `S05-M-listas`, que não
+    existe nesta branch. O trigger dela recusa voltar o username a nulo (23514), então o teste "conta
+    sem username não aparece nem conta" falha **só no banco local**: 162 de 163, e é a única falha. A
+    3ª rodada não mexeu em nada que a RLS cobre, e no CI a migration não está aplicada. A branch das
+    listas já ajusta esse teste. No fim, nenhum vínculo do Bruno sobrou, e os
     usernames do seed estavam no lugar (o Davi voltou de `davi_e2e`).
 - [ ] Screenshots do fluxo (chromium e mobile): `S05-M-solicitacoes-sino-*` (o sino com a bolinha no
   feed), `S05-M-solicitacoes-pendente-*` (a solicitação do Davi) e `S05-M-solicitacoes-vazio-*`
   (depois de aprovar)
 - [ ] Delta de cobertura (`S05-M-solicitacoes-cobertura.txt`): `lib/social/solicitacoes.ts`,
   `lib/schemas/solicitacoes.ts` e as duas rotas, novos, com 100% de linhas e ramos
-- [ ] Revisão adversarial independente (agente `seguranca`): nenhum Bloqueante nem Importante; os
-  Menores M1, M2, M3 e M5 foram corrigidos com regressão que falhou antes, e o M4 ficou registrado
-  como risco aceito (bloco 6)
+- [ ] Revisão adversarial independente (agente `seguranca`), em duas rodadas, sem Bloqueante nem
+  Importante:
+  - 1ª: os Menores M1, M2, M3 e M5 foram corrigidos com regressão que falhou antes, e o M4 ficou
+    registrado como risco aceito (bloco 6);
+  - 2ª: os Menores m1 e m2 foram corrigidos com regressão que falhou antes, num commit novo

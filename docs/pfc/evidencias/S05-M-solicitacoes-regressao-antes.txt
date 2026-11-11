@@ -103,3 +103,63 @@ NEXT_PUBLIC_APP_URL=http://localhost:3100 npx playwright test e2e/solicitacoes.s
     test-results\solicitacoes-com-a-sessão--e682d--contagem-antiga-regressão--mobile\test-failed-1.png
     test-results\solicitacoes-com-a-sessão--e682d--contagem-antiga-regressão--mobile\test-failed-2.png
   6 failed
+
+# 2ª revisão independente (agente seguranca) sobre 05cfa58..6703fcd: m1 e m2, ANTES da correção (2026-11-10 21:46)
+E2E contra o build do 6703fcd, na porta 3100.
+- m1: um 401 dentro de /notificacoes (aprovar com a sessão vencida) não apagava a bolinha do sino;
+- m2: a recarga pedida por um 404 voltava depois de o aprovar do Davi terminar e o trazia de volta à tela.
+  No snapshot da falha: o status "@davi agora segue você." e, ao mesmo tempo, "Solicitações para seguir (1)" com o Davi.
+
+NEXT_PUBLIC_APP_URL=http://localhost:3100 npx playwright test e2e/solicitacoes.spec.ts -g "dentro das Notificações|recarga pedida antes"
+
+  x  1 [chromium] › e2e\solicitacoes.spec.ts:324:5 › com a sessão vencida dentro das Notificações, a bolinha também some (regressão) (11.2s)
+  x  2 [chromium] › e2e\solicitacoes.spec.ts:346:5 › uma recarga pedida antes de outra ação terminar não traz de volta quem já foi resolvido (regressão) (13.5s)
+  x  3 [mobile] › e2e\solicitacoes.spec.ts:324:5 › com a sessão vencida dentro das Notificações, a bolinha também some (regressão) (9.8s)
+  x  4 [mobile] › e2e\solicitacoes.spec.ts:346:5 › uma recarga pedida antes de outra ação terminar não traz de volta quem já foi resolvido (regressão) (14.4s)
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 0
+    Received: 1
+    > 338 |     await expect(page.getByTestId("bolinha-notificacoes")).toHaveCount(0)
+    test-results\solicitacoes-com-a-sessão--5117d-inha-também-some-regressão--chromium\test-failed-1.png
+    test-results\solicitacoes-com-a-sessão--5117d-inha-também-some-regressão--chromium\test-failed-2.png
+    Error: expect(locator).toBeVisible() failed
+    Expected: visible
+    Error: element(s) not found
+    > 398 |     await expect(page.getByRole("heading", { name: "Solicitações para seguir (0)" })).toBeVisible()
+    test-results\solicitacoes-uma-recarga-p-c3e92-já-foi-resolvido-regressão--chromium\test-failed-1.png
+    test-results\solicitacoes-uma-recarga-p-c3e92-já-foi-resolvido-regressão--chromium\test-failed-2.png
+    test-results\solicitacoes-uma-recarga-p-c3e92-já-foi-resolvido-regressão--chromium\test-failed-3.png
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 0
+    Received: 1
+    > 338 |     await expect(page.getByTestId("bolinha-notificacoes")).toHaveCount(0)
+    test-results\solicitacoes-com-a-sessão--5117d-inha-também-some-regressão--mobile\test-failed-1.png
+    test-results\solicitacoes-com-a-sessão--5117d-inha-também-some-regressão--mobile\test-failed-2.png
+    Error: expect(locator).toBeVisible() failed
+    Expected: visible
+    Error: element(s) not found
+    > 398 |     await expect(page.getByRole("heading", { name: "Solicitações para seguir (0)" })).toBeVisible()
+    test-results\solicitacoes-uma-recarga-p-c3e92-já-foi-resolvido-regressão--mobile\test-failed-1.png
+    test-results\solicitacoes-uma-recarga-p-c3e92-já-foi-resolvido-regressão--mobile\test-failed-2.png
+    test-results\solicitacoes-uma-recarga-p-c3e92-já-foi-resolvido-regressão--mobile\test-failed-3.png
+  4 failed
+
+## m1, o outro ramo de 401 (a carga da lista, notificacoes.tsx:75), ANTES da correção
+Isolado com a contagem do sino fixa em 1: o 404 simulado no aprovar pede a recarga, e a recarga recebe o 401 real.
+NEXT_PUBLIC_APP_URL=http://localhost:3100 npx playwright test e2e/solicitacoes.spec.ts -g "na recarga das Notificações"
+
+  x  1 [chromium] › e2e\solicitacoes.spec.ts:413:5 › com a sessão vencida na recarga das Notificações, a bolinha some mesmo que o sino tenha contado antes (regressão) (12.1s)
+  x  2 [mobile] › e2e\solicitacoes.spec.ts:413:5 › com a sessão vencida na recarga das Notificações, a bolinha some mesmo que o sino tenha contado antes (regressão) (11.0s)
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 0
+    Received: 1
+    > 444 |     await expect(page.getByTestId("bolinha-notificacoes")).toHaveCount(0)
+    test-results\solicitacoes-com-a-sessão--5a060-ha-contado-antes-regressão--chromium\test-failed-1.png
+    test-results\solicitacoes-com-a-sessão--5a060-ha-contado-antes-regressão--chromium\test-failed-2.png
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 0
+    Received: 1
+    > 444 |     await expect(page.getByTestId("bolinha-notificacoes")).toHaveCount(0)
+    test-results\solicitacoes-com-a-sessão--5a060-ha-contado-antes-regressão--mobile\test-failed-1.png
+    test-results\solicitacoes-com-a-sessão--5a060-ha-contado-antes-regressão--mobile\test-failed-2.png
+  2 failed
