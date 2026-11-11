@@ -25,9 +25,14 @@ jobs:
       # supabase_vault, do schema `auth` e dos roles anon/authenticated/
       # service_role. Nada disso existe num Postgres puro — foi exatamente
       # assim que este job quebrou quando a primeira migration entrou.
+      #
+      # Versão fixa, igual à que roda nas máquinas da equipe. Com `latest`, uma
+      # release do CLI que deixou de aceitar `[inbucket]` no config.toml
+      # derrubou este job em todos os PRs a partir de 10/11/2026, sem nenhuma
+      # mudança no repositório. Atualizar a versão é decisão de PR, não surpresa.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.104.0
 
       # `supabase start` aplica supabase/migrations/ e roda supabase/seed.sql.
       # É a prova de que o banco é reproduzível **só a partir do repositório**,
