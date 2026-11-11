@@ -49,7 +49,7 @@ catálogo das seções 14 e 15.
 | RF-05.5 | O usuário deve poder categorizar atividades | Parcial | `lib/schemas/itinerario.ts` | — | ad9d35b |
 | RF-05.6 | O usuário deve poder definir horários | Existente | `lib/schemas/itinerario.ts` | — | ad9d35b |
 | RF-05.7 | O usuário deve poder adicionar localização | Existente | `lib/schemas/itinerario.ts` | — | ad9d35b |
-| RF-06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/schemas/despesa.ts` | `tests/lib/despesa-schema.test.ts`<br>`tests/lib/expenses-route.test.ts`<br>`e2e/editar-despesa.spec.ts` | b3a684c |
+| RF-06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/schemas/despesa.ts` | `tests/lib/despesa-schema.test.ts`<br>`tests/lib/expenses-route.test.ts`<br>`e2e/editar-despesa.spec.ts`<br>`e2e/financeiro-jornada.spec.ts` | b3a684c |
 | RF-06.2 | Usuário deve poder editar despesa | Planejado | `app/api/trips/[tripId]/expenses/[expenseId]/route.ts`<br>`lib/schemas/despesa.ts`<br>`components/expense-list.tsx` | `tests/api/expense-item-route.test.ts`<br>`e2e/editar-despesa.spec.ts` | 04d877a |
 | RF-06.3 | Usuário deve poder excluir despesa | Planejado | `app/api/trips/[tripId]/expenses/[expenseId]/route.ts`<br>`components/expense-list.tsx` | `tests/api/expense-item-route.test.ts`<br>`e2e/editar-despesa.spec.ts` | 04d877a |
 | RF-06.4 | Usuário deve poder visualizar total de gastos | Existente | — | — | — |
@@ -57,11 +57,11 @@ catálogo das seções 14 e 15.
 | RF-06.6 | Usuário deve poder comparar gastos com orçamento | A confirmar | — | — | — |
 | RF-06.7 | Sistema deve alertar quando gastos ultrapassarem 80% do orçamento | A confirmar | — | — | — |
 | RF-06.8 | Usuário deve poder indicar quem pagou a despesa (`paid_by`) | Planejado | — | — | — |
-| RF-06.9 | Usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Planejado | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/finance/rateio.ts`<br>`lib/schemas/despesa.ts`<br>`components/expense-split.tsx` | `tests/components/expense-split.test.tsx`<br>`tests/lib/despesa-schema.test.ts`<br>`tests/lib/expenses-route.test.ts`<br>`tests/lib/finance-rateio.test.ts`<br>`e2e/rateio-despesa.spec.ts` | b3a684c |
-| RF-06.10 | Sistema deve calcular o valor devido por membro (`expense_shares`), conforme o tipo de rateio | Planejado | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/finance/rateio.ts`<br>`components/expense-split.tsx` | `tests/components/expense-split.test.tsx`<br>`tests/lib/expenses-route.test.ts`<br>`tests/lib/finance-rateio.test.ts`<br>`e2e/rateio-despesa.spec.ts` | b3a684c |
-| RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | `lib/finance/balances.ts` | `tests/lib/finance-balances.test.ts` | 0dbb673 |
+| RF-06.9 | Usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Planejado | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/finance/rateio.ts`<br>`lib/schemas/despesa.ts`<br>`components/expense-split.tsx` | `tests/components/expense-split.test.tsx`<br>`tests/lib/despesa-schema.test.ts`<br>`tests/lib/expenses-route.test.ts`<br>`tests/lib/finance-rateio.test.ts`<br>`e2e/financeiro-jornada.spec.ts`<br>`e2e/rateio-despesa.spec.ts` | b3a684c |
+| RF-06.10 | Sistema deve calcular o valor devido por membro (`expense_shares`), conforme o tipo de rateio | Planejado | `app/api/trips/[tripId]/expenses/route.ts`<br>`lib/finance/rateio.ts`<br>`components/expense-split.tsx` | `tests/components/expense-split.test.tsx`<br>`tests/lib/expenses-route.test.ts`<br>`tests/lib/finance-rateio.test.ts`<br>`e2e/financeiro-jornada.spec.ts`<br>`e2e/rateio-despesa.spec.ts` | b3a684c |
+| RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | `app/api/trips/[tripId]/acerto/carregar-acerto.ts`<br>`app/api/trips/[tripId]/acerto/route.ts`<br>`app/dashboard/trips/[id]/acerto/page.tsx`<br>`lib/finance/acerto.ts`<br>`lib/finance/balances.ts`<br>`components/acerto-contas.tsx` | `tests/api/acerto-route.test.ts`<br>`tests/components/acerto-contas.test.tsx`<br>`tests/lib/finance-acerto.test.ts`<br>`tests/lib/finance-balances.test.ts`<br>`e2e/acerto-contas.spec.ts`<br>`e2e/financeiro-jornada.spec.ts` | — |
 | RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | — | — | — |
-| RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | `lib/finance/balances.ts` | `tests/lib/finance-balances.test.ts` | 0dbb673 |
+| RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | `app/api/trips/[tripId]/acerto/carregar-acerto.ts`<br>`app/api/trips/[tripId]/acerto/route.ts`<br>`app/api/trips/[tripId]/acerto/transferencias/route.ts`<br>`app/dashboard/trips/[id]/acerto/page.tsx`<br>`lib/finance/acerto.ts`<br>`lib/finance/balances.ts`<br>`lib/finance/transferencia.ts`<br>`lib/schemas/transferencia.ts`<br>`components/acerto-contas.tsx`<br>`components/registrar-pagamento.tsx` | `tests/api/acerto-route.test.ts`<br>`tests/api/acerto-transferencias-route.test.ts`<br>`tests/components/acerto-contas.test.tsx`<br>`tests/lib/finance-acerto.test.ts`<br>`tests/lib/finance-balances.test.ts`<br>`tests/lib/finance-transferencia.test.ts`<br>`tests/rls/07-settlements.test.ts`<br>`e2e/acerto-contas.spec.ts`<br>`e2e/acerto-transferencias.spec.ts`<br>`e2e/financeiro-jornada.spec.ts` | — |
 | RF-07.1 | O usuário deve poder adicionar reserva de voo | Existente | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
 | RF-07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
 | RF-07.3 | O usuário deve poder adicionar reserva de carro | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`lib/schemas/reserva.ts` | — | 9b1e74e |
@@ -114,7 +114,7 @@ catálogo das seções 14 e 15.
 | RNF-02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | — | — | — |
 | RNF-02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | — | — | — |
 | RNF-02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Planejado | — | — | — |
-| RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | — | — | — |
+| RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | `app/api/trips/[tripId]/acerto/transferencias/route.ts` | `tests/api/acerto-transferencias-route.test.ts`<br>`tests/rls/07-settlements.test.ts` | — |
 | RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | `tests/lib/supabase-admin.test.ts` | — |
 | RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/foto/route.ts`<br>`app/api/social/perfil/route.ts`<br>`app/api/social/perfis/route.ts`<br>`app/api/social/perfis/[username]/lista-da-rede.ts`<br>`app/api/social/perfis/[username]/route.ts`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`app/api/social/pesquisas/route.ts`<br>`app/api/social/pesquisas/[username]/route.ts`<br>`app/api/social/seguidores/[username]/route.ts`<br>`app/api/social/solicitacoes/route.ts`<br>`app/api/social/solicitacoes/[username]/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-foto-route.test.ts`<br>`tests/api/social-perfil-route.test.ts`<br>`tests/api/social-perfil-visto-route.test.ts`<br>`tests/api/social-perfis-busca-route.test.ts`<br>`tests/api/social-pesquisas-route.test.ts`<br>`tests/api/social-rede-route.test.ts`<br>`tests/api/social-seguir-route.test.ts`<br>`tests/api/social-solicitacoes-route.test.ts` | d1d638e |
 | RNF-02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | — | — | — |
@@ -133,13 +133,13 @@ catálogo das seções 14 e 15.
 | RNF-07.3 | A geração de roteiro por IA deve responder em até 15 segundos, ou informar erro claro ao usuário | Não iniciado | — | — | — |
 | RNF-07.4 | A geração de roteiro deve ser limitada a no máximo 10 requisições por usuário por hora | Não iniciado | — | — | — |
 | RNF-07.5 | A central de notificações deve carregar as 20 mais recentes em menos de 2 segundos no percentil 95, e o contador de não-lidas deve ser calculado em menos de 500 milissegundos | Não iniciado | — | — | — |
-| RNF-08.1 | O cálculo do roteio deve ser determinístico: a soma das partes de `expense_shares` deve sempre igualar o valor total da despesa | Planejado | `app/api/trips/[tripId]/expenses/[expenseId]/route.ts` | `tests/api/expense-item-route.test.ts`<br>`tests/rls/02-rateio.test.ts` | 04d877a |
+| RNF-08.1 | O cálculo do roteio deve ser determinístico: a soma das partes de `expense_shares` deve sempre igualar o valor total da despesa | Planejado | `app/api/trips/[tripId]/expenses/[expenseId]/route.ts`<br>`lib/finance/rateio.ts` | `tests/api/expense-item-route.test.ts`<br>`tests/lib/expenses-route.test.ts`<br>`tests/lib/finance-rateio.test.ts`<br>`tests/rls/02-rateio.test.ts` | 04d877a |
 
 ## Resumo
 
 - Requisitos no catálogo: **124**
-- Com implementação marcada: **53**
-- Com teste marcado: **46**
+- Com implementação marcada: **54**
+- Com teste marcado: **47**
 
 ## Inconsistências
 

@@ -232,6 +232,26 @@ describe("POST /api/trips/[tripId]/expenses — rateio", () => {
     expect(corpo.shares).toHaveLength(3)
   })
 
+  // @RNF08.1 regressão da Issue #36: o centavo seguia a ordem do formulário.
+  it("participantes fora de ordem: grava o centavo para o menor user_id, como na edição", async () => {
+    const gravadas: Record<string, unknown>[][] = []
+    usarFake({ user: { id: A }, onInsertShares: (l) => gravadas.push(l) })
+
+    for (const ordem of [[C, A, B], [B, C, A], [A, B, C]]) {
+      const res = await POST(
+        requisicao(comRateio({ tipo: "equal", participantes: ordem.map((user_id) => ({ user_id })) })),
+        { params },
+      )
+      expect(res.status).toBe(200)
+    }
+
+    // A lista sai na ordem enviada; o valor de cada um, não.
+    expect(gravadas[0].map((l) => l.user_id)).toEqual([C, A, B])
+    for (const linhas of gravadas) {
+      expect(Object.fromEntries(linhas.map((l) => [l.user_id, l.amount]))).toEqual({ [A]: 3.34, [B]: 3.33, [C]: 3.33 })
+    }
+  })
+
   it("divisão por peso: grava o peso e as partes proporcionais", async () => {
     let partes: Record<string, unknown>[] | undefined
     usarFake({ user: { id: A }, onInsertShares: (l) => (partes = l) })

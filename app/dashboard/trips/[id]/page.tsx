@@ -263,12 +263,17 @@ export default async function TripDetailPage({
                   <CardTitle>Despesas</CardTitle>
                   <CardDescription>Controle seus gastos durante a viagem</CardDescription>
                 </div>
-                <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
-                  <Link href={`/dashboard/trips/${id}/expenses/new`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Despesa
-                  </Link>
-                </Button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button asChild variant="outline">
+                    <Link href={`/dashboard/trips/${id}/acerto`}>Acerto de contas</Link>
+                  </Button>
+                  <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+                    <Link href={`/dashboard/trips/${id}/expenses/new`}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Despesa
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
