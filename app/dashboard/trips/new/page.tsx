@@ -169,7 +169,7 @@ export default function NewTripPage() {
                     setFormData((prev) => ({ ...prev, currency: value }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="currency">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -203,7 +203,7 @@ export default function NewTripPage() {
                   setFormData((prev) => ({ ...prev, status: value }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

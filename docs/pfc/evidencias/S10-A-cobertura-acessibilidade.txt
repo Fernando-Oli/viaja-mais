@@ -1,0 +1,15 @@
+◇ injected env (11) from .env.local // tip: ⌘ enable debugging { debug: true }
+[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\HOME because it is outside the current Git repository (C:\Users\HOME\Desktop\viaja-mais).
+[WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
+[WebServer] 
+
+Running 4 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ✓  1 [chromium] › e2e\acessibilidade.spec.ts:35:5 › telas públicas: login e cadastro (2.7s)
+  ✓  2 [chromium] › e2e\acessibilidade.spec.ts:45:5 › telas logadas: dashboard, viagem, avaliações e nova atividade (12.1s)
+◇ injected env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+  ✓  3 [mobile] › e2e\acessibilidade.spec.ts:35:5 › telas públicas: login e cadastro (3.3s)
+  ✓  4 [mobile] › e2e\acessibilidade.spec.ts:45:5 › telas logadas: dashboard, viagem, avaliações e nova atividade (10.4s)
+
+  4 passed (35.1s)

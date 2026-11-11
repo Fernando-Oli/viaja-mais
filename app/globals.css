@@ -9,8 +9,8 @@
 
   /* Viaja+ Color System */
   --color-navy: #051b38;
-  --color-orange: #ff7f50;
-  --color-green: #319f43;
+  --color-orange: #c2410c;
+  --color-green: #267e35;
   --color-black: #000000;
   --color-white: #ffffff;
 
@@ -118,11 +118,11 @@
   }
 
   .bg-viaja-orange {
-    background-color: #ff7f50;
+    background-color: #c2410c;
   }
 
   .bg-viaja-green {
-    background-color: #319f43;
+    background-color: #267e35;
   }
 
   .text-viaja-navy {
@@ -130,14 +130,14 @@
   }
 
   .text-viaja-orange {
-    color: #ff7f50;
+    color: #c2410c;
   }
 
   .text-viaja-green {
-    color: #319f43;
+    color: #267e35;
   }
 
   .border-viaja-orange {
-    border-color: #ff7f50;
+    border-color: #c2410c;
   }
 }

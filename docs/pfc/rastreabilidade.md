@@ -26,16 +26,16 @@ catálogo das seções 14 e 15.
 | RF-02.7 | O usuário deve poder tornar o perfil público ou privado | Não iniciado | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/page.tsx`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | f2fe986 |
 | RF-03.1 | O usuário deve poder criar nova viagem | Existente | `app/api/trips/route.ts` | `tests/api/trips-post.test.ts`<br>`e2e/grupo-convite.spec.ts` | 47dbca9 |
 | RF-03.2 | O usuário deve poder editar viagem | Existente | `app/api/trips/[tripId]/route.ts` | `tests/api/trips-patch.test.ts`<br>`e2e/editar-viagem.spec.ts` | 6d9496d |
-| RF-03.3 | O usuário deve poder excluir viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
-| RF-03.4 | O usuário deve poder visualizar lista de viagens | Parcial | — | — | — |
-| RF-03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | `app/api/trips/[tripId]/route.ts` | — | 6d9496d |
+| RF-03.3 | O usuário deve poder excluir viagem | Parcial | `app/api/trips/[tripId]/route.ts` | `tests/api/trip-item-route.test.ts` | 6d9496d |
+| RF-03.4 | O usuário deve poder visualizar lista de viagens | Parcial | — | `tests/api/trips-get.test.ts` | — |
+| RF-03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | `app/api/trips/[tripId]/route.ts` | `tests/api/trip-item-route.test.ts` | 6d9496d |
 | RF-03.6 | O usuário deve poder definir orçamento | Parcial | — | — | — |
 | RF-03.7 | O usuário deve poder adicionar imagem de capa | Parcial | — | — | — |
 | RF-03.8 | O usuário deve poder alterar status da viagem | Parcial | — | — | — |
 | RF-04.1 | O dono da viagem deve poder convidar pessoas por e-mail | Parcial | `app/api/invitations/route.ts`<br>`components/trip-members.tsx` | `tests/api/invitations-post.test.ts`<br>`e2e/grupo-convite.spec.ts` | 214970c |
 | RF-04.2 | O convidado deve receber notificação do convite por e-mail | Não iniciado | `app/api/invitations/route.ts` | `tests/api/invitations-post.test.ts` | 214970c |
 | RF-04.3 | O convidado deve poder aceitar ou recusar o convite | Parcial | `app/api/invitations/[invitationId]/accept/route.ts`<br>`components/trip-invitations.tsx` | `tests/api/invitation-accept-route.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts`<br>`tests/rls/convite.ts`<br>`e2e/grupo-convite.spec.ts` | 350a528 |
-| RF-04.4 | Os membros devem poder visualizar a viagem e seus dados | Parcial | `lib/trips/escopo.ts` | `tests/lib/escopo-grupo.test.ts`<br>`tests/rls/03-escopo-grupo.test.ts` | 47dbca9 |
+| RF-04.4 | Os membros devem poder visualizar a viagem e seus dados | Parcial | `lib/trips/escopo.ts` | `tests/api/trips-get.test.ts`<br>`tests/lib/escopo-grupo.test.ts`<br>`tests/rls/03-escopo-grupo.test.ts` | 47dbca9 |
 | RF-04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | — | — | — |
 | RF-04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | `app/api/trips/[tripId]/expenses/route.ts` | — | b3a684c |
 | RF-04.7 | O dono deve poder remover membros da viagem | Existente | `app/api/trips/[tripId]/members/route.ts`<br>`components/trip-members.tsx` | `tests/api/members-route.test.ts` | 5015b38 |
@@ -87,9 +87,9 @@ catálogo das seções 14 e 15.
 | RF-10.2 | O usuário deve poder remover a própria curtida | Não iniciado | — | — | — |
 | RF-10.3 | O usuário deve poder comentar em uma publicação | Não iniciado | — | — | — |
 | RF-10.4 | O usuário deve poder excluir o próprio comentário | Não iniciado | — | — | — |
-| RF-11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-list.tsx`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
-| RF-11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/lugares/avaliacoes.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
-| RF-11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
+| RF-11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-list.tsx`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | 7a2d60d |
+| RF-11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/lugares/avaliacoes.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | 7a2d60d |
+| RF-11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | 7a2d60d |
 | RF-12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Não iniciado | — | — | — |
 | RF-12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | — | — | — |
 | RF-12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | — | — | — |
@@ -114,12 +114,22 @@ catálogo das seções 14 e 15.
 | RNF-02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | — | `tests/lib/supabase-admin.test.ts` | — |
 | RNF-02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/foto/route.ts`<br>`app/api/social/perfil/route.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-foto-route.test.ts`<br>`tests/api/social-perfil-route.test.ts` | f2fe986 |
 | RNF-02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | — | — | — |
+| RNF-03.1 | Toda tela deve ser utilizável em largura de celular (412 pixels) e de computador, sem perda de função | Atendido | — | `e2e/acessibilidade.spec.ts` | — |
+| RNF-03.2 | A aplicação deve funcionar nas duas versões mais recentes de Chrome, Firefox, Safari e Edge | Parcial | — | — | — |
+| RNF-03.3 | Toda ação de escrita deve dar retorno visual de sucesso ou de falha, e ação destrutiva deve exigir confirmação | Parcial | — | — | — |
+| RNF-03.4 | Erro de validação devolvido pelo servidor deve ser exibido ao usuário com o motivo, e não como mensagem genérica | Parcial | — | — | — |
+| RNF-03.5 | Toda tela deve apresentar zero violações das regras WCAG 2.1 níveis A e AA verificáveis por ferramenta automática | Parcial | — | `e2e/acessibilidade.spec.ts` | — |
 | RNF04 | _(fora do catálogo)_ | — | — | `tests/lib/env.test.ts` | — |
 | RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | — | — | — |
 | RNF-04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Planejado | — | — | — |
 | RNF-04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | — | — | — |
 | RNF-04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Parcial | — | — | — |
 | RNF-04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | — | — | — |
+| RNF-05.1 | O código deve ser escrito em TypeScript no modo estrito e compilar sem erro de tipo, verificado pela integração contínua | Atendido | — | — | — |
+| RNF-05.2 | Diálogos, confirmações e campos de formulário devem vir da biblioteca de componentes compartilhada, sem reimplementação por tela | Atendido | — | — | — |
+| RNF-05.3 | Todo requisito implementado deve estar marcado no código e no teste, com rastreabilidade gerada automaticamente | Atendido | — | — | — |
+| RNF-05.4 | A cobertura de testes deve ser de no mínimo 70% em linhas, ramos, funções e instruções, no total e em `lib/`, com bloqueio pela integração contínua | Atendido | — | — | — |
+| RNF-05.5 | Os erros do servidor devem ser registrados em formato estruturado, com rota, usuário e causa | Planejado | — | — | — |
 | RNF-06.1 | A aplicação deve executar sem estado no servidor, permitindo múltiplas instâncias simultâneas | Atendido | — | — | — |
 | RNF-06.2 | Os arquivos estáticos devem ser servidos por rede de distribuição de conteúdo | Atendido | — | — | — |
 | RNF-06.3 | O acesso ao banco deve usar pool de conexões, sem abrir conexão por requisição | Atendido | — | — | — |
@@ -133,9 +143,9 @@ catálogo das seções 14 e 15.
 
 ## Resumo
 
-- Requisitos no catálogo: **120**
+- Requisitos no catálogo: **130**
 - Com implementação marcada: **49**
-- Com teste marcado: **49**
+- Com teste marcado: **54**
 
 ## Inconsistências
 
