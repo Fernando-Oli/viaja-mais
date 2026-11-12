@@ -71,18 +71,51 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+  # PR que só mexe em documentação (docs/ e arquivos .md) não muda nenhuma
+  # tela: o E2E é pulado. Os outros jobs rodam sempre — a rastreabilidade, por
+  # exemplo, lê o catálogo que mora em docs/.
+  mudancas:
+    name: O que mudou
+    runs-on: ubuntu-latest
+    outputs:
+      codigo: ${{ steps.diff.outputs.codigo }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "codigo=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD | grep -qvE '^docs/|\.md$'; then
+            echo "codigo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "codigo=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Só documentação mudou: E2E pulado."
+          fi
+
   # E2E contra um Supabase local efêmero, o mesmo stack do job "Migrations e
   # RLS": migrations + seed aplicados do zero, usuários teste.a/teste.b do seed.
   #
   # Antes este job dependia de secrets E2E_USER_* que nunca foram configurados,
   # e caía num `echo "E2E pulado"` — ficava verde em 50 s sem executar teste
   # nenhum, de setembro a 11/11/2026.
+  #
+  # A suíte é dividida em 4 partes que rodam em paralelo, cada uma com o seu
+  # próprio Supabase: os testes compartilham os usuários do seed e por isso
+  # rodam um de cada vez dentro de um banco (workers: 1), mas bancos separados
+  # não disputam nada. Em série eram ~15 min; em 4 partes, ~6.
   e2e:
-    name: Playwright
+    name: Playwright (${{ matrix.parte }}/4)
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event.pull_request.draft == false }}
-    needs: build
-    timeout-minutes: 40
+    needs: mudancas
+    if: ${{ needs.mudancas.outputs.codigo == 'true' && (github.event_name == 'push' || github.event.pull_request.draft == false) }}
+    timeout-minutes: 30
+    strategy:
+      # Uma parte falhando não cancela as outras: o relatório mostra tudo.
+      fail-fast: false
+      matrix:
+        parte: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -117,7 +150,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: http://localhost:3000
 
       - name: E2E
-        run: npm run e2e
+        run: npm run e2e -- --shard=${{ matrix.parte }}/4
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
@@ -129,7 +162,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.parte }}
           path: |
             playwright-report/
             test-results/

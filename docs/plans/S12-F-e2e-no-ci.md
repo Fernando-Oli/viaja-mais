@@ -25,7 +25,7 @@ Ao rodar a suíte inteira localmente (S06-F), três testes falharam sem relaçã
 
 ## 2. Arquivos afetados
 
-- `.github/workflows/ci.yml` — o job `e2e` sobe o Supabase local (CLI 2.104.0), exporta as credenciais do stack, faz o build contra ele e roda a suíte inteira
+- `.github/workflows/ci.yml` — o job `e2e` sobe o Supabase local (CLI 2.104.0), exporta as credenciais do stack, faz o build contra ele e roda a suíte. Ele é dividido em 4 partes paralelas (`--shard`), cada uma com o seu banco, porque em série a suíte levava 15 min (12 só de testes, um de cada vez). Não espera mais o job de build, que ele não usa. E é pulado em PR que só mexe em `docs/` ou em `.md` (job `mudancas`)
 - `app/dashboard/page.tsx`, `app/dashboard/bookings/page.tsx` — `opacity-75` → `border-dashed` nos itens passados
 - `e2e/acessibilidade.spec.ts` — espera as animações do diálogo antes do axe
 - `e2e/rateio-despesa.spec.ts` — divisão igual sem ordem fixa, conferindo que o 3,34 foi para o menor `user_id`
@@ -40,7 +40,8 @@ Ao rodar a suíte inteira localmente (S06-F), três testes falharam sem relaçã
 
 - [x] `acessibilidade.spec.ts` com `--repeat-each=5`: 20/20
 - [x] `rateio-despesa.spec.ts` com `--repeat-each=3`: todos verdes nos dois projetos
-- [ ] Job "Playwright" do PR executa a suíte inteira (duração de minutos, relatório arquivado) e passa
+- [x] Em série, no primeiro run do PR: 169 passaram em 12,2 min de testes (15 min de job)
+- [ ] Em 4 partes: as quatro passam, e a espera cai para ~6 min
 
 ## 5. O que validar
 
