@@ -219,7 +219,7 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
                   value={formData.currency}
                   onValueChange={(value) => setFormData({ ...formData, currency: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="currency">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

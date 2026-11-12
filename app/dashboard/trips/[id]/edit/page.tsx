@@ -179,7 +179,7 @@ export default function EditTripPage({ params }: { params: Promise<{ id: string 
                   name="currency"
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="currency">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -210,7 +210,7 @@ export default function EditTripPage({ params }: { params: Promise<{ id: string 
                 value={formData.status}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

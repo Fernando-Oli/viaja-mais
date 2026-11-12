@@ -167,7 +167,7 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
                   value={formData.category}
                   onValueChange={(value) => setFormData({ ...formData, category: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="category">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -184,7 +184,7 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger id="status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

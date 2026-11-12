@@ -152,6 +152,7 @@ export default function DashboardPage() {
                   }}
                   size="sm"
                   variant="ghost"
+                  aria-label={`Excluir viagem ${trip.title}`}
                   className="absolute right-2 bottom-2 z-10 hover:bg-red-600 cursor-pointer hover:text-white transition-colors duration-200"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -231,6 +232,7 @@ export default function DashboardPage() {
                   }}
                   size="sm"
                   variant="ghost"
+                  aria-label={`Excluir viagem ${trip.title}`}
                   className="absolute right-2 bottom-2 z-10 hover:bg-red-600 cursor-pointer hover:text-white transition-colors duration-200"
                 >
                   <Trash2 className="h-4 w-4" />

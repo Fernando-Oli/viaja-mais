@@ -1,0 +1,4 @@
+✖ 42 problems (0 errors, 42 warnings)
+ Test Files  38 passed (38)
+      Tests  503 passed (503)
+✓ Compiled successfully in 3.6s
