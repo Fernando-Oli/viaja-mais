@@ -1,0 +1,9 @@
+# S05-M-seguir — cobertura dos arquivos da atividade (2026-10-21 17:35)
+npx vitest run tests/api/social-perfil-visto-route.test.ts tests/api/social-seguir-route.test.ts tests/lib/perfil-schema.test.ts --coverage (include nos arquivos abaixo)
+A função contar_rede (SQL) é coberta pelos testes de RLS e pela mutação do banco, não pelo v8.
+
+total                                              linhas 100% | ramos 100% | funções 100%
+app/api/social/perfis/[username]/route.ts          linhas 100% | ramos 100% | funções 100%
+app/api/social/perfis/[username]/seguir/route.ts   linhas 100% | ramos 100% | funções 100%
+lib/schemas/perfil.ts                              linhas 100% | ramos 100% | funções 100%
+lib/social/perfil-visto.ts                         linhas 100% | ramos 100% | funções 100%

@@ -20,6 +20,7 @@ grupo RF01.
 | RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Existente | Alta |
 | RF02.6 | O usuário deve poder escrever uma biografia | Existente | Média |
 | RF02.7 | O usuário deve poder tornar o perfil público ou privado | Existente | Alta |
+| RF02.8 | O usuário deve poder visualizar o perfil de outro usuário | Não iniciado | Alta |
 
 **Detalhamento:** aplicamos a este grupo o critério de status descrito em RF01 e
 RF04. O perfil tem página própria (`app/dashboard/perfil`), que lê e grava pela
@@ -39,10 +40,17 @@ publicadas são visíveis a qualquer usuário autenticado, e o ato de seguir tem
 efeito imediato. Em um perfil privado, os dados básicos — nome, username, avatar
 e biografia — permanecem visíveis, mas as publicações só são acessíveis ao
 próprio dono e aos seguidores aprovados, e seguir exige solicitação e aprovação
-(conforme RF09). A exclusão de conta (RF02.4) remove em cascata o perfil, os
-vínculos de seguir, as publicações, as curtidas e os arquivos de foto do usuário
-no armazenamento. Como decisão de dado a cargo da plataforma, a tabela
-`profiles` recebe as colunas `username` (única), `bio` e `is_public`.
+(conforme RF09). O perfil de outro usuário (RF02.8) é aberto a partir da busca de
+pessoas (RF09.10) e mostra os dados básicos, a quantidade de seguidores e de
+perfis seguidos e a situação do vínculo de quem o visita; em perfil privado, as
+quantidades permanecem visíveis, e as publicações e a lista de seguidores ficam
+restritas aos seguidores aprovados, com uma exceção equivalente à do Instagram:
+o vínculo de um seguidor de perfil público aparece na lista de perfis seguidos
+por ele, visível a qualquer usuário autenticado. A exclusão de conta (RF02.4) remove em
+cascata o perfil, os vínculos de seguir, as publicações, as curtidas e os
+arquivos de foto do usuário no armazenamento. Como decisão de dado a cargo da
+plataforma, a tabela `profiles` recebe as colunas `username` (única), `bio` e
+`is_public`.
 
 ## 14.1 Existentes (reaproveitados de `docs/ARCHITECTURE.md` §6, status corrigido)
 
@@ -86,6 +94,9 @@ no armazenamento. Como decisão de dado a cargo da plataforma, a tabela
 | RF09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | Alta |
 | RF09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | Alta |
 | RF09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | Média |
+| RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | Alta |
+| RF09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | Média |
+| RF09.12 | O usuário deve poder ver, reabrir e apagar o histórico dos perfis que abriu pela pesquisa | Não iniciado | Média |
 
 **Detalhamento:** seguir um perfil público cria o vínculo já no estado aceito;
 seguir um perfil privado cria um vínculo pendente, que só se torna aceito após a
@@ -100,9 +111,33 @@ o sistema não notifica o removido — e não impõe barreira: o removido pode v
 a seguir, se o perfil for público, ou solicitar novamente, se for privado, e é
 essa ausência de barreira que mantém a remoção indetectável; remover apenas
 desfaz o vínculo aceito, e em um perfil privado o removido perde o acesso às
-publicações. Bloquear usuário está fora do escopo deste período. Como decisão de
-dado a cargo da plataforma, criam-se a tabela `follows`, com estado pendente ou
-aceito, e a tabela `trip_posts`.
+publicações. As listas de seguidores e de seguindo (RF09.6) abrem pelos
+contadores do perfil e mostram somente vínculos aceitos, nunca solicitações
+pendentes; são visíveis ao próprio dono, a quem o segue com vínculo aceito e,
+em perfil público, a qualquer usuário autenticado. Em perfil privado, os
+contadores continuam visíveis, mas as listas não. Cada pessoa da lista aparece
+com os mesmos dados básicos da busca, sem o identificador interno nem a data do
+vínculo. Que um perfil público segue um privado permanece visível, porque o
+vínculo está na lista do perfil público. Somente quem já escolheu um nome de
+usuário segue ou é seguido, porque sem ele a pessoa não tem página nem aparece
+nas listas; quem tem nome de usuário pode trocá-lo, mas não apagá-lo, e os
+contadores contam somente as pessoas que as listas mostram. Bloquear usuário está fora do escopo deste período. A busca de
+usuários (RF09.10) exige sessão autenticada e devolve os dados básicos de cada
+perfil encontrado — nome, username e foto — e a indicação de perfil público ou
+privado, inclusive de perfis privados, que permanecem encontráveis; nunca
+devolve o e-mail e não traz o identificador interno como campo da resposta,
+embora esse identificador componha o endereço temporário da foto de perfil; e não
+inclui o próprio usuário que realiza a busca. O histórico de pesquisa (RF09.12)
+guarda os perfis que o usuário abriu a partir da pesquisa, do mais recente para
+o mais antigo, com no máximo quinze entradas, e apaga as entradas com mais de
+trinta dias; é visível somente ao próprio usuário, acompanha a conta em qualquer
+dispositivo, não notifica a pessoa pesquisada e pode ser apagado entrada a
+entrada ou por inteiro. Nas sugestões do feed (RF09.11),
+somente publicações de perfis públicos podem ser sugeridas; uma publicação de
+perfil privado nunca é sugerida a quem não é seguidor aprovado. Como decisão de
+dado a cargo da plataforma,
+criam-se a tabela `follows`, com estado pendente ou aceito, a tabela
+`trip_posts` e a tabela `search_history`, do histórico de pesquisa.
 
 ## RF10 — Interação Social
 
@@ -174,7 +209,11 @@ ou por atualização periódica. Ficam fora do escopo deste período as notifica
 de curtida, comentário e nova publicação, deliberadamente omitidas pelo alto
 volume que gerariam. Como decisão de dado a cargo da plataforma, cria-se a tabela
 `notifications`, com usuário destino, tipo, ator, referência, marcação de lida e
-data de criação.
+data de criação. A seção de solicitações (RF13.2) não depende dessa tabela: cada
+solicitação é o próprio vínculo pendente de seguir, lido pelo dono do perfil, e
+deixa de existir quando ele a aprova ou recusa. A central é aberta por um sino no
+canto superior direito da aba Rede social, com a quantidade de solicitações
+pendentes.
 
 ## RF03 — Gestão de Viagens
 

@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 C:/Users/micae/viaja-mais
+
+
+ Test Files  1 passed (1)
+      Tests  29 passed (29)
+   Start at  12:13:54
+   Duration  1.42s (transform 235ms, setup 555ms, import 402ms, tests 58ms, environment 0ms)
+

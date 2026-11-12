@@ -1,0 +1,41 @@
+# S05-M-pesquisa — advisors da Supabase, lint e EXPLAIN do histórico (2026-11-10 09:04)
+Rodada final (CLI 2.120.0), depois da mutação, com a migration corrigida (policy de SELECT só por dono, poda SECURITY INVOKER com lock por dono,
+sem grants manuais no schema cron).
+
+## npx supabase db advisors --local --type all --level info, filtrado pelos objetos desta proposta
+Um aviso só cita o histórico: unused_index (INFO) em search_history_profile_idx. A mutação acabou de recriar a
+tabela, então o índice ainda não tem estatística de uso. É o índice da FK de profile_id, que a cascata usa (EXPLAIN
+abaixo), e fica. Nenhum aviso cita public.search_history_podar nem o schema cron.
+Os demais avisos do banco são herdados da base (auth_rls_initplan, multiple_permissive_policies,
+unindexed_foreign_keys, function_search_path_mutable em funções antigas) e não entram na conta.
+
+## npx supabase db lint --local --schema public (plpgsql_check)
+{"results":[],"message":"db lint"}
+
+## EXPLAIN (enable_seqscan = off: a tabela local está vazia)
+-- os recentes do Davi, como a rota pede (o filtro de 30 dias vem da rota), sob RLS
+ Limit
+   InitPlan 1
+     ->  Result
+   ->  Sort
+         Sort Key: search_history.searched_at DESC
+         ->  Result
+               One-Time Filter: ((InitPlan 1).col1 = '44444444-4444-4444-8444-444444444444'::uuid)
+               ->  Bitmap Heap Scan on search_history
+                     Recheck Cond: (user_id = '44444444-4444-4444-8444-444444444444'::uuid)
+                     Filter: (searched_at > (now() - '30 days'::interval))
+                     ->  Bitmap Index Scan on search_history_pkey
+                           Index Cond: (user_id = '44444444-4444-4444-8444-444444444444'::uuid)
+-- a cascata ao apagar uma conta: as entradas em que ela foi aberta
+ Delete on search_history
+   ->  Bitmap Heap Scan on search_history
+         Recheck Cond: (profile_id = '33333333-3333-4333-8333-333333333333'::uuid)
+         ->  Bitmap Index Scan on search_history_profile_idx
+               Index Cond: (profile_id = '33333333-3333-4333-8333-333333333333'::uuid)
+
+O auth.uid() da policy é avaliado uma vez (InitPlan), por estar dentro de (select ...), como a skill
+supabase-postgres-best-practices recomenda. A leitura usa a PK pelo dono; o sort é sobre no máximo 15
+linhas por dono (mais o vencido que ainda não saiu). A cascata usa o índice de profile_id criado para a FK.
+O lock da poda é por dono (pg_advisory_xact_lock), então só serializa registros da mesma pessoa. O job
+diário filtra por searched_at sem índice: com no máximo 15 linhas por pessoa, a varredura diária é pequena;
+um índice em searched_at fica como sugestão para quando houver volume.

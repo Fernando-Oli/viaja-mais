@@ -1,0 +1,22 @@
+◇ injected env (11) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+
+Running 14 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ok  1 [chromium] › e2e\seguir.spec.ts:37:5 › abre o perfil público pela busca, segue e deixa de seguir (4.7s)
+  ok  2 [chromium] › e2e\seguir.spec.ts:96:5 › se seguir falha, o foco volta ao botão, e nada muda (1.8s)
+  ok  3 [chromium] › e2e\seguir.spec.ts:117:5 › com a sessão vencida, seguir oferece entrar de novo (2.0s)
+  ok  4 [chromium] › e2e\seguir.spec.ts:139:5 › no perfil privado, solicita sem mudar o contador e cancela a solicitação (2.4s)
+  ok  5 [chromium] › e2e\seguir.spec.ts:167:5 › o próprio perfil mostra Editar perfil, e quem não existe mostra não encontrado (1.8s)
+  ok  6 [chromium] › e2e\seguir.spec.ts:179:5 › seguir a si mesmo é recusado pela rota (970ms)
+  ok  7 [chromium] › e2e\seguir.spec.ts:186:5 › sem sessão, o perfil manda para o login e as rotas respondem 401 (667ms)
+◇ injected env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ok  8 [mobile] › e2e\seguir.spec.ts:37:5 › abre o perfil público pela busca, segue e deixa de seguir (4.7s)
+  ok  9 [mobile] › e2e\seguir.spec.ts:96:5 › se seguir falha, o foco volta ao botão, e nada muda (1.8s)
+  ok 10 [mobile] › e2e\seguir.spec.ts:117:5 › com a sessão vencida, seguir oferece entrar de novo (2.4s)
+  ok 11 [mobile] › e2e\seguir.spec.ts:139:5 › no perfil privado, solicita sem mudar o contador e cancela a solicitação (2.6s)
+  ok 12 [mobile] › e2e\seguir.spec.ts:167:5 › o próprio perfil mostra Editar perfil, e quem não existe mostra não encontrado (1.6s)
+  ok 13 [mobile] › e2e\seguir.spec.ts:179:5 › seguir a si mesmo é recusado pela rota (1.1s)
+  ok 14 [mobile] › e2e\seguir.spec.ts:186:5 › sem sessão, o perfil manda para o login e as rotas respondem 401 (959ms)
+
+  14 passed (35.6s)

@@ -430,6 +430,40 @@ export type Database = {
         }
         Relationships: []
       }
+      search_history: {
+        Row: {
+          profile_id: string
+          searched_at: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          profile_id: string
+          searched_at?: string
+          user_id: string
+        }
+        Update: {
+          profile_id?: string
+          searched_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settlements: {
         Row: {
           amount: number
@@ -604,6 +638,13 @@ export type Database = {
       can_access_trip: {
         Args: { trip_uuid: string; user_uuid: string }
         Returns: boolean
+      }
+      contar_rede: {
+        Args: { perfil: string }
+        Returns: {
+          seguidores: number
+          seguindo: number
+        }[]
       }
       get_current_user_email: {
         Args: Record<PropertyKey, never>

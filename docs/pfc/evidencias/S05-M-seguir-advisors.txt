@@ -1,0 +1,29 @@
+# S05-M-seguir — advisors da Supabase, lint e EXPLAIN da contar_rede (2026-10-21 17:09)
+
+## npx supabase db advisors --local --type all --level info, filtrado pelos objetos desta proposta
+Nenhum aviso cita public.contar_rede.
+O único aviso em follows é anterior a esta atividade: unused_index em follows_pendentes_idx
+(S03, para a central de notificações, RF13.2, que ainda não existe).
+Os demais avisos do banco são herdados da base (auth_rls_initplan, multiple_permissive_policies,
+unindexed_foreign_keys, function_search_path_mutable em add_trip_owner_as_member e
+get_current_user_email) e não entram na conta.
+
+## npx supabase db lint --local --schema public (plpgsql_check)
+No schema errors found
+{"results":[],"message":"db lint"}
+
+## EXPLAIN das duas contagens da função (enable_seqscan = off: a tabela local está vazia)
+-- seguidores (followee_id)
+ Aggregate
+   ->  Index Scan using follows_followee_recentes_idx on follows f
+         Index Cond: (followee_id = '33333333-3333-4333-8333-333333333333'::uuid)
+         Filter: (status = 'accepted'::text)
+-- seguindo (follower_id)
+ Aggregate
+   ->  Index Scan using follows_pkey on follows f
+         Index Cond: (follower_id = '33333333-3333-4333-8333-333333333333'::uuid)
+         Filter: (status = 'accepted'::text)
+
+Os dois filtros por status são feitos na linha, depois do índice. Para perfis com muitos
+seguidores, um índice parcial (followee_id) where status = 'accepted' permitiria index-only
+scan; fica como sugestão para quando houver volume, porque todo índice encarece a escrita.

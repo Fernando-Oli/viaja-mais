@@ -14,6 +14,7 @@ import {
   LogOut,
   Image,
   UserRound,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ export default function DashboardLayout({
     { name: "Finanças", href: "/dashboard/finances", icon: DollarSign },
     { name: "Lugares", href: "/dashboard/places", icon: MapPin },
     { name: "Reservas", href: "/dashboard/bookings", icon: BookOpen },
+    { name: "Rede social", href: "/feed", icon: Users },
   ];
 
   const initials =

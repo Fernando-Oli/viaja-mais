@@ -1,0 +1,32 @@
+◇ injected env (10) from .env.local // tip: ⌘ enable debugging { debug: true }
+
+Running 24 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+  ok  1 [chromium] › e2e\solicitacoes.spec.ts:79:5 › o sino mostra a solicitação, e aprovar faz do Davi um seguidor (9.8s)
+  ok  2 [chromium] › e2e\solicitacoes.spec.ts:135:5 › recusar tira a solicitação em silêncio, e o Davi pode pedir de novo (6.0s)
+  ok  3 [chromium] › e2e\solicitacoes.spec.ts:158:5 › sem solicitações, a central diz que não há nenhuma e o sino fica sem bolinha (2.0s)
+  ok  4 [chromium] › e2e\solicitacoes.spec.ts:169:5 › acima de 9, a bolinha mostra 9+, e o nome do sino diz quantas são (1.9s)
+  ok  5 [chromium] › e2e\solicitacoes.spec.ts:185:5 › se aprovar falha, a solicitação fica e o erro aparece (4.6s)
+  ok  6 [chromium] › e2e\solicitacoes.spec.ts:206:5 › com a sessão vencida, aprovar oferece entrar de novo (4.4s)
+  ok  7 [chromium] › e2e\solicitacoes.spec.ts:229:5 › ações seguidas em pessoas diferentes: os botões de quem espera ficam travados, e a contagem fecha (regressão) (7.8s)
+  ok  8 [chromium] › e2e\solicitacoes.spec.ts:273:5 › quem pediu troca de username com a lista aberta: a solicitação continua, com o nome novo (regressão) (5.3s)
+  ok  9 [chromium] › e2e\solicitacoes.spec.ts:304:5 › com a sessão vencida, o sino deixa de mostrar a contagem antiga (regressão) (3.8s)
+  ok 10 [chromium] › e2e\solicitacoes.spec.ts:324:5 › com a sessão vencida dentro das Notificações, a bolinha também some (regressão) (3.8s)
+  ok 11 [chromium] › e2e\solicitacoes.spec.ts:346:5 › uma recarga pedida antes de outra ação terminar não traz de volta quem já foi resolvido (regressão) (8.3s)
+  ok 12 [chromium] › e2e\solicitacoes.spec.ts:413:5 › com a sessão vencida na recarga das Notificações, a bolinha some mesmo que o sino tenha contado antes (regressão) (4.3s)
+◇ injected env (0) from .env.local // tip: ⌘ override existing { override: true }
+  ok 13 [mobile] › e2e\solicitacoes.spec.ts:79:5 › o sino mostra a solicitação, e aprovar faz do Davi um seguidor (8.3s)
+  ok 14 [mobile] › e2e\solicitacoes.spec.ts:135:5 › recusar tira a solicitação em silêncio, e o Davi pode pedir de novo (5.3s)
+  ok 15 [mobile] › e2e\solicitacoes.spec.ts:158:5 › sem solicitações, a central diz que não há nenhuma e o sino fica sem bolinha (2.0s)
+  ok 16 [mobile] › e2e\solicitacoes.spec.ts:169:5 › acima de 9, a bolinha mostra 9+, e o nome do sino diz quantas são (1.8s)
+  ok 17 [mobile] › e2e\solicitacoes.spec.ts:185:5 › se aprovar falha, a solicitação fica e o erro aparece (4.7s)
+  ok 18 [mobile] › e2e\solicitacoes.spec.ts:206:5 › com a sessão vencida, aprovar oferece entrar de novo (5.3s)
+  ok 19 [mobile] › e2e\solicitacoes.spec.ts:229:5 › ações seguidas em pessoas diferentes: os botões de quem espera ficam travados, e a contagem fecha (regressão) (8.4s)
+  ok 20 [mobile] › e2e\solicitacoes.spec.ts:273:5 › quem pediu troca de username com a lista aberta: a solicitação continua, com o nome novo (regressão) (5.4s)
+  ok 21 [mobile] › e2e\solicitacoes.spec.ts:304:5 › com a sessão vencida, o sino deixa de mostrar a contagem antiga (regressão) (3.7s)
+  ok 22 [mobile] › e2e\solicitacoes.spec.ts:324:5 › com a sessão vencida dentro das Notificações, a bolinha também some (regressão) (3.7s)
+  ok 23 [mobile] › e2e\solicitacoes.spec.ts:346:5 › uma recarga pedida antes de outra ação terminar não traz de volta quem já foi resolvido (regressão) (7.6s)
+  ok 24 [mobile] › e2e\solicitacoes.spec.ts:413:5 › com a sessão vencida na recarga das Notificações, a bolinha some mesmo que o sino tenha contado antes (regressão) (4.2s)
+
+  24 passed (2.1m)

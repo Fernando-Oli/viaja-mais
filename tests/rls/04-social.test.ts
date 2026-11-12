@@ -327,6 +327,20 @@ describe("seguir perfil público (efeito imediato)", () => {
     const { error } = await bruno.from("follows").insert({ follower_id: idBruno, followee_id: idAna })
     expect(error?.code).toBe(VIOLA_UNICIDADE)
   })
+
+  it("o upsert da rota (ON CONFLICT DO NOTHING) segue de novo sem erro e sem duplicar (S05-M-seguir)", async () => {
+    // A mesma chamada de app/api/social/perfis/[username]/seguir/route.ts, com
+    // os grants reais: INSERT só em (follower_id, followee_id) basta.
+    const { error } = await bruno
+      .from("follows")
+      .upsert({ follower_id: idBruno, followee_id: idAna }, { onConflict: "follower_id,followee_id", ignoreDuplicates: true })
+    expect(error).toBeNull()
+    const { rows } = await db.query("select status from public.follows where follower_id = $1 and followee_id = $2", [
+      idBruno,
+      idAna,
+    ])
+    expect(rows).toEqual([{ status: "accepted" }])
+  })
 })
 
 describe("seguir perfil privado (solicitação pendente)", () => {
@@ -347,6 +361,19 @@ describe("seguir perfil privado (solicitação pendente)", () => {
       .insert({ follower_id: idAna, followee_id: idBruno, created_at: DATA_FORJADA })
     expect(comData?.code).toBe(VIOLA_RLS_OU_GRANT)
 
+    expect(await vinculo(ana, idAna, idBruno)).toBeNull()
+  })
+
+  it("nem pelo upsert da rota (ON CONFLICT DO NOTHING) o cliente manda status (S05-M-seguir)", async () => {
+    // A forma de app/api/social/perfis/[username]/seguir/route.ts, com o status
+    // que a rota nunca manda: quem barra é o grant de coluna, não a rota.
+    const { error } = await ana
+      .from("follows")
+      .upsert(
+        { follower_id: idAna, followee_id: idBruno, status: "accepted" },
+        { onConflict: "follower_id,followee_id", ignoreDuplicates: true },
+      )
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
     expect(await vinculo(ana, idAna, idBruno)).toBeNull()
   })
 

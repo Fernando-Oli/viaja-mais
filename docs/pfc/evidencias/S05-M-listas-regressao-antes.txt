@@ -1,0 +1,63 @@
+# S05-M-listas — teste de regressão, ANTES da correção (2026-11-10)
+Achado do screenshot do celular: com o Remover ao lado, o nome da pessoa era cortado com reticências
+("Davi Teste" virava "Davi Tes…"); com nomes maiores, quase nada aparecia. O teste confere que o nome cabe inteiro
+(scrollWidth <= clientWidth) na própria lista de seguidores, antes de abrir a confirmação.
+
+NEXT_PUBLIC_APP_URL=http://localhost:3100 npx playwright test e2e/listas.spec.ts -g "remover pede", contra o build sem a correção:
+
+      ok 1 [chromium] › e2e\listas.spec.ts:116:5 › remover pede confirmação, tira a pessoa em silêncio, e o removido segue de novo (8.8s)
+        Error: o nome cabe inteiro, sem reticências
+        Expected: true
+        Received: false
+        > 128 |     expect(await nome.evaluate((el) => el.scrollWidth <= el.clientWidth), "o nome cabe inteiro, sem reticências").toBe(true)
+      1 failed
+      1 passed (20.3s)
+
+# Revisão independente (agente seguranca) sobre o 98883d3: I1 e m2, ANTES da correção (2026-11-10)
+I1: um seguidor sem username ficava invisível na lista, não podia ser removido e continuava vendo a rede.
+Decisão do Micael: exigir username, como no Instagram. m2: um 404 recarregava a lista, e a resposta, pedida
+antes de outra remoção terminar, trazia de volta quem já tinha saído.
+
+## Integração: npx vitest run tests/api/social-seguir-route.test.ts
+     × 403 sem_username: a sessão sem nome de usuário não segue ninguém, e nada é gravado (regressão)
+       (a rota respondia 200 e gravava o vínculo)
+
+## RLS: npx vitest run --config vitest.rls.config.mts tests/rls/11-exigir-username.test.ts (sem a migration)
+         × uma conta sem username não segue ninguém pela Data API (regressão) 37ms
+         × ninguém segue uma conta sem username (regressão) 78ms
+         × o seguidor aceito não zera o próprio username pela Data API (regressão) 54ms
+         × vale também para quem grava sem a Data API: o SQL direto também é recusado (regressão) 17ms
+         × a contar_rede não conta um seguidor sem username, como a lista não o mostra (regressão) 20ms
+         × a migration apaga os vínculos legados com uma ponta sem username, e só eles (regressão) 4ms
+    ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+    AssertionError: expected undefined to be '42501' // Object.is equality
+    AssertionError: expected undefined to be '42501' // Object.is equality
+    AssertionError: expected undefined to be '23514' // Object.is equality
+    AssertionError: promise resolved "Result{ command: 'UPDATE', …(9) }" instead of rejecting
+    AssertionError: expected 1 to be +0 // Object.is equality
+    Error: a migration *_social_exigir_username.sql não existe
+          Tests  6 failed | 2 passed (8)
+
+## E2E: npx playwright test e2e/listas.spec.ts -g regressão (build sem a correção, chromium e mobile)
+        Error: expect(locator).toBeVisible() failed
+        Locator: getByText('Escolha um nome de usuário para seguir pessoas.')
+        Expected: visible
+        Error: element(s) not found
+        > 268 |     await expect(semNome.getByText("Escolha um nome de usuário para seguir pessoas.")).toBeVisible()
+        Error: expect(locator).toBeVisible() failed
+        Locator: getByText('Ninguém segue você ainda.')
+        Expected: visible
+        Error: element(s) not found
+        > 336 |     await expect(page.getByText("Ninguém segue você ainda.")).toBeVisible()
+        Error: expect(locator).toBeVisible() failed
+        Locator: getByText('Escolha um nome de usuário para seguir pessoas.')
+        Expected: visible
+        Error: element(s) not found
+        > 268 |     await expect(semNome.getByText("Escolha um nome de usuário para seguir pessoas.")).toBeVisible()
+        Error: expect(locator).toBeVisible() failed
+        Locator: getByText('Ninguém segue você ainda.')
+        Expected: visible
+        Error: element(s) not found
+        > 336 |     await expect(page.getByText("Ninguém segue você ainda.")).toBeVisible()
+    (m2: o contexto da falha mostra o status "@davi saiu dos seus seguidores." e, de novo, o botão "Remover @davi")
+      4 failed (2 testes × chromium e mobile)

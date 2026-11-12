@@ -1,0 +1,82 @@
+# S05-M-solicitacoes — testes de mutação (2026-11-10 22:13)
+Cada proteção sabotada sozinha e desfeita em seguida. MORTA = algum teste falhou (bom); VIVA = nenhum teste percebeu.
+Alvos do código: lib/social/solicitacoes.ts (lib), lib/schemas/solicitacoes.ts (schema), app/api/social/solicitacoes/route.ts
+(rota) e .../[username]/route.ts (rotaU), contra tests/api/social-solicitacoes-route.test.ts.
+Alvo da tela: app/(rede-social)/notificacoes/notificacoes.tsx, cada sabotagem num build de produção próprio na 3100,
+contra o E2E que a cobre (chromium). Antes delas, um controle: os mesmos E2E passam no build sem sabotagem.
+Sem migration nova: a RLS e os grants de follows são os da S03, mutados na S03 e provados em tests/rls/09-solicitacoes.test.ts.
+
+Rodadas: 1ª (implementação), 2ª (revisão independente: M1, M2, M3, M5) e 3ª (2ª revisão independente: m1, m2,
+com as sabotagens da tela).
+
+# Código
+
+MORTA  lib    lista sem o filtro do dono
+MORTA  lib    lista sem o filtro de pendente (aceitos aparecem)
+MORTA  lib    lista sem o filtro de username
+MORTA  lib    lista sem o !inner (o filtro de username não vale para o total)
+MORTA  lib    total sem a contagem do banco
+MORTA  lib    total ignora o banco
+MORTA  lib    lista na ordem errada
+MORTA  lib    lista além do teto de 50
+MORTA  lib    resposta com o id
+MORTA  lib    foto sem assinar
+MORTA  lib    erro da lista ignorado
+MORTA  lib    contagem sem o filtro do dono
+MORTA  lib    contagem sem o filtro de pendente
+MORTA  lib    contagem sem o filtro de username
+MORTA  lib    contagem sem o !inner
+MORTA  lib    contagem traz as linhas (sem head)
+MORTA  lib    contagem sem count exato
+MORTA  lib    erro da contagem ignorado
+MORTA  lib    contagem nula vira outro número
+MORTA  lib    aprovar sem o filtro do dono
+MORTA  lib    aprovar sem o filtro de quem pediu
+MORTA  lib    aprovar sem o filtro de pendente
+MORTA  lib    aprovar grava outro status
+MORTA  lib    aprovar sempre acha
+MORTA  lib    erro do aprovar ignorado
+MORTA  lib    recusar sem o filtro do dono
+MORTA  lib    recusar sem o filtro de quem pediu
+MORTA  lib    recusar sem o filtro de pendente (apaga seguidor aceito)
+MORTA  lib    recusar sempre acha
+MORTA  lib    erro do recusar ignorado
+MORTA  rota   contagem ignora o parâmetro (manda a lista)
+MORTA  rota   contagem sem o cabeçalho sem cache
+MORTA  rota   consulta sem validar
+MORTA  schema contagem aceita qualquer valor
+MORTA  rota   pendentes sem o cabeçalho sem cache
+MORTA  rota   pendentes sem sessão
+MORTA  rotaU  sem validar o username
+MORTA  rotaU  sem o 404 do username que ninguém usa
+MORTA  rotaU  sem o 404 de quando não há pendente
+MORTA  rotaU  códigos dos dois 404 trocados
+MORTA  rotaU  404 sem o código
+MORTA  rotaU  dono e quem pediu trocados
+MORTA  rotaU  POST recusa em vez de aprovar
+MORTA  rotaU  DELETE aprova em vez de recusar
+MORTA  rotaU  sem sessão
+
+# Tela
+
+
+PASSOU tela   controle: os mesmos E2E, sem sabotagem
+MORTA  tela   401 da carga não apaga a bolinha
+MORTA  tela   401 de aprovar ou recusar não apaga a bolinha
+MORTA  tela   carga velha não é descartada
+MORTA  tela   ação concluída não conta
+
+Resultado: 49 de 49 mortas (45 de 45 no código, 4 de 4 na tela), com o controle da tela passando.
+
+# O que a mutação achou (corrigido)
+- 1ª rodada: 'erro da lista ignorado', 'erro do aprovar ignorado' e 'erro do recusar ignorado' sobreviviam: sem o
+  throw, o código quebrava logo depois com TypeError (data nulo) e a resposta continuava 500 genérica, então o
+  teste não distinguia. A diferença real é o log do servidor, que perderia a causa. Os testes de 500 passaram a
+  conferir que o erro do banco é o que vai ao log.
+- 3ª rodada: o ramo de 401 da carga da lista não tinha teste que o isolasse, porque o próprio sino também recebe
+  401 ao montar. Entrou um E2E com a contagem do sino fixa em 1 e o 401 só na recarga.
+- 3ª rodada: com duas checagens seguidas de carga velha (depois do fetch e depois do json), cada uma sozinha
+  sobreviveria, porque a outra pegava. Ficou uma só, depois do json.
+- 3ª rodada, no próprio mutador: a primeira execução não derrubava o servidor da 3100 entre as sabotagens (o filtro
+  do netstat não casava), e os E2E rodaram contra o servidor do build anterior. Os resultados foram descartados; o
+  mutador passou a exigir a porta livre e ganhou o controle, e a rodada acima é a refeita.
