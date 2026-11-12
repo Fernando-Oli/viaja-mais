@@ -1,0 +1,7 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › e2e\lugares.spec.ts:8:5 › membro marca lugar como visitado, o estado persiste, e exclui o lugar (13.3s)
+  ✓  2 [mobile] › e2e\lugares.spec.ts:8:5 › membro marca lugar como visitado, o estado persiste, e exclui o lugar (11.3s)
+
+  2 passed (32.8s)

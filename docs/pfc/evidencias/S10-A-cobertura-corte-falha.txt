@@ -1,0 +1,5 @@
+# Prova do corte: "lib/**" lines elevado temporariamente para 99 em vitest.config.mts
+ Test Files  38 passed (38)
+      Tests  503 passed (503)
+ERROR: Coverage for lines (91.49%) does not meet "lib/**" threshold (99%)
+exit=1

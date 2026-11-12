@@ -92,6 +92,47 @@ subseção do domínio financeiro, adiante, para a visibilidade dos dados de
 rateio; preservamo-lo e numeramos a política de segurança de conteúdo como
 RNF02.12, a fim de não invalidar referência já existente.
 
+## RNF03 — Usabilidade
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF03.1 | Toda tela deve ser utilizável em largura de celular (412 pixels) e de computador, sem perda de função | Atendido | Alta |
+| RNF03.2 | A aplicação deve funcionar nas duas versões mais recentes de Chrome, Firefox, Safari e Edge | Parcial | Média |
+| RNF03.3 | Toda ação de escrita deve dar retorno visual de sucesso ou de falha, e ação destrutiva deve exigir confirmação | Parcial | Alta |
+| RNF03.4 | Erro de validação devolvido pelo servidor deve ser exibido ao usuário com o motivo, e não como mensagem genérica | Parcial | Alta |
+| RNF03.5 | Toda tela deve apresentar zero violações das regras WCAG 2.1 níveis A e AA verificáveis por ferramenta automática | Parcial | Alta |
+
+**Detalhamento:** os cinco requisitos mantêm a numeração herdada de
+`docs/ARCHITECTURE.md` §7, agora com critério verificável. O RNF03.1 é atendido
+porque toda a suíte ponta a ponta executa em dois perfis de navegador, computador
+e celular (Pixel 7), e uma tela que perca função em uma das larguras faz o teste
+falhar. O RNF03.2 permanece Parcial: os testes automatizados executam apenas no
+motor do Chrome, e os demais navegadores não foram verificados.
+
+O RNF03.3 e o RNF03.4 são cumpridos nas telas de viagem, itinerário, reservas,
+lugares e avaliações, que exibem notificação de sucesso ou de falha, mostram a
+mensagem de validação devolvida pela rota e pedem confirmação no `ConfirmModal`
+antes de excluir; nenhuma tela usa as caixas `alert()` e `confirm()` do navegador.
+Permanecem Parciais enquanto as demais telas não forem uniformizadas, trabalho
+compartilhado com o RNF04.4.
+
+O RNF03.5 é verificado pelo teste `e2e/acessibilidade.spec.ts`, que submete as
+telas de login, cadastro, painel, detalhe da viagem, avaliações de lugar e
+criação de atividade do itinerário à biblioteca axe-core, nos dois perfis de
+navegador, e falha com a lista de violações encontradas. Nenhuma regra foi
+desligada. A primeira execução encontrou três classes de problema, todas
+corrigidas: contraste insuficiente entre o texto branco e as cores da marca,
+botões e campos de seleção sem nome acessível e links da barra lateral que
+perdiam o texto na largura de celular. A correção de contraste alterou a
+identidade visual: o laranja passou de `#FF7F50` para `#C2410C` e o verde de
+`#319F43` para `#267E35`, que atingem a razão mínima de 4,5:1 exigida pelo nível
+AA para texto. O logotipo manteve as cores originais, pois a norma isenta
+logotipos dessa exigência. O requisito permanece Parcial porque as telas fora
+dessa lista não são verificadas; a tela de criação de despesa, por exemplo, tem
+campos de seleção sem nome acessível. Foco visível e navegação por teclado não
+são verificáveis pela ferramenta e constam do roteiro manual da atividade
+`S10-A-cobertura`.
+
 ## RNF04 — Confiabilidade
 
 | ID | Descrição | Status | Prioridade |
@@ -113,6 +154,33 @@ isolamento a cada alteração. O RNF04.4 permanece Parcial enquanto os estados d
 erro e de carregamento não forem uniformizados, tarefa da atividade
 `S07-F-estados-erro`.
 
+## RNF05 — Manutenibilidade
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF05.1 | O código deve ser escrito em TypeScript no modo estrito e compilar sem erro de tipo, verificado pela integração contínua | Atendido | Alta |
+| RNF05.2 | Diálogos, confirmações e campos de formulário devem vir da biblioteca de componentes compartilhada, sem reimplementação por tela | Atendido | Média |
+| RNF05.3 | Todo requisito implementado deve estar marcado no código e no teste, com rastreabilidade gerada automaticamente | Atendido | Alta |
+| RNF05.4 | A cobertura de testes deve ser de no mínimo 70% em linhas, ramos, funções e instruções, no total e em `lib/`, com bloqueio pela integração contínua | Atendido | Alta |
+| RNF05.5 | Os erros do servidor devem ser registrados em formato estruturado, com rota, usuário e causa | Planejado | Baixa |
+
+**Detalhamento:** os requisitos mantêm a numeração herdada e ganham critério
+verificável. O RNF05.1 é atendido pela opção `strict` do `tsconfig.json` e pelo
+passo `typecheck` do fluxo de integração contínua. O RNF05.2 é atendido pelos
+componentes de `components/ui` e pelo `ConfirmModal`, que substituiu as caixas
+nativas do navegador em todas as telas. O RNF05.3 é verificado por
+`npm run pfc:rastreabilidade`, que gera a matriz requisito–código–teste e falha
+quando um requisito implementado não tem teste.
+
+O RNF05.4 é atendido desde a atividade `S10-A-cobertura`, que ligou o corte de
+cobertura em `vitest.config.mts`. O passo `test:cov` da integração contínua
+passou a falhar quando qualquer das quatro métricas fica abaixo de 70%, no total
+ou em `lib/`. Na ativação, a cobertura de linhas era de 91,4% no total e de
+91,5% em `lib/`. Nenhum arquivo foi retirado da medição para atingir o valor:
+os módulos de conexão com o Supabase, exercitados apenas pelos testes ponta a
+ponta, permanecem com cobertura zero e contam contra a média. O RNF05.5 não tem
+implementação: os erros são hoje registrados com `console.error`, sem estrutura.
+
 ## RNF06 — Escalabilidade
 
 | ID | Descrição | Status | Prioridade |
@@ -130,5 +198,3 @@ porque a seção 21 exige justificar as escolhas, e é este grupo que explica po
 que elas foram feitas. O RNF06.4 é o único item deste grupo que depende de
 trabalho nosso, e é o mesmo risco enunciado no RNF01.4, observado aqui sob a
 perspectiva do crescimento dos dados.
-
-> [!] PENDENTE: RNF03 (usabilidade) e RNF05 (manutenibilidade) — a cargo da Audrey.

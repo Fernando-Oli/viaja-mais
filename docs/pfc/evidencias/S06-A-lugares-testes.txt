@@ -1,0 +1,30 @@
+
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > 200: membro marca o lugar como visitado 17ms
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > 200: marcar visitado não apaga a observação (só o campo enviado é gravado) 5ms
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > 401: sem sessão não chega a atualizar 3ms
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > 403: quem não participa da viagem não altera 1ms
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > 400: visited que não é booleano 3ms
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > 400: corpo vazio 1ms
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > 404: lugar que não pertence a esta viagem 1ms
+ ✓ tests/api/place-item-route.test.ts > PATCH /api/trips/[tripId]/places/[placeId] > filtra por trip_id e id, e descarta name/trip_id/user_id do corpo (sem mass-assignment) 1ms
+ ✓ tests/api/place-item-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId] > 200: membro exclui o lugar 2ms
+ ✓ tests/api/place-item-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId] > 401: sem sessão não chega a excluir 2ms
+ ✓ tests/api/place-item-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId] > 403: quem não participa da viagem não exclui 2ms
+ ✓ tests/api/place-item-route.test.ts > DELETE /api/trips/[tripId]/places/[placeId] > 404: lugar que não pertence a esta viagem 2ms
+ ✓ tests/api/places-route.test.ts > POST /api/trips/[tripId]/places > 200: membro da viagem salva lugar com observação 21ms
+ ✓ tests/api/places-route.test.ts > POST /api/trips/[tripId]/places > 401: sem sessão não chega a inserir 3ms
+ ✓ tests/api/places-route.test.ts > POST /api/trips/[tripId]/places > 403: quem não participa da viagem não salva 1ms
+ ✓ tests/api/places-route.test.ts > POST /api/trips/[tripId]/places > 400: payload inválido (sem nome) 3ms
+ ✓ tests/api/places-route.test.ts > POST /api/trips/[tripId]/places > 400: latitude fora da faixa 2ms
+ ✓ tests/api/places-route.test.ts > POST /api/trips/[tripId]/places > autor vem da sessão e viagem da URL, mesmo que o corpo tente outros (sem mass-assignment) 2ms
+ ✓ tests/api/places-route.test.ts > GET /api/trips/[tripId]/places > 200: membro lista os lugares 2ms
+ ✓ tests/api/places-route.test.ts > GET /api/trips/[tripId]/places > 401: sem sessão não lista 1ms
+ ✓ tests/api/places-route.test.ts > GET /api/trips/[tripId]/places > 403: quem não participa não lista (antes desta atividade, listava vazio sem erro) 3ms
+
+ Test Files  2 passed (2)
+      Tests  21 passed (21)
+   Start at  19:31:02
+   Duration  1.21s (transform 325ms, setup 761ms, import 638ms, tests 91ms, environment 0ms)
+

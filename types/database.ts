@@ -305,6 +305,40 @@ export type Database = {
           },
         ]
       }
+      place_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          google_place_id: string
+          id: string
+          place_name: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          google_place_id: string
+          id?: string
+          place_name: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          google_place_id?: string
+          id?: string
+          place_name?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       places: {
         Row: {
           address: string | null

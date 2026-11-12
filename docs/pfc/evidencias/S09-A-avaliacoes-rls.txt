@@ -1,0 +1,23 @@
+
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — quem pode avaliar > A avalia um lugar salvo numa viagem dela 94ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — quem pode avaliar > A não avalia o mesmo lugar duas vezes 28ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — quem pode avaliar > B, sem o lugar em viagem nenhuma, não avalia 71ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — quem pode avaliar > B não grava avaliação em nome de A 16ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — leitura > B lê a avaliação de A (pública a autenticados, por decisão do RF11) 12ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — leitura > anônimo não lê nada 10ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — editar e excluir > B não edita a avaliação de A 16ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — editar e excluir > B não exclui a avaliação de A 19ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — editar e excluir > A não move a própria avaliação para outro lugar 10ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — editar e excluir > A não passa a própria avaliação para o nome de B 13ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — editar e excluir > nota fora de 1 a 5 é recusada pelo banco 18ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — editar e excluir > A edita a própria nota e o comentário 13ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — o predicado é participação > B passa a poder avaliar depois de entrar na viagem que tem o lugar 69ms
+ ✓ tests/rls/07-avaliacoes.test.ts > place_reviews — o predicado é participação > A exclui a própria avaliação 10ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  09:23:32
+   Duration  2.68s (transform 184ms, setup 91ms, import 416ms, tests 1.02s, environment 0ms)
+

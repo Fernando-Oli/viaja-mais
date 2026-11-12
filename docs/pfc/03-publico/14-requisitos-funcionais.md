@@ -125,9 +125,9 @@ do projeto.
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
-| RF11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Não iniciado | Média |
-| RF11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Não iniciado | Média |
-| RF11.3 | O usuário deve poder editar ou excluir a própria avaliação | Não iniciado | Baixa |
+| RF11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | Média |
+| RF11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | Média |
+| RF11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | Baixa |
 
 **Detalhamento:** este grupo atende à promessa da página inicial "Avaliações e
 Reviews — compartilhe experiências e ajude outros viajantes". Quanto à
@@ -135,7 +135,7 @@ visibilidade, as avaliações são públicas a qualquer usuário autenticado, po
 alimentam a descoberta; cada usuário edita ou exclui apenas a própria. A nota é
 numérica, de 1 a 5, com texto opcional. A tela de lugar pertence ao domínio de
 Viagem & Itinerário; a ação de avaliar pertence a este domínio. Como decisão de
-dado a cargo da plataforma, cria-se a tabela `place_reviews`.
+dado a cargo da plataforma, cria-se a tabela `place_reviews`. A tabela foi criada em `supabase/migrations/20261111120000_viagem_place_reviews.sql`, com leitura aberta a autenticados, escrita restrita a quem tem o lugar salvo em uma viagem da qual participa e edição e exclusão restritas ao autor, provadas por `tests/rls/07-avaliacoes.test.ts`. Avaliar, editar e excluir passam pela rota `app/api/trips/[tripId]/places/[placeId]/reviews/`, coberta por teste de integração (`tests/api/place-reviews-route.test.ts`) e por teste ponta a ponta (`e2e/avaliacoes.spec.ts`), no qual uma segunda pessoa, com o mesmo lugar salvo em viagem própria, visualiza a avaliação sem poder alterá-la — o que classifica RF11.1 a RF11.3 como existentes.
 
 ## RF12 — IA de Roteiros
 
@@ -180,7 +180,7 @@ data de criação.
 
 ID | Descrição | Status | Prioridade
 --- | --- | --- | ---
-| RF03.1 | O usuário deve poder criar nova viagem | Parcial | Alta
+| RF03.1 | O usuário deve poder criar nova viagem | Existente | Alta
 | RF03.2 | O usuário deve poder editar viagem | Existente | Alta
 | RF03.3 | O usuário deve poder excluir viagem | Parcial | Média
 | RF03.4 | O usuário deve poder visualizar lista de viagens | Parcial | Alta
@@ -189,7 +189,7 @@ ID | Descrição | Status | Prioridade
 | RF03.7 | O usuário deve poder adicionar imagem de capa | Parcial | Baixa
 | RF03.8 | O usuário deve poder alterar status da viagem | Parcial | Média
 
-Detalhamento: aplicamos a este grupo o mesmo critério de status descrito em RF01 e RF04 — **Existente** exige implementação e teste automatizado que a exercite. O RF03.2 passou a atendê-lo com a tela `app/dashboard/trips/[id]/edit`, que usa a rota de atualização restrita ao dono da viagem e é coberta por teste de integração (`tests/api/trips-patch.test.ts`) e por teste ponta a ponta em navegador de computador e de celular (`e2e/editar-viagem.spec.ts`). Os demais requisitos têm implementação, mas ainda não têm teste que os exercite por completo — o RF03.1, por exemplo, tem a rota testada, mas não a tela —, e por isso permanecem como parciais. O defeito de vínculo do proprietário com os membros da viagem, antes citado aqui, foi corrigido na correção dos defeitos P0 (versão 2.4 da Parte 00).
+Detalhamento: aplicamos a este grupo o mesmo critério de status descrito em RF01 e RF04 — **Existente** exige implementação e teste automatizado que a exercite. O RF03.2 passou a atendê-lo com a tela `app/dashboard/trips/[id]/edit`, que usa a rota de atualização restrita ao dono da viagem e é coberta por teste de integração (`tests/api/trips-patch.test.ts`) e por teste ponta a ponta em navegador de computador e de celular (`e2e/editar-viagem.spec.ts`). O RF03.1 também o atende: além da rota, testada por integração (`tests/api/trips-post.test.ts`), a tela `app/dashboard/trips/new` é exercitada pelo teste ponta a ponta do fluxo de grupo (`e2e/grupo-convite.spec.ts`), que cria a viagem pelo formulário em navegador de computador e de celular. Os demais requisitos têm implementação, mas ainda não têm teste que os exercite por completo, e por isso permanecem como parciais. O defeito de vínculo do proprietário com os membros da viagem, antes citado aqui, foi corrigido na correção dos defeitos P0 (versão 2.4 da Parte 00).
 
 ## RF05 — Itinerário
 
@@ -226,11 +226,11 @@ ID | Descrição | Status | Prioridade
 | RF08.1 | O usuário deve poder buscar lugares | Parcial | Alta
 | RF08.2 | O usuário deve poder salvar lugares favoritos | Parcial | Alta
 | RF08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | Média
-| RF08.4 | O usuário deve poder marcar lugares como visitados | Parcial | Média
+| RF08.4 | O usuário deve poder marcar lugares como visitados | Existente | Média
 | RF08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | Média
-| RF08.6 | O usuário deve poder excluir lugares salvos | Parcial | Média
+| RF08.6 | O usuário deve poder excluir lugares salvos | Existente | Média
 
-Detalhamento: o domínio de lugares possui implementação existente, porém ainda há funcionalidades incompletas. O estado de lugar visitado já é exibido, mas atualmente não existe uma interface que permita alterá-lo e persistir essa mudança. Por isso, os requisitos permanecem classificados de forma conservadora como parciais.
+Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. Salvar, marcar como visitado e excluir lugares passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/places/` e `.../[placeId]/`), que validam os dados, gravam apenas os campos previstos e tomam o autor da sessão. Essas operações estão cobertas por testes de integração (`tests/api/places-route.test.ts` e `tests/api/place-item-route.test.ts`) e por teste ponta a ponta (`e2e/lugares.spec.ts`), que marca um lugar como visitado pela interface, confirma que o estado persiste após recarregar a página, desmarca e exclui o lugar — o que classifica RF08.4 e RF08.6 como existentes. A busca (RF08.1), o salvamento (RF08.2), as notas (RF08.3) e o mapa (RF08.5) dependem do componente de busca do Google Maps, que não carrega com a chave usada nos testes; o salvamento e as notas têm a rota testada, mas não a tela, e por isso esses requisitos permanecem parciais.
 
 ## RF01 — Autenticação e Acesso
 

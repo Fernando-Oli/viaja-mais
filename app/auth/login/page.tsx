@@ -91,7 +91,7 @@ export default function LoginPage() {
                     
                     <Link
                       href="/auth/reset-password"
-                      className="text-sm text-sky-600 hover:text-sky-700 hover:underline"
+                      className="text-sm text-sky-700 hover:text-sky-800 hover:underline"
                     >
                       Esqueceu a senha?
                     </Link>
