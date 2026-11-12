@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
+import { limiteExcedido, LIMITES } from "@/lib/seguranca/limite"
 import { estado, reiniciar, type PerfilNoBanco } from "./perfil-visto-dubles"
 import { esquecerLinksEmitidos } from "@/lib/social/avatar"
 
@@ -25,6 +26,17 @@ vi.mock("@/lib/supabase/admin", async () => {
 })
 
 import { DELETE, POST } from "@/app/api/social/perfis/[username]/seguir/route"
+
+/** O limite real é provado em tests/lib/limite.test.ts e tests/rls/12-rate-limit.test.ts; aqui só a ligação da rota com ele. */
+const limite = vi.hoisted(() => ({ exigir: vi.fn() }))
+vi.mock("@/lib/seguranca/limite", async (original) => ({
+  ...(await original<typeof import("@/lib/seguranca/limite")>()),
+  exigirLimite: limite.exigir,
+}))
+beforeEach(() => {
+  limite.exigir.mockReset()
+  limite.exigir.mockResolvedValue(undefined)
+})
 
 const DAVI = "44444444-4444-4444-8444-444444444444"
 const CARLA = "33333333-3333-4333-8333-333333333333"
@@ -231,5 +243,24 @@ describe("DELETE /api/social/perfis/[username]/seguir", () => {
     expect(resposta.status).toBe(500)
     expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
     log.mockRestore()
+  })
+})
+
+describe("POST /api/social/perfis/[username]/seguir — limite (RNF02.8)", () => {
+  it("429: com o limite estourado, nenhum vínculo é gravado", async () => {
+    limite.exigir.mockRejectedValueOnce(limiteExcedido(45))
+
+    const resposta = await pedido("POST", "carla")
+
+    expect(resposta.status).toBe(429)
+    expect(resposta.headers.get("Retry-After")).toBe("45")
+    expect(estado.gravacoes).toEqual([])
+    expect(limite.exigir).toHaveBeenCalledWith(expect.anything(), LIMITES.seguir)
+  })
+
+  it("deixar de seguir não passa pelo limite", async () => {
+    await pedido("DELETE", "carla")
+
+    expect(limite.exigir).not.toHaveBeenCalled()
   })
 })

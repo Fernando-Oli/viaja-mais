@@ -1,6 +1,7 @@
 import { expect, type Browser, type Page, type APIRequestContext } from "@playwright/test"
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../../tests/rls/guarda-ambiente"
+import { zerarLimites } from "./limite"
 
 /**
  * Preparo e leitura de tela compartilhados pelos E2E do fluxo financeiro.
@@ -50,6 +51,7 @@ async function sessao(browser: Browser, email: string) {
 }
 
 async function convidar(dona: APIRequestContext, convidado: APIRequestContext, email: string, tripId: string) {
+  await zerarLimites()
   const convite = await dona.post("/api/invitations", { data: { email, tripId } })
   expect(convite.status(), `convite para ${email}`).toBe(200)
 

@@ -5,6 +5,7 @@ import { exigirDono } from "@/lib/authz/trip"
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
 import { criarConviteSchema } from "@/lib/schemas/convite"
 import { env } from "@/lib/env"
+import { exigirLimite, LIMITES } from "@/lib/seguranca/limite"
 
 /**
  * Convites para participar de uma viagem.
@@ -23,6 +24,7 @@ import { env } from "@/lib/env"
  *
  * @RF04.1 o dono convida pessoas por e-mail
  * @RF04.2 o convidado recebe notificação do convite por e-mail
+ * @RNF02.8 cada convite dispara um e-mail real: 10 por 10 minutos, por usuário
  */
 
 async function usuarioAtual(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -125,6 +127,10 @@ export async function POST(request: Request) {
     const { email, tripId } = analise.data
 
     await exigirDono(supabase, tripId, user.id)
+
+    // Depois da autorização, para que só convite que de fato sairia conte; antes
+    // do insert e do e-mail, para que o 11º não grave nem envie nada.
+    await exigirLimite(supabase, LIMITES.convite)
 
     // A linha vem antes do e-mail, de propósito. Ela é a fonte da verdade: é por
     // ela que o convidado vê o convite na aplicação, e é ela que a RLS protege.

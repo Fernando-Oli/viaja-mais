@@ -64,8 +64,8 @@ as viagens acumulam itens.
 | RNF02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | Alta |
 | RNF02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | Alta |
 | RNF02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | Alta |
-| RNF02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Planejado | Alta |
-| RNF02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Planejado | Média |
+| RNF02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Atendido | Alta |
+| RNF02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Parcial | Média |
 | RNF02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | Alta |
 | RNF02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | Média |
 
@@ -84,8 +84,16 @@ O RNF02.5 e o RNF02.7 decorrem das regras do `CLAUDE.md` e são exercitados pelo
 testes de rota em `tests/api/`, que cobrem obrigatoriamente o caminho de corpo
 inválido. O RNF02.6 permanece Parcial porque parte das telas ainda escreve
 diretamente do navegador, situação que as atividades `S02-Ab-despesas-via-api` e
-`S05-F-escopo-grupo` encerram. O RNF02.8 e o RNF02.12 não têm implementação e são
-objeto de `S06-F-rate-limit-csp`. O RNF02.10 é a razão de a chave de serviço ser
+`S05-F-escopo-grupo` encerram. O RNF02.8 é atendido pela função `consumir_limite`, no
+banco, que conta as requisições de cada usuário em janela fixa; as rotas de
+convite, troca de senha, foto de perfil e seguir recusam com código 429 quando o
+limite é excedido, antes de qualquer efeito, e o usuário não consegue alterar o
+próprio contador pela API (`tests/rls/12-rate-limit.test.ts`). O RNF02.12 é
+Parcial: a política de segurança de conteúdo restringe as origens de script, de
+conexão e de formulário e impede a incorporação da aplicação em página de
+terceiros, mas admite script embutido na própria página (`'unsafe-inline'`), pois
+a alternativa com nonce exigiria renderização dinâmica de todas as páginas; o
+risco residual está descrito na seção 25. O RNF02.10 é a razão de a chave de serviço ser
 restrita a um único módulo de acesso administrativo e nunca receber o prefixo que
 a exporia ao pacote do navegador. O identificador RNF02.9 já é utilizado na
 subseção do domínio financeiro, adiante, para a visibilidade dos dados de

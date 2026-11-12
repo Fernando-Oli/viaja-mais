@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures/contas"
+import { zerarLimites } from "./fixtures/limite"
 
 /**
  * Fluxo de grupo ponta a ponta, todo pela tela: cadastro → criar viagem →
@@ -25,6 +26,7 @@ function daquiA(dias: number) {
 const paraTela = (iso: string) => iso.split("-").reverse().join("/")
 
 test("dona cria a viagem pela tela, convida e o convidado aceita", async ({ dona, convidado }) => {
+  await zerarLimites()
   const projeto = test.info().project.name
   const titulo = `Chapada com a turma ${Date.now()}`
   const inicio = daquiA(30)

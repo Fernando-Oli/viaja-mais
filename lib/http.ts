@@ -9,6 +9,8 @@ export class ErroHttp extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Cabeçalhos da resposta — ex.: `Retry-After` no 429. */
+    readonly headers?: Record<string, string>,
   ) {
     super(message)
     this.name = "ErroHttp"
@@ -26,7 +28,7 @@ export const naoEncontrado = (o = "Recurso") => new ErroHttp(404, `${o} não enc
  */
 export function respostaDeErro(erro: unknown): NextResponse {
   if (erro instanceof ErroHttp) {
-    return NextResponse.json({ error: erro.message }, { status: erro.status })
+    return NextResponse.json({ error: erro.message }, { status: erro.status, headers: erro.headers })
   }
   console.error("[erro não tratado]", erro)
   return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })

@@ -36,8 +36,7 @@ const nextConfig = {
   },
 }
 
-// Nota: a Content-Security-Policy entra na semana S06, junto com o rate limiting.
-// Ela precisa liberar maps.googleapis.com e o projeto do Supabase, e uma CSP
-// escrita às pressas quebra o carregamento do mapa em produção sem avisar.
+// A Content-Security-Policy não está aqui: ela depende da URL do Supabase do
+// ambiente e é aplicada pelo proxy.ts, a partir de lib/seguranca/csp.ts.
 
 export default nextConfig
