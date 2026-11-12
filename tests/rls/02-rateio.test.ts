@@ -114,6 +114,17 @@ beforeAll(async () => {
 
 describe("isolamento das partes do rateio", () => {
   it("Bruno não lê as partes de uma viagem da qual não participa", async () => {
+    // Desde a issue #37 a parte só pode ser de quem participa da viagem. O
+    // cenário real é o ex-membro: o Bruno entra, a Ana lança a parte dele, e
+    // depois ele sai da viagem.
+    await entrarPorConvite({
+      dona: ana,
+      idDona: usuarioAna.id,
+      convidado: bruno,
+      idConvidado: usuarioBruno.id,
+      emailConvidado: BRUNO.email,
+      tripId: viagemFechada,
+    })
     const { error } = await ana
       .from("expense_shares")
       .insert([
@@ -121,6 +132,12 @@ describe("isolamento das partes do rateio", () => {
         { expense_id: despesaFechada, user_id: usuarioBruno.id, amount: 150 },
       ])
     expect(error).toBeNull()
+    const { error: erroSaida } = await ana
+      .from("trip_members")
+      .delete()
+      .eq("trip_id", viagemFechada)
+      .eq("user_id", usuarioBruno.id)
+    expect(erroSaida).toBeNull()
 
     const { data } = await bruno.from("expense_shares").select("*").eq("expense_id", despesaFechada)
 

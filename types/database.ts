@@ -670,7 +670,12 @@ export type Database = {
         Args: { trip_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      parte_de_membro: {
+        Args: { expense_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
       pode_acessar_despesa: { Args: { expense_uuid: string }; Returns: boolean }
+      pode_editar_despesa: { Args: { expense_uuid: string }; Returns: boolean }
       pode_ver_rede: { Args: { perfil: string }; Returns: boolean }
     }
     Enums: {
