@@ -75,6 +75,9 @@ test("telas logadas: dashboard, viagem, avaliações e nova atividade", async ({
   await page.getByRole("listitem").filter({ hasText: nome }).getByRole("button", { name: "Avaliações" }).click()
   const dialogo = page.getByRole("dialog")
   await expect(dialogo.getByText("Nenhuma avaliação ainda")).toBeVisible()
+  // O axe mede cor: no meio do fade-in o fundo ainda não é o final e o
+  // contraste sai menor do que é (4,47 com o fundo a meio caminho).
+  await dialogo.evaluate((el) => Promise.allSettled(el.getAnimations({ subtree: true }).map((a) => a.finished)))
   await semViolacoes(page, "diálogo de avaliações")
   await page.keyboard.press("Escape")
 

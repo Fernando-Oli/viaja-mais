@@ -212,7 +212,7 @@ export default async function BookingsPage() {
               {pastBookings.map((booking) => {
                 const Icon = typeIcons[booking.type]
                 return (
-                  <Card key={booking.id} className="opacity-75 transition-all hover:opacity-100 hover:shadow-lg">
+                  <Card key={booking.id} className="border-dashed transition-all hover:shadow-lg">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
