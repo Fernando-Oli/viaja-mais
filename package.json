@@ -28,6 +28,7 @@
     "pfc:check": "node scripts/pfc/check.mjs",
     "pfc:build": "node scripts/pfc/build.mjs",
     "pfc:rastreabilidade": "node scripts/pfc/rastreabilidade.mjs",
+    "pfc:rastreabilidade:check": "node scripts/pfc/rastreabilidade.mjs --check",
     "notion:seed": "node scripts/notion/seed.mjs",
     "notion:sync": "node scripts/notion/sync.mjs",
     "notion:pull": "node scripts/notion/pull.mjs",

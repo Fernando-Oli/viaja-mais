@@ -142,6 +142,7 @@ são verificáveis pela ferramenta e constam do roteiro manual da atividade
 | RNF04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | Alta |
 | RNF04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Parcial | Alta |
 | RNF04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | Alta |
+| RNF04.6 | A configuração de ambiente deve ser validada na inicialização, e a falha deve nomear a variável ausente ou inválida, sem que valor indefinido chegue à execução | Atendido | Alta |
 
 **Detalhamento:** revisamos a meta de disponibilidade herdada, de 99,9% para
 99,5%, por honestidade técnica: o projeto utiliza camada gratuita de hospedagem e
@@ -152,7 +153,10 @@ em `supabase/migrations/` e o fluxo de integração contínua definido em
 `.github/workflows/db.yml` aplica o schema em base limpa e executa os testes de
 isolamento a cada alteração. O RNF04.4 permanece Parcial enquanto os estados de
 erro e de carregamento não forem uniformizados, tarefa da atividade
-`S07-F-estados-erro`.
+`S07-F-estados-erro`. O RNF04.6 é atendido por `lib/env.ts`, ponto único de
+leitura das variáveis de ambiente, que valida a configuração com `zod` e falha
+com mensagem que identifica a variável; `tests/lib/env.test.ts` cobre variável
+ausente, vazia e inválida.
 
 ## RNF05 — Manutenibilidade
 

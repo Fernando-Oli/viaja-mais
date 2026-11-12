@@ -114,7 +114,12 @@ rastreabilidade e a seção 23 do documento.
 ## Rastreabilidade
 
 Todo requisito implementado carrega uma tag `@RF03.4` em comentário, no código **e** no teste.
-`npm run pfc:rastreabilidade` regenera a matriz e **falha se um RF marcado "Implementado" não tem teste**.
+`npm run pfc:rastreabilidade:check` **falha se um RF marcado "Implementado" não tem teste** ou se uma tag
+não existe no catálogo — roda no CI de todo PR.
+
+**Não commite `docs/pfc/rastreabilidade.md` em PR de feature.** Todo PR que toca uma tag muda o
+arquivo, e quando cada um commitava a sua versão, todo merge conflitava nele. A matriz versionada é
+regenerada na `main` (`npm run pfc:rastreabilidade`, sem `:check`) por quem monta o documento.
 
 ## Não editar
 

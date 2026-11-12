@@ -1,6 +1,6 @@
 ---
 name: rastreabilidade
-description: Regenera a matriz que liga requisito, código, teste e commit, e falha quando um requisito marcado como implementado não tem teste. Use antes de abrir PR e ao atualizar as seções 14, 22 e 24.
+description: Confere a matriz que liga requisito, código, teste e commit, e falha quando um requisito marcado como implementado não tem teste. Use antes de abrir PR (modo conferência) e, na main, ao atualizar as seções 14, 22 e 24 (modo que regenera o arquivo).
 ---
 
 # Matriz de rastreabilidade
@@ -26,9 +26,20 @@ o catálogo de requisitos em `docs/pfc/03-publico/` e escreve `docs/pfc/rastreab
 | Requisito | Status | Implementação | Teste | Commit |
 |---|---|---|---|---|
 
+## Dois modos
+
+| Onde | Comando | Escreve o arquivo? |
+|---|---|---|
+| Branch de PR | `npm run pfc:rastreabilidade:check` | Não — só confere. O CI roda o mesmo. |
+| `main`, ao montar o documento | `npm run pfc:rastreabilidade` | Sim — `docs/pfc/rastreabilidade.md` |
+
+**Nunca commite `docs/pfc/rastreabilidade.md` num PR de feature.** Cada PR que toca uma tag gera uma
+versão diferente do arquivo, e todo merge conflitava nele. Se o arquivo aparecer no seu diff, descarte:
+`git checkout origin/main -- docs/pfc/rastreabilidade.md`.
+
 ## Passos
 
-1. Rode `npm run pfc:rastreabilidade`.
+1. Rode `npm run pfc:rastreabilidade:check` (na `main`, sem `:check`).
 2. **Trate as três falhas possíveis, não silencie nenhuma:**
    - *Requisito "Implementado" sem teste* → ou escreve o teste, ou muda o Status para "Parcial".
      Nunca deixe passar: é a inconsistência que o avaliador mais facilmente encontra.

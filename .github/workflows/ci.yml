@@ -42,6 +42,11 @@ jobs:
       - name: Testes
         run: npm run test -- --reporter=verbose
 
+      # Requisito "Implementado" sem teste, ou tag que não existe no catálogo,
+      # falha aqui. Só confere: a matriz versionada é regenerada na `main`.
+      - name: Rastreabilidade
+        run: npm run pfc:rastreabilidade:check
+
       - name: Cobertura
         run: npm run test:cov
         continue-on-error: true
