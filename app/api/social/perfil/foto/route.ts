@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { ErroHttp, naoAutenticado, naoEncontrado, respostaDeErro } from "@/lib/http"
 import { SEM_CACHE_COMPARTILHADO, assinarAvatar } from "@/lib/social/avatar"
+import { exigirLimite, LIMITES } from "@/lib/seguranca/limite"
 import {
   BUCKET_AVATARES,
   LIMITE_FOTO_BYTES,
@@ -165,6 +166,9 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient()
     const user = await usuarioAtual(supabase)
+
+    // Cada envio grava no Storage com a chave de serviço (RNF02.8).
+    await exigirLimite(supabase, LIMITES.fotoPerfil)
 
     // Recusa pelo cabeçalho, antes de processar o multipart. Não evita a leitura
     // do corpo: o proxy.ts casa com /api, e o Next lê até 10 MB dele para a

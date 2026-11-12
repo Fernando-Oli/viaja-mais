@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page, type APIRequestContext } from "@playwright/test"
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
+import { zerarLimites } from "./fixtures/limite"
 
 /**
  * @RF06.11 visualizar o saldo por membro (quem deve a quem)
@@ -64,6 +65,7 @@ async function criarViagem(api: APIRequestContext, titulo: string) {
 
 /** Convite pela rota da aplicação e aceite pela rota do convidado. */
 async function convidar(dona: APIRequestContext, convidado: APIRequestContext, email: string, tripId: string) {
+  await zerarLimites()
   const convite = await dona.post("/api/invitations", { data: { email, tripId } })
   expect(convite.status(), `convite para ${email}`).toBe(200)
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
+import { limiteExcedido, LIMITES } from "@/lib/seguranca/limite"
 
 /**
  * @RF02.2 @RNF02.11 — enviar e remover a foto do próprio perfil.
@@ -122,6 +123,17 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 /** Prefixo das URLs que o Storage falso assina. */
 const URL_ASSINADA = vi.hoisted(() => "https://storage.teste/storage/v1/object/sign/avatars/")
+
+/** O limite real é provado em tests/lib/limite.test.ts e tests/rls/12-rate-limit.test.ts; aqui só a ligação da rota com ele. */
+const limite = vi.hoisted(() => ({ exigir: vi.fn() }))
+vi.mock("@/lib/seguranca/limite", async (original) => ({
+  ...(await original<typeof import("@/lib/seguranca/limite")>()),
+  exigirLimite: limite.exigir,
+}))
+beforeEach(() => {
+  limite.exigir.mockReset()
+  limite.exigir.mockResolvedValue(undefined)
+})
 
 type ObjetoNaPasta = { name: string; id: string | null; created_at: string | null }
 
@@ -586,5 +598,30 @@ describe("varredura da pasta depois da troca (@RF02.2)", () => {
 
     expect((await POST(envio(PNG))).status).toBe(200)
     expect(log).toHaveBeenCalledWith("[foto de perfil] sobras não apagadas", [ORFA_1], null)
+  })
+})
+
+describe("POST /api/social/perfil/foto — limite (RNF02.8)", () => {
+  it("429: com o limite estourado, nada vai para o Storage nem para o perfil", async () => {
+    logado()
+    limite.exigir.mockRejectedValueOnce(limiteExcedido(300))
+
+    const resposta = await POST(envio(PNG))
+
+    expect(resposta.status).toBe(429)
+    expect(resposta.headers.get("Retry-After")).toBe("300")
+    expect(h.envios).toEqual([])
+    expect(h.updates).toEqual([])
+    expect(h.remocoes).toEqual([])
+    expect(limite.exigir).toHaveBeenCalledWith(expect.anything(), LIMITES.fotoPerfil)
+  })
+
+  it("401 antes do limite: sem sessão não há contador", async () => {
+    semSessao()
+
+    const resposta = await POST(envio(PNG))
+
+    expect(resposta.status).toBe(401)
+    expect(limite.exigir).not.toHaveBeenCalled()
   })
 })

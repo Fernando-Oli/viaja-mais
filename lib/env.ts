@@ -49,6 +49,13 @@ if (!analisePublica.success) explodir("público", analisePublica.error)
 
 export const env = analisePublica.data
 
+/**
+ * `next dev`. O Next substitui `NODE_ENV` no build, então isto vira constante.
+ * Usado pela CSP, que em desenvolvimento precisa liberar `'unsafe-eval'` para o
+ * React reconstruir a pilha de erro.
+ */
+export const emDesenvolvimento = process.env.NODE_ENV === "development"
+
 /* -------------------------------------------------------------------------- */
 /* Servidor — nunca chega ao navegador                                         */
 /* -------------------------------------------------------------------------- */

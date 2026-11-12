@@ -4,6 +4,7 @@ import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { ErroHttp, naoAutenticado, naoEncontrado, respostaDeErro, respostaInvalida } from "@/lib/http"
 import { formatoUsernameSchema } from "@/lib/schemas/perfil"
 import { SEM_CACHE_COMPARTILHADO } from "@/lib/social/avatar"
+import { exigirLimite, LIMITES } from "@/lib/seguranca/limite"
 import { buscarPerfilPorUsername, montarPerfilVisto, temUsername, type PerfilAlvo } from "@/lib/social/perfil-visto"
 
 /**
@@ -78,6 +79,9 @@ export async function POST(_request: Request, contexto: Contexto): Promise<NextR
     const preparo = await prepararVinculo(contexto, "Você não pode seguir a si mesmo")
     if (!preparo.ok) return preparo.resposta
     const { supabase, user, perfil } = preparo
+
+    // Seguir perfil privado gera solicitação para a outra pessoa (RNF02.8).
+    await exigirLimite(supabase, LIMITES.seguir)
 
     if (!(await temUsername(supabase, user.id))) {
       return NextResponse.json(

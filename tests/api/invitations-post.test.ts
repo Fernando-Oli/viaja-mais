@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
+import { limiteExcedido, LIMITES } from "@/lib/seguranca/limite"
 
 /**
  * Testes de contrato do route handler de convites.
@@ -22,6 +23,17 @@ import { POST } from "@/app/api/invitations/route"
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }))
 vi.mock("@/lib/supabase/admin", () => ({ criarClienteAdmin: vi.fn() }))
+
+/** O limite real é provado em tests/lib/limite.test.ts e tests/rls/12-rate-limit.test.ts; aqui só a ligação da rota com ele. */
+const limite = vi.hoisted(() => ({ exigir: vi.fn() }))
+vi.mock("@/lib/seguranca/limite", async (original) => ({
+  ...(await original<typeof import("@/lib/seguranca/limite")>()),
+  exigirLimite: limite.exigir,
+}))
+beforeEach(() => {
+  limite.exigir.mockReset()
+  limite.exigir.mockResolvedValue(undefined)
+})
 
 const VIAGEM = "11111111-1111-4111-8111-111111111111"
 const DONO = "22222222-2222-4222-8222-222222222222"
@@ -261,5 +273,32 @@ describe("POST /api/invitations", () => {
 
     expect(resposta.status).toBe(403)
     expect(convidados).toHaveLength(0)
+  })
+})
+
+describe("POST /api/invitations — limite (RNF02.8)", () => {
+  it("429: com o limite estourado, nada é gravado e nenhum e-mail sai", async () => {
+    const inseridos: Record<string, unknown>[] = []
+    const convidados: Envio[] = []
+    vi.mocked(createClient).mockResolvedValue(supabaseFalso({ aoInserir: (p) => inseridos.push(p) }) as never)
+    vi.mocked(criarClienteAdmin).mockReturnValue(adminFalso(convidados) as never)
+    limite.exigir.mockRejectedValueOnce(limiteExcedido(120))
+
+    const resposta = await POST(requisicao(corpoValido))
+
+    expect(resposta.status).toBe(429)
+    expect(resposta.headers.get("Retry-After")).toBe("120")
+    expect(inseridos).toEqual([])
+    expect(convidados).toEqual([])
+    expect(limite.exigir).toHaveBeenCalledWith(expect.anything(), LIMITES.convite)
+  })
+
+  it("403 antes do limite: quem não é dono não gasta tentativa", async () => {
+    vi.mocked(createClient).mockResolvedValue(supabaseFalso({ papel: "member" }) as never)
+
+    const resposta = await POST(requisicao(corpoValido))
+
+    expect(resposta.status).toBe(403)
+    expect(limite.exigir).not.toHaveBeenCalled()
   })
 })
