@@ -223,7 +223,7 @@ export default function DashboardPage() {
             {pastTrips.map((trip) => (
               <Card
                 key={trip.id}
-                className="group relative opacity-75 transition-all hover:opacity-100 hover:shadow-lg"
+                className="group relative border-dashed transition-all hover:shadow-lg"
               >
                 <Button
                   onClick={() => {

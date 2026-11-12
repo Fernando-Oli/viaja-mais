@@ -18,6 +18,8 @@ import { entrarPorConvite } from "../tests/rls/convite"
 
 const SENHA = "viajamais123"
 let tripId = ""
+/** Ids dos três membros. A RNE-020 dá o centavo de sobra ao menor deles (#41). */
+let idsMembros: string[] = []
 
 async function entrar(page: Page, email: string) {
   await page.goto("/auth/login")
@@ -45,8 +47,10 @@ async function logar(email: string) {
  */
 async function adicionarMembros(emails: string[]) {
   const ana = await logar("teste.a@viajamais.local")
+  idsMembros = [ana.id]
   for (const email of emails) {
     const membro = await logar(email)
+    idsMembros.push(membro.id)
     await entrarPorConvite({
       dona: ana.cliente,
       idDona: ana.id,
@@ -120,7 +124,12 @@ const partes = (page: Page) => page.getByTestId("parte-rateio")
 const salvar = (page: Page) => page.getByRole("button", { name: "Salvar Despesa" })
 const projeto = () => test.info().project.name
 
-async function salvarEConferir(page: Page, esperado: number[], total: number) {
+/**
+ * `esperado` na ordem da tela. Com `qualquerOrdem`, compara as partes sem a
+ * ordem: na divisão igual, quem recebe o centavo de sobra depende dos ids, que
+ * são aleatórios a cada execução.
+ */
+async function salvarEConferir(page: Page, esperado: number[], total: number, qualquerOrdem = false) {
   const respostaPost = page.waitForResponse(
     (r: Response) => r.url().endsWith(`/api/trips/${tripId}/expenses`) && r.request().method() === "POST",
   )
@@ -128,9 +137,16 @@ async function salvarEConferir(page: Page, esperado: number[], total: number) {
   const resposta = await respostaPost
   expect(resposta.status()).toBe(200)
 
-  const { shares } = (await resposta.json()) as { shares: { amount: number }[] }
+  const { shares } = (await resposta.json()) as { shares: { amount: number; user_id: string }[] }
   const gravado = shares.map((s) => Number(s.amount))
-  expect(gravado).toEqual(esperado)
+  const ordenar = (v: number[]) => [...v].sort((a, b) => b - a)
+  expect(qualquerOrdem ? ordenar(gravado) : gravado).toEqual(qualquerOrdem ? ordenar(esperado) : esperado)
+  if (qualquerOrdem) {
+    // RNE-020: o centavo de sobra fica com o menor user_id, na comparação simples.
+    const menor = [...idsMembros].sort()[0]
+    const maior = Math.max(...gravado)
+    expect(shares.find((s) => Number(s.amount) === maior)?.user_id).toBe(menor)
+  }
   expect(Math.round(gravado.reduce((a, b) => a + b, 0) * 100)).toBe(Math.round(total * 100))
 
   await page.waitForURL(/\?aba=despesas$/)
@@ -147,14 +163,18 @@ test.describe.serial("rateio na criação da despesa", () => {
     await preencher(page, "Pizza do grupo", "10.00")
 
     await expect(page.getByRole("radio", { name: "Igual" })).toBeChecked()
-    await expect(partes(page)).toHaveText([/R\$\s3,34/, /R\$\s3,33/, /R\$\s3,33/])
+    // Sem ordem fixa: o 3,34 fica com o menor user_id (RNE-020, #41), e os ids
+    // mudam a cada execução.
+    await expect
+      .poll(async () => (await partes(page).allTextContents()).map((t) => t.replace(/\s/g, " ").trim()).sort())
+      .toEqual(["R$ 3,33", "R$ 3,33", "R$ 3,34"])
     await expect(page.getByTestId("rateio-soma")).toHaveText(/R\$\s10,00/)
     await expect(page.getByText("A soma das partes fecha com o total.")).toBeVisible()
     await expect(salvar(page)).toBeEnabled()
 
     await page.screenshot({ path: `docs/pfc/evidencias/S06-Ab-rateio-ui-igual-${projeto()}.png`, fullPage: true })
 
-    await salvarEConferir(page, [3.34, 3.33, 3.33], 10)
+    await salvarEConferir(page, [3.34, 3.33, 3.33], 10, true)
     expect(dialogos).toEqual([])
   })
 
