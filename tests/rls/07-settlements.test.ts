@@ -102,8 +102,24 @@ beforeAll(async () => {
     tripId: viagemCompartilhada,
   })
 
-  // A RLS não confere saldo, e o recebedor aqui é só um id válido.
+  // Desde a issue #37 quem recebe precisa participar da viagem. Para existir
+  // um pagamento numa viagem de que o Bruno não participa, ele entra, recebe
+  // e sai — o cenário real do ex-membro.
+  await entrarPorConvite({
+    dona: ana,
+    idDona: usuarioAna.id,
+    convidado: bruno,
+    idConvidado: usuarioBruno.id,
+    emailConvidado: BRUNO.email,
+    tripId: viagemFechada,
+  })
   pagamentoFechado = await registrar(ana, pagamento(viagemFechada, usuarioAna.id, usuarioBruno.id))
+  const { error: erroSaida } = await ana
+    .from("trip_members")
+    .delete()
+    .eq("trip_id", viagemFechada)
+    .eq("user_id", usuarioBruno.id)
+  if (erroSaida) throw new Error(`o Bruno não saiu da viagem fechada: ${erroSaida.message}`)
   pagamentoCompartilhado = await registrar(ana, pagamento(viagemCompartilhada, usuarioAna.id, usuarioBruno.id))
 })
 

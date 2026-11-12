@@ -276,13 +276,15 @@ describe("membro legítimo", () => {
   })
 
   it("Bruno não se promove a dono da viagem da Ana", async () => {
-    const { data } = await bruno
+    // Desde a issue #37 ninguém tem UPDATE em trip_members: o grant recusa
+    // antes da policy (antes, a policy devolvia zero linhas).
+    const { error } = await bruno
       .from("trip_members")
       .update({ role: "owner" })
       .eq("trip_id", viagemDaAna)
       .eq("user_id", usuarioBruno.id)
       .select()
-    expect(data).toEqual([])
+    expect(error?.code).toBe("42501")
 
     const { data: papel } = await ana
       .from("trip_members")
