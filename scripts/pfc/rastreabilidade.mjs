@@ -8,6 +8,10 @@
  * projeto com zero testes.
  *
  * Falha (exit 1) quando um requisito marcado "Implementado" não tem teste.
+ *
+ * `--check` valida sem escrever o arquivo. É o modo dos PRs e do CI: a matriz
+ * muda em todo PR que toca uma tag, e quando cada PR commitava a própria versão,
+ * todo merge conflitava nela. A matriz versionada é regenerada só na `main`.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -17,6 +21,7 @@ const RAIZ_CODIGO = ["app", "lib", "components", "context", "hooks"]
 const RAIZ_TESTES = ["tests", "e2e"]
 const CATALOGO = ["docs/pfc/03-publico/14-requisitos-funcionais.md", "docs/pfc/03-publico/15-requisitos-nao-funcionais.md"]
 const SAIDA = "docs/pfc/rastreabilidade.md"
+const SO_CONFERIR = process.argv.includes("--check")
 
 const TAG = /@(RF|RNF|RNE)[-\s]?(\d+(?:\.\d+)?)/g
 
@@ -128,9 +133,13 @@ ${linhas.join("\n") || "| — | _catálogo de requisitos ainda não escrito_ | �
 - Com teste marcado: **${nosTestes.size}**
 ${problemas.length ? `\n## Inconsistências\n\n${problemas.map((p) => `- ${p}`).join("\n")}\n` : "\n_Nenhuma inconsistência._\n"}`
 
-fs.mkdirSync(path.dirname(SAIDA), { recursive: true })
-fs.writeFileSync(SAIDA, conteudo)
-console.log(`Matriz escrita em ${SAIDA}`)
+if (SO_CONFERIR) {
+  console.log("Modo --check: matriz conferida, arquivo não escrito.")
+} else {
+  fs.mkdirSync(path.dirname(SAIDA), { recursive: true })
+  fs.writeFileSync(SAIDA, conteudo)
+  console.log(`Matriz escrita em ${SAIDA}`)
+}
 console.log(`Catálogo: ${catalogo.size} · código: ${noCodigo.size} · testes: ${nosTestes.size}`)
 
 if (catalogo.size === 0) {

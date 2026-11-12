@@ -69,12 +69,12 @@ catálogo das seções 14 e 15.
 | RF-07.5 | O usuário deve poder editar reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`lib/schemas/reserva.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
 | RF-07.6 | O usuário deve poder excluir reserva | Existente | `app/api/trips/[tripId]/bookings/[bookingId]/route.ts`<br>`components/booking-list.tsx` | `tests/api/booking-item-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
 | RF-07.7 | O usuário deve poder visualizar todas as reservas | Parcial | `app/api/trips/[tripId]/bookings/route.ts`<br>`components/booking-list.tsx` | `tests/api/bookings-route.test.ts`<br>`e2e/reservas.spec.ts` | 9b1e74e |
-| RF-08.1 | O usuário deve poder buscar lugares | Parcial | `app/dashboard/trips/[id]/places/page.tsx` | — | c44332b |
-| RF-08.2 | O usuário deve poder salvar lugares favoritos | Parcial | `app/api/trips/[tripId]/places/route.ts`<br>`app/dashboard/trips/[id]/places/page.tsx`<br>`lib/schemas/lugar.ts` | `tests/api/places-route.test.ts` | 07f46b2 |
-| RF-08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | `app/api/trips/[tripId]/places/route.ts`<br>`app/dashboard/trips/[id]/places/page.tsx`<br>`lib/schemas/lugar.ts` | `tests/api/places-route.test.ts` | 07f46b2 |
-| RF-08.4 | O usuário deve poder marcar lugares como visitados | Existente | `app/api/trips/[tripId]/places/[placeId]/route.ts`<br>`lib/schemas/lugar.ts`<br>`components/place-list.tsx` | `tests/api/place-item-route.test.ts`<br>`e2e/lugares.spec.ts` | — |
+| RF-08.1 | O usuário deve poder buscar lugares | Parcial | `app/dashboard/trips/[id]/places/page.tsx` | — | b831d45 |
+| RF-08.2 | O usuário deve poder salvar lugares favoritos | Parcial | `app/api/trips/[tripId]/places/route.ts`<br>`app/dashboard/trips/[id]/places/page.tsx`<br>`lib/schemas/lugar.ts` | `tests/api/places-route.test.ts` | b831d45 |
+| RF-08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | `app/api/trips/[tripId]/places/route.ts`<br>`app/dashboard/trips/[id]/places/page.tsx`<br>`lib/schemas/lugar.ts` | `tests/api/places-route.test.ts` | b831d45 |
+| RF-08.4 | O usuário deve poder marcar lugares como visitados | Existente | `app/api/trips/[tripId]/places/[placeId]/route.ts`<br>`lib/schemas/lugar.ts`<br>`components/place-list.tsx` | `tests/api/place-item-route.test.ts`<br>`e2e/lugares.spec.ts` | b831d45 |
 | RF-08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | — | — | — |
-| RF-08.6 | O usuário deve poder excluir lugares salvos | Existente | `app/api/trips/[tripId]/places/[placeId]/route.ts`<br>`components/place-list.tsx` | `tests/api/place-item-route.test.ts`<br>`e2e/lugares.spec.ts` | — |
+| RF-08.6 | O usuário deve poder excluir lugares salvos | Existente | `app/api/trips/[tripId]/places/[placeId]/route.ts`<br>`components/place-list.tsx` | `tests/api/place-item-route.test.ts`<br>`e2e/lugares.spec.ts` | b831d45 |
 | RF-09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Não iniciado | `app/(rede-social)/u/[username]/page.tsx`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`lib/social/perfil-visto.ts` | `tests/api/social-seguir-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/seguir.spec.ts` | 3cff665 |
 | RF-09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Não iniciado | `app/(rede-social)/u/[username]/page.tsx`<br>`app/api/social/perfis/[username]/seguir/route.ts`<br>`lib/social/perfil-visto.ts` | `tests/api/social-seguir-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/seguir.spec.ts` | 3cff665 |
 | RF-09.3 | O dono de um perfil privado deve poder visualizar suas solicitações pendentes | Não iniciado | `app/(rede-social)/notificacoes/notificacoes.tsx`<br>`app/api/social/solicitacoes/route.ts`<br>`lib/social/solicitacoes.ts` | `tests/api/social-solicitacoes-route.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/09-solicitacoes.test.ts`<br>`e2e/solicitacoes.spec.ts` | 9d2aecc |
@@ -91,9 +91,9 @@ catálogo das seções 14 e 15.
 | RF-10.2 | O usuário deve poder remover a própria curtida | Não iniciado | — | — | — |
 | RF-10.3 | O usuário deve poder comentar em uma publicação | Não iniciado | — | — | — |
 | RF-10.4 | O usuário deve poder excluir o próprio comentário | Não iniciado | — | — | — |
-| RF-11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-list.tsx`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
-| RF-11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/lugares/avaliacoes.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
-| RF-11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | — |
+| RF-11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-list.tsx`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | 7a2d60d |
+| RF-11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/lugares/avaliacoes.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/lib/avaliacoes.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | 7a2d60d |
+| RF-11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | `app/api/trips/[tripId]/places/[placeId]/reviews/route.ts`<br>`lib/schemas/avaliacao.ts`<br>`components/place-reviews.tsx` | `tests/api/place-reviews-route.test.ts`<br>`tests/rls/07-avaliacoes.test.ts`<br>`e2e/avaliacoes.spec.ts` | 7a2d60d |
 | RF-12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Não iniciado | — | — | — |
 | RF-12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | — | — | — |
 | RF-12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | — | — | — |
@@ -123,12 +123,12 @@ catálogo das seções 14 e 15.
 | RNF-03.3 | Toda ação de escrita deve dar retorno visual de sucesso ou de falha, e ação destrutiva deve exigir confirmação | Parcial | — | — | — |
 | RNF-03.4 | Erro de validação devolvido pelo servidor deve ser exibido ao usuário com o motivo, e não como mensagem genérica | Parcial | — | — | — |
 | RNF-03.5 | Toda tela deve apresentar zero violações das regras WCAG 2.1 níveis A e AA verificáveis por ferramenta automática | Parcial | — | `e2e/acessibilidade.spec.ts` | — |
-| RNF04 | _(fora do catálogo)_ | — | — | `tests/lib/env.test.ts` | — |
 | RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | — | — | — |
 | RNF-04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Planejado | — | — | — |
 | RNF-04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | — | — | — |
 | RNF-04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Parcial | — | — | — |
 | RNF-04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | — | — | — |
+| RNF-04.6 | A configuração de ambiente deve ser validada na inicialização, e a falha deve nomear a variável ausente ou inválida, sem que valor indefinido chegue à execução | Atendido | `lib/env.ts` | `tests/lib/env.test.ts` | ef4ebe9 |
 | RNF-05.1 | O código deve ser escrito em TypeScript no modo estrito e compilar sem erro de tipo, verificado pela integração contínua | Atendido | — | — | — |
 | RNF-05.2 | Diálogos, confirmações e campos de formulário devem vir da biblioteca de componentes compartilhada, sem reimplementação por tela | Atendido | — | — | — |
 | RNF-05.3 | Todo requisito implementado deve estar marcado no código e no teste, com rastreabilidade gerada automaticamente | Atendido | — | — | — |
@@ -147,10 +147,8 @@ catálogo das seções 14 e 15.
 
 ## Resumo
 
-- Requisitos no catálogo: **134**
-- Com implementação marcada: **62**
+- Requisitos no catálogo: **135**
+- Com implementação marcada: **63**
 - Com teste marcado: **59**
 
-## Inconsistências
-
-- RNF04 aparece no código mas não existe no catálogo de requisitos (tag órfã).
+_Nenhuma inconsistência._

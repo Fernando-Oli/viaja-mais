@@ -9,6 +9,8 @@ import { z } from "zod"
  * boot e falha com mensagem que diz qual variável falta.
  *
  * Regra: nunca `process.env.X` fora deste arquivo. O ESLint avisa.
+ *
+ * @RNF04.6 configuração validada no boot, com mensagem que nomeia a variável
  */
 
 function explodir(contexto: string, erro: z.ZodError): never {

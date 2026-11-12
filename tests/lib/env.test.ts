@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
  * `envServidor()` guarda o resultado em cache no módulo, então cada caso
  * reimporta `lib/env.ts` do zero com o ambiente que quer provar.
  *
- * @RNF04 o boot falha com mensagem clara, e só quando a configuração está errada
+ * @RNF04.6 o boot falha com mensagem clara, e só quando a configuração está errada
  */
 
 async function carregar() {

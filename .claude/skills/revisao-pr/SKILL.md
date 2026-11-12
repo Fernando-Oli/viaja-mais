@@ -26,7 +26,8 @@ Se o PR não tem plano, pare e diga isso: é o processo acordado pela equipe.
 - `/code-review` — correção, reuso, simplificação.
 - `/security-review` — obrigatório quando o diff toca `app/api/**`, `lib/authz/`, `lib/supabase/`,
   `proxy.ts` ou `supabase/migrations/`.
-- `/rastreabilidade` — nenhum requisito "Implementado" sem teste.
+- `/rastreabilidade` — nenhum requisito "Implementado" sem teste, e `docs/pfc/rastreabilidade.md` **fora** do diff
+  (a matriz só é regenerada na `main`; commitada em PR, ela conflita em todo merge).
 
 ## 3. O que só revisão humana pega
 
