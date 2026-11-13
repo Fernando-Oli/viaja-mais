@@ -41,7 +41,7 @@ test("o Feed fica na barra do app e a pesquisa troca de página", async ({ page 
 
   await paraFeed().click()
   await page.waitForURL("/feed")
-  await expect(page.getByRole("heading", { name: "Rede social" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Feed" })).toBeVisible()
   await expect(paraFeed()).toHaveAttribute("aria-current", "page")
 
   await paraPesquisa().click()

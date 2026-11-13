@@ -42,14 +42,14 @@ const SECOES = [
 const ABAS = [
   { nome: "Início", href: "/feed", Icone: House },
   { nome: "Pesquisar", href: "/pesquisar", Icone: Search },
-  { nome: "Nova viagem", href: "/dashboard/trips/new", Icone: Plus, destaque: true },
+  { nome: "Nova viagem", href: "/dashboard/trips/criar", Icone: Plus, destaque: true },
   { nome: "Viagens", href: "/dashboard/trips", Icone: Luggage },
   { nome: "Perfil", href: "/dashboard/perfil", Icone: UserRound },
 ] as const;
 
 function estaEm(caminho: string, href: string, exato?: boolean) {
   if (exato) return caminho === href;
-  if (href === "/dashboard/trips") return caminho.startsWith(href) && !caminho.startsWith("/dashboard/trips/new");
+  if (href === "/dashboard/trips") return caminho.startsWith(href) && !caminho.startsWith("/dashboard/trips/criar");
   return caminho === href || caminho.startsWith(`${href}/`);
 }
 
@@ -134,7 +134,7 @@ export default function DashboardLayout({
             </Link>
             <SinoNotificacoes tom="escuro" />
             <Link
-              href="/dashboard/trips/new"
+              href="/dashboard/trips/criar"
               className="hidden h-11 items-center gap-2 rounded-xl bg-citrico px-5 text-sm font-medium text-grafite transition-colors hover:bg-citrico/90 lg:inline-flex"
             >
               <Plus className="h-[18px] w-[18px]" aria-hidden />
