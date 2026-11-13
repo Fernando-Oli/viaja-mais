@@ -30,8 +30,17 @@ export function respostaDeErro(erro: unknown): NextResponse {
   if (erro instanceof ErroHttp) {
     return NextResponse.json({ error: erro.message }, { status: erro.status, headers: erro.headers })
   }
-  console.error("[erro não tratado]", erro)
-  return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+  // O código vai no log e no cabeçalho da resposta: quem relata um problema
+  // informa o código, e ele acha a linha exata no log da Vercel (S09-F). Fica
+  // fora do corpo, que continua com a mensagem genérica de sempre.
+  const codigo = codigoDeErro()
+  console.error(`[erro não tratado] codigo=${codigo}`, erro)
+  return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500, headers: { "X-Codigo-Erro": codigo } })
+}
+
+/** 8 caracteres hexadecimais: curto para ditar, único o bastante para um log. */
+function codigoDeErro(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 8)
 }
 
 /** Resposta de payload inválido, com o detalhe do zod para o cliente corrigir. */

@@ -10,7 +10,7 @@ type Resposta = { data: unknown; error: unknown }
 /**
  * Cliente falso com os dois encadeamentos que o helper usa:
  * trips → select().eq().maybeSingle() e
- * itinerary_items → select().eq().or().order().order().returns().
+ * itinerary_items → select().eq().or().order().order().limit().returns().
  */
 function clienteFalso(viagem: Resposta, itens: Resposta = { data: [], error: null }) {
   const chamadas = {
@@ -19,12 +19,14 @@ function clienteFalso(viagem: Resposta, itens: Resposta = { data: [], error: nul
     eqItens: vi.fn(),
     or: vi.fn(),
     order: vi.fn(),
+    limit: vi.fn(),
   }
 
   const consultaItens = {
     eq: (...a: unknown[]) => (chamadas.eqItens(...a), consultaItens),
     or: (...a: unknown[]) => (chamadas.or(...a), consultaItens),
     order: (...a: unknown[]) => (chamadas.order(...a), consultaItens),
+    limit: (...a: unknown[]) => (chamadas.limit(...a), consultaItens),
     returns: () => Promise.resolve(itens),
   }
 
@@ -136,6 +138,8 @@ describe("projecaoPublicaDaViagem", () => {
       ascending: true,
       nullsFirst: false,
     })
+    // O post aceita no máximo 200 itens; sem o teto, o insert do post falhava.
+    expect(chamadas.limit).toHaveBeenCalledWith(200)
   })
 
   it("viagem sem itens devolve lista vazia", async () => {

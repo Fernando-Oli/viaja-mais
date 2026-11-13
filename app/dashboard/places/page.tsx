@@ -4,6 +4,7 @@ import { selecaoPorViagem, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Star } from "lucide-react"
+import { LIMITE_LISTAGEM } from "@/lib/listagem"
 
 export default async function PlacesPage() {
   const supabase = await createClient()
@@ -23,6 +24,7 @@ export default async function PlacesPage() {
     .select(selecaoPorViagem("title, destination"))
     .eq(FILTRO_POR_VIAGEM, user.id)
     .order("created_at", { ascending: false })
+    .limit(LIMITE_LISTAGEM)
 
   return (
     <div className="space-y-6">

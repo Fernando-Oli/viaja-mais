@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { exigirMembro } from "@/lib/authz/trip"
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
 import { criarReservaSchema } from "@/lib/schemas/reserva"
+import { LIMITE_LISTAGEM } from "@/lib/listagem"
 
 /**
  * Reservas de uma viagem. Segue o molde de `app/api/trips/[tripId]/route.ts`.
@@ -33,6 +34,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tri
       .select("*")
       .eq("trip_id", tripId)
       .order("start_date", { ascending: true })
+      .limit(LIMITE_LISTAGEM)
 
     if (error) throw new ErroHttp(400, "Não foi possível carregar as reservas")
     return NextResponse.json({ bookings })

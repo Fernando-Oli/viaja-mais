@@ -100,7 +100,7 @@ describe("POST /api/social/perfis/[username]/seguir", () => {
 
     expect(resposta.status).toBe(500)
     expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
-    expect(log).toHaveBeenCalledWith("[erro não tratado]", estado.erroUsernameDaSessao)
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[erro não tratado\] codigo=[0-9a-f]{8}$/), estado.erroUsernameDaSessao)
     expect(estado.gravacoes).toEqual([])
     log.mockRestore()
   })

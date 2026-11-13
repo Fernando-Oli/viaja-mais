@@ -133,7 +133,7 @@ describe("GET /api/social/solicitacoes", () => {
     expect(resposta.status).toBe(500)
     expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
     // O erro do banco vai inteiro ao log do servidor, e não um TypeError de depois.
-    expect(log).toHaveBeenCalledWith("[erro não tratado]", estado.erroLista)
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[erro não tratado\] codigo=[0-9a-f]{8}$/), estado.erroLista)
     log.mockRestore()
   })
 })
@@ -195,7 +195,7 @@ describe("GET /api/social/solicitacoes?contagem=1 (a bolinha do sino)", () => {
 
     expect(resposta.status).toBe(500)
     expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
-    expect(log).toHaveBeenCalledWith("[erro não tratado]", estado.erroLista)
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[erro não tratado\] codigo=[0-9a-f]{8}$/), estado.erroLista)
     log.mockRestore()
   })
 })
@@ -270,7 +270,7 @@ describe.each([
     expect(resposta.status).toBe(500)
     expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
     // O erro do banco vai inteiro ao log do servidor, e não um TypeError de depois.
-    expect(log).toHaveBeenCalledWith("[erro não tratado]", erro)
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[erro não tratado\] codigo=[0-9a-f]{8}$/), erro)
     log.mockRestore()
   })
 })

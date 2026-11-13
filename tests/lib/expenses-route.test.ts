@@ -89,7 +89,7 @@ function fakeSupabase(opts: FakeOpts = {}) {
             }
           },
           select: () => ({
-            eq: () => ({ order: async () => ({ data: expenses, error: null }) }),
+            eq: () => ({ order: () => ({ limit: async (n: number) => ((globalThis as { __limite?: number }).__limite = n, { data: expenses, error: null }) }) }),
           }),
           delete: () => ({
             eq: async (_coluna: string, id: string) => {
@@ -401,6 +401,7 @@ describe("GET /api/trips/[tripId]/expenses", () => {
   it("lista as despesas para um membro", async () => {
     usarFake({ papel: "member", expenses: [{ id: "exp-1", title: "Jantar" }] })
     const res = await GET(new Request(`http://test/api/trips/${TRIP}/expenses`), { params })
+    expect((globalThis as { __limite?: number }).__limite).toBe(500) // RNF06.4
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ expenses: [{ id: "exp-1", title: "Jantar" }] })
   })

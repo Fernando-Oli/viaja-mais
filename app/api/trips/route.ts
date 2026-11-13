@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { selecaoDeViagens, FILTRO_EM_VIAGENS } from "@/lib/trips/escopo"
 import { ErroHttp, naoAutenticado, respostaDeErro, respostaInvalida } from "@/lib/http"
 import { criarViagemSchema } from "@/lib/schemas/viagem"
+import { LIMITE_LISTAGEM } from "@/lib/listagem"
 
 /**
  * Lista e cria viagens. Segue o molde de `app/api/trips/[tripId]/route.ts`.
@@ -33,6 +34,7 @@ export async function GET() {
       .select(selecaoDeViagens("*", "user_id, role"))
       .eq(FILTRO_EM_VIAGENS, user.id)
       .order("start_date", { ascending: false })
+      .limit(LIMITE_LISTAGEM)
 
     if (error) throw new ErroHttp(400, "Não foi possível carregar as viagens")
 

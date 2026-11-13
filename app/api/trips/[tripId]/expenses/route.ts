@@ -4,6 +4,7 @@ import { exigirMembro, papelNaViagem, type ClienteConsulta } from "@/lib/authz/t
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
 import { criarDespesaSchema, type Rateio } from "@/lib/schemas/despesa"
 import { calcularRateio, centavosParaReais, ErroRateio, type Parte } from "@/lib/finance/rateio"
+import { LIMITE_LISTAGEM } from "@/lib/listagem"
 
 /**
  * Despesas de uma viagem.
@@ -45,6 +46,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tri
       .select("*")
       .eq("trip_id", tripId)
       .order("date", { ascending: false })
+      .limit(LIMITE_LISTAGEM)
 
     // Mensagem genérica: a do Postgres pode revelar coluna/constraint.
     if (error) throw new ErroHttp(400, "Não foi possível carregar as despesas")

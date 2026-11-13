@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { exigirMembro } from "@/lib/authz/trip"
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
 import { criarItemItinerarioSchema } from "@/lib/schemas/itinerario"
+import { LIMITE_LISTAGEM } from "@/lib/listagem"
 
 /**
  * Itinerário de uma viagem. Segue o molde de `app/api/trips/[tripId]/route.ts`.
@@ -34,6 +35,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tri
       .eq("trip_id", tripId)
       .order("date", { ascending: true })
       .order("start_time", { ascending: true })
+      .limit(LIMITE_LISTAGEM)
 
     if (error) throw new ErroHttp(400, "Não foi possível carregar o itinerário")
     return NextResponse.json({ itinerary })

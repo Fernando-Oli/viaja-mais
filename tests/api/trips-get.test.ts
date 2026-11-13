@@ -25,7 +25,7 @@ vi.mock("@/lib/supabase/server", () => ({
         select: () => ({
           eq: (coluna: string, valor: unknown) => {
             h.filtros.push([coluna, valor])
-            return { order: async () => h.resultado }
+            return { order: () => ({ limit: async (n: number) => ((globalThis as { __limite?: number }).__limite = n, h.resultado) }) }
           },
         }),
       }),
@@ -49,6 +49,7 @@ describe("GET /api/trips", () => {
 
     const resposta = await GET()
 
+    expect((globalThis as { __limite?: number }).__limite).toBe(500) // RNF06.4
     expect(resposta.status).toBe(200)
     expect(await resposta.json()).toEqual({ trips: [{ id: "trip-1", title: "Porto" }] })
     expect(h.filtros).toEqual([[FILTRO_EM_VIAGENS, "user-1"]])
