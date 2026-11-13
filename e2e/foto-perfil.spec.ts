@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF02.2 foto de perfil por upload, com enquadramento: o lápis na bolinha do
@@ -24,7 +25,7 @@ const FOTO = "e2e/fixtures/foto-perfil.png"
 async function abrirPerfilDoDavi(page: Page) {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.d@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
   await page.goto("/dashboard/perfil")

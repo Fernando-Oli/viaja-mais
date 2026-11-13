@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page, type APIRequestContext } from "@
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
 import { zerarLimites } from "./fixtures/limite"
+import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
 
 /**
  * @RF06.11 visualizar o saldo por membro (quem deve a quem)
@@ -22,7 +23,6 @@ import { zerarLimites } from "./fixtures/limite"
  *   - "Vazia": viagem sem despesa.
  */
 
-const SENHA = "viajamais123"
 const ANA = "teste.a@viajamais.local"
 const BRUNO = "teste.b@viajamais.local"
 

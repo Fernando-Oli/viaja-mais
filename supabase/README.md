@@ -30,7 +30,7 @@ O último é o Inbucket: confirmação de cadastro, reset de senha e convite cae
 ali, sem sair da máquina. É como se testa o fluxo de e-mail sem mandar mensagem
 para ninguém.
 
-**Usuários de teste** (criados por `seed.sql`, senha `viajamais123`):
+**Usuários de teste** (criados por `seed.sql`, senha `Viaja+mais123`):
 `teste.a@viajamais.local` e `teste.b@viajamais.local`. São dois porque metade do
 valor da suíte está em provar que B **não** vê o que é de A.
 

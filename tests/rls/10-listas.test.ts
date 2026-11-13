@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient, type User } from "@supabase/supabase
 import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { listarRede, podeVerRede, POR_PAGINA, removerSeguidor, type Lado } from "@/lib/social/rede"
+import { USUARIOS } from "../fixtures/usuarios"
 
 /**
  * As listas da rede de um perfil e remover seguidor (S05-M-listas). Não há
@@ -36,9 +37,9 @@ const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
-const CARLA = { email: "teste.c@viajamais.local", senha: "viajamais123" }
+const ANA = USUARIOS.ana
+const BRUNO = USUARIOS.bruno
+const CARLA = USUARIOS.carla
 /** O Davi do seed (supabase/seed.sql), que este arquivo não loga. */
 const DAVI = "44444444-4444-4444-8444-444444444444"
 

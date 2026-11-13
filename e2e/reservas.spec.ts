@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF07.1 adicionar reserva · @RF07.5 editar reserva · @RF07.6 excluir reserva · @RF07.7 visualizar reservas
@@ -8,7 +9,7 @@ import { test, expect } from "@playwright/test"
 test("membro cria, edita e exclui reserva a partir da aba da viagem", async ({ page }) => {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.a@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF02.1 @RF02.5 @RF02.6 @RF02.7 ver e editar o próprio perfil na página
@@ -15,7 +16,7 @@ const DAVI_NO_SEED = { username: "davi", bio: "Viajante de teste — usado pelo 
 async function entrarComoDavi(page: Page) {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.d@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 }

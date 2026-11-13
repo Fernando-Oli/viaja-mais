@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page, type Response } from "@playwrigh
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
 import { entrarPorConvite } from "../tests/rls/convite"
+import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
 
 /**
  * @RF06.9 tipo de rateio: igual, por peso ou por valor exato
@@ -16,7 +17,6 @@ import { entrarPorConvite } from "../tests/rls/convite"
  * devolvidas pelo POST são as recalculadas no servidor, não as do navegador.
  */
 
-const SENHA = "viajamais123"
 let tripId = ""
 /** Ids dos três membros. A RNE-020 dá o centavo de sobra ao menor deles (#41). */
 let idsMembros: string[] = []

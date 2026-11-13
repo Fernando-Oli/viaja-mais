@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient, type User } from "@supabase/supabase
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { entrarPorConvite } from "./convite"
 import { selecaoPorViagem, selecaoDeViagens, FILTRO_POR_VIAGEM, FILTRO_EM_VIAGENS } from "@/lib/trips/escopo"
+import { USUARIOS } from "../fixtures/usuarios"
 
 /**
  * O convidado enxerga o que é do grupo.
@@ -23,8 +24,8 @@ import { selecaoPorViagem, selecaoDeViagens, FILTRO_POR_VIAGEM, FILTRO_EM_VIAGEN
 const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
+const ANA = USUARIOS.ana
+const BRUNO = USUARIOS.bruno
 
 async function logar(email: string, senha: string) {
   const cliente = createClient(API, CHAVE, {

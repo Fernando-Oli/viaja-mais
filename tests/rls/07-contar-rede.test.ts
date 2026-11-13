@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { USUARIOS } from "../fixtures/usuarios"
 
 /**
  * Os contadores do perfil de outra pessoa (S05-M-seguir): a função
@@ -36,9 +37,9 @@ const CHAVE = variavelObrigatoria("ANON_KEY")
 // sem sessão, numa transação desfeita no fim.
 const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
-const CARLA = { email: "teste.c@viajamais.local", senha: "viajamais123" }
+const ANA = USUARIOS.ana
+const BRUNO = USUARIOS.bruno
+const CARLA = USUARIOS.carla
 
 const VIOLA_RLS_OU_GRANT = "42501"
 const NINGUEM = "00000000-0000-4000-8000-000000000000"

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { SENHA_TESTE as SENHA } from "../fixtures/usuarios"
 
 /**
  * public.meus_convites_pendentes() (S09-F): os convites pendentes do e-mail
@@ -16,7 +17,6 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
-const SENHA = "viajamais123"
 
 function novoCliente() {
   return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })

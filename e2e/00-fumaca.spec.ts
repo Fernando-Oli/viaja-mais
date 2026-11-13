@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * Testes de fumaça: provam que o essencial está de pé. Só "rotas removidas"
@@ -50,7 +51,7 @@ test.describe("rotas removidas", () => {
     test(`${rota} não existe mais`, async ({ page }) => {
       await page.goto("/auth/login")
       await page.fill("#email", "teste.a@viajamais.local")
-      await page.fill("#password", "viajamais123")
+      await page.fill("#password", SENHA_TESTE)
       await page.click('button[type="submit"]')
       await page.waitForURL("/dashboard")
 

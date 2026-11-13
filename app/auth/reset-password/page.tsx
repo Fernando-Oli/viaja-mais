@@ -12,7 +12,7 @@ import { useState, useEffect } from "react"
 import { Plane, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
-import { problemaDeSenha, TAMANHO_MINIMO_SENHA } from "@/lib/seguranca/senha"
+import { DICA_SENHA, problemaDeSenha, TAMANHO_MINIMO_SENHA } from "@/lib/seguranca/senha"
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("")
@@ -177,7 +177,7 @@ export default function ResetPasswordPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         minLength={TAMANHO_MINIMO_SENHA}
-                        placeholder={`Mínimo ${TAMANHO_MINIMO_SENHA} caracteres, com letra e número`}
+                        placeholder={DICA_SENHA}
                       />
                     </div>
                     <div className="grid gap-2">

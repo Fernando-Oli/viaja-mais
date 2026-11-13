@@ -4,6 +4,7 @@ import path from "node:path"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { USUARIOS, SENHA_TESTE as SENHA } from "../fixtures/usuarios"
 
 /**
  * Exigir username para entrar na rede (S05-M-listas, achado I1 da revisão
@@ -33,9 +34,8 @@ const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const CARLA = { email: "teste.c@viajamais.local", senha: "viajamais123" }
-const SENHA = "viajamais123"
+const ANA = USUARIOS.ana
+const CARLA = USUARIOS.carla
 
 const VIOLA_RLS_OU_GRANT = "42501"
 const VIOLA_CHECK = "23514"

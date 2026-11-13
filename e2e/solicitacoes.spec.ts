@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Locator, type Page } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF09.3 @RF09.4 @RF13.2 as solicitações para seguir na central de
@@ -17,7 +18,7 @@ const DAVI = "teste.d@viajamais.local"
 async function entrar(page: Page, email: string) {
   await page.goto("/auth/login")
   await page.fill("#email", email)
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 }

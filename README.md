@@ -148,7 +148,7 @@ npm run verify           # lint + tipos + testes + build (o mesmo gate do CI)
 O último é o Inbucket: confirmação de cadastro, reset de senha e convite caem ali,
 sem sair da máquina.
 
-**Login de teste:** `teste.a@viajamais.local` / `viajamais123`
+**Login de teste:** `teste.a@viajamais.local` / `Viaja+mais123`
 (existe também `teste.b@`, para provar isolamento entre usuários nos testes.)
 
 ## 🧰 Comandos

@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page, type APIRequestContext } from "@
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
 import { zerarLimites } from "./fixtures/limite"
+import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
 
 /**
  * @RF06.13 registrar como paga uma transferência do acerto
@@ -22,7 +23,6 @@ import { zerarLimites } from "./fixtures/limite"
  *   3. Bruno registra R$ 15,00 → "Tudo acertado".
  */
 
-const SENHA = "viajamais123"
 const ANA = "teste.a@viajamais.local"
 const BRUNO = "teste.b@viajamais.local"
 
