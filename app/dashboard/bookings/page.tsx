@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plane, Hotel, Car, Calendar, MapPin } from "lucide-react"
 import { LIMITE_LISTAGEM } from "@/lib/listagem"
+import { BuscaReserva } from "@/components/prototipo/compra/busca-reserva"
 
 export default async function BookingsPage() {
   const supabase = await createClient()
@@ -60,19 +61,19 @@ export default async function BookingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Reservas</h1>
-          <p className="mt-2 text-muted-foreground">Gerencie todas as suas reservas de viagem</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Reservas</h1>
+        <p className="mt-1 text-muted-foreground">Busque voos e hotéis, e veja tudo o que o grupo já reservou.</p>
       </div>
+
+      <BuscaReserva />
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Calendar className="h-4 w-4 text-sky-600" />
+            <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{bookings?.length || 0}</div>
@@ -82,7 +83,7 @@ export default async function BookingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Voos</CardTitle>
-            <Plane className="h-4 w-4 text-sky-600" />
+            <Plane className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{bookings?.filter((b) => b.type === "flight").length || 0}</div>
@@ -92,7 +93,7 @@ export default async function BookingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Hotéis</CardTitle>
-            <Hotel className="h-4 w-4 text-amber-600" />
+            <Hotel className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{bookings?.filter((b) => b.type === "hotel").length || 0}</div>
@@ -102,7 +103,7 @@ export default async function BookingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Carros</CardTitle>
-            <Car className="h-4 w-4 text-emerald-600" />
+            <Car className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{bookings?.filter((b) => b.type === "car").length || 0}</div>
@@ -137,7 +138,7 @@ export default async function BookingsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div className="rounded-lg bg-sky-100 p-2">
-                            <Icon className="h-5 w-5 text-sky-600" />
+                            <Icon className="h-5 w-5 text-primary" />
                           </div>
                           <div className="flex-1">
                             <CardTitle className="text-lg">{booking.title}</CardTitle>
@@ -267,7 +268,7 @@ export default async function BookingsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div className="rounded-lg bg-sky-100 p-2">
-                            <Icon className="h-5 w-5 text-sky-600" />
+                            <Icon className="h-5 w-5 text-primary" />
                           </div>
                           <div className="flex-1">
                             <CardTitle className="text-lg">{booking.title}</CardTitle>

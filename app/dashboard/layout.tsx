@@ -50,6 +50,7 @@ const ABAS = [
 function estaEm(caminho: string, href: string, exato?: boolean) {
   if (exato) return caminho === href;
   if (href === "/dashboard/trips") return caminho.startsWith(href) && !caminho.startsWith("/dashboard/trips/criar");
+  if (href === "/dashboard/bookings" && caminho.startsWith("/dashboard/reservar")) return true;
   return caminho === href || caminho.startsWith(`${href}/`);
 }
 
