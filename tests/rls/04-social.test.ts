@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { USUARIOS } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * Isolamento do domínio Social: perfil público/privado e follows.
@@ -34,12 +34,6 @@ import { USUARIOS } from "../fixtures/usuarios"
  * @RF02.5 @RF02.6 @RF02.7 @RF09.1 @RF09.2 @RF09.3 @RF09.4 @RF09.5 @RF09.6 @RF09.9 @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-// Conexão direta só para o que nenhum cliente da aplicação alcança: o
-// catálogo, escrever sem passar pelo grant e apagar de auth.users. Tudo que
-// escreve roda numa transação desfeita no fim: o banco sai como entrou.
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
@@ -55,19 +49,6 @@ const DATA_FORJADA = "2099-01-01T00:00:00Z"
 /** Compara com o relógio, não com o ano: 2099-01-01T00:00Z ainda é 2098 em Brasília. */
 function ehDeAgora(timestamp: string) {
   return Date.parse(timestamp) < Date.now() + 60_000
-}
-
-function novoCliente() {
-  return createClient(API, CHAVE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-}
-
-async function logar(email: string, senha: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, usuario: data.user as User }
 }
 
 let ana: SupabaseClient

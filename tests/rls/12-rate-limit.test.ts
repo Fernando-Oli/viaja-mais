@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { USUARIOS } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * Limite de requisições por usuário: a tabela public.rate_limits e a função
@@ -29,9 +29,6 @@ import { USUARIOS } from "../fixtures/usuarios"
  * @RNF02.8 @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
@@ -41,17 +38,6 @@ const PARAMETRO_INVALIDO = "22023"
 
 const SUFIXO = Math.random().toString(36).slice(2, 8)
 const chave = (caso: string) => `rls-${caso}-${SUFIXO}`
-
-function novoCliente() {
-  return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
-async function logar(email: string, senha: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, id: data.user.id }
-}
 
 let ana: SupabaseClient
 let bruno: SupabaseClient

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest"
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
-import { USUARIOS, SENHA_TESTE as SENHA } from "../fixtures/usuarios"
+import { SENHA_TESTE, USUARIOS } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * Exigir username para entrar na rede (S05-M-listas, achado I1 da revisão
@@ -30,28 +30,12 @@ import { USUARIOS, SENHA_TESTE as SENHA } from "../fixtures/usuarios"
  * @RF09.9 @RF02.5 @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const ANA = USUARIOS.ana
 const CARLA = USUARIOS.carla
 
 const VIOLA_RLS_OU_GRANT = "42501"
 const VIOLA_CHECK = "23514"
-
-function novoCliente() {
-  return createClient(API, CHAVE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-}
-
-async function logar(email: string, senha: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, usuario: data.user as User }
-}
 
 /** A migration desta correção, pelo nome: o timestamp vem do `migration new`. */
 function sqlDaMigration() {
@@ -90,7 +74,7 @@ beforeAll(async () => {
   // Conta nova pelo cadastro, como qualquer pessoa: o perfil nasce sem username.
   semNome = novoCliente()
   const email = `semnome.${Date.now()}.${Math.floor(Math.random() * 1e6)}@viajamais.local`
-  const { data, error } = await semNome.auth.signUp({ email, password: SENHA })
+  const { data, error } = await semNome.auth.signUp({ email, password: SENHA_TESTE })
   if (error || !data.user) throw new Error(`falha no cadastro: ${error?.message}`)
   idSemNome = data.user.id
   const { data: perfil } = await semNome.from("profiles").select("username").eq("id", idSemNome).single()

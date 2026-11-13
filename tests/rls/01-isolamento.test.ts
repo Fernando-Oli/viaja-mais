@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { type SupabaseClient, type User } from "@supabase/supabase-js"
 import { entrarPorConvite } from "./convite"
 import { USUARIOS } from "../fixtures/usuarios"
+import { logar } from "./apoio"
 
 /**
  * Isolamento entre contas, provado com os dois usuários do seed.
@@ -19,22 +19,9 @@ import { USUARIOS } from "../fixtures/usuarios"
  * @RNF02.4 RLS habilitada e policy por operação em toda tabela
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
-
-async function logar(email: string, senha: string) {
-  const cliente = createClient(API, CHAVE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-
-  return { cliente, usuario: data.user as User }
-}
 
 let ana: SupabaseClient
 let bruno: SupabaseClient

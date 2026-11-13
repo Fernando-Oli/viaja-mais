@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
-import { SENHA_TESTE as SENHA } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * public.meus_convites_pendentes() (S09-F): os convites pendentes do e-mail
@@ -14,19 +13,6 @@ import { SENHA_TESTE as SENHA } from "../fixtures/usuarios"
  * @RF04.3 · @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
-
-function novoCliente() {
-  return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-async function logar(email: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: SENHA })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, id: data.user.id }
-}
 
 let ana: SupabaseClient, bruno: SupabaseClient, carla: SupabaseClient
 let idAna: string

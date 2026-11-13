@@ -1,4 +1,7 @@
-import { test as base, expect, type Browser, type Page } from "@playwright/test"
+import { test as base, expect, type APIRequestContext, type Browser, type Page } from "@playwright/test"
+import { createClient } from "@supabase/supabase-js"
+import { exigirLocal } from "../../tests/rls/guarda-ambiente"
+import { zerarLimites } from "./limite"
 import { SENHA_TESTE as SENHA } from "../../tests/fixtures/usuarios"
 export { SENHA }
 
@@ -93,3 +96,33 @@ export const test = base.extend<Fixtures>({
 })
 
 export { expect }
+
+/** Id de um usuário, logando pelo GoTrue com a chave anon (sem passar pela tela). */
+export async function idDe(email: string) {
+  const url = exigirLocal(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", "NEXT_PUBLIC_SUPABASE_URL")
+  const cliente = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  const { data, error } = await cliente.auth.signInWithPassword({ email, password: SENHA })
+  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
+  return data.user.id
+}
+
+/**
+ * Põe `email` na viagem pelo caminho da aplicação: a dona convida pela API e o
+ * convidado aceita pela API. Zera o limite de convites antes (ver ./limite).
+ */
+export async function convidar(dona: APIRequestContext, convidado: APIRequestContext, email: string, tripId: string) {
+  await zerarLimites()
+  const convite = await dona.post("/api/invitations", { data: { email, tripId } })
+  expect(convite.status(), `convite para ${email}`).toBe(200)
+
+  const pendentes = await convidado.get("/api/invitations")
+  expect(pendentes.ok(), `lista de convites de ${email}`).toBeTruthy()
+  const { invitations } = (await pendentes.json()) as { invitations: { id: string; trip_id: string }[] }
+  const meu = invitations.find((i) => i.trip_id === tripId)
+  expect(meu, `convite pendente de ${email}`).toBeTruthy()
+
+  const aceite = await convidado.post(`/api/invitations/${meu!.id}/accept`)
+  expect(aceite.status(), `aceite de ${email}`).toBe(200)
+}

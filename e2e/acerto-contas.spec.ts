@@ -1,8 +1,5 @@
 import { test, expect, type Browser, type Page, type APIRequestContext } from "@playwright/test"
-import { createClient } from "@supabase/supabase-js"
-import { exigirLocal } from "../tests/rls/guarda-ambiente"
-import { zerarLimites } from "./fixtures/limite"
-import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
+import { cadastrar, convidar, entrar, idDe } from "./fixtures/contas"
 
 /**
  * @RF06.11 visualizar o saldo por membro (quem deve a quem)
@@ -32,14 +29,6 @@ let emailC = ""
 const projeto = () => test.info().project.name
 const evidencia = (cenario: string) => `docs/pfc/evidencias/S07-Ab-acerto-contas-${cenario}-${projeto()}.png`
 
-async function entrar(page: Page, email: string) {
-  await page.goto("/auth/login")
-  await page.fill("#email", email)
-  await page.fill("#password", SENHA)
-  await page.click('button[type="submit"]')
-  await page.waitForURL("/dashboard")
-}
-
 /** Uma sessão por pessoa, para as chamadas de API saírem com o usuário certo. */
 async function sessao(browser: Browser, email: string) {
   const ctx = await browser.newContext()
@@ -64,21 +53,6 @@ async function criarViagem(api: APIRequestContext, titulo: string) {
 }
 
 /** Convite pela rota da aplicação e aceite pela rota do convidado. */
-async function convidar(dona: APIRequestContext, convidado: APIRequestContext, email: string, tripId: string) {
-  await zerarLimites()
-  const convite = await dona.post("/api/invitations", { data: { email, tripId } })
-  expect(convite.status(), `convite para ${email}`).toBe(200)
-
-  const pendentes = await convidado.get("/api/invitations")
-  expect(pendentes.ok()).toBeTruthy()
-  const { invitations } = (await pendentes.json()) as { invitations: { id: string; trip_id: string }[] }
-  const meu = invitations.find((i) => i.trip_id === tripId)
-  expect(meu, `convite pendente de ${email}`).toBeTruthy()
-
-  const aceite = await convidado.post(`/api/invitations/${meu!.id}/accept`)
-  expect(aceite.status(), `aceite de ${email}`).toBe(200)
-}
-
 async function membrosDaViagem(api: APIRequestContext, tripId: string) {
   const resposta = await api.get(`/api/trips/${tripId}`)
   const { trip } = (await resposta.json()) as { trip: { trip_members: { user_id: string }[] } }
@@ -100,17 +74,6 @@ async function lancar(api: APIRequestContext, tripId: string, titulo: string, va
   expect(resposta.status(), `despesa ${titulo}`).toBe(200)
 }
 
-/** Id de quem entra, pelo Auth local — o mesmo meio de `e2e/rateio-despesa.spec.ts`. */
-async function idDe(email: string) {
-  const url = exigirLocal(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", "NEXT_PUBLIC_SUPABASE_URL")
-  const cliente = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: SENHA })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return data.user.id
-}
-
 async function prepararViagens(browser: Browser) {
   const sufixo = Date.now()
   emailC = `acerto.c.${sufixo}@viajamais.local`
@@ -118,13 +81,7 @@ async function prepararViagens(browser: Browser) {
   // Terceira conta pelo cadastro: o seed só tem duas.
   const ctxC = await browser.newContext()
   const pageC = await ctxC.newPage()
-  await pageC.goto("/auth/sign-up")
-  await pageC.fill("#fullName", "Carla Acerto")
-  await pageC.fill("#email", emailC)
-  await pageC.fill("#password", SENHA)
-  await pageC.fill("#confirmPassword", SENHA)
-  await pageC.click('button[type="submit"]')
-  await pageC.waitForURL("/dashboard")
+  await cadastrar(pageC, "Carla Acerto", emailC)
   const carla = { ctx: ctxC, api: pageC.request }
 
   const ana = await sessao(browser, ANA)

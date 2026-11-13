@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { USUARIOS } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * Os contadores do perfil de outra pessoa (S05-M-seguir): a função
@@ -31,11 +31,6 @@ import { USUARIOS } from "../fixtures/usuarios"
  * @RF02.8 @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-// Conexão direta só para o catálogo e para chamar a função como authenticated
-// sem sessão, numa transação desfeita no fim.
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
@@ -43,19 +38,6 @@ const CARLA = USUARIOS.carla
 
 const VIOLA_RLS_OU_GRANT = "42501"
 const NINGUEM = "00000000-0000-4000-8000-000000000000"
-
-function novoCliente() {
-  return createClient(API, CHAVE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-}
-
-async function logar(email: string, senha: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, usuario: data.user as User }
-}
 
 let ana: SupabaseClient
 let bruno: SupabaseClient

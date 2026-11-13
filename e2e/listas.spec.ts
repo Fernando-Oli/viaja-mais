@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page, type Route } from "@playwright/test"
 import { Client } from "pg"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
-import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
+import { cadastrar, entrar } from "./fixtures/contas"
 
 /**
  * @RF09.6 @RF09.9 as listas de seguidores e de seguindo no perfil, e remover
@@ -18,14 +18,6 @@ import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
 const ANA = "teste.a@viajamais.local"
 const CARLA = "teste.c@viajamais.local"
 const DAVI = "teste.d@viajamais.local"
-
-async function entrar(page: Page, email: string) {
-  await page.goto("/auth/login")
-  await page.fill("#email", email)
-  await page.fill("#password", SENHA)
-  await page.click('button[type="submit"]')
-  await page.waitForURL("/dashboard")
-}
 
 /** O Davi numa sessão própria, que não se mistura com a da página do teste. */
 async function sessaoDoDavi(browser: Browser) {
@@ -241,13 +233,7 @@ async function contaSemUsername(browser: Browser) {
   const email = `listas.semnome.${Date.now()}@viajamais.local`
   const contexto = await browser.newContext({ baseURL: test.info().project.use.baseURL, locale: "pt-BR" })
   const pagina = await contexto.newPage()
-  await pagina.goto("/auth/sign-up")
-  await pagina.fill("#fullName", "Sem Nome")
-  await pagina.fill("#email", email)
-  await pagina.fill("#password", SENHA)
-  await pagina.fill("#confirmPassword", SENHA)
-  await pagina.click('button[type="submit"]')
-  await pagina.waitForURL("/dashboard")
+  await cadastrar(pagina, "Sem Nome", email)
   return { pagina, email }
 }
 

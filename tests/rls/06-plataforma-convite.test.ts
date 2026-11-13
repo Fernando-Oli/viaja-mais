@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { type SupabaseClient, type User } from "@supabase/supabase-js"
 import { entrarPorConvite } from "./convite"
 import { SENHA_TESTE, USUARIOS } from "../fixtures/usuarios"
+import { logar, novoCliente } from "./apoio"
 
 /**
  * As três explorações que a S03-M reproduziu na plataforma, bloqueadas pela
@@ -14,22 +14,9 @@ import { SENHA_TESTE, USUARIOS } from "../fixtures/usuarios"
  * @RF01.1 cadastro com e-mail e senha
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
-
-function cliente() {
-  return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
-async function logar(email: string, senha: string) {
-  const c = cliente()
-  const { data, error } = await c.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente: c, usuario: data.user as User }
-}
 
 let ana: SupabaseClient
 let bruno: SupabaseClient
@@ -138,7 +125,7 @@ describe("as funções de participação só respondem sobre quem pergunta", () 
   })
 
   it("visitante sem login não descobre que a Ana participa da viagem", async () => {
-    const visitante = cliente()
+    const visitante = novoCliente()
     for (const funcao of ["is_trip_member", "is_trip_owner", "can_access_trip"]) {
       const { data } = await visitante.rpc(funcao, { trip_uuid: tripId, user_uuid: usuarioAna.id })
       expect(data, `${funcao} respondeu sobre a Ana a um visitante`).not.toBe(true)
@@ -160,7 +147,7 @@ describe("as funções de participação só respondem sobre quem pergunta", () 
 
 describe("cadastro com nome longo", () => {
   it("cria a conta e guarda os 120 primeiros caracteres do nome", async () => {
-    const novo = cliente()
+    const novo = novoCliente()
     const nome = "N".repeat(121)
     const email = `nome-longo-${Date.now()}@viajamais.local`
 

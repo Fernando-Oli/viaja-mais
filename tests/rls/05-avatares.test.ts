@@ -1,10 +1,10 @@
 import fs from "node:fs"
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { variavelObrigatoria } from "./guarda-ambiente"
 import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
-import { SENHA_TESTE } from "../fixtures/usuarios"
+import { API, CHAVE, CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * Bucket de avatares e o trigger de `profiles.avatar_url` (migration social_avatares).
@@ -40,9 +40,6 @@ import { SENHA_TESTE } from "../fixtures/usuarios"
 /** Arquivo só do caso de remoção: ele é apagado, então não pode ser o da Ana. */
 const PREFIXO_REMOVIDO = "5b"
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const VIOLA_CHECK = "23514"
 const BUCKET = "avatars"
@@ -69,20 +66,9 @@ function chaveDeServico(): string {
   return linha?.[1] ?? variavelObrigatoria("SERVICE_ROLE_KEY")
 }
 
-function novoCliente(chave = CHAVE) {
-  return createClient(API, chave, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
 /** `<pasta>/<variação do ARQUIVO>.png`: cada tentativa escreve num nome conhecido. */
 function nomeNaPasta(pasta: string, prefixo = "0b") {
   return `${pasta}/${ARQUIVO.replace("0b", prefixo)}.png`
-}
-
-async function logar(email: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: SENHA_TESTE })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, usuario: data.user as User }
 }
 
 let ana: SupabaseClient

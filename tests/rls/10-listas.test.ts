@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { listarRede, podeVerRede, POR_PAGINA, removerSeguidor, type Lado } from "@/lib/social/rede"
 import { USUARIOS } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * As listas da rede de um perfil e remover seguidor (S05-M-listas). Não há
@@ -33,9 +33,6 @@ import { USUARIOS } from "../fixtures/usuarios"
  * @RF09.6 @RF09.9 @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
@@ -48,19 +45,6 @@ const VIOLA_RLS_OU_GRANT = "42501"
 /** As fotos não entram nestes testes: ninguém do seed nem das contas descartáveis tem foto. */
 const semStorage = () => {
   throw new Error("o Storage não deveria ser chamado: ninguém aqui tem foto")
-}
-
-function novoCliente() {
-  return createClient(API, CHAVE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-}
-
-async function logar(email: string, senha: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, usuario: data.user as User }
 }
 
 let ana: SupabaseClient
