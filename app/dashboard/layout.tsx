@@ -2,22 +2,9 @@
 
 import type React from "react";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  Plane,
-  Calendar,
-  DollarSign,
-  MapPin,
-  BookOpen,
-  Settings,
-  LogOut,
-  Image,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { House, LogOut, Plus, Search, Settings, UserRound, Luggage } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +14,44 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Logo } from "@/components/brand/logo";
+import { SinoNotificacoes } from "@/app/(rede-social)/sino";
 import { useAuth } from "@/context/auth-context";
+import { cn } from "@/lib/utils";
+
+/**
+ * Casca do app logado (S12-F-rebranding-avori).
+ *
+ * Desktop (lg+): barra superior Floresta com a assinatura, as seções em
+ * pílulas, Pesquisar, o sino, "Nova viagem" em Cítrico e o avatar.
+ * Celular: a mesma barra, com as seções numa faixa rolável logo abaixo, e a
+ * barra de abas fixa no rodapé (Início · Pesquisar · Nova · Viagens · Perfil).
+ * O `pb-28` do conteúdo reserva o espaço da barra de abas.
+ */
+
+const SECOES = [
+  { nome: "Painel", href: "/dashboard", exato: true },
+  { nome: "Feed", href: "/feed" },
+  { nome: "Viagens", href: "/dashboard/trips" },
+  { nome: "Agenda", href: "/dashboard/itinerary" },
+  { nome: "Finanças", href: "/dashboard/finances" },
+  { nome: "Reservas", href: "/dashboard/bookings" },
+  { nome: "Lugares", href: "/dashboard/places" },
+] as const;
+
+const ABAS = [
+  { nome: "Início", href: "/feed", Icone: House },
+  { nome: "Pesquisar", href: "/pesquisar", Icone: Search },
+  { nome: "Nova viagem", href: "/dashboard/trips/new", Icone: Plus, destaque: true },
+  { nome: "Viagens", href: "/dashboard/trips", Icone: Luggage },
+  { nome: "Perfil", href: "/dashboard/perfil", Icone: UserRound },
+] as const;
+
+function estaEm(caminho: string, href: string, exato?: boolean) {
+  if (exato) return caminho === href;
+  if (href === "/dashboard/trips") return caminho.startsWith(href) && !caminho.startsWith("/dashboard/trips/new");
+  return caminho === href || caminho.startsWith(`${href}/`);
+}
 
 export default function DashboardLayout({
   children,
@@ -36,6 +60,7 @@ export default function DashboardLayout({
 }) {
   const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
+  const caminho = usePathname() ?? "";
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,9 +70,9 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center gap-x-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-viaja-orange border-t-transparent" />
-        <p className="text-gray-600 text-2xl">Carregando...</p>
+      <div className="flex min-h-screen items-center justify-center gap-x-4 bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-2xl text-muted-foreground">Carregando...</p>
       </div>
     );
   }
@@ -55,16 +80,6 @@ export default function DashboardLayout({
   if (!user) {
     return null;
   }
-
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Minhas Viagens", href: "/dashboard/trips", icon: Plane },
-    { name: "Itinerários", href: "/dashboard/itinerary", icon: Calendar },
-    { name: "Finanças", href: "/dashboard/finances", icon: DollarSign },
-    { name: "Lugares", href: "/dashboard/places", icon: MapPin },
-    { name: "Reservas", href: "/dashboard/bookings", icon: BookOpen },
-    { name: "Rede social", href: "/feed", icon: Users },
-  ];
 
   const initials =
     profile?.full_name
@@ -74,66 +89,76 @@ export default function DashboardLayout({
       .toUpperCase()
       .slice(0, 2) || "U";
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <aside className="w-20 shrink-0 md:w-64 border-r border-gray-200 bg-viaja-navy lg:block">
-        <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-16 items-center gap-2 border-b border-white/10 px-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-viaja-green relative">
-              <Plane className="h-5 w-5 text-gray-300" />
-            </div>
-            <span className="text-xl font-bold text-white hidden md:block lg:block">Viaja+</span>
-          </div>
+  const pilula = (ativo: boolean) =>
+    cn(
+      "inline-flex h-10 shrink-0 items-center rounded-full px-4 text-sm transition-colors",
+      ativo
+        ? "bg-primary-foreground font-semibold text-foreground"
+        : "font-medium text-primary-foreground hover:bg-primary-foreground/10",
+    );
 
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                aria-label={item.name}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <item.icon className="h-5 w-5" />
-                <p className="hidden md:block lg:block">{item.name}</p>
-              </Link>
-            ))}
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <a
+        href="#conteudo"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2"
+      >
+        Pular para o conteúdo
+      </a>
+
+      <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
+        <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-4 px-4 md:px-10 lg:h-[72px]">
+          <Link href="/dashboard" className="flex shrink-0 rounded-md">
+            <Logo variante="marfim" />
+          </Link>
+
+          <nav aria-label="Principal" className="hidden min-w-0 flex-1 items-center gap-1 lg:flex">
+            {SECOES.map((s) => {
+              const ativo = estaEm(caminho, s.href, "exato" in s ? s.exato : undefined);
+              return (
+                <Link key={s.href} href={s.href} aria-current={ativo ? "page" : undefined} className={pilula(ativo)}>
+                  {s.nome}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* User Menu */}
-          <div className="border-t border-white/10 p-4">
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              href="/pesquisar"
+              aria-label="Pesquisar"
+              aria-current={caminho === "/pesquisar" ? "page" : undefined}
+              className="hidden h-11 w-11 items-center justify-center rounded-full border border-primary-foreground/35 text-primary-foreground transition-colors hover:bg-primary-foreground/10 lg:inline-flex"
+            >
+              <Search className="h-5 w-5" aria-hidden />
+            </Link>
+            <SinoNotificacoes tom="escuro" />
+            <Link
+              href="/dashboard/trips/new"
+              className="hidden h-11 items-center gap-2 rounded-xl bg-citrico px-5 text-sm font-medium text-grafite transition-colors hover:bg-citrico/90 lg:inline-flex"
+            >
+              <Plus className="h-[18px] w-[18px]" aria-hidden />
+              Nova viagem
+            </Link>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-3 px-3 text-white hover:bg-white/10 hover:text-white"
-                >
+              <DropdownMenuTrigger
+                className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-citrico"
+              >
+                <span className="sr-only">Minha conta, {profile?.full_name || "Usuário"}</span>
+                <Avatar className="h-11 w-11" aria-hidden>
                   {profile?.avatar_url ? (
-                    <Avatar>
-                      <img
-                        src={profile.avatar_url}
-                        alt={profile.full_name || "User Avatar"}
-                        className="object-cover"
-                      />
-                    </Avatar>
+                    // eslint-disable-next-line @next/next/no-img-element -- avatar do Storage, URL assinada
+                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <Avatar>
-                      <AvatarFallback className="bg-viaja-green text-white">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <AvatarFallback className="bg-primary-foreground font-semibold text-foreground">{initials}</AvatarFallback>
                   )}
-                  <div className="hidden flex-col items-start text-sm md:flex">
-                    <span className="font-medium text-white">
-                      {profile?.full_name || "Usuário"}
-                    </span>
-                    <span className="text-xs text-white/60">{user.email}</span>
-                  </div>
-                </Button>
+                </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuLabel className="flex flex-col">
+                  <span>{profile?.full_name || "Usuário"}</span>
+                  <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/perfil">
@@ -156,12 +181,51 @@ export default function DashboardLayout({
             </DropdownMenu>
           </div>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-7xl p-6 lg:p-8">{children}</div>
+        {/* Celular e tablet: as mesmas seções numa faixa rolável. */}
+        <nav aria-label="Seções" className="lg:hidden">
+          <div className="mx-auto flex max-w-[1360px] gap-1 overflow-x-auto px-4 pb-3 md:px-10">
+            {SECOES.map((s) => {
+              const ativo = estaEm(caminho, s.href, "exato" in s ? s.exato : undefined);
+              return (
+                <Link key={s.href} href={s.href} aria-current={ativo ? "page" : undefined} className={cn(pilula(ativo), "h-9")}>
+                  {s.nome}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </header>
+
+      <main id="conteudo" className="mx-auto w-full min-w-0 max-w-[1360px] flex-1 px-4 pb-28 pt-6 md:px-10 lg:pb-10 lg:pt-8">
+        {children}
       </main>
+
+      <nav aria-label="Atalhos" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card lg:hidden">
+        <ul className="mx-auto flex h-16 max-w-lg items-center">
+          {ABAS.map(({ nome, href, Icone, ...resto }) => {
+            const ativo = estaEm(caminho, href);
+            const destaque = "destaque" in resto && resto.destaque;
+            return (
+              <li key={href} className="flex flex-1 justify-center">
+                <Link
+                  href={href}
+                  aria-label={nome}
+                  aria-current={ativo ? "page" : undefined}
+                  className={cn(
+                    "inline-flex items-center justify-center transition-colors",
+                    destaque
+                      ? "h-11 w-14 rounded-2xl bg-citrico text-grafite"
+                      : cn("h-12 w-12 rounded-full", ativo ? "text-primary" : "text-muted-foreground hover:text-foreground"),
+                  )}
+                >
+                  <Icone className={cn("h-6 w-6", ativo && !destaque && "stroke-[2.5]")} aria-hidden />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }

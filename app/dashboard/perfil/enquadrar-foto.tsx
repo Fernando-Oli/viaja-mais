@@ -141,7 +141,7 @@ function JanelaDeEnquadramento({
         role="application"
         aria-label="Área de enquadramento: arraste ou use as setas para posicionar; + e − para zoom"
         tabIndex={0}
-        className="relative mx-auto cursor-grab touch-none select-none overflow-hidden rounded-md bg-black outline-none focus-visible:ring-2 focus-visible:ring-viaja-orange active:cursor-grabbing"
+        className="relative mx-auto cursor-grab touch-none select-none overflow-hidden rounded-md bg-black outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
         style={{ width: JANELA, height: JANELA }}
         onPointerDown={aoPressionar}
         onPointerMove={aoMover}
@@ -167,7 +167,7 @@ function JanelaDeEnquadramento({
       </div>
 
       <div className="flex items-center gap-3">
-        <ZoomOut className="h-4 w-4 text-gray-500" aria-hidden />
+        <ZoomOut className="h-4 w-4 text-muted-foreground" aria-hidden />
         <input
           type="range"
           aria-label="Zoom"
@@ -177,12 +177,9 @@ function JanelaDeEnquadramento({
           value={enquadramento.zoom}
           onChange={(e) => setEnquadramento((atual) => aplicarZoom(atual, Number(e.target.value), dimensoes))}
           disabled={enviando}
-          className="w-full"
-          // A cor da marca vem de classes escritas à mão em app/globals.css, não do
-          // tema do Tailwind — não existe accent-viaja-orange. Mesmo valor de .bg-viaja-orange.
-          style={{ accentColor: "#ff7f50" }}
+          className="w-full accent-primary"
         />
-        <ZoomIn className="h-4 w-4 text-gray-500" aria-hidden />
+        <ZoomIn className="h-4 w-4 text-muted-foreground" aria-hidden />
       </div>
 
       <DialogFooter>
@@ -191,7 +188,7 @@ function JanelaDeEnquadramento({
         </Button>
         <Button
           type="button"
-          className="bg-viaja-orange hover:bg-viaja-orange/90"
+          className="bg-primary hover:bg-primary/90"
           onClick={() => onAplicar(recorteDaImagem(enquadramento, dimensoes))}
           disabled={enviando}
         >

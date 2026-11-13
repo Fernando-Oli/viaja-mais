@@ -91,8 +91,8 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Nova Reserva</h1>
-        <p className="mt-2 text-slate-600">Adicione uma reserva à sua viagem</p>
+        <h1 className="text-3xl font-bold text-foreground">Nova Reserva</h1>
+        <p className="mt-2 text-muted-foreground">Adicione uma reserva à sua viagem</p>
       </div>
 
       <Card>
@@ -244,7 +244,7 @@ export default function NewBookingPage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <Button type="submit" disabled={isLoading} className="bg-viaja-orange">
+              <Button type="submit" disabled={isLoading} className="bg-primary">
                 {isLoading ? "Salvando..." : "Salvar Reserva"}
               </Button>
               <Button type="button" variant="outline" asChild>

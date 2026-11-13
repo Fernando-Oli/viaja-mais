@@ -30,26 +30,25 @@ async function buscar(area: Locator, termo: string) {
   await area.getByRole("searchbox", { name: "Buscar pessoas" }).fill(termo)
 }
 
-test("a aba Rede social fica logo abaixo de Reservas e abre o feed", async ({ page }) => {
+test("o Feed fica na barra do app e a pesquisa troca de página", async ({ page }) => {
   await entrarComoDavi(page)
 
-  // Pelo href, porque no celular o menu mostra só o ícone, sem o texto do link.
-  const destinos = await page.locator("aside nav a").evaluateAll((links) => links.map((a) => a.getAttribute("href")))
-  expect(destinos.indexOf("/feed")).toBe(destinos.indexOf("/dashboard/bookings") + 1)
+  // Desde o rebranding Avori (S12): no desktop, as seções em pílulas na barra
+  // superior; no celular, a faixa de seções e a barra de abas do rodapé. Pelo
+  // href, porque na barra de abas o link mostra só o ícone.
+  const paraFeed = () => page.locator('nav a[href="/feed"]:visible').first()
+  const paraPesquisa = () => page.locator('a[href="/pesquisar"]:visible').first()
 
-  await page.locator('aside nav a[href="/feed"]').click()
+  await paraFeed().click()
   await page.waitForURL("/feed")
   await expect(page.getByRole("heading", { name: "Rede social" })).toBeVisible()
-  await expect(page.getByRole("region", { name: "Feed" }).getByText("Seu feed ainda está vazio")).toBeVisible()
+  await expect(paraFeed()).toHaveAttribute("aria-current", "page")
 
-  // O menu da aba (no celular, os ícones do rodapé) troca entre o Início e a pesquisa.
-  const menu = page.getByRole("navigation", { name: "Rede social" })
-  await expect(menu.getByRole("link", { name: "Início" })).toHaveAttribute("aria-current", "page")
-  await menu.getByRole("link", { name: "Pesquisar" }).click()
+  await paraPesquisa().click()
   await page.waitForURL("/pesquisar")
   await expect(page.getByRole("heading", { name: "Pesquisar" })).toBeVisible()
-  await expect(menu.getByRole("link", { name: "Pesquisar" })).toHaveAttribute("aria-current", "page")
-  await expect(menu.getByRole("link", { name: "Início" })).not.toHaveAttribute("aria-current", "page")
+  await expect(paraPesquisa()).toHaveAttribute("aria-current", "page")
+  await expect(paraFeed()).not.toHaveAttribute("aria-current", "page")
 })
 
 test("busca por nome e por @usuário, marca o perfil privado e não mostra quem busca", async ({ page }) => {

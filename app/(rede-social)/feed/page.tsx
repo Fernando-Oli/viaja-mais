@@ -15,14 +15,14 @@ export default function FeedPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-viaja-navy">Rede social</h1>
-        <p className="mt-2 text-gray-600">Viagens de quem você segue e sugestões para você</p>
+        <h1 className="text-3xl font-bold text-foreground">Rede social</h1>
+        <p className="mt-2 text-muted-foreground">Viagens de quem você segue e sugestões para você</p>
       </div>
       <Card role="region" aria-label="Feed">
         <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-          <Newspaper className="h-10 w-10 text-gray-400" aria-hidden />
-          <p className="text-lg font-semibold text-viaja-navy">Seu feed ainda está vazio</p>
-          <p className="max-w-md text-sm text-gray-600">
+          <Newspaper className="h-10 w-10 text-muted-foreground" aria-hidden />
+          <p className="text-lg font-semibold text-foreground">Seu feed ainda está vazio</p>
+          <p className="max-w-md text-sm text-muted-foreground">
             Quando as pessoas que você segue publicarem viagens, elas aparecem aqui. Pesquise pessoas para encontrar
             quem seguir.
           </p>

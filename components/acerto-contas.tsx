@@ -38,17 +38,17 @@ function LinhaSaldo({ saldo, moeda }: { saldo: SaldoAcerto; moeda: string }) {
     centavos > 0
       ? { texto: "a receber", cor: "text-emerald-700" }
       : centavos < 0
-        ? { texto: "deve", cor: "text-red-700" }
-        : { texto: "quite", cor: "text-slate-600" }
+        ? { texto: "deve", cor: "text-destructive" }
+        : { texto: "quite", cor: "text-muted-foreground" }
 
   return (
     <li
       data-testid="saldo-membro"
-      className="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-1 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         {/* Os espaços não aparecem no flex, mas separam as palavras para leitor de tela. */}
-        <span className="font-medium text-viaja-navy">{saldo.rotulo}</span>{" "}
+        <span className="font-medium text-foreground">{saldo.rotulo}</span>{" "}
         <Badge variant={saldo.papel === "owner" ? "default" : "secondary"}>{ROTULO_PAPEL[saldo.papel]}</Badge>
       </div>{" "}
       <p className={`text-sm font-semibold break-words ${estado.cor}`}>
@@ -92,21 +92,21 @@ function GrupoAcerto({
         </CardHeader>
         <CardContent>
           {grupo.transferencias.length === 0 ? (
-            <p className="text-sm text-slate-600">Nenhuma transferência necessária nesta moeda.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma transferência necessária nesta moeda.</p>
           ) : (
             <ul className="space-y-2" aria-label="Transferências sugeridas">
               {grupo.transferencias.map((t) => (
                 <li
                   key={`${t.de.userId}-${t.para.userId}`}
                   data-testid="linha-transferencia"
-                  className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2 rounded-lg border border-border p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 items-start gap-2">
-                    <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                    <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                     <p data-testid="transferencia" className="min-w-0 break-words">
-                      <span className="font-medium text-viaja-navy">{t.de.rotulo}</span> paga{" "}
+                      <span className="font-medium text-foreground">{t.de.rotulo}</span> paga{" "}
                       <span className="font-semibold">{formatar(t.valor, grupo.moeda)}</span> para{" "}
-                      <span className="font-medium text-viaja-navy">{t.para.rotulo}</span>
+                      <span className="font-medium text-foreground">{t.para.rotulo}</span>
                     </p>
                   </div>
                   {onRegistrarPagamento && usuarioAtualId && t.de.userId === usuarioAtualId && (
@@ -143,8 +143,8 @@ export function AcertoContas({
     return (
       <Card>
         <CardContent className="flex flex-col items-start gap-3 py-6">
-          <p className="text-slate-700">Nenhuma despesa lançada nesta viagem ainda.</p>
-          <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+          <p className="text-foreground">Nenhuma despesa lançada nesta viagem ainda.</p>
+          <Button asChild className="bg-primary hover:bg-primary/90">
             <Link href={`/dashboard/trips/${tripId}/expenses/new`}>Adicionar Despesa</Link>
           </Button>
           {acerto.grupos.map((grupo) => (
@@ -174,7 +174,7 @@ export function AcertoContas({
       )}
 
       {acerto.despesasSemRateio > 0 && (
-        <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+        <div className="flex items-start gap-2 rounded-lg border border-border bg-muted p-4 text-sm text-foreground">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {acerto.despesasSemRateio === 1
             ? "1 despesa sem divisão entre participantes não entra no acerto."

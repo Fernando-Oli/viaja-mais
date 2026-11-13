@@ -153,7 +153,7 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
 
   if (estado.tipo === "carregando") {
     return (
-      <p role="status" className="text-sm text-gray-500">
+      <p role="status" className="text-sm text-muted-foreground">
         Carregando...
       </p>
     );
@@ -161,7 +161,7 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
 
   if (estado.tipo === "erro") {
     return (
-      <p role="alert" className="text-sm text-red-600">
+      <p role="alert" className="text-sm text-destructive">
         Não foi possível carregar este perfil. Recarregue a página para tentar de novo.
       </p>
     );
@@ -169,7 +169,7 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
 
   if (estado.tipo === "sessao") {
     return (
-      <div role="alert" className="space-y-2 text-sm text-red-600">
+      <div role="alert" className="space-y-2 text-sm text-destructive">
         <p>Sua sessão expirou.</p>
         <Button asChild variant="outline" size="sm">
           <Link href="/auth/login">Entrar de novo</Link>
@@ -182,9 +182,9 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
     return (
       <Card role="region" aria-label="Perfil não encontrado">
         <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <UserRoundX className="h-10 w-10 text-gray-400" aria-hidden />
-          <h1 className="text-xl font-semibold text-viaja-navy">Perfil não encontrado</h1>
-          <p className="text-sm text-gray-600">Confira o endereço: nenhum perfil usa esse nome de usuário.</p>
+          <UserRoundX className="h-10 w-10 text-muted-foreground" aria-hidden />
+          <h1 className="text-xl font-semibold text-foreground">Perfil não encontrado</h1>
+          <p className="text-sm text-muted-foreground">Confira o endereço: nenhum perfil usa esse nome de usuário.</p>
           <Button asChild variant="outline">
             <Link href="/feed">Voltar à Rede social</Link>
           </Button>
@@ -207,13 +207,13 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <Avatar className="h-24 w-24 shrink-0">
             {perfil.avatar_url ? <AvatarImage src={perfil.avatar_url} alt={`Foto de ${nome}`} /> : null}
-            <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
+            <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-primary text-primary-foreground">
               <UserRound className="h-12 w-12" aria-hidden />
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-2xl font-semibold text-viaja-navy">{nome}</h1>
+              <h1 className="break-words text-2xl font-semibold text-foreground">{nome}</h1>
               {perfil.is_public ? null : (
                 <Badge variant="outline" className="gap-1">
                   <Lock aria-hidden />
@@ -221,9 +221,9 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-gray-500">@{perfil.username}</p>
-            {perfil.bio ? <p className="whitespace-pre-line break-words text-gray-700">{perfil.bio}</p> : null}
-            <p className="flex gap-4 text-sm text-gray-700">
+            <p className="text-sm text-muted-foreground">@{perfil.username}</p>
+            {perfil.bio ? <p className="whitespace-pre-line break-words text-foreground">{perfil.bio}</p> : null}
+            <p className="flex gap-4 text-sm text-foreground">
               {podeVerRede ? (
                 <>
                   <Link href={`/u/${perfil.username}/seguidores`} className="rounded-sm hover:underline">
@@ -259,14 +259,14 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
         <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
           {podeVerViagens ? (
             <>
-              <IconeMapa className="h-10 w-10 text-gray-400" aria-hidden />
-              <p className="text-sm text-gray-600">Nenhuma viagem publicada ainda.</p>
+              <IconeMapa className="h-10 w-10 text-muted-foreground" aria-hidden />
+              <p className="text-sm text-muted-foreground">Nenhuma viagem publicada ainda.</p>
             </>
           ) : (
             <>
-              <Lock className="h-10 w-10 text-gray-400" aria-hidden />
-              <p className="font-semibold text-viaja-navy">Esta conta é privada</p>
-              <p className="max-w-sm text-sm text-gray-600">
+              <Lock className="h-10 w-10 text-muted-foreground" aria-hidden />
+              <p className="font-semibold text-foreground">Esta conta é privada</p>
+              <p className="max-w-sm text-sm text-muted-foreground">
                 {perfil.vinculo === "solicitado"
                   ? `Sua solicitação está pendente. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`
                   : `Solicite para seguir. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`}
@@ -308,7 +308,7 @@ function BotaoDoVinculo({
   // Deixar de seguir e cancelar, abaixo, continuam.
   if (perfil.vinculo === "nenhum" && perfil.sem_username) {
     return (
-      <div className="max-w-xs space-y-2 text-sm text-gray-600">
+      <div className="max-w-xs space-y-2 text-sm text-muted-foreground">
         <p>Escolha um nome de usuário para seguir pessoas.</p>
         <Button asChild variant="outline" size="sm">
           <Link href="/dashboard/perfil">Escolher nome de usuário</Link>
@@ -323,7 +323,7 @@ function BotaoDoVinculo({
         ref={botao}
         onClick={() => aoAlterar("POST")}
         disabled={enviando}
-        className="bg-viaja-orange text-white hover:bg-viaja-orange/90"
+        className="bg-primary text-primary-foreground hover:bg-primary/90"
       >
         {carregando ?? <UserPlus className="mr-2 h-4 w-4" aria-hidden />}
         {perfil.is_public ? "Seguir" : "Solicitar"}
@@ -342,7 +342,7 @@ function BotaoDoVinculo({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => aoAlterar("DELETE")} className="text-red-600 focus:text-red-600">
+        <DropdownMenuItem onSelect={() => aoAlterar("DELETE")} className="text-destructive focus:text-destructive">
           {seguindo ? "Deixar de seguir" : "Cancelar solicitação"}
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -163,18 +163,18 @@ export function Notificacoes() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-bold text-viaja-navy">Notificações</h1>
+      <h1 className="text-3xl font-bold text-foreground">Notificações</h1>
       <Card>
         <CardContent className="space-y-3">
           {estado.tipo === "carregando" ? (
-            <p role="status" className="flex items-center gap-2 text-sm text-gray-500">
+            <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               Carregando notificações...
             </p>
           ) : estado.tipo === "sessao" ? (
             <SessaoVencida />
           ) : estado.tipo === "erro" ? (
-            <div role="alert" className="space-y-2 text-sm text-red-600">
+            <div role="alert" className="space-y-2 text-sm text-destructive">
               <p>Não foi possível carregar as notificações.</p>
               <Button variant="outline" size="sm" onClick={() => setTentativa((t) => t + 1)}>
                 Tentar de novo
@@ -185,12 +185,12 @@ export function Notificacoes() {
               <p role="status" className="sr-only">
                 {aviso}
               </p>
-              <h2 id={idTitulo} ref={titulo} tabIndex={-1} className="rounded-sm font-semibold text-viaja-navy">
+              <h2 id={idTitulo} ref={titulo} tabIndex={-1} className="rounded-sm font-semibold text-foreground">
                 Solicitações para seguir ({estado.total})
               </h2>
 
               {estado.solicitacoes.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhuma solicitação pendente.</p>
+                <p className="text-sm text-muted-foreground">Nenhuma solicitação pendente.</p>
               ) : (
                 <ul aria-label="Solicitações para seguir" className="space-y-1">
                   {estado.solicitacoes.map((s) => (
@@ -203,7 +203,7 @@ export function Notificacoes() {
                       <div className="flex gap-2 pl-15 sm:pl-0">
                         <Button
                           size="sm"
-                          className="bg-viaja-orange hover:bg-viaja-orange/90"
+                          className="bg-primary hover:bg-primary/90"
                           aria-label={`Aprovar @${s.username}`}
                           disabled={ocupados.has(s.username)}
                           onClick={() => resolver(s.username, "aprovar")}
@@ -234,7 +234,7 @@ export function Notificacoes() {
 
 function SessaoVencida() {
   return (
-    <div role="alert" className="space-y-2 text-sm text-red-600">
+    <div role="alert" className="space-y-2 text-sm text-destructive">
       <p>Sua sessão expirou.</p>
       <Button asChild variant="outline" size="sm">
         <Link href="/auth/login">Entrar de novo</Link>
@@ -248,24 +248,24 @@ function Pessoa({ pessoa }: { pessoa: Solicitacao }) {
   return (
     <Link
       href={`/u/${pessoa.username}`}
-      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-100 focus-visible:bg-gray-100"
+      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted focus-visible:bg-muted"
     >
       <Avatar className="h-10 w-10">
         {pessoa.avatar_url ? <AvatarImage src={pessoa.avatar_url} alt={`Foto de ${nome}`} /> : null}
-        <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
+        <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-primary text-primary-foreground">
           <UserRound className="h-5 w-5" aria-hidden />
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0">
-        <p className="flex items-center gap-1 text-sm font-medium text-viaja-navy">
+        <p className="flex items-center gap-1 text-sm font-medium text-foreground">
           <span className="truncate">{nome}</span>
           {pessoa.is_public ? null : (
             <span role="img" aria-label="Perfil privado" title="Perfil privado" className="shrink-0">
-              <Lock className="h-3.5 w-3.5 text-gray-500" aria-hidden />
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
             </span>
           )}
         </p>
-        <p className="truncate text-xs text-gray-500">@{pessoa.username}</p>
+        <p className="truncate text-xs text-muted-foreground">@{pessoa.username}</p>
       </div>
     </Link>
   );

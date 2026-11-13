@@ -31,12 +31,12 @@ export default function TripsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-viaja-navy">Minhas Viagens</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Minhas Viagens</h1>
+          <p className="mt-2 text-muted-foreground">
             Gerencie todas as suas viagens em um só lugar
           </p>
         </div>
-        <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+        <Button asChild className="bg-primary hover:bg-primary/90">
           <Link href="/dashboard/trips/new">
             <Plus className="mr-2 h-4 w-4" />
             Nova Viagem
@@ -60,10 +60,10 @@ export default function TripsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="mb-4 h-12 w-12 text-gray-300" />
-                <h3 className="mb-2 text-lg font-semibold text-viaja-navy">
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
                   Nenhuma viagem futura
                 </h3>
-                <p className="mb-4 text-center text-gray-600">
+                <p className="mb-4 text-center text-muted-foreground">
                   Comece a planejar sua próxima aventura!
                 </p>
               </CardContent>
@@ -82,10 +82,10 @@ export default function TripsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="mb-4 h-12 w-12 text-gray-300" />
-                <h3 className="mb-2 text-lg font-semibold text-viaja-navy">
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
                   Nenhuma viagem anterior
                 </h3>
-                <p className="text-center text-gray-600">
+                <p className="text-center text-muted-foreground">
                   Suas viagens passadas aparecerão aqui
                 </p>
               </CardContent>
@@ -104,15 +104,15 @@ export default function TripsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="mb-4 h-12 w-12 text-gray-300" />
-                <h3 className="mb-2 text-lg font-semibold text-viaja-navy">
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
                   Nenhuma viagem cadastrada
                 </h3>
-                <p className="mb-4 text-center text-gray-600">
+                <p className="mb-4 text-center text-muted-foreground">
                   Crie sua primeira viagem agora!
                 </p>
                 <Button
                   asChild
-                  className="bg-viaja-orange hover:bg-viaja-orange/90"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   <Link href="/dashboard/trips/new">
                     <Plus className="mr-2 h-4 w-4" />
@@ -173,7 +173,7 @@ function TripCard({ trip, userId }: { trip: any; userId: string }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
                 {parseLocalDate(trip.start_date).toLocaleDateString("pt-BR")} -{" "}
@@ -181,7 +181,7 @@ function TripCard({ trip, userId }: { trip: any; userId: string }) {
               </span>
             </div>
             {trip.budget && (
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <DollarSign className="h-4 w-4" />
                 <span>
                   {new Intl.NumberFormat("pt-BR", {

@@ -154,7 +154,7 @@ export function PlaceAutocomplete({
           name="destination"
         />
         {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400" />
+          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
         )}
       </div>
 
@@ -165,15 +165,15 @@ export function PlaceAutocomplete({
               <button
                 key={prediction.place_id}
                 onClick={(e) => handlePlaceSelect(e, prediction.place_id)}
-                className="w-full rounded-lg p-3 text-left transition-colors hover:bg-gray-100"
+                className="w-full rounded-lg p-3 text-left transition-colors hover:bg-muted"
               >
                 <div className="flex items-start gap-3">
-                  <MapPin className="mt-1 h-5 w-5 shrink-0 text-viaja-orange" />
+                  <MapPin className="mt-1 h-5 w-5 shrink-0 text-primary" />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-viaja-navy truncate">
+                    <h4 className="font-medium text-foreground truncate">
                       {prediction.structured_formatting.main_text}
                     </h4>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-muted-foreground truncate">
                       {prediction.structured_formatting.secondary_text}
                     </p>
                   </div>

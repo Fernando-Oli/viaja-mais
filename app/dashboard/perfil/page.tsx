@@ -255,16 +255,16 @@ export default function PerfilPage() {
     <div className="space-y-6">
       <EnquadrarFoto foto={fotoEscolhida} enviando={enviandoFoto} onCancelar={descartarFoto} onAplicar={enviarFoto} />
       <div>
-        <h1 className="text-3xl font-bold text-viaja-navy">Perfil</h1>
-        <p className="mt-2 text-gray-600">Como as outras pessoas veem você no ViajaMais</p>
+        <h1 className="text-3xl font-bold text-foreground">Perfil</h1>
+        <p className="mt-2 text-muted-foreground">Como as outras pessoas veem você na Avori</p>
       </div>
 
       {erroAoCarregar ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           Não foi possível carregar seu perfil. Recarregue a página para tentar de novo.
         </p>
       ) : !perfil ? (
-        <p role="status" className="text-sm text-gray-500">
+        <p role="status" className="text-sm text-muted-foreground">
           Carregando...
         </p>
       ) : (
@@ -279,7 +279,7 @@ export default function PerfilPage() {
                   {perfil.avatar_url ? <AvatarImage src={perfil.avatar_url} alt="Foto de perfil" /> : null}
                   {/* Sem foto, um ícone de pessoa, e não as iniciais: decisão do Micael,
                       depois de ver nome com emoji virar caractere quebrado na bolinha. */}
-                  <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
+                  <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-primary text-primary-foreground">
                     <UserRound className="h-10 w-10" aria-hidden />
                   </AvatarFallback>
                 </Avatar>
@@ -300,9 +300,9 @@ export default function PerfilPage() {
                       variant="outline"
                       aria-label="Alterar foto de perfil"
                       disabled={enviandoFoto || salvando}
-                      className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full border-2 border-white bg-white shadow-md hover:bg-gray-50"
+                      className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full border-2 border-white bg-card shadow-md hover:bg-muted"
                     >
-                      <Pencil className="h-4 w-4 text-viaja-navy" aria-hidden />
+                      <Pencil className="h-4 w-4 text-foreground" aria-hidden />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
@@ -311,7 +311,7 @@ export default function PerfilPage() {
                       Enviar nova foto
                     </DropdownMenuItem>
                     {perfil.avatar_url ? (
-                      <DropdownMenuItem onSelect={removerFoto} className="text-red-600 focus:text-red-600">
+                      <DropdownMenuItem onSelect={removerFoto} className="text-destructive focus:text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" aria-hidden />
                         Remover foto
                       </DropdownMenuItem>
@@ -330,7 +330,7 @@ export default function PerfilPage() {
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xl font-semibold text-viaja-navy break-words">
+                  <p className="text-xl font-semibold text-foreground break-words">
                     {perfil.full_name || "Sem nome"}
                   </p>
                   <Badge variant="outline" className="gap-1">
@@ -338,10 +338,10 @@ export default function PerfilPage() {
                     {perfil.is_public ? "Público" : "Privado"}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {perfil.username ? `@${perfil.username}` : "Escolha um nome de usuário para ter sua página pública"}
                 </p>
-                {perfil.bio ? <p className="whitespace-pre-line break-words text-gray-700">{perfil.bio}</p> : null}
+                {perfil.bio ? <p className="whitespace-pre-line break-words text-foreground">{perfil.bio}</p> : null}
               </div>
             </CardContent>
           </Card>
@@ -351,7 +351,7 @@ export default function PerfilPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <UserRound className="h-5 w-5 text-viaja-orange" />
+                    <UserRound className="h-5 w-5 text-primary" />
                     Dados do perfil
                   </CardTitle>
                   <CardDescription>Nome e o que aparece na sua página. A foto muda pelo lápis do avatar.</CardDescription>
@@ -383,7 +383,7 @@ export default function PerfilPage() {
                       aria-describedby="username-dica"
                       disabled={salvando}
                     />
-                    <p id="username-dica" className="text-xs text-gray-500">
+                    <p id="username-dica" className="text-xs text-muted-foreground">
                       De {USERNAME_MIN} a {USERNAME_MAX} caracteres: letras, números e _. Fica salvo em minúsculas.
                     </p>
                   </div>
@@ -399,7 +399,7 @@ export default function PerfilPage() {
                       aria-describedby="bio-dica"
                       disabled={salvando}
                     />
-                    <p id="bio-dica" className="text-xs text-gray-500">
+                    <p id="bio-dica" className="text-xs text-muted-foreground">
                       Até {LIMITE_BIO} caracteres.
                     </p>
                   </div>
@@ -409,7 +409,7 @@ export default function PerfilPage() {
               <Card className="h-fit">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Lock className="h-5 w-5 text-viaja-orange" />
+                    <Lock className="h-5 w-5 text-primary" />
                     Privacidade
                   </CardTitle>
                   <CardDescription>Quem pode seguir você</CardDescription>
@@ -418,7 +418,7 @@ export default function PerfilPage() {
                   <div className="flex items-start justify-between gap-4 rounded-md border p-3">
                     <div className="space-y-1">
                       <Label htmlFor="is_public">Perfil público</Label>
-                      <p id="is_public-descricao" className="text-xs text-gray-500">
+                      <p id="is_public-descricao" className="text-xs text-muted-foreground">
                         {publico
                           ? "Quem quiser pode seguir você na hora."
                           : "Seguir você exige sua aprovação. Nome, foto, nome de usuário e bio continuam visíveis."}
@@ -439,7 +439,7 @@ export default function PerfilPage() {
             <div className="flex justify-end">
               {/* Travado durante o envio da foto: a resposta do PATCH chegaria com o
                   avatar_url de antes e desfaria a foto nova na tela. */}
-              <Button type="submit" className="bg-viaja-orange hover:bg-viaja-orange/90" disabled={salvando || enviandoFoto}>
+              <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={salvando || enviandoFoto}>
                 {salvando ? "Salvando..." : "Salvar perfil"}
               </Button>
             </div>

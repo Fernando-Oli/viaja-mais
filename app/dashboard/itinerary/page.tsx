@@ -39,7 +39,7 @@ export default async function ItineraryPage() {
     activity: "bg-green-100 text-green-800",
     restaurant: "bg-orange-100 text-orange-800",
     attraction: "bg-pink-100 text-pink-800",
-    other: "bg-slate-100 text-slate-800",
+    other: "bg-muted text-foreground",
   }
 
   const categoryLabels: Record<string, string> = {
@@ -54,16 +54,16 @@ export default async function ItineraryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Próximas Atividades</h1>
-        <p className="mt-2 text-slate-600">Seu itinerário consolidado de todas as viagens</p>
+        <h1 className="text-3xl font-bold text-foreground">Próximas Atividades</h1>
+        <p className="mt-2 text-muted-foreground">Seu itinerário consolidado de todas as viagens</p>
       </div>
 
       {!itineraryItems || itineraryItems.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="mb-4 h-12 w-12 text-slate-300" />
-            <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma atividade futura</h3>
-            <p className="text-center text-slate-600">Adicione atividades aos seus itinerários de viagem</p>
+            <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma atividade futura</h3>
+            <p className="text-center text-muted-foreground">Adicione atividades aos seus itinerários de viagem</p>
           </CardContent>
         </Card>
       ) : (
@@ -88,9 +88,9 @@ export default async function ItineraryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {item.description && <p className="text-sm text-slate-600">{item.description}</p>}
+                    {item.description && <p className="text-sm text-muted-foreground">{item.description}</p>}
 
-                    <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>

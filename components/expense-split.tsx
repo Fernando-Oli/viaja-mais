@@ -86,7 +86,7 @@ export function ExpenseSplit({
             htmlFor={`rateio-tipo-${t}`}
             className={cn(
               "flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-normal",
-              tipo === t && "border-viaja-orange bg-orange-50",
+              tipo === t && "border-primary bg-orange-50",
             )}
           >
             <RadioGroupItem id={`rateio-tipo-${t}`} value={t} />
@@ -94,7 +94,7 @@ export function ExpenseSplit({
           </Label>
         ))}
       </RadioGroup>
-      <p className="text-sm text-slate-600">{DESCRICAO_TIPO[tipo]}</p>
+      <p className="text-sm text-muted-foreground">{DESCRICAO_TIPO[tipo]}</p>
 
       <ul className="space-y-2" aria-label="Participantes do rateio">
         {membros.map((membro) => {
@@ -120,7 +120,7 @@ export function ExpenseSplit({
                   onCheckedChange={(v) => alterar(membro.userId, { selecionado: v === true })}
                   aria-label={`Incluir ${membro.rotulo} no rateio`}
                 />
-                <Label htmlFor={idCheckbox} className="min-w-0 truncate font-medium text-viaja-navy">
+                <Label htmlFor={idCheckbox} className="min-w-0 truncate font-medium text-foreground">
                   {membro.rotulo}
                 </Label>
                 <Badge className="shrink-0" variant={membro.papel === "owner" ? "default" : "secondary"}>
@@ -158,7 +158,7 @@ export function ExpenseSplit({
               )}
 
               <span
-                className="ml-auto w-28 shrink-0 text-right text-sm font-semibold tabular-nums text-slate-900"
+                className="ml-auto w-28 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground"
                 data-testid="parte-rateio"
               >
                 {estado.selecionado ? (parte !== undefined ? formatarCentavos(parte, moeda) : "—") : "Fora"}
@@ -168,26 +168,26 @@ export function ExpenseSplit({
         })}
       </ul>
 
-      <dl className="grid grid-cols-2 gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-3 text-sm sm:grid-cols-3">
         <div>
-          <dt className="text-slate-600">Total da despesa</dt>
+          <dt className="text-muted-foreground">Total da despesa</dt>
           <dd className="font-semibold tabular-nums" data-testid="rateio-total">
             {total !== null ? formatarCentavos(total, moeda) : "—"}
           </dd>
         </div>
         <div>
-          <dt className="text-slate-600">Soma das partes</dt>
+          <dt className="text-muted-foreground">Soma das partes</dt>
           <dd className="font-semibold tabular-nums" data-testid="rateio-soma">
             {formatarCentavos(avaliacao.somaCentavos, moeda)}
           </dd>
         </div>
         {tipo === "exact" && total !== null && (
           <div>
-            <dt className="text-slate-600">{avaliacao.diferencaCentavos < 0 ? "Excedeu" : "Falta"}</dt>
+            <dt className="text-muted-foreground">{avaliacao.diferencaCentavos < 0 ? "Excedeu" : "Falta"}</dt>
             <dd
               className={cn(
                 "font-semibold tabular-nums",
-                avaliacao.diferencaCentavos === 0 ? "text-green-700" : "text-red-600",
+                avaliacao.diferencaCentavos === 0 ? "text-green-700" : "text-destructive",
               )}
               data-testid="rateio-diferenca"
             >
@@ -201,7 +201,7 @@ export function ExpenseSplit({
         id="rateio-status"
         role="status"
         aria-live="polite"
-        className={cn("text-sm", avaliacao.valido ? "text-green-700" : "text-red-600")}
+        className={cn("text-sm", avaliacao.valido ? "text-green-700" : "text-destructive")}
       >
         {avaliacao.valido ? "A soma das partes fecha com o total." : avaliacao.erro}
       </p>

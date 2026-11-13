@@ -82,25 +82,25 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center text-viaja-green bg-linear-to-br from-sky-50 via-white to-amber-50 p-6">
+    <div className="flex min-h-screen w-full items-center justify-center text-primary bg-linear-to-br from-sky-50 via-white to-amber-50 p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-viaja-green rounded-xl flex items-center justify-center relative">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center relative">
                 <Plane className="h-5 w-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-viaja-navy">Viaja+</span>
+              <span className="text-2xl font-bold text-foreground">Avori</span>
             </div>
           </div>
 
-          <p className="mt-2 text-slate-600">Comece a planejar suas viagens</p>
+          <p className="mt-2 text-muted-foreground">Comece a planejar suas viagens</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-viaja-green">Criar conta</CardTitle>
-            <CardDescription className="text-viaja-navy">
+            <CardTitle className="text-2xl text-primary">Criar conta</CardTitle>
+            <CardDescription className="text-foreground">
               Preencha os dados abaixo para criar sua conta
             </CardDescription>
           </CardHeader>
@@ -108,7 +108,7 @@ export default function SignUpPage() {
             <form onSubmit={handleSignUp}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="fullName" className="text-viaja-navy">Nome completo</Label>
+                  <Label htmlFor="fullName" className="text-foreground">Nome completo</Label>
                   <Input
                     id="fullName"
                     type="text"
@@ -119,7 +119,7 @@ export default function SignUpPage() {
                     onChange={(e) => setFullName(e.target.value)}
                   />
                 </div>
-                <div className="grid gap-2 text-viaja-navy">
+                <div className="grid gap-2 text-foreground">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
@@ -130,7 +130,7 @@ export default function SignUpPage() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <div className="grid gap-2 text-viaja-navy">
+                <div className="grid gap-2 text-foreground">
                   <Label htmlFor="password">Senha</Label>
                   <Input
                     id="password"
@@ -140,7 +140,7 @@ export default function SignUpPage() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                <div className="grid gap-2 text-viaja-navy">
+                <div className="grid gap-2 text-foreground">
                   <Label htmlFor="confirmPassword">Confirmar senha</Label>
                   <Input
                     id="confirmPassword"
@@ -151,11 +151,11 @@ export default function SignUpPage() {
                   />
                 </div>
                 {error && (
-                  <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                  <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                     {error}
                   </div>
                 )}
-                <Button type="submit" className="w-full bg-viaja-orange hover:bg-viaja-orange/90" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
                   {isLoading ? "Criando conta..." : "Criar conta"}
                 </Button>
               </div>
@@ -163,7 +163,7 @@ export default function SignUpPage() {
                 Já tem uma conta?{" "}
                 <Link
                   href="/auth/login"
-                  className="font-medium text-viaja-green hover:text-viaja-green/80 underline-offset-4 hover:underline"
+                  className="font-medium text-primary hover:text-primary/80 underline-offset-4 hover:underline"
                 >
                   Entrar
                 </Link>

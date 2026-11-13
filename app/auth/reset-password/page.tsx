@@ -141,7 +141,7 @@ export default function ResetPasswordPage() {
       <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-sky-50 via-white to-amber-50">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#319f43] border-t-transparent mx-auto" />
-          <p className="mt-4 text-slate-600">Carregando...</p>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
         </div>
       </div>
     )
@@ -152,10 +152,10 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4  w-auto rounded-2xl flex items-center justify-center gap-2 ">
-            <Plane className="h-10 w-10 text-white bg-viaja-green rounded-sm" /> 
-            <h1 className="text-3xl font-bold text-navy">Viaja+</h1>
+            <Plane className="h-10 w-10 text-primary-foreground bg-primary rounded-sm" /> 
+            <h1 className="text-3xl font-bold text-navy">Avori</h1>
           </div>
-          <p className="mt-2 text-slate-600">{hasToken ? "Redefinir sua senha" : "Recuperar senha"}</p>
+          <p className="mt-2 text-muted-foreground">{hasToken ? "Redefinir sua senha" : "Recuperar senha"}</p>
         </div>
 
         <Card>
@@ -192,7 +192,7 @@ export default function ResetPasswordPage() {
                         placeholder="Digite a senha novamente"
                       />
                     </div>
-                    {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+                    {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Redefinindo..." : "Redefinir senha"}
                     </Button>
@@ -220,7 +220,7 @@ export default function ResetPasswordPage() {
                         onChange={(e) => setEmail(e.target.value)}
                       />
                     </div>
-                    {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+                    {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Enviando..." : "Enviar link de recuperação"}
                     </Button>
@@ -234,7 +234,7 @@ export default function ResetPasswordPage() {
         <div className="mt-4 text-center">
           <Link
             href="/auth/login"
-            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar para login

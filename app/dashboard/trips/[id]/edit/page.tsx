@@ -98,7 +98,7 @@ export default function EditTripPage({ params }: { params: Promise<{ id: string 
   }
 
   if (isFetching) {
-    return <p className="text-gray-600">Carregando...</p>
+    return <p className="text-muted-foreground">Carregando...</p>
   }
 
   return (
@@ -110,7 +110,7 @@ export default function EditTripPage({ params }: { params: Promise<{ id: string 
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Editar Viagem</h1>
+        <h1 className="text-3xl font-bold text-foreground">Editar Viagem</h1>
       </div>
 
       <Card>

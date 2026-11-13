@@ -194,12 +194,12 @@ export function ListaDaRede({ username: daUrl, lado }: { username: string; lado:
     <div className="space-y-4">
       <Link
         href={`/u/${username}`}
-        className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-viaja-navy hover:underline"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Perfil de @{username}
       </Link>
-      <h1 ref={cabecalho} tabIndex={-1} className="rounded-sm text-3xl font-bold text-viaja-navy">
+      <h1 ref={cabecalho} tabIndex={-1} className="rounded-sm text-3xl font-bold text-foreground">
         {titulo(lado, username)}
       </h1>
       <p role="status" className="sr-only">
@@ -209,19 +209,19 @@ export function ListaDaRede({ username: daUrl, lado }: { username: string; lado:
       <Card>
         <CardContent className="space-y-3">
           {estado.tipo === "carregando" ? (
-            <p role="status" className="flex items-center gap-2 text-sm text-gray-500">
+            <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               Carregando...
             </p>
           ) : estado.tipo === "sessao" ? (
-            <div role="alert" className="space-y-2 text-sm text-red-600">
+            <div role="alert" className="space-y-2 text-sm text-destructive">
               <p>Sua sessão expirou.</p>
               <Button asChild variant="outline" size="sm">
                 <Link href="/auth/login">Entrar de novo</Link>
               </Button>
             </div>
           ) : estado.tipo === "erro" ? (
-            <div role="alert" className="space-y-2 text-sm text-red-600">
+            <div role="alert" className="space-y-2 text-sm text-destructive">
               <p>Não foi possível carregar a lista.</p>
               <Button variant="outline" size="sm" onClick={() => setTentativa((t) => t + 1)}>
                 Tentar de novo
@@ -229,9 +229,9 @@ export function ListaDaRede({ username: daUrl, lado }: { username: string; lado:
             </div>
           ) : estado.tipo === "privado" ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <Lock className="h-10 w-10 text-gray-400" aria-hidden />
-              <p className="font-semibold text-viaja-navy">Esta conta é privada</p>
-              <p className="max-w-sm text-sm text-gray-600">
+              <Lock className="h-10 w-10 text-muted-foreground" aria-hidden />
+              <p className="font-semibold text-foreground">Esta conta é privada</p>
+              <p className="max-w-sm text-sm text-muted-foreground">
                 Só quem segue @{username} vê quem segue e quem é seguido por essa conta.
               </p>
               <Button asChild variant="outline">
@@ -240,15 +240,15 @@ export function ListaDaRede({ username: daUrl, lado }: { username: string; lado:
             </div>
           ) : estado.tipo === "nao-encontrado" ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <UserRoundX className="h-10 w-10 text-gray-400" aria-hidden />
-              <p className="font-semibold text-viaja-navy">Perfil não encontrado</p>
-              <p className="text-sm text-gray-600">Confira o endereço: nenhum perfil usa esse nome de usuário.</p>
+              <UserRoundX className="h-10 w-10 text-muted-foreground" aria-hidden />
+              <p className="font-semibold text-foreground">Perfil não encontrado</p>
+              <p className="text-sm text-muted-foreground">Confira o endereço: nenhum perfil usa esse nome de usuário.</p>
               <Button asChild variant="outline">
                 <Link href="/feed">Voltar à Rede social</Link>
               </Button>
             </div>
           ) : estado.pessoas.length === 0 ? (
-            <p className="text-sm text-gray-500">{vazio(lado, username, estado.proprio)}</p>
+            <p className="text-sm text-muted-foreground">{vazio(lado, username, estado.proprio)}</p>
           ) : (
             <>
               <ul aria-label={titulo(lado, username)} className="space-y-1">
@@ -309,24 +309,24 @@ function ItemPessoa({ pessoa }: { pessoa: Pessoa }) {
   return (
     <Link
       href={`/u/${pessoa.username}`}
-      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-100 focus-visible:bg-gray-100"
+      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted focus-visible:bg-muted"
     >
       <Avatar className="h-10 w-10">
         {pessoa.avatar_url ? <AvatarImage src={pessoa.avatar_url} alt={`Foto de ${nome}`} /> : null}
-        <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
+        <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-primary text-primary-foreground">
           <UserRound className="h-5 w-5" aria-hidden />
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0">
-        <p className="flex items-center gap-1 text-sm font-medium text-viaja-navy">
+        <p className="flex items-center gap-1 text-sm font-medium text-foreground">
           <span className="truncate">{nome}</span>
           {pessoa.is_public ? null : (
             <span role="img" aria-label="Perfil privado" title="Perfil privado" className="shrink-0">
-              <Lock className="h-3.5 w-3.5 text-gray-500" aria-hidden />
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
             </span>
           )}
         </p>
-        <p className="truncate text-xs text-gray-500">@{pessoa.username}</p>
+        <p className="truncate text-xs text-muted-foreground">@{pessoa.username}</p>
       </div>
     </Link>
   );

@@ -84,8 +84,8 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Nova Atividade</h1>
-        <p className="mt-2 text-slate-600">Adicione uma atividade ao seu itinerário</p>
+        <h1 className="text-3xl font-bold text-foreground">Nova Atividade</h1>
+        <p className="mt-2 text-muted-foreground">Adicione uma atividade ao seu itinerário</p>
       </div>
 
       <Card>
@@ -198,7 +198,7 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
             </div>
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading} className="bg-viaja-orange">
+              <Button type="submit" disabled={isLoading} className="bg-primary">
                 {isLoading ? "Salvando..." : "Salvar Atividade"}
               </Button>
               <Button type="button" variant="outline" asChild>

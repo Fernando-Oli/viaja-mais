@@ -124,12 +124,12 @@ export default function AcertoContasPage({ params }: { params: Promise<{ id: str
             Voltar para a viagem
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Acerto de contas</h1>
-        <p className="mt-2 text-slate-600">Quanto cada um tem a receber ou deve, e quem paga quem</p>
+        <h1 className="text-3xl font-bold text-foreground">Acerto de contas</h1>
+        <p className="mt-2 text-muted-foreground">Quanto cada um tem a receber ou deve, e quem paga quem</p>
       </div>
 
       {estado.tipo === "carregando" && (
-        <div role="status" className="flex items-center gap-2 rounded-lg border p-4 text-sm text-slate-600">
+        <div role="status" className="flex items-center gap-2 rounded-lg border p-4 text-sm text-muted-foreground">
           <Spinner />
           Carregando acerto de contas...
         </div>
@@ -138,7 +138,7 @@ export default function AcertoContasPage({ params }: { params: Promise<{ id: str
       {estado.tipo === "erro" && (
         <div
           role="alert"
-          className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
         >
           <span className="flex-1">Não foi possível carregar o acerto de contas.</span>
           <Button type="button" variant="outline" size="sm" onClick={tentarDeNovo}>

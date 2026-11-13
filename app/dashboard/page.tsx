@@ -54,10 +54,10 @@ export default function DashboardPage() {
         />
       )}
       <div>
-        <h1 className="text-3xl font-bold text-viaja-navy">
+        <h1 className="text-3xl font-bold text-foreground">
           Olá, {profile?.full_name || "Viajante"}!
         </h1>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-muted-foreground">
           Gerencie suas viagens e planeje novas aventuras
         </p>
       </div>
@@ -106,10 +106,10 @@ export default function DashboardPage() {
       {/* Upcoming Trips */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-viaja-navy">
+          <h2 className="text-2xl font-bold text-foreground">
             Próximas Viagens
           </h2>
-          <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+          <Button asChild className="bg-primary hover:bg-primary/90">
             <Link href="/dashboard/trips/new">
               <Plus className="mr-2 h-4 w-4" />
               Nova Viagem
@@ -121,15 +121,15 @@ export default function DashboardPage() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Plane className="mb-4 h-12 w-12 text-gray-300" />
-              <h3 className="mb-2 text-lg font-semibold text-viaja-navy">
+              <h3 className="mb-2 text-lg font-semibold text-foreground">
                 Nenhuma viagem planejada
               </h3>
-              <p className="mb-4 text-center text-gray-600">
+              <p className="mb-4 text-center text-muted-foreground">
                 Comece a planejar sua próxima aventura agora!
               </p>
               <Button
                 asChild
-                className="bg-viaja-orange hover:bg-viaja-orange/90"
+                className="bg-primary hover:bg-primary/90"
               >
                 <Link href="/dashboard/trips/new">
                   <Plus className="mr-2 h-4 w-4" />
@@ -153,7 +153,7 @@ export default function DashboardPage() {
                   size="sm"
                   variant="ghost"
                   aria-label={`Excluir viagem ${trip.title}`}
-                  className="absolute right-2 bottom-2 z-10 hover:bg-red-600 cursor-pointer hover:text-white transition-colors duration-200"
+                  className="absolute right-2 bottom-2 z-10 hover:bg-destructive cursor-pointer hover:text-white transition-colors duration-200"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -182,7 +182,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-4 w-4" />
                         <span>
                           {parseLocalDate(trip.start_date).toLocaleDateString(
@@ -195,7 +195,7 @@ export default function DashboardPage() {
                         </span>
                       </div>
                       {trip.budget && (
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <DollarSign className="h-4 w-4" />
                           <span>
                             {new Intl.NumberFormat("pt-BR", {
@@ -216,7 +216,7 @@ export default function DashboardPage() {
 
       {pastTrips.length > 0 && (
         <div>
-          <h2 className="mb-4 text-2xl font-bold text-viaja-navy">
+          <h2 className="mb-4 text-2xl font-bold text-foreground">
             Viagens Anteriores
           </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -233,7 +233,7 @@ export default function DashboardPage() {
                   size="sm"
                   variant="ghost"
                   aria-label={`Excluir viagem ${trip.title}`}
-                  className="absolute right-2 bottom-2 z-10 hover:bg-red-600 cursor-pointer hover:text-white transition-colors duration-200"
+                  className="absolute right-2 bottom-2 z-10 hover:bg-destructive cursor-pointer hover:text-white transition-colors duration-200"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -246,7 +246,7 @@ export default function DashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
                       <span>
                         {parseLocalDate(trip.start_date).toLocaleDateString(

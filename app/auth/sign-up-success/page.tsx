@@ -15,10 +15,10 @@ export default function SignUpSuccessPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="flex items-center gap-2 justify-center">
-            <div className="w-10 h-10 bg-viaja-green rounded-xl flex items-center justify-center relative">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center relative">
               <Plane className="h-5 w-5 text-gray-300" />
             </div>
-            <span className="text-2xl font-bold text-viaja-navy">Viaja+</span>
+            <span className="text-2xl font-bold text-foreground">Avori</span>
           </div>
         </div>
 

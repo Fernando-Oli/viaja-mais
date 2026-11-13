@@ -72,8 +72,8 @@ export function ExpenseList({ expenses, tripId, currentUserId, isOwner }: Expens
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <DollarSign className="mb-4 h-12 w-12 text-gray-300" />
-        <h3 className="mb-2 text-lg font-semibold text-viaja-navy">Nenhuma despesa registrada</h3>
-        <p className="text-center text-gray-600">Comece a registrar seus gastos</p>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma despesa registrada</h3>
+        <p className="text-center text-muted-foreground">Comece a registrar seus gastos</p>
       </div>
     )
   }
@@ -99,18 +99,18 @@ export function ExpenseList({ expenses, tripId, currentUserId, isOwner }: Expens
         return (
           <div
             key={expense.id}
-            className="flex flex-col gap-3 border-b border-gray-200 pb-4 last:border-0 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 border-b border-border pb-4 last:border-0 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="min-w-0">
-              <h4 className="font-medium text-viaja-navy">{expense.title}</h4>
-              <p className="text-sm text-gray-600">
+              <h4 className="font-medium text-foreground">{expense.title}</h4>
+              <p className="text-sm text-muted-foreground">
                 {categoryLabels[expense.category ?? "other"] ?? expense.category} •{" "}
                 {new Date(`${expense.date}T00:00`).toLocaleDateString("pt-BR")}
               </p>
             </div>
 
             <div className="flex items-center justify-between gap-3 sm:justify-end">
-              <p className="font-semibold text-viaja-navy">
+              <p className="font-semibold text-foreground">
                 {new Intl.NumberFormat("pt-BR", {
                   style: "currency",
                   currency: expense.currency || "BRL",
@@ -130,7 +130,7 @@ export function ExpenseList({ expenses, tripId, currentUserId, isOwner }: Expens
                     variant="outline"
                     disabled={ocupado}
                     onClick={() => setParaExcluir(expense)}
-                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="mr-1 h-4 w-4" />
                     Excluir

@@ -112,8 +112,8 @@ test("enquadra a foto no modal, envia o que está no círculo e remove", async (
     expect(centro, "arrastar para a direita deveria enquadrar a parte esquerda, menos vermelha").toBeLessThan(105)
     expect(borda, "o zoom 2 deveria cortar a faixa da esquerda: sem zoom, a borda fica em ~0").toBeGreaterThan(25)
 
-    // O menu lateral também troca as iniciais pela foto, e também por URL assinada.
-    await expect(page.locator("aside img[src*='/object/sign/avatars/'][src*='?token=']")).toBeVisible()
+    // A barra do app também troca as iniciais pela foto, e também por URL assinada.
+    await expect(page.locator("header img[src*='/object/sign/avatars/'][src*='?token=']")).toBeVisible()
 
     // Recarregar prova que ficou gravado.
     await page.reload()

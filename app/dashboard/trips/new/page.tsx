@@ -85,8 +85,8 @@ export default function NewTripPage() {
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Nova Viagem</h1>
-        <p className="mt-2 text-slate-600">
+        <h1 className="text-3xl font-bold text-foreground">Nova Viagem</h1>
+        <p className="mt-2 text-muted-foreground">
           Preencha os detalhes da sua próxima aventura
         </p>
       </div>
@@ -214,7 +214,7 @@ export default function NewTripPage() {
             </div>
 
             {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}

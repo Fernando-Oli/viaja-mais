@@ -101,8 +101,8 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-viaja-navy">Lugares da Viagem</h1>
-        <p className="mt-2 text-gray-600">Busque e salve lugares para visitar</p>
+        <h1 className="text-3xl font-bold text-foreground">Lugares da Viagem</h1>
+        <p className="mt-2 text-muted-foreground">Busque e salve lugares para visitar</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -129,14 +129,14 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
           </Card>
 
           {selectedPlace && (
-            <Card className="border-viaja-orange/30">
+            <Card className="border-primary/30">
               <CardHeader>
                 <CardTitle>Lugar Selecionado</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-viaja-navy">{selectedPlace.name}</h3>
-                  <p className="mt-1 text-sm text-gray-600">{selectedPlace.address}</p>
+                  <h3 className="font-semibold text-foreground">{selectedPlace.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{selectedPlace.address}</p>
                   {selectedPlace.rating && (
                     <div className="mt-2 flex items-center gap-1 text-sm text-amber-600">
                       <Star className="h-4 w-4 fill-current" />
@@ -160,7 +160,7 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
                   <Button
                     onClick={handleSavePlace}
                     disabled={isLoading}
-                    className="bg-viaja-orange hover:bg-viaja-orange/90"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     {isLoading ? (
                       <>
@@ -188,12 +188,12 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
           </CardHeader>
           <CardContent>
             {carregando ? (
-              <div className="flex items-center justify-center py-12 text-gray-600">
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Carregando lugares...
               </div>
             ) : erroAoCarregar ? (
-              <p role="alert" className="py-12 text-center text-sm text-red-600">
+              <p role="alert" className="py-12 text-center text-sm text-destructive">
                 {erroAoCarregar}
               </p>
             ) : (
