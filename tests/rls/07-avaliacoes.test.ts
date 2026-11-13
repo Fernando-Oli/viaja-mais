@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { entrarPorConvite } from "./convite"
+import { USUARIOS } from "../fixtures/usuarios"
 
 /**
  * Avaliações de lugares (`place_reviews`).
@@ -20,8 +21,8 @@ import { entrarPorConvite } from "./convite"
 const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
+const ANA = USUARIOS.ana
+const BRUNO = USUARIOS.bruno
 
 /** Violação de policy ou de grant: o PostgREST devolve 42501 para os dois. */
 const VIOLA_RLS_OU_GRANT = "42501"

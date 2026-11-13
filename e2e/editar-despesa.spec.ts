@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF06.1 adicionar despesa · @RF06.2 editar despesa · @RF06.3 excluir despesa
@@ -8,7 +9,7 @@ import { test, expect } from "@playwright/test"
 test("membro cria, edita e exclui despesa a partir da aba da viagem", async ({ page }) => {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.a@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 

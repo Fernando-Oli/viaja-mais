@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient, type User } from "@supabase/supabase
 import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
+import { SENHA_TESTE } from "../fixtures/usuarios"
 
 /**
  * Bucket de avatares e o trigger de `profiles.avatar_url` (migration social_avatares).
@@ -79,7 +80,7 @@ function nomeNaPasta(pasta: string, prefixo = "0b") {
 
 async function logar(email: string) {
   const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: "viajamais123" })
+  const { data, error } = await cliente.auth.signInWithPassword({ email, password: SENHA_TESTE })
   if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
   return { cliente, usuario: data.user as User }
 }

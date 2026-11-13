@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { USUARIOS } from "../fixtures/usuarios"
 
 /**
  * O histórico de pesquisa da Rede social (S05-M-pesquisa): a tabela
@@ -35,9 +36,9 @@ const CHAVE = variavelObrigatoria("ANON_KEY")
 // desfeita no fim: o banco sai como entrou.
 const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
-const CARLA = { email: "teste.c@viajamais.local", senha: "viajamais123" }
+const ANA = USUARIOS.ana
+const BRUNO = USUARIOS.bruno
+const CARLA = USUARIOS.carla
 
 const VIOLA_RLS_OU_GRANT = "42501"
 const VIOLA_UNICIDADE = "23505"

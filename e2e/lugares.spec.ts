@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF08.4 marcar visitado · @RF08.6 excluir lugar
@@ -8,7 +9,7 @@ import { test, expect } from "@playwright/test"
 test("membro marca lugar como visitado, o estado persiste, e exclui o lugar", async ({ page }) => {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.a@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 

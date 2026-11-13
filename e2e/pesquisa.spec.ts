@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF09.12 o histórico de pesquisa da aba Rede social (S05-M-pesquisa): com o
@@ -12,7 +13,7 @@ import { test, expect, type Locator, type Page } from "@playwright/test"
 async function entrarComoDavi(page: Page) {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.d@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 }

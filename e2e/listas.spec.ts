@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page, type Route } from "@playwright/test"
 import { Client } from "pg"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
+import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
 
 /**
  * @RF09.6 @RF09.9 as listas de seguidores e de seguindo no perfil, e remover
@@ -15,7 +16,6 @@ import { exigirLocal } from "../tests/rls/guarda-ambiente"
  */
 
 const ANA = "teste.a@viajamais.local"
-const SENHA = "viajamais123"
 const CARLA = "teste.c@viajamais.local"
 const DAVI = "teste.d@viajamais.local"
 

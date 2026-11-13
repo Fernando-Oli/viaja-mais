@@ -2,6 +2,8 @@ import { expect, type Browser, type Page, type APIRequestContext } from "@playwr
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../../tests/rls/guarda-ambiente"
 import { zerarLimites } from "./limite"
+import { SENHA_TESTE as SENHA } from "../../tests/fixtures/usuarios"
+export { SENHA }
 
 /**
  * Preparo e leitura de tela compartilhados pelos E2E do fluxo financeiro.
@@ -14,7 +16,6 @@ import { zerarLimites } from "./limite"
  * uma cadeia de dívidas precisa de três pessoas.
  */
 
-export const SENHA = "viajamais123"
 export const ANA = "teste.a@viajamais.local"
 export const BRUNO = "teste.b@viajamais.local"
 

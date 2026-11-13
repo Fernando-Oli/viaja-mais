@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { aprovarSolicitacao, contarSolicitacoes, listarSolicitacoes, recusarSolicitacao } from "@/lib/social/solicitacoes"
+import { USUARIOS } from "../fixtures/usuarios"
 
 /**
  * As solicitações para seguir (S05-M-solicitacoes): a Zona 1 da central de
@@ -30,9 +31,9 @@ import { aprovarSolicitacao, contarSolicitacoes, listarSolicitacoes, recusarSoli
 const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
-const CARLA = { email: "teste.c@viajamais.local", senha: "viajamais123" }
+const ANA = USUARIOS.ana
+const BRUNO = USUARIOS.bruno
+const CARLA = USUARIOS.carla
 
 const VIOLA_RLS_OU_GRANT = "42501"
 

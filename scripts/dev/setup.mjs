@@ -110,9 +110,9 @@ AI_PROVIDER=fake
 
 # Usuários criados por supabase/seed.sql
 E2E_USER_A_EMAIL=teste.a@viajamais.local
-E2E_USER_A_PASSWORD=viajamais123
+E2E_USER_A_PASSWORD=Viaja+mais123
 E2E_USER_B_EMAIL=teste.b@viajamais.local
-E2E_USER_B_PASSWORD=viajamais123
+E2E_USER_B_PASSWORD=Viaja+mais123
 `,
   )
   ok(".env.local escrito com as credenciais locais.")
@@ -151,7 +151,7 @@ Pronto.
   Studio                 http://localhost:54323
   E-mails de teste       http://localhost:54324   (Inbucket: confirmação, reset de senha)
 
-  Login de teste: teste.a@viajamais.local / viajamais123
+  Login de teste: teste.a@viajamais.local / Viaja+mais123
 
   npm run db:reset       recria o banco do zero (migrations + seed)
   npm run db:stop        derruba o stack

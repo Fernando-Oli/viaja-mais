@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /**
  * @RF02.8 @RF09.1 @RF09.2 @RF09.5 o perfil de outra pessoa, aberto pela busca, e
@@ -13,7 +14,7 @@ import { test, expect, type Locator, type Page } from "@playwright/test"
 async function entrarComoDavi(page: Page) {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.d@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 }

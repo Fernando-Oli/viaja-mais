@@ -45,6 +45,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }))
 
 import { POST } from "@/app/api/auth/change-password/route"
+import { SENHA_TESTE } from "../fixtures/usuarios"
 
 function pedido(campos: Record<string, string>) {
   const formulario = new FormData()
@@ -52,7 +53,7 @@ function pedido(campos: Record<string, string>) {
   return POST(new Request("http://localhost/api/auth/change-password", { method: "POST", body: formulario }))
 }
 
-const VALIDO = { current_password: "viajamais123", new_password: "nova-senha-1", confirm_password: "nova-senha-1" }
+const VALIDO = { current_password: SENHA_TESTE, new_password: "Nova-senha-1", confirm_password: "Nova-senha-1" }
 
 beforeEach(() => {
   h.usuario = { id: "u1", email: "teste.a@viajamais.local" }
@@ -69,8 +70,8 @@ describe("POST /api/auth/change-password", () => {
     const resposta = await pedido(VALIDO)
 
     expect(resposta.status).toBe(200)
-    expect(h.conferencias).toEqual([{ email: "teste.a@viajamais.local", password: "viajamais123" }])
-    expect(h.trocas).toEqual([{ password: "nova-senha-1" }])
+    expect(h.conferencias).toEqual([{ email: "teste.a@viajamais.local", password: SENHA_TESTE }])
+    expect(h.trocas).toEqual([{ password: "Nova-senha-1" }])
     expect(limite.exigir).toHaveBeenCalledWith(expect.anything(), LIMITES.trocarSenha)
   })
 
@@ -92,7 +93,7 @@ describe("POST /api/auth/change-password", () => {
     expect(h.conferencias).toEqual([])
   })
 
-  it.each([["curta1"], ["semnumero"], ["12345678"]])("400: senha nova fraca (%s) não chega ao Auth (F4)", async (fraca) => {
+  it.each([["Curta1!"], ["semmaiuscula1!"], ["SemSimbolo123"]])("400: senha nova fraca (%s) não chega ao Auth (F4)", async (fraca) => {
     const resposta = await pedido({ ...VALIDO, new_password: fraca, confirm_password: fraca })
 
     expect(resposta.status).toBe(400)

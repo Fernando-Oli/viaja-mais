@@ -28,7 +28,7 @@ import { chromium } from "@playwright/test"
 
 const URL_BASE = (process.env.MEDIR_URL ?? "http://localhost:3000").replace(/\/$/, "")
 const EMAIL = process.env.MEDIR_EMAIL ?? "teste.a@viajamais.local"
-const SENHA = process.env.MEDIR_SENHA ?? "viajamais123"
+const SENHA = process.env.MEDIR_SENHA ?? "Viaja+mais123"
 const AMBIENTE = process.env.MEDIR_AMBIENTE ?? "local"
 const N = Number(process.env.MEDIR_N ?? 30)
 

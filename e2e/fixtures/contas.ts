@@ -1,4 +1,6 @@
 import { test as base, expect, type Browser, type Page } from "@playwright/test"
+import { SENHA_TESTE as SENHA } from "../../tests/fixtures/usuarios"
+export { SENHA }
 
 /**
  * Fixtures dos E2E com mais de uma pessoa. Cada pessoa tem o próprio contexto
@@ -10,7 +12,6 @@ import { test as base, expect, type Browser, type Page } from "@playwright/test"
  * por execução: a suíte roda de novo sem `db:reset` e não colide.
  */
 
-export const SENHA = "viajamais123"
 
 export const DONA = { email: "teste.a@viajamais.local", nome: "Ana Teste" } as const
 

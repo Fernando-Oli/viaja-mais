@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest"
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { entrarPorConvite } from "./convite"
+import { SENHA_TESTE, USUARIOS } from "../fixtures/usuarios"
 
 /**
  * As três explorações que a S03-M reproduziu na plataforma, bloqueadas pela
@@ -16,8 +17,8 @@ import { entrarPorConvite } from "./convite"
 const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 
-const ANA = { email: "teste.a@viajamais.local", senha: "viajamais123" }
-const BRUNO = { email: "teste.b@viajamais.local", senha: "viajamais123" }
+const ANA = USUARIOS.ana
+const BRUNO = USUARIOS.bruno
 
 function cliente() {
   return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
@@ -165,7 +166,7 @@ describe("cadastro com nome longo", () => {
 
     const { data, error } = await novo.auth.signUp({
       email,
-      password: "viajamais123",
+      password: SENHA_TESTE,
       options: { data: { full_name: nome } },
     })
     expect(error, "o cadastro falhou por causa do nome").toBeNull()

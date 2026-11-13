@@ -30,6 +30,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: h.push }) }))
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }))
 
 import SignUpPage from "@/app/auth/sign-up/page"
+import { SENHA_TESTE } from "../fixtures/usuarios"
 
 /** Preenche o formulário e envia. */
 async function cadastrar() {
@@ -41,7 +42,7 @@ async function cadastrar() {
 
   await usuario.type(campos[0], "Fulano de Tal")
   await usuario.type(campos[1], "novo@viajamais.local")
-  for (const campo of senhas) await usuario.type(campo as HTMLElement, "viajamais123")
+  for (const campo of senhas) await usuario.type(campo as HTMLElement, SENHA_TESTE)
 
   await usuario.click(screen.getByRole("button", { name: /criar conta/i }))
 }

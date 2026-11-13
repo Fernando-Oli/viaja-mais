@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { createClient } from "@supabase/supabase-js"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { SENHA_TESTE } from "../fixtures/usuarios"
 
 /**
  * Política de senha aplicada pelo próprio Auth (S10-F, achado F4), e não só pela
@@ -23,17 +24,18 @@ const email = (caso: string) => `senha-${caso}-${Date.now()}@viajamais.local`
 
 describe("cadastro direto pelo Auth", () => {
   it.each([
-    ["curta", "abc1234"],
-    ["sem-numero", "semnumeros"],
-    ["sem-letra", "1234567890"],
+    ["curta", "Ab1!xyz"],
+    ["sem-maiuscula", "abcdef1!"],
+    ["sem-simbolo", "Abcdefg1"],
+    ["antiga-do-seed", "viajamais123"],
   ])("senha %s é recusada como fraca", async (caso, senha) => {
     const { data, error } = await cliente().auth.signUp({ email: email(caso), password: senha })
     expect(error?.code).toBe("weak_password")
     expect(data.user).toBeNull()
   })
 
-  it("senha com 8+ caracteres, letra e número é aceita", async () => {
-    const { error } = await cliente().auth.signUp({ email: email("ok"), password: "viajamais123" })
+  it("senha com 8+ caracteres, minúscula, maiúscula, número e símbolo é aceita", async () => {
+    const { error } = await cliente().auth.signUp({ email: email("ok"), password: SENHA_TESTE })
     expect(error).toBeNull()
   })
 })

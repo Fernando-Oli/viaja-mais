@@ -1,11 +1,12 @@
 import { test, expect } from "@playwright/test"
+import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 /** @RF05.1 adicionar atividade ao itinerário — fluxo pela UI, com o usuário A do seed. */
 
 test("membro adiciona atividade ao itinerário da viagem", async ({ page }) => {
   await page.goto("/auth/login")
   await page.fill("#email", "teste.a@viajamais.local")
-  await page.fill("#password", "viajamais123")
+  await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
 

@@ -74,7 +74,7 @@ Studio em http://localhost:54323 · e-mails de teste em http://localhost:54324
 (confirmação, reset de senha e convite caem ali, sem sair da máquina).
 
 Usuários do seed: `teste.a@viajamais.local` e `teste.b@viajamais.local`,
-senha `viajamais123`. São dois porque metade do valor da suíte está em provar que
+senha `Viaja+mais123`. São dois porque metade do valor da suíte está em provar que
 B **não** vê o que é de A.
 
 ## Skills obrigatórias

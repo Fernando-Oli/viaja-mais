@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
 import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { entrarPorConvite } from "./convite"
+import { SENHA_TESTE as SENHA } from "../fixtures/usuarios"
 
 /**
  * O que um **participante** consegue fazer além do devido (issue #37).
@@ -36,7 +37,6 @@ const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
 const CHAVE = variavelObrigatoria("ANON_KEY")
 const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
-const SENHA = "viajamais123"
 const EMAIL = {
   ana: "teste.a@viajamais.local",
   bruno: "teste.b@viajamais.local",

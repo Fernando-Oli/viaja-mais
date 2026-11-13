@@ -21,14 +21,14 @@
 -- ---------------------------------------------------------------------------
 
 -- Ana Teste — usuária A
--- id: 11111111-1111-4111-8111-111111111111 / senha: viajamais123
+-- id: 11111111-1111-4111-8111-111111111111 / senha: Viaja+mais123
 -- Bruno Teste — usuário B
--- id: 22222222-2222-4222-8222-222222222222 / senha: viajamais123
+-- id: 22222222-2222-4222-8222-222222222222 / senha: Viaja+mais123
 -- Carla Teste — usuária C (terceiro, para provar que quem não é parte de uma
 -- solicitação pendente não a enxerga — RF09.3)
--- id: 33333333-3333-4333-8333-333333333333 / senha: viajamais123
+-- id: 33333333-3333-4333-8333-333333333333 / senha: Viaja+mais123
 -- Davi Teste — usuário D (reservado aos E2E de perfil)
--- id: 44444444-4444-4444-8444-444444444444 / senha: viajamais123
+-- id: 44444444-4444-4444-8444-444444444444 / senha: Viaja+mais123
 
 do $$
 declare
@@ -69,7 +69,7 @@ begin
       '00000000-0000-0000-0000-000000000000',
       uid, 'authenticated', 'authenticated',
       u->>'email',
-      extensions.crypt('viajamais123', extensions.gen_salt('bf')),
+      extensions.crypt('Viaja+mais123', extensions.gen_salt('bf')),
       now(), now(), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
       jsonb_build_object('full_name', u->>'nome'),

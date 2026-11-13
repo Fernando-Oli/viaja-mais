@@ -25,7 +25,7 @@ Além das rotas: escrita no banco a partir do navegador, `dangerouslySetInnerHTM
 | `dangerouslySetInnerHTML` | Nenhum uso fora do componente de gráfico do shadcn. |
 | Redirect aberto | Nenhum redirect montado a partir de parâmetro da URL. |
 | Chave de serviço | Só em route handlers e em `lib/` de servidor (`lib/supabase/admin.ts`, `lib/social/avatar.ts`). |
-| Auth | Cadastro sem confirmação de e-mail (**F3**); senha mínima de 6 caracteres, sem requisito (**F4**). |
+| Auth | Cadastro sem confirmação de e-mail no ambiente local (**F3**); senha mínima de 6 caracteres, sem requisito (**F4**). |
 
 ## Achados
 
@@ -33,19 +33,17 @@ Além das rotas: escrita no banco a partir do navegador, `dangerouslySetInnerHTM
 |---|---|---|---|---|
 | F1 · média | `POST /api/trips` gravava os campos do corpo sem validar. O `criarViagemSchema` existia e não era usado: status fora da lista, orçamento negativo e data fora do formato chegavam ao banco | `app/api/trips/route.ts` | Valida com `criarViagemSchema`; campos extraídos do resultado do zod; `user_id` da sessão | `tests/api/trips-post.test.ts` (6 payloads inválidos sem insert; campo extra não chega ao banco) |
 | F2 · baixa | Mensagem interna do Postgres ou do GoTrue devolvida ao cliente, com nome de constraint e coluna, embora o RNF02.11 estivesse marcado como Atendido | `trips/route.ts` (GET e POST), `trips/[tripId]/route.ts` (PATCH e DELETE, o arquivo-molde das rotas), `invitations/[id]/decline`, `auth/change-password` | Mensagem genérica em português; detalhe só no log do servidor | `tests/api/trips-post.test.ts` (constraint não aparece na resposta), `tests/api/change-password-route.test.ts` |
-| F3 · alta | **Cadastro sem confirmação de e-mail.** Quem se cadastra primeiro com o e-mail de outra pessoa passa a receber os convites que eram para ela, e entra na viagem | Auth (`enable_confirmations = false`) | **Risco aceito**, ver abaixo | — |
-| F4 · baixa | Senha mínima de 6 caracteres, sem requisito nenhum | Auth + três telas + rota de troca | 8 caracteres, com letra e número, no Auth e na tela (`lib/seguranca/senha.ts`) | `tests/rls/14-politica-senha.test.ts` (o Auth recusa direto pela API), `tests/lib/senha.test.ts`, `tests/api/change-password-route.test.ts` |
+| F3 · baixa | **Cadastro sem confirmação de e-mail no ambiente local.** Lá, quem se cadastra primeiro com o e-mail de outra pessoa passaria a receber os convites dela. **Em produção a confirmação está ligada** (verificado no painel em 13/11/2026), e o cenário não se aplica | `supabase/config.toml` (`enable_confirmations = false`, de propósito, para desenvolver sem e-mail) | Nenhuma em produção; ver abaixo | — |
+| F4 · baixa | Senha mínima de 6 caracteres, sem requisito nenhum | Auth + três telas + rota de troca | 8 caracteres, com minúscula, maiúscula, número e símbolo — a regra de produção — no Auth local e na tela (`lib/seguranca/senha.ts`) | `tests/rls/14-politica-senha.test.ts` (o Auth recusa direto pela API), `tests/lib/senha.test.ts`, `tests/api/change-password-route.test.ts` |
 
-## Risco aceito: F3, cadastro sem confirmação de e-mail
+## F3: por que não é risco em produção
 
-**O cenário.** A dona convida `fulano@exemplo.com`. Se outra pessoa já tiver criado uma conta com esse endereço, sem ter acesso à caixa de entrada dele, essa conta vê o convite, aceita e passa a ver o itinerário, as despesas e os membros da viagem.
+**O cenário.** A dona convida `fulano@exemplo.com`. Se outra pessoa já tivesse criado uma conta com esse endereço, sem acesso à caixa de entrada dele, essa conta veria o convite e entraria na viagem.
 
-**Por que ficou aberto.** A correção é ligar a confirmação de e-mail, e isso exige um SMTP próprio: o SMTP padrão do Supabase só entrega para os membros da organização. A confirmação foi desligada na S05-F justamente porque nenhum e-mail de cadastro chegava. A 8 dias do congelamento, trocar o fluxo de cadastro arrisca deixar todo mundo sem acesso.
+**Em produção ele não acontece.** A confirmação de e-mail está ligada no projeto hospedado (Authentication → Sign In / Providers → Email → *Confirm email*). Ninguém usa uma conta antes de confirmar o endereço. O desligamento existe só no `supabase/config.toml`, para desenvolver sem depender de e-mail; a tela de cadastro trata os dois modos (`app/auth/sign-up/page.tsx`, S05-F).
 
-**O que limita o estrago.** O atacante precisa saber, antes da vítima, o e-mail exato que vai ser convidado, e se cadastrar com ele antes de a vítima criar a própria conta. Quem já tem conta não é afetado: o e-mail é único no Auth.
+**O que fica de risco.** O envio usa o SMTP padrão do Supabase, que tem cota baixa de mensagens por hora. Um pico de cadastros esbarra nela (aconteceu num teste em 13/11, com "email rate limit exceeded"). A saída é um SMTP próprio, por exemplo com o domínio `viaja-mais.online`.
 
-**Como fechar.** SMTP próprio (por exemplo, Resend com o domínio `viaja-mais.online`), depois ligar *Confirm email* no painel (Authentication → Providers → Email) e `enable_confirmations = true` no `config.toml`.
+## Configuração do Auth em produção (13/11/2026)
 
-## Ação manual em produção
-
-A política de senha do F4 também precisa ser aplicada no painel do projeto hospedado: **Authentication → Policies → Minimum password length = 8** e **Password requirements = Letters and digits**. O `config.toml` só vale para o ambiente local.
+Conferida no painel: *Confirm email* ligado; *Minimum password length* = 8; *Password requirements* = minúscula, maiúscula, número e símbolo. A aplicação e o ambiente local foram alinhados à mesma regra de senha; a senha dos usuários do seed passou a ser `Viaja+mais123` (`tests/fixtures/usuarios.ts`).
