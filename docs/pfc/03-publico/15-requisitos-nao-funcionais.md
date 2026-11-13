@@ -38,20 +38,29 @@ pertencem a outros domínios.
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
-| RNF01.1 | O carregamento inicial do painel deve completar em menos de 3 segundos no percentil 95 | Planejado | Alta |
-| RNF01.2 | Toda operação de escrita via rota de API deve responder em menos de 1 segundo no percentil 95 | Planejado | Alta |
+| RNF01.1 | O carregamento inicial do painel deve completar em menos de 3 segundos no percentil 95 | Parcial | Alta |
+| RNF01.2 | Toda operação de escrita via rota de API deve responder em menos de 1 segundo no percentil 95 | Parcial | Alta |
 | RNF01.3 | O sistema deve sustentar 1.000 usuários simultâneos sem degradação superior a 20% no tempo de resposta | Planejado | Média |
-| RNF01.4 | Toda listagem que possa crescer sem limite deve paginar, no máximo 20 registros por página | Planejado | Alta |
-| RNF01.5 | Toda coluna usada em filtro de consulta frequente deve ter índice, verificável no plano de execução | Planejado | Média |
+| RNF01.4 | Toda listagem que possa crescer sem limite deve paginar, no máximo 20 registros por página | Parcial | Alta |
+| RNF01.5 | Toda coluna usada em filtro de consulta frequente deve ter índice, verificável no plano de execução | Atendido | Média |
 
 **Detalhamento:** os três primeiros itens reproduzem as metas herdadas de
 `docs/ARCHITECTURE.md` §7, agora com percentil declarado — sem ele a medição não
-é reprodutível e o requisito não é verificável. Nenhum deles foi medido até o
-momento, razão pela qual constam como Planejado e não como Atendido; a medição é
-objeto da atividade `S09-F-performance`. O RNF01.4 e o RNF01.5 foram acrescentados
-por decorrerem diretamente do modelo de dados: a ausência de paginação e de
-índice é a causa mais provável de o RNF01.2 deixar de ser cumprido à medida que
-as viagens acumulam itens.
+é reprodutível e o requisito não é verificável. A medição, feita pelo script
+`scripts/pfc/medir-desempenho.mjs` sobre o build de produção em ambiente local,
+registrou percentil 95 de 249 ms no carregamento do painel e de 220 ms nas
+escritas pela API, bem abaixo das metas; ambos permanecem Parciais até a mesma
+medição ser repetida no ambiente publicado, onde a latência de rede até o banco
+é maior. O RNF01.3 não foi verificado: mil usuários simultâneos exigem teste de
+carga distribuído, acima dos limites das camadas gratuitas de hospedagem e de
+banco adotadas. O RNF01.4 e o RNF01.5 foram acrescentados por decorrerem
+diretamente do modelo de dados. O RNF01.5 é atendido: toda chave estrangeira
+tem índice, e o plano de execução das consultas da tela de viagem usa o índice
+(`tests/rls/15-indices.test.ts`); com cem mil despesas no banco, a consulta da
+aba de despesas caiu de 12,2 ms para 0,49 ms. O RNF01.4 é Parcial: a rede
+social pagina de 20 em 20, enquanto as listas de uma viagem são lidas inteiras
+por decisão de produto — a pessoa quer ver a viagem toda, e uma viagem tem
+tamanho natural limitado —, sob o teto do RNF06.4.
 
 ## RNF02 — Segurança
 
@@ -205,13 +214,14 @@ implementação: os erros são hoje registrados com `console.error`, sem estrutu
 | RNF06.1 | A aplicação deve executar sem estado no servidor, permitindo múltiplas instâncias simultâneas | Atendido | Alta |
 | RNF06.2 | Os arquivos estáticos devem ser servidos por rede de distribuição de conteúdo | Atendido | Média |
 | RNF06.3 | O acesso ao banco deve usar pool de conexões, sem abrir conexão por requisição | Atendido | Alta |
-| RNF06.4 | Toda consulta de listagem deve ter limite explícito de registros, sem depender do volume atual de dados | Planejado | Alta |
+| RNF06.4 | Toda consulta de listagem deve ter limite explícito de registros, sem depender do volume atual de dados | Atendido | Alta |
 
 **Detalhamento:** os três primeiros requisitos são atendidos por consequência das
 escolhas tecnológicas descritas na seção 19: a aplicação executa em funções sem
 estado, com distribuição de conteúdo estático pela própria hospedagem, e o acesso
 ao banco ocorre pelo pool gerenciado do Supabase. Registramo-los ainda assim
 porque a seção 21 exige justificar as escolhas, e é este grupo que explica por
-que elas foram feitas. O RNF06.4 é o único item deste grupo que depende de
-trabalho nosso, e é o mesmo risco enunciado no RNF01.4, observado aqui sob a
-perspectiva do crescimento dos dados.
+que elas foram feitas. O RNF06.4 é atendido: toda consulta de listagem leva
+limite explícito de 500 registros (`lib/listagem.ts`), com uma exceção
+deliberada — o acerto de contas e os totais de finanças somam despesas, e
+cortar a lista em silêncio produziria saldo errado.

@@ -26,6 +26,31 @@ describe("respostaDeErro", () => {
     respostaDeErro(new Error("falha qualquer"))
     expect(espiao).toHaveBeenCalled()
   })
+
+  it("o código do erro sai no cabeçalho e na linha de log — o mesmo nos dois (S09-F)", async () => {
+    const espiao = vi.spyOn(console, "error").mockImplementation(() => {})
+    const erro = new Error("falha qualquer")
+
+    const resposta = respostaDeErro(erro)
+
+    const codigo = resposta.headers.get("X-Codigo-Erro")
+    expect(codigo).toMatch(/^[0-9a-f]{8}$/)
+    expect(espiao).toHaveBeenCalledWith(`[erro não tratado] codigo=${codigo}`, erro)
+    // O corpo continua genérico: o código não substitui a mensagem.
+    expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
+    espiao.mockRestore()
+  })
+
+  it("cada erro ganha um código diferente", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const a = respostaDeErro(new Error("a")).headers.get("X-Codigo-Erro")
+    const b = respostaDeErro(new Error("b")).headers.get("X-Codigo-Erro")
+    expect(a).not.toBe(b)
+  })
+
+  it("erro conhecido (ErroHttp) não ganha código: não é falha do servidor", () => {
+    expect(respostaDeErro(semPermissao("esta viagem")).headers.get("X-Codigo-Erro")).toBeNull()
+  })
 })
 
 describe("respostaInvalida", () => {

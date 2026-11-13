@@ -5,6 +5,7 @@ import { exigirDono } from "@/lib/authz/trip"
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
 import { criarConviteSchema } from "@/lib/schemas/convite"
 import { env } from "@/lib/env"
+import type { Database } from "@/types/database"
 import { exigirLimite, LIMITES } from "@/lib/seguranca/limite"
 
 /**
@@ -27,6 +28,8 @@ import { exigirLimite, LIMITES } from "@/lib/seguranca/limite"
  * @RNF02.8 cada convite dispara um e-mail real: 10 por 10 minutos, por usuário
  */
 
+type ConvitePendente = Database["public"]["Functions"]["meus_convites_pendentes"]["Returns"][number]
+
 async function usuarioAtual(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
     data: { user },
@@ -38,30 +41,26 @@ async function usuarioAtual(supabase: Awaited<ReturnType<typeof createClient>>) 
 export async function GET() {
   try {
     const supabase = await createClient()
-    const user = await usuarioAtual(supabase)
+    await usuarioAtual(supabase)
 
-    const { data: invitations, error } = await supabase
-      .from("trip_invitations")
-      .select("*")
-      .eq("invitee_email", user.email)
-      .eq("status", "pending")
+    // Uma consulta, com a viagem junto (S09-F). Antes eram 1 + N, e as N
+    // voltavam vazias: quem foi convidado ainda não enxerga a viagem pela RLS.
+    // A função filtra pelo e-mail da sessão e devolve só título, destino e datas.
+    const { data, error } = await supabase.rpc("meus_convites_pendentes")
 
     // Mensagem genérica: a do Postgres pode revelar coluna e constraint.
     if (error) throw new ErroHttp(400, "Não foi possível carregar os convites")
 
-    const comViagem = await Promise.all(
-      (invitations || []).map(async (invitation) => {
-        const { data: trip } = await supabase
-          .from("trips")
-          .select("id, title, destination, start_date, end_date")
-          .eq("id", invitation.trip_id)
-          .single()
+    const convites = (data ?? []) as ConvitePendente[]
+    const invitations = convites.map((c) => ({
+      id: c.id,
+      trip_id: c.trip_id,
+      status: "pending" as const,
+      created_at: c.created_at,
+      trip: { id: c.trip_id, title: c.title, destination: c.destination, start_date: c.start_date, end_date: c.end_date },
+    }))
 
-        return { ...invitation, trip }
-      }),
-    )
-
-    return NextResponse.json({ invitations: comViagem })
+    return NextResponse.json({ invitations })
   } catch (erro) {
     return respostaDeErro(erro)
   }

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plane, Hotel, Car, Calendar, MapPin } from "lucide-react"
+import { LIMITE_LISTAGEM } from "@/lib/listagem"
 
 export default async function BookingsPage() {
   const supabase = await createClient()
@@ -24,6 +25,7 @@ export default async function BookingsPage() {
     .select(selecaoPorViagem("title, destination"))
     .eq(FILTRO_POR_VIAGEM, user.id)
     .order("start_date", { ascending: true })
+    .limit(LIMITE_LISTAGEM)
 
   const upcomingBookings = bookings?.filter((b) => new Date(b.start_date) >= new Date()) || []
   const pastBookings = bookings?.filter((b) => new Date(b.start_date) < new Date()) || []

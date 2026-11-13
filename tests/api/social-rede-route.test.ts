@@ -313,7 +313,7 @@ describe("GET /api/social/perfis/[username]/seguidores e /seguindo", () => {
 
     expect(resposta.status).toBe(500)
     expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
-    expect(log).toHaveBeenCalledWith("[erro não tratado]", esperado)
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[erro não tratado\] codigo=[0-9a-f]{8}$/), esperado)
     log.mockRestore()
   })
 })
@@ -396,7 +396,7 @@ describe("DELETE /api/social/seguidores/[username]", () => {
 
     expect(resposta.status).toBe(500)
     expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
-    expect(log).toHaveBeenCalledWith("[erro não tratado]", esperado)
+    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[erro não tratado\] codigo=[0-9a-f]{8}$/), esperado)
     log.mockRestore()
   })
 })

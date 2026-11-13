@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { exigirMembro } from "@/lib/authz/trip"
 import { naoAutenticado, respostaDeErro, respostaInvalida, ErroHttp } from "@/lib/http"
 import { criarLugarSchema } from "@/lib/schemas/lugar"
+import { LIMITE_LISTAGEM } from "@/lib/listagem"
 
 /**
  * Lugares de uma viagem. Segue o molde de `app/api/trips/[tripId]/route.ts`.
@@ -33,6 +34,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tri
       .select("*")
       .eq("trip_id", tripId)
       .order("created_at", { ascending: false })
+      .limit(LIMITE_LISTAGEM)
 
     if (error) throw new ErroHttp(400, "Não foi possível carregar os lugares")
     return NextResponse.json({ places })

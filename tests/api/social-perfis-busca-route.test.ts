@@ -315,7 +315,7 @@ describe("GET /api/social/perfis?busca=", () => {
       expect(resposta.status).toBe(500)
       expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
       // O 500 vem do erro do banco, e não de um TypeError ao percorrer `data: null`.
-      expect(silenciar).toHaveBeenCalledWith("[erro não tratado]", erroDoBanco)
+      expect(silenciar).toHaveBeenCalledWith(expect.stringMatching(/^\[erro não tratado\] codigo=[0-9a-f]{8}$/), erroDoBanco)
       silenciar.mockRestore()
     },
   )

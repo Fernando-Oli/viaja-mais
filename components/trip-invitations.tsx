@@ -19,9 +19,10 @@ interface Invitation {
   trip_id: string;
   status: string;
   created_at: string;
-  // `null` enquanto a pessoa não aceita: `GET /api/invitations` lê a viagem
-  // sob a RLS de `trips`, que só libera dono e membro. O cartão precisa
-  // continuar de pé — é por ele que se entra na viagem.
+  // Desde a S09-F a rota devolve título, destino e datas pela função
+  // `meus_convites_pendentes` — antes vinha sempre `null`, porque a RLS de
+  // `trips` não libera quem ainda não é membro. O `null` continua tratado: o
+  // cartão é por onde se entra na viagem e não pode cair.
   trip: {
     id: string;
     title: string;

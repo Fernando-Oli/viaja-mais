@@ -670,6 +670,18 @@ export type Database = {
         Args: { trip_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      meus_convites_pendentes: {
+        Args: never
+        Returns: {
+          created_at: string
+          destination: string
+          end_date: string
+          id: string
+          start_date: string
+          title: string
+          trip_id: string
+        }[]
+      }
       parte_de_membro: {
         Args: { expense_uuid: string; user_uuid: string }
         Returns: boolean

@@ -32,7 +32,7 @@ vi.mock("@/lib/supabase/server", () => ({
           return { select: () => ({ single: async () => ({ data: { id: "place-1" }, error: null }) }) }
         },
         select: () => ({
-          eq: () => ({ order: async () => ({ data: [{ id: "place-1" }], error: null }) }),
+          eq: () => ({ order: () => ({ limit: async (n: number) => ((globalThis as { __limite?: number }).__limite = n, { data: [{ id: "place-1" }], error: null }) }) }),
         }),
       }
     },
@@ -147,6 +147,7 @@ describe("GET /api/trips/[tripId]/places", () => {
 
     const resposta = await GET(new Request("http://localhost"), contexto())
 
+    expect((globalThis as { __limite?: number }).__limite).toBe(500) // RNF06.4
     expect(resposta.status).toBe(200)
     expect(await resposta.json()).toEqual({ places: [{ id: "place-1" }] })
   })

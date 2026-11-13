@@ -34,7 +34,7 @@ vi.mock("@/lib/supabase/server", () => ({
         },
         select: () => ({
           eq: () => ({
-            order: () => ({ order: async () => ({ data: [{ id: "item-1" }], error: null }) }),
+            order: () => ({ order: () => ({ limit: async (n: number) => ((globalThis as { __limite?: number }).__limite = n, { data: [{ id: "item-1" }], error: null }) }) }),
           }),
         }),
       }
@@ -135,6 +135,7 @@ describe("GET /api/trips/[tripId]/itinerary", () => {
 
     const resposta = await GET(new Request("http://localhost"), contexto())
 
+    expect((globalThis as { __limite?: number }).__limite).toBe(500) // RNF06.4
     expect(resposta.status).toBe(200)
     expect(await resposta.json()).toEqual({ itinerary: [{ id: "item-1" }] })
   })

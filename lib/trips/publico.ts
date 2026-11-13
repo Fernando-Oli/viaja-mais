@@ -38,6 +38,8 @@ export type ViagemPublica = {
 }
 
 const COLUNAS_VIAGEM = "title, destination, start_date, end_date"
+/** O mesmo limite da checagem de `trip_posts.items` no banco. */
+export const MAXIMO_ITENS_NO_POST = 200
 const COLUNAS_ITEM = "id, title, date, start_time, end_time, category, location, description"
 
 type LinhaViagem = Omit<ViagemPublica, "itens">
@@ -67,6 +69,9 @@ export async function projecaoPublicaDaViagem(
     .or("status.is.null,status.neq.cancelled")
     .order("date", { ascending: true })
     .order("start_time", { ascending: true, nullsFirst: false })
+    // O post aceita no máximo 200 itens (`social_itens_do_post_validos`, no
+    // banco). Sem o teto, uma viagem maior fazia o insert do post falhar.
+    .limit(MAXIMO_ITENS_NO_POST)
     .returns<ItemPublico[]>()
 
   if (erroItens) {
