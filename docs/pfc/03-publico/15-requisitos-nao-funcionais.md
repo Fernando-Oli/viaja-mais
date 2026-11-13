@@ -149,7 +149,7 @@ são verificáveis pela ferramenta e constam do roteiro manual da atividade
 | RNF04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | Média |
 | RNF04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Planejado | Alta |
 | RNF04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | Alta |
-| RNF04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Parcial | Alta |
+| RNF04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Atendido | Alta |
 | RNF04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | Alta |
 | RNF04.6 | A configuração de ambiente deve ser validada na inicialização, e a falha deve nomear a variável ausente ou inválida, sem que valor indefinido chegue à execução | Atendido | Alta |
 
@@ -160,9 +160,13 @@ declarar 99,9% seria enunciar um requisito que não temos como verificar nem
 cumprir. O RNF04.3 e o RNF04.5 são atendidos e verificáveis: as migrações estão
 em `supabase/migrations/` e o fluxo de integração contínua definido em
 `.github/workflows/db.yml` aplica o schema em base limpa e executa os testes de
-isolamento a cada alteração. O RNF04.4 permanece Parcial enquanto os estados de
-erro e de carregamento não forem uniformizados, tarefa da atividade
-`S07-F-estados-erro`. O RNF04.6 é atendido por `lib/env.ts`, ponto único de
+isolamento a cada alteração. O RNF04.4 é atendido pelos estados de erro,
+de não encontrado e de carregamento de cada segmento da aplicação
+(`error.tsx`, `global-error.tsx`, `not-found.tsx` e `loading.tsx`): a falha
+inesperada mostra uma explicação e a opção de tentar de novo, sem expor a
+mensagem interna; o endereço inexistente, ou de viagem de que a pessoa não
+participa, mostra a mesma página de não encontrado, sem revelar se o recurso
+existe. O RNF04.6 é atendido por `lib/env.ts`, ponto único de
 leitura das variáveis de ambiente, que valida a configuração com `zod` e falha
 com mensagem que identifica a variável; `tests/lib/env.test.ts` cobre variável
 ausente, vazia e inválida.

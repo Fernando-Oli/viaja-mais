@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -64,9 +64,15 @@ export default async function TripDetailPage({
     .eq("trip_members.user_id", user.id)
     .single()
 
-  if (error || !trip) {
-    redirect("/dashboard/trips")
+  // PGRST116 é o `.single()` sem linha: a viagem não existe ou a sessão não
+  // participa dela — as duas respondem o mesmo 404, para não revelar que a
+  // viagem existe. Qualquer outro erro é falha de verdade e vai para o
+  // error.tsx do dashboard. Antes os dois casos mandavam de volta para a
+  // lista, sem explicar nada (S07-F).
+  if (error && error.code !== "PGRST116") {
+    throw new Error("Não foi possível carregar a viagem")
   }
+  if (!trip) notFound()
 
   // O nome vem numa segunda consulta: o embed `profiles(...)` direto daqui
   // falhava com PGRST200 e a lista chegava vazia, sem nem a dona.
