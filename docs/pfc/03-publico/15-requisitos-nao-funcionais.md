@@ -38,8 +38,8 @@ pertencem a outros domínios.
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
-| RNF01.1 | O carregamento inicial do painel deve completar em menos de 3 segundos no percentil 95 | Parcial | Alta |
-| RNF01.2 | Toda operação de escrita via rota de API deve responder em menos de 1 segundo no percentil 95 | Parcial | Alta |
+| RNF01.1 | O carregamento inicial do painel deve completar em menos de 3 segundos no percentil 95 | Atendido | Alta |
+| RNF01.2 | Toda operação de escrita via rota de API deve responder em menos de 1 segundo no percentil 95 | Atendido | Alta |
 | RNF01.3 | O sistema deve sustentar 1.000 usuários simultâneos sem degradação superior a 20% no tempo de resposta | Planejado | Média |
 | RNF01.4 | Toda listagem que possa crescer sem limite deve paginar, no máximo 20 registros por página | Parcial | Alta |
 | RNF01.5 | Toda coluna usada em filtro de consulta frequente deve ter índice, verificável no plano de execução | Atendido | Média |
@@ -47,11 +47,12 @@ pertencem a outros domínios.
 **Detalhamento:** os três primeiros itens reproduzem as metas herdadas de
 `docs/ARCHITECTURE.md` §7, agora com percentil declarado — sem ele a medição não
 é reprodutível e o requisito não é verificável. A medição, feita pelo script
-`scripts/pfc/medir-desempenho.mjs` sobre o build de produção em ambiente local,
-registrou percentil 95 de 249 ms no carregamento do painel e de 220 ms nas
-escritas pela API, bem abaixo das metas; ambos permanecem Parciais até a mesma
-medição ser repetida no ambiente publicado, onde a latência de rede até o banco
-é maior. O RNF01.3 não foi verificado: mil usuários simultâneos exigem teste de
+`scripts/pfc/medir-desempenho.mjs` no ambiente publicado em 13/11/2026,
+registrou percentil 95 de 623 ms no carregamento do painel e de 865 ms nas
+escritas pela API, ambos dentro das metas. A margem do RNF01.2 é estreita:
+cada escrita percorre três vezes o trajeto até o banco, hospedado nos Estados
+Unidos (validação da sessão, checagem de participação na viagem e a escrita),
+e é a latência de rede, e não o processamento, que domina o tempo. O RNF01.3 não foi verificado: mil usuários simultâneos exigem teste de
 carga distribuído, acima dos limites das camadas gratuitas de hospedagem e de
 banco adotadas. O RNF01.4 e o RNF01.5 foram acrescentados por decorrerem
 diretamente do modelo de dados. O RNF01.5 é atendido: toda chave estrangeira

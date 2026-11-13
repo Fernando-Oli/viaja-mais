@@ -60,7 +60,7 @@ Os cinco requisitos de performance (RNF01) estavam como "Planejado", e o catálo
 - [x] Convites em 1 consulta, independente da quantidade
 - [x] Toda listagem com limite explícito (RNF06.4), exceto o acerto e os totais de finanças, que somam despesas
 - [x] RNF01.1 e RNF01.2 medidos no build de produção local: p95 de 249 ms e 220 ms
-- [ ] RNF01.1 e RNF01.2 medidos no ambiente publicado (`MEDIR_URL=… MEDIR_EMAIL=… MEDIR_SENHA=… MEDIR_AMBIENTE=producao npm run pfc:desempenho`)
+- [x] RNF01.1 e RNF01.2 medidos no ambiente publicado (13/11): p95 de 623 ms e 865 ms — `docs/pfc/evidencias/S09-F-desempenho-producao.md`
 - [x] RNF01.3 com status honesto: indício com 50 simultâneas, e justificativa de por que mil não se verificam aqui
 
 ## 6. Evidência
