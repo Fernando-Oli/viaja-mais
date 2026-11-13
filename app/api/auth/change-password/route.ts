@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { ErroHttp, respostaDeErro } from "@/lib/http"
 import { exigirLimite, LIMITES } from "@/lib/seguranca/limite"
+import { problemaDeSenha } from "@/lib/seguranca/senha"
 
 /**
  * Troca de senha. A senha atual é conferida com `signInWithPassword`, e isso
@@ -40,8 +41,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "As senhas não coincidem" }, { status: 400 })
     }
 
-    if (new_password.length < 6) {
-      return NextResponse.json({ error: "A nova senha deve ter pelo menos 6 caracteres" }, { status: 400 })
+    const problema = problemaDeSenha(new_password)
+    if (problema) {
+      return NextResponse.json({ error: problema }, { status: 400 })
     }
 
     await exigirLimite(supabase, LIMITES.trocarSenha)
@@ -62,8 +64,14 @@ export async function POST(request: Request) {
     })
 
     if (updateError) {
-      console.error("[v0] Password update error:", updateError)
-      return NextResponse.json({ error: updateError.message }, { status: 400 })
+      console.error("[senha] troca recusada pelo Auth:", updateError.message)
+      // A mensagem do GoTrue vem em inglês e descreve a política interna; a
+      // tela recebe uma explicação que a pessoa consegue seguir (RNF02.11).
+      const mesmaSenha = updateError.code === "same_password"
+      return NextResponse.json(
+        { error: mesmaSenha ? "A nova senha precisa ser diferente da atual" : "Não foi possível alterar a senha" },
+        { status: 400 },
+      )
     }
 
     return NextResponse.json({ success: true, message: "Senha alterada com sucesso" })

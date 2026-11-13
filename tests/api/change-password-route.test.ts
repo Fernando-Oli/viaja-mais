@@ -25,6 +25,7 @@ const h = vi.hoisted(() => ({
   erroLogin: null as { message: string } | null,
   conferencias: [] as { email: string; password: string }[],
   trocas: [] as { password: string }[],
+  erroTroca: null as { message: string; code?: string } | null,
 }))
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -37,7 +38,7 @@ vi.mock("@/lib/supabase/server", () => ({
       },
       updateUser: async (dados: { password: string }) => {
         h.trocas.push(dados)
-        return { error: null }
+        return { error: h.erroTroca }
       },
     },
   }),
@@ -58,6 +59,7 @@ beforeEach(() => {
   h.erroLogin = null
   h.conferencias.length = 0
   h.trocas.length = 0
+  h.erroTroca = null
   limite.exigir.mockReset()
   limite.exigir.mockResolvedValue(undefined)
 })
@@ -88,6 +90,23 @@ describe("POST /api/auth/change-password", () => {
     expect(resposta.status).toBe(400)
     expect(limite.exigir).not.toHaveBeenCalled()
     expect(h.conferencias).toEqual([])
+  })
+
+  it.each([["curta1"], ["semnumero"], ["12345678"]])("400: senha nova fraca (%s) não chega ao Auth (F4)", async (fraca) => {
+    const resposta = await pedido({ ...VALIDO, new_password: fraca, confirm_password: fraca })
+
+    expect(resposta.status).toBe(400)
+    expect(h.conferencias).toEqual([])
+    expect(h.trocas).toEqual([])
+  })
+
+  it("400: o erro do Auth não volta em inglês para a tela (RNF02.11)", async () => {
+    h.erroTroca = { message: "New password should be different from the old password.", code: "same_password" }
+
+    const resposta = await pedido(VALIDO)
+
+    expect(resposta.status).toBe(400)
+    expect(await resposta.json()).toEqual({ error: "A nova senha precisa ser diferente da atual" })
   })
 
   it("400: campo faltando", async () => {

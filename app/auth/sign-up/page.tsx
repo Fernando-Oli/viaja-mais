@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Plane } from "lucide-react";
 import { env } from "@/lib/env";
+import { problemaDeSenha } from "@/lib/seguranca/senha";
 
 /**
  * Cadastro de nova conta.
@@ -46,8 +47,9 @@ export default function SignUpPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres");
+    const problema = problemaDeSenha(password);
+    if (problema) {
+      setError(problema);
       setIsLoading(false);
       return;
     }

@@ -76,6 +76,6 @@ describe("GET /api/trips", () => {
     const resposta = await GET()
 
     expect(resposta.status).toBe(500)
-    expect(await resposta.json()).toEqual({ error: "Internal server error" })
+    expect(await resposta.json()).toEqual({ error: "Erro interno do servidor" })
   })
 })

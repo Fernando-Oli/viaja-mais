@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Lock } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import { TAMANHO_MINIMO_SENHA } from "@/lib/seguranca/senha"
 
 /**
  * Configurações da conta: e-mail e senha. Os dados do perfil (nome, foto,
@@ -129,7 +130,7 @@ export default function SettingsPage() {
                   name="new_password"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={TAMANHO_MINIMO_SENHA}
                   disabled={isChangingPassword}
                 />
               </div>
@@ -140,7 +141,7 @@ export default function SettingsPage() {
                   name="confirm_password"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={TAMANHO_MINIMO_SENHA}
                   disabled={isChangingPassword}
                 />
               </div>
