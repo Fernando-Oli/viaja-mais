@@ -116,9 +116,9 @@ export default function AcertoContasPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <Button variant="ghost" asChild className="mb-4">
+        <Button variant="link" asChild className="mb-2 h-auto px-0">
           <Link href={`/dashboard/trips/${id}?aba=despesas`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar para a viagem

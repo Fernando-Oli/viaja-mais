@@ -86,7 +86,7 @@ export function ExpenseSplit({
             htmlFor={`rateio-tipo-${t}`}
             className={cn(
               "flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-normal",
-              tipo === t && "border-primary bg-orange-50",
+              tipo === t && "border-primary bg-muted font-semibold",
             )}
           >
             <RadioGroupItem id={`rateio-tipo-${t}`} value={t} />
@@ -187,7 +187,7 @@ export function ExpenseSplit({
             <dd
               className={cn(
                 "font-semibold tabular-nums",
-                avaliacao.diferencaCentavos === 0 ? "text-green-700" : "text-destructive",
+                avaliacao.diferencaCentavos === 0 ? "text-primary" : "text-destructive",
               )}
               data-testid="rateio-diferenca"
             >
@@ -201,7 +201,7 @@ export function ExpenseSplit({
         id="rateio-status"
         role="status"
         aria-live="polite"
-        className={cn("text-sm", avaliacao.valido ? "text-green-700" : "text-destructive")}
+        className={cn("text-sm", avaliacao.valido ? "text-primary" : "text-destructive")}
       >
         {avaliacao.valido ? "A soma das partes fecha com o total." : avaliacao.erro}
       </p>

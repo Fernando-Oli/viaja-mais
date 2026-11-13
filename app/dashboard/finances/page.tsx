@@ -64,7 +64,7 @@ export default async function FinancesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Gastos</CardTitle>
-            <DollarSign className="h-4 w-4 text-sky-600" />
+            <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
@@ -87,7 +87,7 @@ export default async function FinancesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Viagens Ativas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-semibold">
@@ -100,7 +100,7 @@ export default async function FinancesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Categoria Principal</CardTitle>
-            <PieChart className="h-4 w-4 text-amber-600" />
+            <PieChart className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-semibold">
@@ -130,7 +130,7 @@ export default async function FinancesPage() {
             <CardContent>
               {!allExpenses || allExpenses.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <DollarSign className="mb-4 h-12 w-12 text-slate-300" />
+                  <DollarSign className="mb-4 h-12 w-12 text-muted-foreground" />
                   <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma despesa registrada</h3>
                   <p className="text-center text-muted-foreground">Comece a registrar seus gastos de viagem</p>
                 </div>
@@ -168,7 +168,7 @@ export default async function FinancesPage() {
           {!trips || trips.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <TrendingDown className="mb-4 h-12 w-12 text-slate-300" />
+                <TrendingDown className="mb-4 h-12 w-12 text-muted-foreground" />
                 <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma viagem cadastrada</h3>
                 <p className="text-center text-muted-foreground">Crie uma viagem para começar a controlar gastos</p>
               </CardContent>
@@ -213,14 +213,14 @@ export default async function FinancesPage() {
                               <div className="mb-2 flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Utilizado</span>
                                 <span
-                                  className={`font-medium ${percentage > 100 ? "text-destructive" : percentage > 80 ? "text-amber-600" : "text-emerald-600"}`}
+                                  className={`font-medium ${percentage > 100 ? "text-destructive" : percentage > 80 ? "text-foreground" : "text-primary"}`}
                                 >
                                   {percentage.toFixed(1)}%
                                 </span>
                               </div>
                               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                                 <div
-                                  className={`h-full transition-all ${percentage > 100 ? "bg-destructive/100" : percentage > 80 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                  className={`h-full transition-all ${percentage > 100 ? "bg-destructive/100" : percentage > 80 ? "bg-citrico" : "bg-primary"}`}
                                   style={{ width: `${Math.min(percentage, 100)}%` }}
                                 />
                               </div>
@@ -246,7 +246,7 @@ export default async function FinancesPage() {
             <CardContent>
               {!byCategory || Object.keys(byCategory).length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <PieChart className="mb-4 h-12 w-12 text-slate-300" />
+                  <PieChart className="mb-4 h-12 w-12 text-muted-foreground" />
                   <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma despesa por categoria</h3>
                   <p className="text-center text-muted-foreground">Registre despesas para ver a distribuição</p>
                 </div>
@@ -265,7 +265,7 @@ export default async function FinancesPage() {
                             <span className="text-sm text-muted-foreground">{percentage.toFixed(1)}%</span>
                           </div>
                           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div className="h-full bg-sky-500 transition-all" style={{ width: `${percentage}%` }} />
+                            <div className="h-full bg-primary transition-all" style={{ width: `${percentage}%` }} />
                           </div>
                           <div className="text-right text-sm font-semibold text-foreground">R$ {amount.toFixed(2)}</div>
                         </div>

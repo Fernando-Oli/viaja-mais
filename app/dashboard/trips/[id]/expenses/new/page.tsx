@@ -204,9 +204,9 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <Button variant="ghost" asChild className="mb-4">
+        <Button variant="link" asChild className="mb-2 h-auto px-0">
           <Link href={`/dashboard/trips/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar

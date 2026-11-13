@@ -36,7 +36,7 @@ function LinhaSaldo({ saldo, moeda }: { saldo: SaldoAcerto; moeda: string }) {
   const centavos = paraCentavos(saldo.valor)
   const estado =
     centavos > 0
-      ? { texto: "a receber", cor: "text-emerald-700" }
+      ? { texto: "a receber", cor: "text-primary" }
       : centavos < 0
         ? { texto: "deve", cor: "text-destructive" }
         : { texto: "quite", cor: "text-muted-foreground" }
@@ -44,7 +44,7 @@ function LinhaSaldo({ saldo, moeda }: { saldo: SaldoAcerto; moeda: string }) {
   return (
     <li
       data-testid="saldo-membro"
-      className="flex flex-col gap-1 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         {/* Os espaços não aparecem no flex, mas separam as palavras para leitor de tela. */}
@@ -99,7 +99,7 @@ function GrupoAcerto({
                 <li
                   key={`${t.de.userId}-${t.para.userId}`}
                   data-testid="linha-transferencia"
-                  className="flex flex-col gap-2 rounded-lg border border-border p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 items-start gap-2">
                     <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -166,7 +166,7 @@ export function AcertoContas({
       {acerto.tudoAcertado && (
         <div
           role="status"
-          className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="flex items-center gap-2 rounded-2xl bg-citrico p-4 text-sm text-grafite"
         >
           <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
           Tudo acertado: ninguém deve nada a ninguém.
