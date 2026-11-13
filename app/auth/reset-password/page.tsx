@@ -12,6 +12,7 @@ import { useState, useEffect } from "react"
 import { Plane, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import { problemaDeSenha, TAMANHO_MINIMO_SENHA } from "@/lib/seguranca/senha"
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("")
@@ -104,8 +105,9 @@ export default function ResetPasswordPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres")
+    const problema = problemaDeSenha(password)
+    if (problema) {
+      setError(problema)
       return
     }
 
@@ -174,8 +176,8 @@ export default function ResetPasswordPage() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        minLength={6}
-                        placeholder="Mínimo 6 caracteres"
+                        minLength={TAMANHO_MINIMO_SENHA}
+                        placeholder={`Mínimo ${TAMANHO_MINIMO_SENHA} caracteres, com letra e número`}
                       />
                     </div>
                     <div className="grid gap-2">
@@ -186,7 +188,7 @@ export default function ResetPasswordPage() {
                         required
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        minLength={6}
+                        minLength={TAMANHO_MINIMO_SENHA}
                         placeholder="Digite a senha novamente"
                       />
                     </div>

@@ -94,12 +94,45 @@ describe("POST /api/trips", () => {
     expect(resposta.status).toBe(500)
   })
 
-  it("responde 400 quando o insert da viagem falha", async () => {
+  it("responde 400 quando o insert da viagem falha, sem repassar a mensagem do Postgres (RNF02.11)", async () => {
     h.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } })
-    h.tripInsertResult = { data: null as unknown as never[], error: { message: "falhou" } }
+    h.tripInsertResult = {
+      data: null as unknown as never[],
+      error: { message: 'new row for relation "trips" violates check constraint "trips_status_check"' },
+    }
 
     const resposta = await POST(requisicao(CORPO_VALIDO))
 
     expect(resposta.status).toBe(400)
+    const corpo = await resposta.json()
+    expect(JSON.stringify(corpo)).not.toContain("trips_status_check")
+    expect(corpo.error).toBe("Não foi possível criar a viagem")
+  })
+
+  // Até a S10-F o POST não validava nada: o schema existia e não era usado.
+  it.each([
+    ["sem título", { ...CORPO_VALIDO, title: "" }],
+    ["fim antes do início", { ...CORPO_VALIDO, end_date: "2025-12-31" }],
+    ["status fora da lista", { ...CORPO_VALIDO, status: "hackeada" }],
+    ["data fora do formato", { ...CORPO_VALIDO, start_date: "01/01/2026" }],
+    ["orçamento negativo", { ...CORPO_VALIDO, budget: -10 }],
+    ["corpo que não é JSON de objeto", null],
+  ])("400 e nada gravado: %s", async (_caso, corpo) => {
+    h.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } })
+
+    const resposta = await POST(requisicao(corpo))
+
+    expect(resposta.status).toBe(400)
+    expect(h.inserts).toHaveLength(0)
+  })
+
+  it("campo extra no corpo não chega ao banco (sem mass-assignment)", async () => {
+    h.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } })
+
+    await POST(requisicao({ ...CORPO_VALIDO, user_id: "outra-pessoa", id: "forjado" }))
+
+    const valores = (h.inserts[0].valores as Record<string, unknown>[])[0]
+    expect(valores.user_id).toBe("user-1")
+    expect(valores).not.toHaveProperty("id")
   })
 })

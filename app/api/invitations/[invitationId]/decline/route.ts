@@ -20,8 +20,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ inv
       .eq("id", invitationId)
       .eq("invitee_email", user.email)
 
+    // Mensagem genérica: a do Postgres revela coluna e constraint (RNF02.11).
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ error: "Não foi possível recusar o convite" }, { status: 400 })
     }
 
     return NextResponse.json({ success: true })

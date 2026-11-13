@@ -62,7 +62,7 @@ as viagens acumulam itens.
 | RNF02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | Alta |
 | RNF02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | Alta |
 | RNF02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | Alta |
-| RNF02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Parcial | Alta |
+| RNF02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Atendido | Alta |
 | RNF02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | Alta |
 | RNF02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Atendido | Alta |
 | RNF02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Parcial | Média |
@@ -82,9 +82,10 @@ Esse teste é a origem da marcação `@RNF02` no repositório.
 
 O RNF02.5 e o RNF02.7 decorrem das regras do `CLAUDE.md` e são exercitados pelos
 testes de rota em `tests/api/`, que cobrem obrigatoriamente o caminho de corpo
-inválido. O RNF02.6 permanece Parcial porque parte das telas ainda escreve
-diretamente do navegador, situação que as atividades `S02-Ab-despesas-via-api` e
-`S05-F-escopo-grupo` encerram. O RNF02.8 é atendido pela função `consumir_limite`, no
+inválido. O RNF02.6 é atendido: a revisão de segurança de 12/11/2026
+(`S10-F-revisao-seguranca`) não encontrou escrita no banco a partir de componente
+ou página; toda alteração passa por rota de API, e a Row Level Security nega as
+alterações de coluna que nenhuma rota faz. O RNF02.8 é atendido pela função `consumir_limite`, no
 banco, que conta as requisições de cada usuário em janela fixa; as rotas de
 convite, troca de senha, foto de perfil e seguir recusam com código 429 quando o
 limite é excedido, antes de qualquer efeito, e o usuário não consegue alterar o

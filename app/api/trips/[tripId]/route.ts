@@ -75,7 +75,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ tr
       .select()
       .single()
 
-    if (error) throw new ErroHttp(400, error.message)
+    // Mensagem genérica: a do Postgres revela coluna e constraint (RNF02.11).
+    if (error) throw new ErroHttp(400, "Não foi possível salvar a viagem")
     return NextResponse.json({ trip })
   } catch (erro) {
     return respostaDeErro(erro)
@@ -92,7 +93,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     await exigirDono(supabase, tripId, user.id)
 
     const { error } = await supabase.from("trips").delete().eq("id", tripId)
-    if (error) throw new ErroHttp(400, error.message)
+    if (error) throw new ErroHttp(400, "Não foi possível excluir a viagem")
 
     return NextResponse.json({ success: true })
   } catch (erro) {
