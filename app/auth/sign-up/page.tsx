@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Plane } from "lucide-react";
 import { env } from "@/lib/env";
 import { problemaDeSenha } from "@/lib/seguranca/senha";
 
@@ -82,25 +81,11 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center text-primary bg-linear-to-br from-sky-50 via-white to-amber-50 p-6">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center relative">
-                <Plane className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-foreground">Avori</span>
-            </div>
-          </div>
-
-          <p className="mt-2 text-muted-foreground">Comece a planejar suas viagens</p>
-        </div>
-
-        <Card>
+    <div className="w-full">
+        <Card className="rounded-3xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-primary">Criar conta</CardTitle>
-            <CardDescription className="text-foreground">
+            <CardTitle className="text-3xl tracking-tight">Criar conta</CardTitle>
+            <CardDescription>
               Preencha os dados abaixo para criar sua conta
             </CardDescription>
           </CardHeader>
@@ -171,7 +156,6 @@ export default function SignUpPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

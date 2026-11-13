@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { Plane, ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { DICA_SENHA, problemaDeSenha, TAMANHO_MINIMO_SENHA } from "@/lib/seguranca/senha"
@@ -138,9 +138,9 @@ export default function ResetPasswordPage() {
 
   if (checkingToken) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-sky-50 via-white to-amber-50">
+      <div className="flex w-full items-center justify-center py-12">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#319f43] border-t-transparent mx-auto" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
           <p className="mt-4 text-muted-foreground">Carregando...</p>
         </div>
       </div>
@@ -148,21 +148,13 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-sky-50 via-white to-amber-50 p-6">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4  w-auto rounded-2xl flex items-center justify-center gap-2 ">
-            <Plane className="h-10 w-10 text-primary-foreground bg-primary rounded-sm" /> 
-            <h1 className="text-3xl font-bold text-navy">Avori</h1>
-          </div>
-          <p className="mt-2 text-muted-foreground">{hasToken ? "Redefinir sua senha" : "Recuperar senha"}</p>
-        </div>
-
-        <Card>
+    <div className="w-full">
+        <p className="mb-3 text-sm font-medium text-muted-foreground">{hasToken ? "Redefinir sua senha" : "Recuperar senha"}</p>
+        <Card className="rounded-3xl">
           {hasToken ? (
             <>
               <CardHeader>
-                <CardTitle className="text-2xl">Nova senha</CardTitle>
+                <CardTitle className="text-3xl tracking-tight">Nova senha</CardTitle>
                 <CardDescription>Digite sua nova senha abaixo</CardDescription>
               </CardHeader>
               <CardContent>
@@ -203,7 +195,7 @@ export default function ResetPasswordPage() {
           ) : (
             <>
               <CardHeader>
-                <CardTitle className="text-2xl">Esqueceu sua senha?</CardTitle>
+                <CardTitle className="text-3xl tracking-tight">Esqueceu sua senha?</CardTitle>
                 <CardDescription>Digite seu email e enviaremos um link para redefinir sua senha</CardDescription>
               </CardHeader>
               <CardContent>
@@ -240,7 +232,6 @@ export default function ResetPasswordPage() {
             Voltar para login
           </Link>
         </div>
-      </div>
     </div>
   )
 }
