@@ -55,7 +55,7 @@ export default async function FinancesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Controle Financeiro</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Controle Financeiro</h1>
         <p className="mt-2 text-muted-foreground">Acompanhe seus gastos e orçamentos de viagem</p>
       </div>
 
@@ -69,7 +69,7 @@ export default async function FinancesPage() {
           <CardContent>
             <div className="space-y-1">
               {Object.entries(totalsByCurrency).map(([currency, total]) => (
-                <div key={currency} className="text-2xl font-bold">
+                <div key={currency} className="text-2xl font-semibold">
                   {new Intl.NumberFormat("pt-BR", {
                     style: "currency",
                     currency,
@@ -77,7 +77,7 @@ export default async function FinancesPage() {
                 </div>
               ))}
               {Object.keys(totalsByCurrency).length === 0 && (
-                <div className="text-2xl font-bold">R$ 0,00</div>
+                <div className="text-2xl font-semibold">R$ 0,00</div>
               )}
             </div>
             <p className="text-xs text-muted-foreground">{allExpenses?.length || 0} despesas registradas</p>
@@ -90,7 +90,7 @@ export default async function FinancesPage() {
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-semibold">
               {trips?.filter((t) => t.status === "confirmed" || t.status === "ongoing").length || 0}
             </div>
             <p className="text-xs text-muted-foreground">com orçamento definido</p>
@@ -103,7 +103,7 @@ export default async function FinancesPage() {
             <PieChart className="h-4 w-4 text-amber-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-semibold">
               {Object.keys(byCategory).length > 0
                 ? categoryLabels[Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0][0]]
                 : "-"}

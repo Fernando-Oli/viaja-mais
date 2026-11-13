@@ -15,8 +15,8 @@ import { CapaViagem } from "@/components/brand/capa-viagem"
 import { BotaoPublicar } from "@/components/prototipo/botao-publicar"
 
 function parseLocalDate(dateString: string) {
-  const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(year, month - 1, day); // <-- interpreta como data local
+  const [year, month, day] = dateString.split("-").map(Number)
+  return new Date(year, month - 1, day) // <-- interpreta como data local
 }
 
 const ABAS = ["itinerary", "expenses", "places", "bookings"] as const
@@ -57,10 +57,12 @@ export default async function TripDetailPage({
 
   const { data: trip, error } = await supabase
     .from("trips")
-    .select(`
+    .select(
+      `
       *,
       trip_members!inner(user_id, role)
-    `)
+    `,
+    )
     .eq("id", id)
     .eq("trip_members.user_id", user.id)
     .single()
@@ -83,7 +85,10 @@ export default async function TripDetailPage({
     .eq("trip_id", id)
     .order("joined_at", { ascending: true })
 
-  const nomes = await nomesDosPerfis(supabase, (participantes ?? []).map((p) => p.user_id))
+  const nomes = await nomesDosPerfis(
+    supabase,
+    (participantes ?? []).map((p) => p.user_id),
+  )
   const members = (participantes ?? []).map((p) => ({
     ...p,
     profiles: { full_name: nomes.get(p.user_id) ?? null },
@@ -169,7 +174,11 @@ export default async function TripDetailPage({
             {trip.description && <p className="max-w-2xl">{trip.description}</p>}
             <div className="mt-2 flex flex-wrap gap-2">
               {isOwner && (
-                <Button asChild variant="outline" className="h-10 rounded-xl border-0 bg-primary-foreground text-foreground">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-10 rounded-xl border-0 bg-primary-foreground text-foreground"
+                >
                   <Link href={`/dashboard/trips/${id}/edit`}>
                     <Pencil className="h-4 w-4" aria-hidden />
                     Editar
@@ -187,172 +196,171 @@ export default async function TripDetailPage({
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Itinerário</CardTitle>
-            <Calendar className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{itineraryItems?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">atividades</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: trip.currency || "BRL",
-              }).format(totalExpenses)}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <aside aria-label="Resumo da viagem" className="space-y-4 lg:col-start-2 lg:row-start-1">
+          <section className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-4 lg:grid-cols-2">
+            <div className="bg-card p-4">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Calendar className="h-4 w-4 text-primary" aria-hidden />
+                Itinerário
+              </div>
+              <div className="text-2xl font-semibold tabular-nums">{itineraryItems?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">atividades</p>
             </div>
-            <p className="text-xs text-muted-foreground">{expenses?.length || 0} despesas</p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lugares</CardTitle>
-            <MapPinned className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{places?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">salvos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Duração</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.ceil(
-                (new Date(parseLocalDate(trip.end_date)).getTime() - new Date(parseLocalDate(trip.start_date)).getTime()) / (1000 * 60 * 60 * 24),
-              )}
+            <div className="bg-card p-4">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <DollarSign className="h-4 w-4 text-primary" aria-hidden />
+                Gastos
+              </div>
+              <div className="truncate text-2xl font-semibold tabular-nums">
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: trip.currency || "BRL",
+                }).format(totalExpenses)}
+              </div>
+              <p className="text-xs text-muted-foreground">{expenses?.length || 0} despesas</p>
             </div>
-            <p className="text-xs text-muted-foreground">dias</p>
-          </CardContent>
-        </Card>
+
+            <div className="bg-card p-4">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <MapPinned className="h-4 w-4 text-primary" aria-hidden />
+                Lugares
+              </div>
+              <div className="text-2xl font-semibold tabular-nums">{places?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">salvos</p>
+            </div>
+
+            <div className="bg-card p-4">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Clock className="h-4 w-4 text-primary" aria-hidden />
+                Duração
+              </div>
+              <div className="text-2xl font-semibold tabular-nums">
+                {Math.ceil(
+                  (new Date(parseLocalDate(trip.end_date)).getTime() -
+                    new Date(parseLocalDate(trip.start_date)).getTime()) /
+                    (1000 * 60 * 60 * 24),
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">dias</p>
+            </div>
+          </section>
+
+          <TripMembers tripId={id} members={members || []} isOwner={isOwner} />
+        </aside>
+
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          {/* Tabs */}
+          <Tabs defaultValue={abaInicial} className="w-full">
+            {/* Quatro abas não cabem numa linha no celular: a lista quebra em vez de estourar. */}
+            <TabsList className="h-auto flex-wrap">
+              <TabsTrigger value="itinerary">Itinerário</TabsTrigger>
+              <TabsTrigger value="expenses">Despesas</TabsTrigger>
+              <TabsTrigger value="places">Lugares</TabsTrigger>
+              <TabsTrigger value="bookings">Reservas</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="itinerary" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <CardTitle>Itinerário</CardTitle>
+                      <CardDescription>Organize suas atividades dia a dia</CardDescription>
+                    </div>
+                    <Button asChild className="bg-primary hover:bg-primary/90">
+                      <Link href={`/dashboard/trips/${id}/itinerary/new`}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Atividade
+                      </Link>
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ItineraryList items={itineraryItems || []} tripId={id} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="expenses" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Despesas</CardTitle>
+                      <CardDescription>Controle seus gastos durante a viagem</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button asChild variant="outline">
+                        <Link href={`/dashboard/trips/${id}/acerto`}>Acerto de contas</Link>
+                      </Button>
+                      <Button asChild className="bg-primary hover:bg-primary/90">
+                        <Link href={`/dashboard/trips/${id}/expenses/new`}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar Despesa
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ExpenseList expenses={expenses || []} tripId={id} currentUserId={user.id} isOwner={isOwner} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="places" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <CardTitle>Lugares Salvos</CardTitle>
+                      <CardDescription>Pontos turísticos e locais de interesse</CardDescription>
+                    </div>
+                    <Button asChild className="bg-primary hover:bg-primary/90">
+                      <Link href={`/dashboard/trips/${id}/places`}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Lugar
+                      </Link>
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <PlaceList places={places || []} tripId={id} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="bookings" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <CardTitle>Reservas</CardTitle>
+                      <CardDescription>Voos, hospedagens e demais reservas da viagem</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild variant="outline">
+                        <Link href={`/dashboard/trips/${id}/bookings/new`}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar Reserva
+                        </Link>
+                      </Button>
+                      <Button asChild className="bg-citrico text-grafite hover:bg-citrico/90">
+                        <Link href="/dashboard/reservar/voos">Buscar voos e hotéis</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <BookingList bookings={bookings || []} tripId={id} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-
-      <TripMembers tripId={id} members={members || []} isOwner={isOwner} />
-
-      {/* Tabs */}
-      <Tabs defaultValue={abaInicial} className="w-full">
-        {/* Quatro abas não cabem numa linha no celular: a lista quebra em vez de estourar. */}
-        <TabsList className="h-auto flex-wrap">
-          <TabsTrigger value="itinerary">Itinerário</TabsTrigger>
-          <TabsTrigger value="expenses">Despesas</TabsTrigger>
-          <TabsTrigger value="places">Lugares</TabsTrigger>
-          <TabsTrigger value="bookings">Reservas</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="itinerary" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <CardTitle>Itinerário</CardTitle>
-                  <CardDescription>Organize suas atividades dia a dia</CardDescription>
-                </div>
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link href={`/dashboard/trips/${id}/itinerary/new`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Atividade
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ItineraryList items={itineraryItems || []} tripId={id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="expenses" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Despesas</CardTitle>
-                  <CardDescription>Controle seus gastos durante a viagem</CardDescription>
-                </div>
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button asChild variant="outline">
-                    <Link href={`/dashboard/trips/${id}/acerto`}>Acerto de contas</Link>
-                  </Button>
-                  <Button asChild className="bg-primary hover:bg-primary/90">
-                    <Link href={`/dashboard/trips/${id}/expenses/new`}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Adicionar Despesa
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ExpenseList expenses={expenses || []} tripId={id} currentUserId={user.id} isOwner={isOwner} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="places" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <CardTitle>Lugares Salvos</CardTitle>
-                  <CardDescription>Pontos turísticos e locais de interesse</CardDescription>
-                </div>
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link href={`/dashboard/trips/${id}/places`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Lugar
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <PlaceList places={places || []} tripId={id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="bookings" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <CardTitle>Reservas</CardTitle>
-                  <CardDescription>Voos, hospedagens e demais reservas da viagem</CardDescription>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild variant="outline">
-                    <Link href={`/dashboard/trips/${id}/bookings/new`}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Adicionar Reserva
-                    </Link>
-                  </Button>
-                  <Button asChild className="bg-citrico text-grafite hover:bg-citrico/90">
-                    <Link href="/dashboard/reservar/voos">Buscar voos e hotéis</Link>
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <BookingList bookings={bookings || []} tripId={id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

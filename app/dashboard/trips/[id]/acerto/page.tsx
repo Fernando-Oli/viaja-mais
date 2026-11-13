@@ -124,7 +124,7 @@ export default function AcertoContasPage({ params }: { params: Promise<{ id: str
             Voltar para a viagem
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">Acerto de contas</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Acerto de contas</h1>
         <p className="mt-2 text-muted-foreground">Quanto cada um tem a receber ou deve, e quem paga quem</p>
       </div>
 

@@ -45,8 +45,8 @@ const typeLabels: Record<string, string> = {
 }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  confirmed: "bg-emerald-100 text-emerald-800",
+  pending: "bg-citrico text-grafite",
+  confirmed: "bg-primary text-primary-foreground",
   cancelled: "bg-destructive/10 text-destructive",
 }
 
@@ -99,7 +99,7 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
   if (bookings.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Plane className="mb-4 h-12 w-12 text-slate-300" />
+        <Plane className="mb-4 h-12 w-12 text-muted-foreground" aria-hidden />
         <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma reserva cadastrada</h3>
         <p className="text-center text-muted-foreground">Adicione voos, hotéis e outras reservas da viagem</p>
       </div>
@@ -126,14 +126,14 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
         const ocupado = pendente === booking.id
 
         return (
-          <div key={booking.id} className="flex flex-col gap-4 rounded-lg border border-border p-4">
+          <div key={booking.id} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-sky-100 p-2">
-                <Icon className="h-5 w-5 text-sky-600" />
-              </div>
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-primary">
+                <Icon className="h-5 w-5" aria-hidden />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="font-medium text-foreground">{booking.title}</h4>
+                  <h4 className="font-semibold text-foreground">{booking.title}</h4>
                   <Badge variant="secondary">{typeLabels[booking.type] ?? booking.type}</Badge>
                   <Badge className={statusColors[status]}>{statusLabels[status] ?? status}</Badge>
                 </div>
@@ -152,8 +152,11 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
                     </p>
                   )}
                   {booking.confirmation_number && (
-                    <p>
-                      <span className="font-medium">Confirmação:</span> {booking.confirmation_number}
+                    <p className="flex items-center gap-2">
+                      <span className="font-medium">Confirmação:</span>
+                      <span className="rounded-lg bg-muted px-2 py-0.5 font-semibold tracking-wider text-foreground">
+                        {booking.confirmation_number}
+                      </span>
                     </p>
                   )}
                   {booking.location && (
@@ -163,7 +166,7 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
                     </div>
                   )}
                   {booking.price !== null && (
-                    <p className="pt-1 font-semibold text-foreground">
+                    <p className="pt-1 text-base font-semibold tabular-nums text-foreground">
                       {new Intl.NumberFormat("pt-BR", {
                         style: "currency",
                         currency: booking.currency || "BRL",

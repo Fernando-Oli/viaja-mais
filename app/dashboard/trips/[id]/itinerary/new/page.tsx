@@ -76,15 +76,15 @@ export default function NewItineraryItemPage({ params }: { params: Promise<{ id:
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Button variant="ghost" asChild className="mb-4">
+        <Button variant="link" asChild className="mb-2 h-auto px-0">
           <Link href={`/dashboard/trips/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">Nova Atividade</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Nova Atividade</h1>
         <p className="mt-2 text-muted-foreground">Adicione uma atividade ao seu itinerário</p>
       </div>
 

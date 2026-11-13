@@ -255,7 +255,7 @@ export default function PerfilPage() {
     <div className="space-y-6">
       <EnquadrarFoto foto={fotoEscolhida} enviando={enviandoFoto} onCancelar={descartarFoto} onAplicar={enviarFoto} />
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Perfil</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Perfil</h1>
         <p className="mt-2 text-muted-foreground">Como as outras pessoas veem você na Avori</p>
       </div>
 
