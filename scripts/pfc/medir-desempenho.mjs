@@ -49,7 +49,17 @@ await pagina.goto("/auth/login")
 await pagina.fill("#email", EMAIL)
 await pagina.fill("#password", SENHA)
 await pagina.click('button[type="submit"]')
-await pagina.waitForURL("**/dashboard", { timeout: 30_000 })
+try {
+  await pagina.waitForURL("**/dashboard", { timeout: 30_000 })
+} catch {
+  // Sem isto, credencial errada vira um timeout de 30 s sem explicação.
+  const texto = (await pagina.textContent("body"))?.replace(/\s+/g, " ") ?? ""
+  const motivo = texto.match(/(Invalid login credentials|Email not confirmed|[^.]*(inválid|incorret)[^.]*)/i)?.[0]
+  console.error(`\nO login em ${URL_BASE} não chegou ao painel com ${EMAIL}.`)
+  console.error(motivo ? `A tela disse: "${motivo.trim()}"` : "Confira o e-mail e a senha (MEDIR_EMAIL e MEDIR_SENHA).")
+  await navegador.close()
+  process.exit(1)
+}
 
 // Aquecimento: a primeira requisição de uma função serverless paga o arranque
 // a frio, que não é o que o requisito descreve.
