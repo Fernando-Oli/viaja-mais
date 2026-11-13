@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { CONEXAO } from "./apoio"
 
 /**
  * Índices (S09-F, RNF01.5): toda coluna usada em filtro frequente tem índice,
@@ -19,7 +19,6 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
  * @RNF01.5
  */
 
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 let db: Client
 

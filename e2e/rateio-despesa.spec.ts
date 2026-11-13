@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 import { exigirLocal } from "../tests/rls/guarda-ambiente"
 import { entrarPorConvite } from "../tests/rls/convite"
 import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
+import { cadastrar, entrar } from "./fixtures/contas"
 
 /**
  * @RF06.9 tipo de rateio: igual, por peso ou por valor exato
@@ -20,14 +21,6 @@ import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
 let tripId = ""
 /** Ids dos três membros. A RNE-020 dá o centavo de sobra ao menor deles (#41). */
 let idsMembros: string[] = []
-
-async function entrar(page: Page, email: string) {
-  await page.goto("/auth/login")
-  await page.fill("#email", email)
-  await page.fill("#password", SENHA)
-  await page.click('button[type="submit"]')
-  await page.waitForURL("/dashboard")
-}
 
 /** Cliente Supabase com a sessão de quem entrou, sob RLS — como nos testes de RLS. */
 async function logar(email: string) {
@@ -70,13 +63,7 @@ async function montarViagemComTresMembros(browser: Browser) {
   // o seed só tem duas e o rateio precisa de três pessoas reais.
   const ctxC = await browser.newContext()
   const pageC = await ctxC.newPage()
-  await pageC.goto("/auth/sign-up")
-  await pageC.fill("#fullName", "Carla Rateio")
-  await pageC.fill("#email", emailC)
-  await pageC.fill("#password", SENHA)
-  await pageC.fill("#confirmPassword", SENHA)
-  await pageC.click('button[type="submit"]')
-  await pageC.waitForURL("/dashboard")
+  await cadastrar(pageC, "Carla Rateio", emailC)
 
   const ctxA = await browser.newContext()
   const pageA = await ctxA.newPage()

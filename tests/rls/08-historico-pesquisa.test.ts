@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { USUARIOS } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * O histórico de pesquisa da Rede social (S05-M-pesquisa): a tabela
@@ -30,11 +30,6 @@ import { USUARIOS } from "../fixtures/usuarios"
  * @RF09.12 @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-// Conexão direta só para montar estado e ler o catálogo, sempre numa transação
-// desfeita no fim: o banco sai como entrou.
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
@@ -48,19 +43,6 @@ const LIMITE = 15
 const JOB = "social-apagar-pesquisas-vencidas"
 /** O Davi do seed (supabase/seed.sql), que este arquivo não loga. */
 const DAVI = "44444444-4444-4444-8444-444444444444"
-
-function novoCliente() {
-  return createClient(API, CHAVE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-}
-
-async function logar(email: string, senha: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, usuario: data.user as User }
-}
 
 let ana: SupabaseClient
 let bruno: SupabaseClient

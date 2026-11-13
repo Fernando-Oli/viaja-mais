@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest"
-import { createClient } from "@supabase/supabase-js"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 import { SENHA_TESTE } from "../fixtures/usuarios"
+import { novoCliente } from "./apoio"
 
 /**
  * Política de senha aplicada pelo próprio Auth (S10-F, achado F4), e não só pela
@@ -13,12 +12,6 @@ import { SENHA_TESTE } from "../fixtures/usuarios"
  * @RNF02.2
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-
-function cliente() {
-  return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
-}
 
 const email = (caso: string) => `senha-${caso}-${Date.now()}@viajamais.local`
 
@@ -29,13 +22,13 @@ describe("cadastro direto pelo Auth", () => {
     ["sem-simbolo", "Abcdefg1"],
     ["antiga-do-seed", "viajamais123"],
   ])("senha %s é recusada como fraca", async (caso, senha) => {
-    const { data, error } = await cliente().auth.signUp({ email: email(caso), password: senha })
+    const { data, error } = await novoCliente().auth.signUp({ email: email(caso), password: senha })
     expect(error?.code).toBe("weak_password")
     expect(data.user).toBeNull()
   })
 
   it("senha com 8+ caracteres, minúscula, maiúscula, número e símbolo é aceita", async () => {
-    const { error } = await cliente().auth.signUp({ email: email("ok"), password: SENHA_TESTE })
+    const { error } = await novoCliente().auth.signUp({ email: email("ok"), password: SENHA_TESTE })
     expect(error).toBeNull()
   })
 })

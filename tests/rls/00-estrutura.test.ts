@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { Client } from "pg"
 import fs from "node:fs"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { CONEXAO } from "./apoio"
 
 /**
  * Primeira barreira: o banco precisa ser reproduzível a partir do repositório, e
@@ -16,9 +16,6 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 // a suíte dizia "passou" sem ter verificado nada — e verificação de RLS que
 // some em silêncio é pior do que verificação que não existe.
 //
-// `exigirLocal` porque este teste abre conexão direta com o banco: apontada
-// para o projeto hospedado, ela leria produção.
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
 
 describe("migrations versionadas", () => {
   it("existe pelo menos uma migration no repositório", () => {

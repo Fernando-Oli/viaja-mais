@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Locator, type Page } from "@playwright/test"
-import { SENHA_TESTE } from "../tests/fixtures/usuarios"
+import { entrar } from "./fixtures/contas"
 
 /**
  * @RF09.3 @RF09.4 @RF13.2 as solicitações para seguir na central de
@@ -14,14 +14,6 @@ import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 
 const BRUNO = "teste.b@viajamais.local"
 const DAVI = "teste.d@viajamais.local"
-
-async function entrar(page: Page, email: string) {
-  await page.goto("/auth/login")
-  await page.fill("#email", email)
-  await page.fill("#password", SENHA_TESTE)
-  await page.click('button[type="submit"]')
-  await page.waitForURL("/dashboard")
-}
 
 /** Quem pede numa sessão própria, que não se mistura com a do Bruno. */
 async function sessao(browser: Browser, email: string) {

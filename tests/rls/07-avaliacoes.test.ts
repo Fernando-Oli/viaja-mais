@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { type SupabaseClient, type User } from "@supabase/supabase-js"
 import { entrarPorConvite } from "./convite"
 import { USUARIOS } from "../fixtures/usuarios"
+import { logar, novoCliente } from "./apoio"
 
 /**
  * Avaliações de lugares (`place_reviews`).
@@ -18,8 +18,6 @@ import { USUARIOS } from "../fixtures/usuarios"
  * @RNF02.4 isolamento
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
 
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
@@ -28,17 +26,6 @@ const BRUNO = USUARIOS.bruno
 const VIOLA_RLS_OU_GRANT = "42501"
 const VIOLA_UNIQUE = "23505"
 const VIOLA_CHECK = "23514"
-
-function novoCliente() {
-  return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
-async function logar(email: string, senha: string) {
-  const cliente = novoCliente()
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: senha })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, usuario: data.user as User }
-}
 
 let ana: SupabaseClient
 let bruno: SupabaseClient
