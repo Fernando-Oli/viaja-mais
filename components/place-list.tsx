@@ -96,7 +96,7 @@ export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
   if (itens.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <MapPin className="mb-4 h-12 w-12 text-gray-300" />
+        <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
         <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhum lugar salvo</h3>
         <p className="text-center text-muted-foreground">Adicione lugares que deseja visitar</p>
       </div>
@@ -124,9 +124,9 @@ export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
                         {place.category}
                       </Badge>
                     )}
-                    {place.visited && <Badge className="bg-emerald-100 text-emerald-800">Visitado</Badge>}
+                    {place.visited && <Badge className="bg-primary text-primary-foreground">Visitado</Badge>}
                     {place.rating != null && (
-                      <span className="flex items-center gap-1 text-sm text-amber-600">
+                      <span className="flex items-center gap-1 text-sm text-primary">
                         <Star className="h-3 w-3 fill-current" />
                         {place.rating}
                       </span>
@@ -145,7 +145,7 @@ export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
                     {ocupado ? (
                       <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                     ) : place.visited ? (
-                      <CheckCircle2 className="mr-1 h-4 w-4 text-emerald-600" />
+                      <CheckCircle2 className="mr-1 h-4 w-4 text-primary" />
                     ) : (
                       <Circle className="mr-1 h-4 w-4" />
                     )}

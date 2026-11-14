@@ -101,7 +101,7 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">Lugares da Viagem</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Lugares da Viagem</h1>
         <p className="mt-2 text-muted-foreground">Busque e salve lugares para visitar</p>
       </div>
 
@@ -138,7 +138,7 @@ export default function TripPlacesPage({ params }: { params: Promise<{ id: strin
                   <h3 className="font-semibold text-foreground">{selectedPlace.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{selectedPlace.address}</p>
                   {selectedPlace.rating && (
-                    <div className="mt-2 flex items-center gap-1 text-sm text-amber-600">
+                    <div className="mt-2 flex items-center gap-1 text-sm text-primary">
                       <Star className="h-4 w-4 fill-current" />
                       <span>{selectedPlace.rating}</span>
                     </div>

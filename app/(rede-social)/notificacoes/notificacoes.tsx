@@ -163,7 +163,7 @@ export function Notificacoes() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-bold text-foreground">Notificações</h1>
+      <h1 className="text-3xl font-semibold tracking-tight text-foreground">Notificações</h1>
       <Card>
         <CardContent className="space-y-3">
           {estado.tipo === "carregando" ? (

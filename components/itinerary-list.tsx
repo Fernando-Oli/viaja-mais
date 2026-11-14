@@ -8,7 +8,20 @@ import { Button } from "@/components/ui/button"
 import ConfirmModal from "@/components/ui/confirm-modal"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
-import { Calendar, Check, Clock, MapPin, Pencil, RotateCcw, Trash2 } from "lucide-react"
+import {
+  BedDouble,
+  Bus,
+  Calendar,
+  Check,
+  Clock,
+  Landmark,
+  MapPin,
+  Pencil,
+  RotateCcw,
+  Ticket,
+  Trash2,
+  Utensils,
+} from "lucide-react"
 
 interface ItineraryItem {
   id: string
@@ -28,10 +41,9 @@ interface ItineraryListProps {
 }
 
 function parseLocalDate(dateString: string) {
-  const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(year, month - 1, day); // <-- interpreta como data local
+  const [year, month, day] = dateString.split("-").map(Number)
+  return new Date(year, month - 1, day) // <-- interpreta como data local
 }
-
 
 /**
  * Lista do itinerário com as ações de cada item. Toda escrita passa pela rota
@@ -85,7 +97,7 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Calendar className="mb-4 h-12 w-12 text-slate-300" />
+        <Calendar className="mb-4 h-12 w-12 text-muted-foreground" aria-hidden />
         <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma atividade planejada</h3>
         <p className="text-center text-muted-foreground">Adicione atividades ao seu itinerário</p>
       </div>
@@ -106,7 +118,7 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
   )
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <ConfirmModal
         open={paraExcluir !== null}
         onOpenChange={(aberto) => {
@@ -119,11 +131,13 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
         onConfirm={() => paraExcluir && excluir(paraExcluir)}
       />
 
-      {Object.entries(groupedItems).map(([date, dayItems]) => (
-        <div key={date}>
-          <div className="mb-4 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-sky-600" />
-            <h3 className="text-lg font-semibold text-foreground capitalize">
+      {Object.entries(groupedItems).map(([date, dayItems], indice) => (
+        <section key={date} className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
+              Dia {indice + 1}
+            </span>
+            <h3 className="flex-1 text-base font-semibold text-foreground first-letter:uppercase">
               {new Date(parseLocalDate(date)).toLocaleDateString("pt-BR", {
                 weekday: "long",
                 year: "numeric",
@@ -131,9 +145,11 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
                 day: "numeric",
               })}
             </h3>
+            <span className="text-xs font-medium text-muted-foreground">
+              {dayItems.length} {dayItems.length === 1 ? "atividade" : "atividades"}
+            </span>
           </div>
-
-          <div className="space-y-4">
+          <div className="divide-y divide-border border-t border-border">
             {dayItems.map((item) => (
               <ItineraryItemCard
                 key={item.id}
@@ -145,19 +161,19 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
               />
             ))}
           </div>
-        </div>
+        </section>
       ))}
     </div>
   )
 }
 
-const categoryColors: Record<string, string> = {
-  accommodation: "bg-purple-100 text-purple-800",
-  transport: "bg-blue-100 text-blue-800",
-  activity: "bg-green-100 text-green-800",
-  restaurant: "bg-orange-100 text-orange-800",
-  attraction: "bg-pink-100 text-pink-800",
-  other: "bg-muted text-foreground",
+const categoryIcons: Record<string, typeof MapPin> = {
+  accommodation: BedDouble,
+  transport: Bus,
+  activity: Ticket,
+  restaurant: Utensils,
+  attraction: Landmark,
+  other: MapPin,
 }
 
 const categoryLabels: Record<string, string> = {
@@ -179,55 +195,52 @@ interface ItineraryItemCardProps {
 
 function ItineraryItemCard({ item, tripId, ocupado, onAlternarConclusao, onExcluir }: ItineraryItemCardProps) {
   const concluida = item.status === "completed"
+  const Icone = categoryIcons[item.category ?? "other"] ?? MapPin
 
   return (
-    <div
-      data-status={item.status}
-      className={cn(
-        "rounded-lg border border-border p-4 transition-all hover:shadow-md",
-        concluida && "border-green-200 bg-green-50/60 opacity-70",
-      )}
-    >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h4 className={cn("font-medium text-foreground", concluida && "text-muted-foreground line-through")}>
-              {item.title}
-            </h4>
-            {item.category && (
-              <Badge className={categoryColors[item.category] || categoryColors.other}>
-                {categoryLabels[item.category] || item.category}
-              </Badge>
-            )}
-            {concluida && (
-              <Badge className="bg-green-600 text-white">
-                <Check className="mr-1 h-3 w-3" />
-                Concluída
-              </Badge>
-            )}
-          </div>
+    <div data-status={item.status} className={cn("px-4 py-3.5", concluida && "bg-muted/60")}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-1 gap-3">
+          <span className="w-12 shrink-0 pt-2 text-sm font-semibold tabular-nums">
+            {item.start_time ? item.start_time.slice(0, 5) : "—"}
+          </span>
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-primary">
+            <Icone className="h-[18px] w-[18px]" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className={cn("font-medium text-foreground", concluida && "text-muted-foreground line-through")}>
+                {item.title}
+              </h4>
+              {item.category && <Badge variant="secondary">{categoryLabels[item.category] || item.category}</Badge>}
+              {concluida && (
+                <Badge className="bg-primary text-primary-foreground">
+                  <Check className="mr-1 h-3 w-3" />
+                  Concluída
+                </Badge>
+              )}
+            </div>
 
-          {item.description && <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>}
-
-          <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
-            {item.start_time && (
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>
-                  {item.start_time.slice(0, 5)}
-                  {item.end_time && ` - ${item.end_time.slice(0, 5)}`}
-                </span>
-              </div>
-            )}
-            {item.location && (
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                <span>{item.location}</span>
-              </div>
-            )}
+            {item.description && <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>}
+            <div className="mt-1 flex flex-wrap gap-4 text-sm text-muted-foreground">
+              {item.start_time && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    {item.start_time.slice(0, 5)}
+                    {item.end_time && ` - ${item.end_time.slice(0, 5)}`}
+                  </span>
+                </div>
+              )}
+              {item.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{item.location}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
         <div className="flex flex-wrap gap-2 sm:shrink-0">
           <Button size="sm" variant="outline" disabled={ocupado} onClick={onAlternarConclusao}>
             {concluida ? <RotateCcw className="mr-1 h-4 w-4" /> : <Check className="mr-1 h-4 w-4" />}

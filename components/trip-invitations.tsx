@@ -97,7 +97,7 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
   if (invitations.length === 0) return null;
 
   return (
-    <Card className="border-primary/20 bg-orange-50/50">
+    <Card className="border-0 bg-citrico text-grafite">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-primary">
           <Bell className="h-5 w-5" />

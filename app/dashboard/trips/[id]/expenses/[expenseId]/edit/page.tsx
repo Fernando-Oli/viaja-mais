@@ -118,7 +118,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">Editar Despesa</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Editar Despesa</h1>
       </div>
 
       <Card>

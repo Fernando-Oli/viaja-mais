@@ -87,7 +87,7 @@ export function Pesquisa() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-foreground">Pesquisar</h1>
+      <h1 className="text-3xl font-semibold tracking-tight text-foreground">Pesquisar</h1>
       <Card>
         <CardContent className="space-y-4">
           <div className="relative">

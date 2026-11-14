@@ -199,7 +199,7 @@ export function ListaDaRede({ username: daUrl, lado }: { username: string; lado:
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Perfil de @{username}
       </Link>
-      <h1 ref={cabecalho} tabIndex={-1} className="rounded-sm text-3xl font-bold text-foreground">
+      <h1 ref={cabecalho} tabIndex={-1} className="rounded-sm text-3xl font-semibold tracking-tight text-foreground">
         {titulo(lado, username)}
       </h1>
       <p role="status" className="sr-only">

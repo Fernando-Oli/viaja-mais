@@ -76,7 +76,7 @@ export default async function BookingsPage() {
             <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bookings?.length || 0}</div>
+            <div className="text-2xl font-semibold">{bookings?.length || 0}</div>
           </CardContent>
         </Card>
 
@@ -86,7 +86,7 @@ export default async function BookingsPage() {
             <Plane className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bookings?.filter((b) => b.type === "flight").length || 0}</div>
+            <div className="text-2xl font-semibold">{bookings?.filter((b) => b.type === "flight").length || 0}</div>
           </CardContent>
         </Card>
 
@@ -96,7 +96,7 @@ export default async function BookingsPage() {
             <Hotel className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bookings?.filter((b) => b.type === "hotel").length || 0}</div>
+            <div className="text-2xl font-semibold">{bookings?.filter((b) => b.type === "hotel").length || 0}</div>
           </CardContent>
         </Card>
 
@@ -106,7 +106,7 @@ export default async function BookingsPage() {
             <Car className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bookings?.filter((b) => b.type === "car").length || 0}</div>
+            <div className="text-2xl font-semibold">{bookings?.filter((b) => b.type === "car").length || 0}</div>
           </CardContent>
         </Card>
       </div>

@@ -212,7 +212,7 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">Nova Despesa</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Nova Despesa</h1>
         <p className="mt-2 text-muted-foreground">Registre um gasto da sua viagem</p>
       </div>
 

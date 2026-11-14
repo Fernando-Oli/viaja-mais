@@ -34,11 +34,11 @@ export default async function ItineraryPage() {
 
 
   const categoryColors: Record<string, string> = {
-    accommodation: "bg-purple-100 text-purple-800",
-    transport: "bg-blue-100 text-blue-800",
-    activity: "bg-green-100 text-green-800",
-    restaurant: "bg-orange-100 text-orange-800",
-    attraction: "bg-pink-100 text-pink-800",
+    accommodation: "bg-muted text-foreground",
+    transport: "bg-muted text-foreground",
+    activity: "bg-muted text-foreground",
+    restaurant: "bg-muted text-foreground",
+    attraction: "bg-muted text-foreground",
     other: "bg-muted text-foreground",
   }
 
@@ -54,14 +54,14 @@ export default async function ItineraryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Próximas Atividades</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Próximas Atividades</h1>
         <p className="mt-2 text-muted-foreground">Seu itinerário consolidado de todas as viagens</p>
       </div>
 
       {!itineraryItems || itineraryItems.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="mb-4 h-12 w-12 text-slate-300" />
+            <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma atividade futura</h3>
             <p className="text-center text-muted-foreground">Adicione atividades aos seus itinerários de viagem</p>
           </CardContent>

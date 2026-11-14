@@ -29,14 +29,14 @@ export default async function PlacesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Lugares Salvos</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Lugares Salvos</h1>
         <p className="mt-2 text-muted-foreground">Todos os lugares que você salvou para suas viagens</p>
       </div>
 
       {!places || places.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <MapPin className="mb-4 h-12 w-12 text-slate-300" />
+            <MapPin className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhum lugar salvo</h3>
             <p className="text-center text-muted-foreground">Adicione lugares às suas viagens para vê-los aqui</p>
           </CardContent>
@@ -52,7 +52,7 @@ export default async function PlacesPage() {
                     <CardDescription className="mt-1">{place.trips?.destination}</CardDescription>
                   </div>
                   {place.rating && (
-                    <div className="flex items-center gap-1 text-sm font-medium text-amber-600">
+                    <div className="flex items-center gap-1 text-sm font-medium text-primary">
                       <Star className="h-4 w-4 fill-current" />
                       <span>{place.rating}</span>
                     </div>
@@ -69,7 +69,7 @@ export default async function PlacesPage() {
                   )}
                   <div className="flex items-center gap-2">
                     {place.category && <Badge variant="secondary">{place.category}</Badge>}
-                    {place.visited && <Badge className="bg-emerald-100 text-emerald-800">Visitado</Badge>}
+                    {place.visited && <Badge className="bg-primary text-primary-foreground">Visitado</Badge>}
                   </div>
                   {place.notes && <p className="text-sm text-muted-foreground line-clamp-2">{place.notes}</p>}
                 </div>

@@ -125,6 +125,73 @@
   }
 }
 
+/*
+ * Componentes do shadcn (components/ui/, que não é editado) no desenho do
+ * canvas Avori. Fora de @layer de propósito: CSS sem camada vence as
+ * utilitárias do próprio componente (h-9, rounded-md, bg-muted…).
+ * Campos com 48px, cantos de 12px, abas sublinhadas em Floresta,
+ * selos em pílula, cartões com 16px e sem sombra.
+ */
+[data-slot="input"],
+[data-slot="select-trigger"][data-size="default"] {
+  height: 3rem;
+  border-radius: 0.75rem;
+  border-color: var(--input);
+  background-color: var(--card);
+  font-size: 1rem;
+  padding-inline: 0.875rem;
+}
+[data-slot="input"][type="file"] {
+  padding-block: 0.625rem;
+}
+[data-slot="textarea"] {
+  border-radius: 0.75rem;
+  border-color: var(--input);
+  background-color: var(--card);
+  font-size: 1rem;
+}
+[data-slot="button"] {
+  border-radius: 0.75rem;
+}
+[data-slot="button"][type="submit"] {
+  min-height: 2.75rem;
+  padding-inline: 1.5rem;
+}
+[data-slot="card"] {
+  border-radius: 1rem;
+  box-shadow: none;
+}
+[data-slot="badge"] {
+  border-radius: 999px;
+}
+[data-slot="tabs-list"] {
+  height: auto;
+  padding: 0;
+  gap: 0.5rem;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  justify-content: flex-start;
+  overflow-x: auto;
+}
+[data-slot="tabs-trigger"] {
+  flex: none;
+  height: 2.75rem;
+  padding-inline: 1rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  box-shadow: none !important;
+}
+[data-slot="tabs-trigger"][data-state="active"] {
+  background: transparent;
+  color: var(--foreground);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

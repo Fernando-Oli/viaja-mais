@@ -107,7 +107,7 @@ export default function DashboardPage() {
             <Plane className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{upcomingTrips.length}</div>
+            <div className="text-2xl font-semibold">{upcomingTrips.length}</div>
           </CardContent>
         </Card>
         <Card className="rounded-2xl">
@@ -118,7 +118,7 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pastTrips.length}</div>
+            <div className="text-2xl font-semibold">{pastTrips.length}</div>
           </CardContent>
         </Card>
         <Card className="rounded-2xl">
@@ -129,7 +129,7 @@ export default function DashboardPage() {
             <MapPin className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{trips?.length || 0}</div>
+            <div className="text-2xl font-semibold">{trips?.length || 0}</div>
           </CardContent>
         </Card>
       </div>

@@ -43,9 +43,9 @@ async function lerErro(resposta: Response, padrao: string) {
 
 function Estrelas({ nota }: { nota: number }) {
   return (
-    <span className="flex items-center gap-0.5 text-amber-500" aria-label={`${nota} de 5 estrelas`}>
+    <span className="flex items-center gap-0.5 text-primary" aria-label={`${nota} de 5 estrelas`}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Star key={n} className={`h-3.5 w-3.5 ${n <= nota ? "fill-current" : "text-gray-300"}`} />
+        <Star key={n} className={`h-3.5 w-3.5 ${n <= nota ? "fill-current" : "text-input"}`} />
       ))}
     </span>
   )
@@ -180,9 +180,9 @@ export function PlaceReviews({ tripId, placeId, placeName }: PlaceReviewsProps) 
                       aria-label={`${n} ${n === 1 ? "estrela" : "estrelas"}`}
                       aria-pressed={nota === n}
                       onClick={() => setNota(n)}
-                      className="rounded p-1 text-amber-500 hover:bg-amber-50"
+                      className="rounded p-1 text-primary hover:bg-muted"
                     >
-                      <Star className={`h-6 w-6 ${n <= nota ? "fill-current" : "text-gray-300"}`} />
+                      <Star className={`h-6 w-6 ${n <= nota ? "fill-current" : "text-input"}`} />
                     </button>
                   ))}
                 </div>
