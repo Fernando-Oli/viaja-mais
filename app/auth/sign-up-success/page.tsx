@@ -7,34 +7,24 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Mail, Plane } from "lucide-react";
+import { Mail } from "lucide-react";
 
 export default function SignUpSuccessPage() {
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-linear-to-br from-sky-50 via-white to-amber-50 p-6">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="flex items-center gap-2 justify-center">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center relative">
-              <Plane className="h-5 w-5 text-gray-300" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">Avori</span>
-          </div>
-        </div>
-
-        <Card>
+    <div className="w-full">
+        <Card className="rounded-3xl">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <Mail className="h-8 w-8 text-green-600" />
             </div>
-            <CardTitle className="text-2xl">Verifique seu email</CardTitle>
+            <CardTitle className="text-3xl tracking-tight">Verifique seu email</CardTitle>
             <CardDescription>
               Enviamos um link de confirmação para o seu email. Por favor,
               clique no link para ativar sua conta.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-sky-50 p-4 text-sm text-sky-800">
+            <div className="rounded-lg bg-muted p-4 text-sm text-foreground">
               <p className="font-medium mb-1">Mesmo sem a confirmação você já pode acessar sua conta normalmente, mas sua validade será temporária.</p>
             </div>
             <Button asChild className="w-full">
@@ -42,7 +32,6 @@ export default function SignUpSuccessPage() {
             </Button>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }
