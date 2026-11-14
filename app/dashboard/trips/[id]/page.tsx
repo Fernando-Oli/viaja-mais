@@ -334,12 +334,17 @@ export default async function TripDetailPage({
                   <CardTitle>Reservas</CardTitle>
                   <CardDescription>Voos, hospedagens e demais reservas da viagem</CardDescription>
                 </div>
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link href={`/dashboard/trips/${id}/bookings/new`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Reserva
-                  </Link>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild variant="outline">
+                    <Link href={`/dashboard/trips/${id}/bookings/new`}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Reserva
+                    </Link>
+                  </Button>
+                  <Button asChild className="bg-citrico text-grafite hover:bg-citrico/90">
+                    <Link href="/dashboard/reservar/voos">Buscar voos e hotéis</Link>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
