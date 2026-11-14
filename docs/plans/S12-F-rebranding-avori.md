@@ -10,7 +10,7 @@ secoes_doc: [15, 17]
 branch: feat/S12-F-rebranding-avori
 tipo: [tela, componente]
 depende_de: []
-status: em-desenvolvimento
+status: concluido
 ---
 # Aplicar a marca Avori na interface
 
@@ -87,14 +87,14 @@ Não muda: `components/ui/*` (herda dos tokens), `project_id` do Supabase, e-mai
 
 **Testes automatizados**
 
-- [ ] `e2e/00-fumaca.spec.ts`: o título da página casa com `/Avori/`
-- [ ] `e2e/grupo-convite.spec.ts`: a mensagem do convite cita "Avori"
-- [ ] `e2e/rede-social.spec.ts`: Feed e Pesquisar na barra do app, com `aria-current` certo, em computador e celular
-- [ ] `e2e/compra-previa.spec.ts`: voo e hotel de ponta a ponta, recusa com cartão final 0000, selo de prévia na confirmação
-- [ ] `e2e/estados-erro.spec.ts`: o 404 dentro do app mantém a barra (link "Viagens")
-- [ ] `e2e/acessibilidade.spec.ts` (@RNF03.5 · @RNF03.1): zero violações WCAG 2.1 A/AA com a paleta nova, em computador e em celular
-- [ ] `e2e/csp.spec.ts`: a fonte nova não gera pedido a host externo
-- [ ] Suíte E2E completa verde, com screenshots regenerados em `docs/pfc/evidencias/`
+- [x] `e2e/00-fumaca.spec.ts`: o título da página casa com `/Avori/`
+- [x] `e2e/grupo-convite.spec.ts`: a mensagem do convite cita "Avori"
+- [x] `e2e/rede-social.spec.ts`: Feed e Pesquisar na barra do app, com `aria-current` certo, em computador e celular
+- [x] `e2e/compra-previa.spec.ts`: voo e hotel de ponta a ponta, recusa com cartão final 0000, selo de prévia na confirmação
+- [x] `e2e/estados-erro.spec.ts`: o 404 dentro do app mantém a barra (link "Viagens")
+- [x] `e2e/acessibilidade.spec.ts` (@RNF03.5 · @RNF03.1): zero violações WCAG 2.1 A/AA com a paleta nova, em computador e em celular
+- [x] `e2e/csp.spec.ts`: a fonte nova não gera pedido a host externo
+- [x] Suíte E2E completa verde, com screenshots regenerados em `docs/pfc/evidencias/`
 
 **Roteiro de teste manual**
 
@@ -115,13 +115,13 @@ Não muda: `components/ui/*` (herda dos tokens), `project_id` do Supabase, e-mai
 - [x] Nenhum texto usa cítrico (`#D7EC92`) sobre marfim; sobre fundo cítrico o texto é grafite
 - [x] `e2e/acessibilidade.spec.ts` passa sem regra desligada a mais
 - [x] Nenhuma rota em `app/api/**`, migration ou arquivo de `lib/` foi alterado
-- [ ] Funciona em mobile (412px) e desktop; nenhuma tela perde função
+- [x] Funciona em mobile (412px) e desktop; nenhuma tela perde função
 - [x] Toda tela com dados de exemplo mostra o selo de prévia e não grava nada
 - [x] `npm run verify` verde
 
 ## 6. Evidência
 
-- [ ] Saída de `npm run verify` e da suíte E2E
+- [x] Saída de `npm run verify` e da suíte E2E
 - [ ] Screenshots antes e depois da landing, do painel e de uma viagem, em celular e computador
 - [x] Saída dos dois `grep` do bloco 5
 
