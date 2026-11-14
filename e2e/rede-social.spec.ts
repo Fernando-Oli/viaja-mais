@@ -34,7 +34,7 @@ test("o Feed fica na barra do app e a pesquisa troca de página", async ({ page 
   await entrarComoDavi(page)
 
   // Desde o rebranding Avori (S12): no desktop, as seções em pílulas na barra
-  // superior; no celular, a faixa de seções e a barra de abas do rodapé. Pelo
+  // superior; no celular, a barra de abas do rodapé. Pelo
   // href, porque na barra de abas o link mostra só o ícone.
   const paraFeed = () => page.locator('nav a[href="/feed"]:visible').first()
   const paraPesquisa = () => page.locator('a[href="/pesquisar"]:visible').first()

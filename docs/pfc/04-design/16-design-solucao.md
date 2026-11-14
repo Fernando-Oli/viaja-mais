@@ -100,6 +100,31 @@ tela — informação que sustenta as políticas de acesso definidas adiante.
 
 ## 16.2 — Protótipos
 
-> [!] PENDENTE: protótipo navegável no Figma. O link herdado está corrompido e
-> precisa ser recuperado pela equipe. Uma vez disponível, o protótipo deve ser
-> alinhado aos requisitos funcionais deste domínio (RF02, RF09–RF13).
+O protótipo navegável de alta fidelidade foi produzido em novembro de 2026,
+junto com a nova identidade visual Avori, e substitui o protótipo herdado do
+Figma, cujo link estava corrompido. Ele está publicado em
+https://claude.ai/artifact/5GGDo2PEXLKYQecpdUPakk e cobre todas as rotas do
+sistema em duas larguras, celular (390 px) e computador (1440 px), organizadas
+em páginas: Social, Nova viagem, Comprar voos e hotéis, Viagem, Finanças,
+Conta, Estados, Web e Desktop. As telas são ligadas entre si pelos mesmos
+botões e menus da interface, de modo que é possível percorrer, por exemplo, o
+caminho do feed ao perfil de outro viajante, ou da criação da viagem ao
+roteiro, sem sair do protótipo.
+
+O protótipo serviu de referência direta para a implementação: a navegação, as
+telas de conta, o detalhe da viagem e as telas de finanças do código seguem as
+pranchas correspondentes. A tabela relaciona as páginas do protótipo aos
+requisitos deste domínio e indica o que já está implementado.
+
+| Página do protótipo | Requisitos | Situação no código |
+|---|---|---|
+| Social: feed, comentários, publicar | RF10 | Prévia visual com dados de exemplo |
+| Social: pesquisar, perfis, seguidores, notificações | RF02, RF09, RF13 | Implementado |
+| Nova viagem: conversa guiada e prévia do roteiro | RF12 | Prévia visual, sem geração de roteiro |
+| Conta: editar perfil, configurações | RF02 | Implementado |
+
+O protótipo também desenha funcionalidades que ainda não constam do catálogo,
+como a compra de passagens e de hospedagem dentro do sistema. No código, elas
+existem apenas como prévia visual, sem integração com fornecedor nem cobrança;
+a compra real depende de parceria com um provedor de reservas e fica registrada
+como evolução do projeto.

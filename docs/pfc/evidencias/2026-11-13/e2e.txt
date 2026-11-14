@@ -1,0 +1,195 @@
+◇ injected env (21) from .env.local // tip: ⌘ enable debugging { debug: true }
+
+Running 184 tests using 1 worker
+
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+
+[1/184] [chromium] › e2e\00-fumaca.spec.ts:10:7 › páginas públicas › a landing page carrega e leva ao cadastro
+[2/184] [chromium] › e2e\00-fumaca.spec.ts:20:7 › páginas públicas › o login está acessível e pede e-mail e senha
+[3/184] [chromium] › e2e\00-fumaca.spec.ts:29:7 › proteção de rotas › visitante anônimo é redirecionado do dashboard para o login
+[4/184] [chromium] › e2e\00-fumaca.spec.ts:36:7 › proteção de rotas › a API responde 401 em JSON, não redireciona para HTML
+[5/184] [chromium] › e2e\00-fumaca.spec.ts:51:9 › rotas removidas › /login não existe mais
+[6/184] [chromium] › e2e\00-fumaca.spec.ts:51:9 › rotas removidas › /register não existe mais
+[7/184] [chromium] › e2e\acerto-contas.spec.ts:142:7 › acerto de contas › saldos e transferências sugeridas, a partir da aba Despesas
+[8/184] [chromium] › e2e\acerto-contas.spec.ts:167:7 › acerto de contas › quem tem a receber vê as transferências chegando para si
+[9/184] [chromium] › e2e\acerto-contas.spec.ts:178:7 › acerto de contas › viagem sem despesas
+[10/184] [chromium] › e2e\acerto-contas.spec.ts:192:7 › acerto de contas › todos os saldos zerados
+[11/184] [chromium] › e2e\acerto-contas.spec.ts:208:7 › acerto de contas › erro da API e recuperação com Tentar novamente
+[12/184] [chromium] › e2e\acerto-contas.spec.ts:240:7 › acerto de contas › quem não participa da viagem não consulta o acerto
+[13/184] [chromium] › e2e\acerto-transferencias.spec.ts:140:7 › registrar pagamento do acerto › pagamento parcial reduz o saldo e a sugestão
+[14/184] [chromium] › e2e\acerto-transferencias.spec.ts:174:7 › registrar pagamento do acerto › pagamento do restante tira a transferência de quem pagou
+[15/184] [chromium] › e2e\acerto-transferencias.spec.ts:193:7 › registrar pagamento do acerto › último pagamento zera todos os saldos: "Tudo acertado"
+[16/184] [chromium] › e2e\acerto-transferencias.spec.ts:212:7 › registrar pagamento do acerto › a credora vê o acerto quitado e não tem o que registrar
+[17/184] [chromium] › e2e\acerto-transferencias.spec.ts:220:7 › registrar pagamento do acerto › erro da API ao registrar: toast, diálogo aberto e nova tentativa
+[18/184] [chromium] › e2e\acerto-transferencias.spec.ts:249:7 › registrar pagamento do acerto › a API recusa pagamento em nome de outra pessoa e acima da dívida
+[19/184] [chromium] › e2e\acessibilidade.spec.ts:35:5 › telas públicas: login e cadastro
+[20/184] [chromium] › e2e\acessibilidade.spec.ts:45:5 › telas logadas: dashboard, viagem, avaliações e nova atividade
+[21/184] [chromium] › e2e\acessibilidade.spec.ts:89:5 › telas novas da Avori: landing, criar viagem, prévias e compra
+[22/184] [chromium] › e2e\adicionar-atividade.spec.ts:6:5 › membro adiciona atividade ao itinerário da viagem
+[23/184] [chromium] › e2e\avaliacoes.spec.ts:42:5 › avaliar, editar, ver a avaliação de outra pessoa e excluir
+[24/184] [chromium] › e2e\compra-previa.spec.ts:11:5 › passagens: da busca em Reservas até a confirmação, marcada como prévia
+[25/184] [chromium] › e2e\compra-previa.spec.ts:43:5 › hotéis: filtro, opção de quarto e pagamento com Pix
+[26/184] [chromium] › e2e\csp.spec.ts:26:5 › o cabeçalho CSP chega e fecha as saídas
+[27/184] [chromium] › e2e\csp.spec.ts:36:5 › login, dashboard e viagem carregam sem violação de CSP
+[28/184] [chromium] › e2e\editar-despesa.spec.ts:9:5 › membro cria, edita e exclui despesa a partir da aba da viagem
+[29/184] [chromium] › e2e\editar-perfil.spec.ts:28:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco
+[30/184] [chromium] › e2e\editar-perfil.spec.ts:90:5 › Configurações fica só com conta e senha, e aponta para o Perfil
+[31/184] [chromium] › e2e\editar-perfil.spec.ts:102:5 › mostra o erro quando o perfil não carrega
+[32/184] [chromium] › e2e\editar-viagem.spec.ts:6:5 › dono edita título e destino da viagem
+[33/184] [chromium] › e2e\estados-erro.spec.ts:18:5 › sem sessão, endereço que não existe vai para o login (lista branca do proxy)
+[34/184] [chromium] › e2e\estados-erro.spec.ts:24:5 › com sessão, endereço que não existe: 404 em português, com caminho de volta
+[35/184] [chromium] › e2e\estados-erro.spec.ts:36:5 › viagem que não existe: 404 dentro do dashboard, sem perder a navegação
+[36/184] [chromium] › e2e\estados-erro.spec.ts:50:5 › viagem de outra pessoa: o mesmo 404, sem revelar que ela existe
+[37/184] [chromium] › e2e\financeiro-jornada.spec.ts:123:7 › jornada financeira › despesas pela tela, acerto, pagamento parcial, restante e Tudo acertado
+[38/184] [chromium] › e2e\financeiro-jornada.spec.ts:199:7 › jornada financeira › pagamento persiste ao recarregar e ao voltar, e os outros membros veem o saldo novo
+[39/184] [chromium] › e2e\foto-perfil.spec.ts:61:5 › enquadra a foto no modal, envia o que está no círculo e remove
+[40/184] [chromium] › e2e\foto-perfil.spec.ts:142:5 › Cancelar no modal não envia nada
+[41/184] [chromium] › e2e\foto-perfil.spec.ts:166:9 › recusa o que não é imagem › PDF
+[42/184] [chromium] › e2e\foto-perfil.spec.ts:166:9 › recusa o que não é imagem › PDF renomeado para .png
+[43/184] [chromium] › e2e\grupo-convite.spec.ts:28:5 › dona cria a viagem pela tela, convida e o convidado aceita
+[44/184] [chromium] › e2e\itinerario-crud.spec.ts:6:5 › membro conclui, edita e exclui atividade do itinerário
+[45/184] [chromium] › e2e\listas.spec.ts:60:5 › o contador de seguidores abre a lista, e voltar retorna ao perfil; o de seguindo também
+[46/184] [chromium] › e2e\listas.spec.ts:94:5 › perfil privado sem acesso: os contadores não são links, e a lista diz que a conta é privada
+[47/184] [chromium] › e2e\listas.spec.ts:111:5 › remover pede confirmação, tira a pessoa em silêncio, e o removido segue de novo
+[48/184] [chromium] › e2e\listas.spec.ts:152:5 › Ver mais traz a página seguinte pelo cursor e some na última
+[49/184] [chromium] › e2e\listas.spec.ts:176:5 › se o cursor não acha mais a pessoa, a lista recomeça do início e avisa
+[50/184] [chromium] › e2e\listas.spec.ts:193:5 › com a sessão vencida, remover oferece entrar de novo
+[51/184] [chromium] › e2e\listas.spec.ts:213:5 › sem sessão, as listas mandam para o login, e as rotas respondem 401
+[52/184] [chromium] › e2e\listas.spec.ts:250:5 › quem não tem username vê o aviso no lugar do Seguir, e o contador bate com a lista (regressão)
+[53/184] [chromium] › e2e\listas.spec.ts:275:5 › uma remoção que termina depois de um recarregamento não traz a pessoa de volta (regressão)
+[54/184] [chromium] › e2e\lugares.spec.ts:9:5 › membro marca lugar como visitado, o estado persiste, e exclui o lugar
+[55/184] [chromium] › e2e\pesquisa.spec.ts:37:5 › os recentes: vazio, registro, ordem, o X e o Limpar tudo
+[56/184] [chromium] › e2e\pesquisa.spec.ts:123:5 › Pesquisar no menu começa uma pesquisa nova, sem o termo anterior (regressão)
+[57/184] [chromium] › e2e\pesquisa.spec.ts:139:5 › digitar tecla a tecla, no meio do texto e com composição, não embaralha o campo (regressão)
+[58/184] [chromium] › e2e\pesquisa.spec.ts:180:5 › abrir em outra aba, pelo clique do meio, também registra (regressão)
+[59/184] [chromium] › e2e\pesquisa.spec.ts:204:5 › se o X falha, a entrada fica e o erro aparece
+[60/184] [chromium] › e2e\pesquisa.spec.ts:224:5 › o próprio perfil não entra no histórico, e o corpo só passa o username
+[61/184] [chromium] › e2e\pesquisa.spec.ts:242:5 › sem sessão, a pesquisa manda para o login e as rotas do histórico respondem 401
+[62/184] [chromium] › e2e\rateio-despesa.spec.ts:148:7 › rateio na criação da despesa › divisão igual: R$ 10,00 entre 3 fecha em 3,34 + 3,33 + 3,33
+[63/184] [chromium] › e2e\rateio-despesa.spec.ts:168:7 › rateio na criação da despesa › divisão por peso: peso zero bloqueia; pesos 2, 1, 1 dividem R$ 100,00 em 50, 25, 25
+[64/184] [chromium] › e2e\rateio-despesa.spec.ts:190:7 › rateio na criação da despesa › divisão por valor exato: mostra falta e excesso e só envia quando fecha
+[65/184] [chromium] › e2e\rateio-despesa.spec.ts:223:7 › rateio na criação da despesa › carregamento e erro ao buscar os participantes, com nova tentativa
+[66/184] [chromium] › e2e\rede-social.spec.ts:33:5 › o Feed fica na barra do app e a pesquisa troca de página
+[67/184] [chromium] › e2e\rede-social.spec.ts:54:5 › busca por nome e por @usuário, marca o perfil privado e não mostra quem busca
+[68/184] [chromium] › e2e\rede-social.spec.ts:89:5 › o _ é procurado como _, e os curingas do LIKE são recusados
+[69/184] [chromium] › e2e\rede-social.spec.ts:106:5 › uma resposta atrasada não aparece no lugar da busca mais nova
+[70/184] [chromium] › e2e\rede-social.spec.ts:129:5 › sessão expirada leva ao login, em vez de erro sem saída
+[71/184] [chromium] › e2e\rede-social.spec.ts:148:5 › mostra o erro da busca e deixa tentar de novo
+[72/184] [chromium] › e2e\rede-social.spec.ts:164:5 › sem sessão, a aba manda para o login e a busca responde 401
+[73/184] [chromium] › e2e\reservas.spec.ts:9:5 › membro cria, edita e exclui reserva a partir da aba da viagem
+[74/184] [chromium] › e2e\seguir.spec.ts:36:5 › abre o perfil público pela busca, segue e deixa de seguir
+[75/184] [chromium] › e2e\seguir.spec.ts:89:5 › se seguir falha, o foco volta ao botão, e nada muda
+[76/184] [chromium] › e2e\seguir.spec.ts:110:5 › com a sessão vencida, seguir oferece entrar de novo
+[77/184] [chromium] › e2e\seguir.spec.ts:132:5 › no perfil privado, solicita sem mudar o contador e cancela a solicitação
+[78/184] [chromium] › e2e\seguir.spec.ts:160:5 › o próprio perfil mostra Editar perfil, e quem não existe mostra não encontrado
+[79/184] [chromium] › e2e\seguir.spec.ts:172:5 › seguir a si mesmo é recusado pela rota
+[80/184] [chromium] › e2e\seguir.spec.ts:179:5 › sem sessão, o perfil manda para o login e as rotas respondem 401
+[81/184] [chromium] › e2e\solicitacoes.spec.ts:75:5 › o sino mostra a solicitação, e aprovar faz do Davi um seguidor
+[82/184] [chromium] › e2e\solicitacoes.spec.ts:131:5 › recusar tira a solicitação em silêncio, e o Davi pode pedir de novo
+[83/184] [chromium] › e2e\solicitacoes.spec.ts:154:5 › sem solicitações, a central diz que não há nenhuma e o sino fica sem bolinha
+[84/184] [chromium] › e2e\solicitacoes.spec.ts:165:5 › acima de 9, a bolinha mostra 9+, e o nome do sino diz quantas são
+[85/184] [chromium] › e2e\solicitacoes.spec.ts:181:5 › se aprovar falha, a solicitação fica e o erro aparece
+[86/184] [chromium] › e2e\solicitacoes.spec.ts:202:5 › com a sessão vencida, aprovar oferece entrar de novo
+[87/184] [chromium] › e2e\solicitacoes.spec.ts:225:5 › ações seguidas em pessoas diferentes: os botões de quem espera ficam travados, e a contagem fecha (regressão)
+[88/184] [chromium] › e2e\solicitacoes.spec.ts:269:5 › quem pediu troca de username com a lista aberta: a solicitação continua, com o nome novo (regressão)
+[89/184] [chromium] › e2e\solicitacoes.spec.ts:300:5 › com a sessão vencida, o sino deixa de mostrar a contagem antiga (regressão)
+[90/184] [chromium] › e2e\solicitacoes.spec.ts:320:5 › com a sessão vencida dentro das Notificações, a bolinha também some (regressão)
+[91/184] [chromium] › e2e\solicitacoes.spec.ts:342:5 › uma recarga pedida antes de outra ação terminar não traz de volta quem já foi resolvido (regressão)
+[92/184] [chromium] › e2e\solicitacoes.spec.ts:409:5 › com a sessão vencida na recarga das Notificações, a bolinha some mesmo que o sino tenha contado antes (regressão)
+◇ injected env (0) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+
+[93/184] [mobile] › e2e\00-fumaca.spec.ts:10:7 › páginas públicas › a landing page carrega e leva ao cadastro
+[94/184] [mobile] › e2e\00-fumaca.spec.ts:20:7 › páginas públicas › o login está acessível e pede e-mail e senha
+[95/184] [mobile] › e2e\00-fumaca.spec.ts:29:7 › proteção de rotas › visitante anônimo é redirecionado do dashboard para o login
+[96/184] [mobile] › e2e\00-fumaca.spec.ts:36:7 › proteção de rotas › a API responde 401 em JSON, não redireciona para HTML
+[97/184] [mobile] › e2e\00-fumaca.spec.ts:51:9 › rotas removidas › /login não existe mais
+[98/184] [mobile] › e2e\00-fumaca.spec.ts:51:9 › rotas removidas › /register não existe mais
+[99/184] [mobile] › e2e\acerto-contas.spec.ts:142:7 › acerto de contas › saldos e transferências sugeridas, a partir da aba Despesas
+[100/184] [mobile] › e2e\acerto-contas.spec.ts:167:7 › acerto de contas › quem tem a receber vê as transferências chegando para si
+[101/184] [mobile] › e2e\acerto-contas.spec.ts:178:7 › acerto de contas › viagem sem despesas
+[102/184] [mobile] › e2e\acerto-contas.spec.ts:192:7 › acerto de contas › todos os saldos zerados
+[103/184] [mobile] › e2e\acerto-contas.spec.ts:208:7 › acerto de contas › erro da API e recuperação com Tentar novamente
+[104/184] [mobile] › e2e\acerto-contas.spec.ts:240:7 › acerto de contas › quem não participa da viagem não consulta o acerto
+[105/184] [mobile] › e2e\acerto-transferencias.spec.ts:140:7 › registrar pagamento do acerto › pagamento parcial reduz o saldo e a sugestão
+[106/184] [mobile] › e2e\acerto-transferencias.spec.ts:174:7 › registrar pagamento do acerto › pagamento do restante tira a transferência de quem pagou
+[107/184] [mobile] › e2e\acerto-transferencias.spec.ts:193:7 › registrar pagamento do acerto › último pagamento zera todos os saldos: "Tudo acertado"
+[108/184] [mobile] › e2e\acerto-transferencias.spec.ts:212:7 › registrar pagamento do acerto › a credora vê o acerto quitado e não tem o que registrar
+[109/184] [mobile] › e2e\acerto-transferencias.spec.ts:220:7 › registrar pagamento do acerto › erro da API ao registrar: toast, diálogo aberto e nova tentativa
+[110/184] [mobile] › e2e\acerto-transferencias.spec.ts:249:7 › registrar pagamento do acerto › a API recusa pagamento em nome de outra pessoa e acima da dívida
+[111/184] [mobile] › e2e\acessibilidade.spec.ts:35:5 › telas públicas: login e cadastro
+[112/184] [mobile] › e2e\acessibilidade.spec.ts:45:5 › telas logadas: dashboard, viagem, avaliações e nova atividade
+[113/184] [mobile] › e2e\acessibilidade.spec.ts:89:5 › telas novas da Avori: landing, criar viagem, prévias e compra
+[114/184] [mobile] › e2e\adicionar-atividade.spec.ts:6:5 › membro adiciona atividade ao itinerário da viagem
+[115/184] [mobile] › e2e\avaliacoes.spec.ts:42:5 › avaliar, editar, ver a avaliação de outra pessoa e excluir
+[116/184] [mobile] › e2e\compra-previa.spec.ts:11:5 › passagens: da busca em Reservas até a confirmação, marcada como prévia
+[117/184] [mobile] › e2e\compra-previa.spec.ts:43:5 › hotéis: filtro, opção de quarto e pagamento com Pix
+[118/184] [mobile] › e2e\csp.spec.ts:26:5 › o cabeçalho CSP chega e fecha as saídas
+[119/184] [mobile] › e2e\csp.spec.ts:36:5 › login, dashboard e viagem carregam sem violação de CSP
+[120/184] [mobile] › e2e\editar-despesa.spec.ts:9:5 › membro cria, edita e exclui despesa a partir da aba da viagem
+[121/184] [mobile] › e2e\editar-perfil.spec.ts:28:5 › abre Perfil pelo menu do usuário, edita e recusa username em uso, reservado ou em branco
+[122/184] [mobile] › e2e\editar-perfil.spec.ts:90:5 › Configurações fica só com conta e senha, e aponta para o Perfil
+[123/184] [mobile] › e2e\editar-perfil.spec.ts:102:5 › mostra o erro quando o perfil não carrega
+[124/184] [mobile] › e2e\editar-viagem.spec.ts:6:5 › dono edita título e destino da viagem
+[125/184] [mobile] › e2e\estados-erro.spec.ts:18:5 › sem sessão, endereço que não existe vai para o login (lista branca do proxy)
+[126/184] [mobile] › e2e\estados-erro.spec.ts:24:5 › com sessão, endereço que não existe: 404 em português, com caminho de volta
+[127/184] [mobile] › e2e\estados-erro.spec.ts:36:5 › viagem que não existe: 404 dentro do dashboard, sem perder a navegação
+[128/184] [mobile] › e2e\estados-erro.spec.ts:50:5 › viagem de outra pessoa: o mesmo 404, sem revelar que ela existe
+[129/184] [mobile] › e2e\financeiro-jornada.spec.ts:123:7 › jornada financeira › despesas pela tela, acerto, pagamento parcial, restante e Tudo acertado
+[130/184] [mobile] › e2e\financeiro-jornada.spec.ts:199:7 › jornada financeira › pagamento persiste ao recarregar e ao voltar, e os outros membros veem o saldo novo
+[131/184] [mobile] › e2e\foto-perfil.spec.ts:61:5 › enquadra a foto no modal, envia o que está no círculo e remove
+[132/184] [mobile] › e2e\foto-perfil.spec.ts:142:5 › Cancelar no modal não envia nada
+[133/184] [mobile] › e2e\foto-perfil.spec.ts:166:9 › recusa o que não é imagem › PDF
+[134/184] [mobile] › e2e\foto-perfil.spec.ts:166:9 › recusa o que não é imagem › PDF renomeado para .png
+[135/184] [mobile] › e2e\grupo-convite.spec.ts:28:5 › dona cria a viagem pela tela, convida e o convidado aceita
+[136/184] [mobile] › e2e\itinerario-crud.spec.ts:6:5 › membro conclui, edita e exclui atividade do itinerário
+[137/184] [mobile] › e2e\listas.spec.ts:60:5 › o contador de seguidores abre a lista, e voltar retorna ao perfil; o de seguindo também
+[138/184] [mobile] › e2e\listas.spec.ts:94:5 › perfil privado sem acesso: os contadores não são links, e a lista diz que a conta é privada
+[139/184] [mobile] › e2e\listas.spec.ts:111:5 › remover pede confirmação, tira a pessoa em silêncio, e o removido segue de novo
+[140/184] [mobile] › e2e\listas.spec.ts:152:5 › Ver mais traz a página seguinte pelo cursor e some na última
+[141/184] [mobile] › e2e\listas.spec.ts:176:5 › se o cursor não acha mais a pessoa, a lista recomeça do início e avisa
+[142/184] [mobile] › e2e\listas.spec.ts:193:5 › com a sessão vencida, remover oferece entrar de novo
+[143/184] [mobile] › e2e\listas.spec.ts:213:5 › sem sessão, as listas mandam para o login, e as rotas respondem 401
+[144/184] [mobile] › e2e\listas.spec.ts:250:5 › quem não tem username vê o aviso no lugar do Seguir, e o contador bate com a lista (regressão)
+[145/184] [mobile] › e2e\listas.spec.ts:275:5 › uma remoção que termina depois de um recarregamento não traz a pessoa de volta (regressão)
+[146/184] [mobile] › e2e\lugares.spec.ts:9:5 › membro marca lugar como visitado, o estado persiste, e exclui o lugar
+[147/184] [mobile] › e2e\pesquisa.spec.ts:37:5 › os recentes: vazio, registro, ordem, o X e o Limpar tudo
+[148/184] [mobile] › e2e\pesquisa.spec.ts:123:5 › Pesquisar no menu começa uma pesquisa nova, sem o termo anterior (regressão)
+[149/184] [mobile] › e2e\pesquisa.spec.ts:139:5 › digitar tecla a tecla, no meio do texto e com composição, não embaralha o campo (regressão)
+[150/184] [mobile] › e2e\pesquisa.spec.ts:180:5 › abrir em outra aba, pelo clique do meio, também registra (regressão)
+[151/184] [mobile] › e2e\pesquisa.spec.ts:204:5 › se o X falha, a entrada fica e o erro aparece
+[152/184] [mobile] › e2e\pesquisa.spec.ts:224:5 › o próprio perfil não entra no histórico, e o corpo só passa o username
+[153/184] [mobile] › e2e\pesquisa.spec.ts:242:5 › sem sessão, a pesquisa manda para o login e as rotas do histórico respondem 401
+[154/184] [mobile] › e2e\rateio-despesa.spec.ts:148:7 › rateio na criação da despesa › divisão igual: R$ 10,00 entre 3 fecha em 3,34 + 3,33 + 3,33
+[155/184] [mobile] › e2e\rateio-despesa.spec.ts:168:7 › rateio na criação da despesa › divisão por peso: peso zero bloqueia; pesos 2, 1, 1 dividem R$ 100,00 em 50, 25, 25
+[156/184] [mobile] › e2e\rateio-despesa.spec.ts:190:7 › rateio na criação da despesa › divisão por valor exato: mostra falta e excesso e só envia quando fecha
+[157/184] [mobile] › e2e\rateio-despesa.spec.ts:223:7 › rateio na criação da despesa › carregamento e erro ao buscar os participantes, com nova tentativa
+[158/184] [mobile] › e2e\rede-social.spec.ts:33:5 › o Feed fica na barra do app e a pesquisa troca de página
+[159/184] [mobile] › e2e\rede-social.spec.ts:54:5 › busca por nome e por @usuário, marca o perfil privado e não mostra quem busca
+[160/184] [mobile] › e2e\rede-social.spec.ts:89:5 › o _ é procurado como _, e os curingas do LIKE são recusados
+[161/184] [mobile] › e2e\rede-social.spec.ts:106:5 › uma resposta atrasada não aparece no lugar da busca mais nova
+[162/184] [mobile] › e2e\rede-social.spec.ts:129:5 › sessão expirada leva ao login, em vez de erro sem saída
+[163/184] [mobile] › e2e\rede-social.spec.ts:148:5 › mostra o erro da busca e deixa tentar de novo
+[164/184] [mobile] › e2e\rede-social.spec.ts:164:5 › sem sessão, a aba manda para o login e a busca responde 401
+[165/184] [mobile] › e2e\reservas.spec.ts:9:5 › membro cria, edita e exclui reserva a partir da aba da viagem
+[166/184] [mobile] › e2e\seguir.spec.ts:36:5 › abre o perfil público pela busca, segue e deixa de seguir
+[167/184] [mobile] › e2e\seguir.spec.ts:89:5 › se seguir falha, o foco volta ao botão, e nada muda
+[168/184] [mobile] › e2e\seguir.spec.ts:110:5 › com a sessão vencida, seguir oferece entrar de novo
+[169/184] [mobile] › e2e\seguir.spec.ts:132:5 › no perfil privado, solicita sem mudar o contador e cancela a solicitação
+[170/184] [mobile] › e2e\seguir.spec.ts:160:5 › o próprio perfil mostra Editar perfil, e quem não existe mostra não encontrado
+[171/184] [mobile] › e2e\seguir.spec.ts:172:5 › seguir a si mesmo é recusado pela rota
+[172/184] [mobile] › e2e\seguir.spec.ts:179:5 › sem sessão, o perfil manda para o login e as rotas respondem 401
+[173/184] [mobile] › e2e\solicitacoes.spec.ts:75:5 › o sino mostra a solicitação, e aprovar faz do Davi um seguidor
+[174/184] [mobile] › e2e\solicitacoes.spec.ts:131:5 › recusar tira a solicitação em silêncio, e o Davi pode pedir de novo
+[175/184] [mobile] › e2e\solicitacoes.spec.ts:154:5 › sem solicitações, a central diz que não há nenhuma e o sino fica sem bolinha
+[176/184] [mobile] › e2e\solicitacoes.spec.ts:165:5 › acima de 9, a bolinha mostra 9+, e o nome do sino diz quantas são
+[177/184] [mobile] › e2e\solicitacoes.spec.ts:181:5 › se aprovar falha, a solicitação fica e o erro aparece
+[178/184] [mobile] › e2e\solicitacoes.spec.ts:202:5 › com a sessão vencida, aprovar oferece entrar de novo
+[179/184] [mobile] › e2e\solicitacoes.spec.ts:225:5 › ações seguidas em pessoas diferentes: os botões de quem espera ficam travados, e a contagem fecha (regressão)
+[180/184] [mobile] › e2e\solicitacoes.spec.ts:269:5 › quem pediu troca de username com a lista aberta: a solicitação continua, com o nome novo (regressão)
+[181/184] [mobile] › e2e\solicitacoes.spec.ts:300:5 › com a sessão vencida, o sino deixa de mostrar a contagem antiga (regressão)
+[182/184] [mobile] › e2e\solicitacoes.spec.ts:320:5 › com a sessão vencida dentro das Notificações, a bolinha também some (regressão)
+[183/184] [mobile] › e2e\solicitacoes.spec.ts:342:5 › uma recarga pedida antes de outra ação terminar não traz de volta quem já foi resolvido (regressão)
+[184/184] [mobile] › e2e\solicitacoes.spec.ts:409:5 › com a sessão vencida na recarga das Notificações, a bolinha some mesmo que o sino tenha contado antes (regressão)
+  1 skipped
+  183 passed (13.2m)
+saida 0

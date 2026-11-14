@@ -1,6 +1,6 @@
 ## 22. Implementação por Camadas do Sistema
 
-Esta seção descreve como cada camada do ViajaMais foi efetivamente implementada, com referência aos arquivos do repositório e aos requisitos que cada parte atende.
+Esta seção descreve como cada camada da Avori (nome adotado em novembro de 2026; até então, ViajaMais) foi efetivamente implementada, com referência aos arquivos do repositório e aos requisitos que cada parte atende.
 
 ### 22.1 Frontend
 
@@ -8,7 +8,7 @@ A interface foi desenvolvida em Next.js 16 com o App Router, sobre React 19. No 
 
 #### Organização das telas
 
-Todas as telas da área autenticada compartilham o layout definido em `app/dashboard/layout.tsx`, que contém a barra lateral com os atalhos Dashboard, Minhas Viagens, Itinerários, Finanças, Lugares e Reservas, além do menu do usuário com Configurações e Sair. A tela central do sistema é o detalhe da viagem, que reúne indicadores, membros, convites e as abas Itinerário, Despesas, Lugares e Reservas. A tabela a seguir relaciona cada tela ao tipo de componente adotado e aos requisitos do catálogo da seção 14 que ela atende.
+Todas as telas da área autenticada compartilham o layout definido em `app/dashboard/layout.tsx`. No computador, uma barra superior reúne a assinatura da marca, as seções Painel, Feed, Viagens, Agenda, Finanças, Reservas e Lugares, a pesquisa de pessoas, o sino de notificações, o botão Nova viagem e o menu do usuário com Meu perfil, Configurações e Sair. No celular, as mesmas seções aparecem numa faixa rolável logo abaixo da barra, e uma barra de abas fixa no rodapé dá acesso a Início, Pesquisar, Nova viagem, Viagens e Perfil. A tela central do sistema é o detalhe da viagem, que reúne a capa, o resumo, os membros, os convites e as abas Itinerário, Despesas, Lugares e Reservas. A tabela a seguir relaciona cada tela ao tipo de componente adotado e aos requisitos do catálogo da seção 14 que ela atende.
 
 | Tela (rota) | Tipo | Requisitos atendidos |
 |---|---|---|
@@ -18,7 +18,9 @@ Todas as telas da área autenticada compartilham o layout definido em `app/dashb
 | `/dashboard/settings` | Cliente | RF01.8, RF02.2, RF02.3 |
 | `/dashboard` | Cliente | RF03.4 (visão geral das viagens) |
 | `/dashboard/trips` | Cliente | RF03.4 |
+| `/dashboard/trips/criar` | Servidor | RF03.1 (escolha entre criar com a Avori e criar manualmente) |
 | `/dashboard/trips/new` | Cliente | RF03.1 |
+| `/dashboard/trips/criar/ia` | Cliente | RF12 (prévia visual, sem geração de roteiro) |
 | `/dashboard/trips/[id]` | Servidor | RF03.5; RF04.1, RF04.3, RF04.7, RF04.8 (componentes de membros e convites); RF05.4 (aba Itinerário) |
 | `/dashboard/trips/[id]/edit` | Cliente | RF03.2 |
 | `/dashboard/trips/[id]/itinerary/new` | Cliente | RF05.1 |
@@ -30,6 +32,10 @@ Todas as telas da área autenticada compartilham o layout definido em `app/dashb
 | `/dashboard/trips/[id]/bookings/new` | Cliente | RF07.1 a RF07.4 |
 | `/dashboard/trips/[id]/bookings/[bookingId]/edit` | Cliente | RF07.5 |
 | `/dashboard/places`, `/dashboard/trips/[id]/places` | Servidor / Cliente | RF08 |
+| `/feed` | Servidor | RF10 (prévia visual, com dados de exemplo) |
+| `/dashboard/reservar/voos`, `/dashboard/reservar/hoteis` | Cliente | Prévia visual de compra de passagens e hospedagem, sem requisito no catálogo |
+
+As telas marcadas como prévia visual já têm o desenho final, mas funcionam com dados de exemplo e não gravam nada; cada uma exibe na própria tela o selo "Prévia com dados de exemplo", para que nenhum usuário ou avaliador as confunda com funcionalidades prontas. O código delas fica isolado em `components/prototipo/`, de modo que a implementação real substitui os dados de exemplo sem alterar o restante da interface.
 
 As ações de concluir, reabrir e excluir atividade (RF05.2 e RF05.3) não têm tela própria: ficam no componente `components/itinerary-list.tsx`, exibido na aba Itinerário do detalhe da viagem. Da mesma forma, a exclusão de reserva (RF07.6) fica em `components/booking-list.tsx`, na aba Reservas, que é também o ponto de entrada para criar e editar reservas. As telas de reserva, ao salvar, retornam ao detalhe com o parâmetro `?aba=reservas`, que abre a página diretamente nessa aba para que o usuário veja o registro que acabou de gravar. Marcar um lugar como visitado e excluí-lo (RF08.4 e RF08.6) segue o mesmo desenho: as ações ficam em `components/place-list.tsx`, exibido tanto na aba Lugares do detalhe da viagem quanto na tela de lugares da viagem, e o estado de visitado é gravado pela rota de API, de modo que persiste ao recarregar a página e é visto por todos os membros do grupo.
 
@@ -51,15 +57,15 @@ As reservas seguem o mesmo desenho em `booking-list.tsx`, com uma particularidad
 
 ![Itinerário com atividade concluída, perfil de computador](../evidencias/S04-A-itinerario-concluida-chromium.png)
 
-*Figura 22.1 — Aba Itinerário do detalhe da viagem após a conclusão de uma atividade, capturada pelo teste `e2e/itinerario-crud.spec.ts` no perfil de computador.* A atividade concluída aparece com o título riscado, o cartão esmaecido e o selo "Concluída", enquanto as demais mantêm a aparência normal. Os botões Reabrir, Editar e Excluir permanecem visíveis no cartão, o que mostra que a conclusão é reversível e não remove o item.
+*Figura 22.1 — Aba Itinerário do detalhe da viagem após a conclusão de uma atividade, capturada pelo teste `e2e/itinerario-crud.spec.ts` no perfil de computador.* As atividades aparecem agrupadas em um cartão por dia, com o selo "Dia 1", a data por extenso e a contagem de atividades; cada linha traz o horário à esquerda, o ícone da categoria, o título e o local. A atividade concluída aparece com o título riscado, a linha em fundo destacado e o selo "Concluída". À direita, a coluna de resumo mostra os indicadores da viagem e os membros. Os botões Reabrir, Editar e Excluir permanecem visíveis na linha, o que mostra que a conclusão é reversível e não remove o item.
 
 #### Responsividade e verificação
 
-A barra lateral passa a exibir apenas ícones abaixo do ponto de quebra `md` do Tailwind, e os cabeçalhos de página e os cartões são empilhados em telas estreitas. A verificação da interface é feita por testes ponta a ponta em Playwright, executados em dois perfis definidos em `playwright.config.ts`: `chromium`, que simula um navegador de computador, e `mobile`, que simula um Pixel 7. O perfil de celular já revelou um defeito real: a barra lateral sobrepunha o conteúdo e cobria o botão de salvar, o que levou à correção do layout do painel registrada na versão 2.6 da Parte 00.
+Abaixo do ponto de quebra `lg` do Tailwind, as seções da barra superior passam para a faixa rolável e a barra de abas aparece no rodapé, com espaço reservado no fim do conteúdo para que ela não cubra o último elemento da página; os cabeçalhos de página e os cartões são empilhados em telas estreitas. A verificação da interface é feita por testes ponta a ponta em Playwright, executados em dois perfis definidos em `playwright.config.ts`: `chromium`, que simula um navegador de computador, e `mobile`, que simula um Pixel 7. O perfil de celular já revelou um defeito real: a antiga barra lateral sobrepunha o conteúdo e cobria o botão de salvar, o que levou à correção do layout do painel registrada na versão 2.6 da Parte 00.
 
 ![Detalhe da viagem após a edição, perfil de celular](../evidencias/S03-A-editar-viagem-mobile.png)
 
-*Figura 22.2 — Detalhe da viagem logo após a edição, capturado pelo teste `e2e/editar-viagem.spec.ts` no perfil `mobile`.* A imagem mostra a barra lateral reduzida aos ícones, o título, o status e o botão Editar empilhados na largura restante, sem rolagem lateral, e o aviso "Viagem atualizada" que confirma a gravação. Para chegar a essa tela, o teste precisou preencher e salvar o formulário de edição no mesmo perfil, etapa que antes da correção falhava porque o botão de salvar ficava encoberto.
+*Figura 22.2 — Detalhe da viagem logo após a edição, capturado pelo teste `e2e/editar-viagem.spec.ts` no perfil `mobile`.* A imagem mostra o cabeçalho da viagem com a capa, o status, o título, o destino, as datas e os botões Editar e Publicar empilhados na largura do celular, sem rolagem lateral; logo abaixo vêm as abas e o itinerário, e só depois o resumo e os membros. No topo, o aviso "Viagem atualizada" confirma a gravação. A barra de abas aparece no meio da imagem por efeito da captura de página inteira; no aparelho, ela fica presa ao rodapé. Para chegar a essa tela, o teste precisou preencher e salvar o formulário de edição no mesmo perfil, etapa que antes da correção falhava porque o botão de salvar ficava encoberto.
 
 #### Limitações conhecidas
 

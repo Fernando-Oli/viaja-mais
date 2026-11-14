@@ -139,7 +139,6 @@
   border-color: var(--input);
   background-color: var(--card);
   font-size: 1rem;
-  padding-inline: 0.875rem;
 }
 [data-slot="input"][type="file"] {
   padding-block: 0.625rem;

@@ -197,7 +197,7 @@ export default async function TripDetailPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <aside aria-label="Resumo da viagem" className="space-y-4 lg:col-start-2 lg:row-start-1">
+        <aside aria-label="Resumo da viagem" className="order-last space-y-4 lg:order-none lg:col-start-2 lg:row-start-1">
           <section className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-4 lg:grid-cols-2">
             <div className="bg-card p-4">
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -254,7 +254,7 @@ export default async function TripDetailPage({
           {/* Tabs */}
           <Tabs defaultValue={abaInicial} className="w-full">
             {/* Quatro abas não cabem numa linha no celular: a lista quebra em vez de estourar. */}
-            <TabsList className="h-auto flex-wrap">
+            <TabsList className="h-auto">
               <TabsTrigger value="itinerary">Itinerário</TabsTrigger>
               <TabsTrigger value="expenses">Despesas</TabsTrigger>
               <TabsTrigger value="places">Lugares</TabsTrigger>
