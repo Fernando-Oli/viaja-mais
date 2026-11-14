@@ -46,7 +46,7 @@ https://claude.ai/artifact/5GGDo2PEXLKYQecpdUPakk.
 - `app/layout.tsx` — `Instrument_Sans` no lugar de `Poppins`; título e descrição
 - `app/**`, `components/**` (cerca de 40 arquivos) — `viaja-*` e cinzas fixos viram tokens semânticos; "Viaja+" vira `<Logo />` ou "Avori"
 - `supabase/config.toml`, `supabase/templates/convite.html` — nome no assunto e no corpo do convite
-- `app/dashboard/layout.tsx` — barra superior (lg+), faixa de seções e barra de abas no celular
+- `app/dashboard/layout.tsx` — barra superior (lg+); no celular, barra de abas e as demais seções no menu do avatar
 - `app/(rede-social)/layout.tsx`, `sino.tsx` — o menu da aba sai (`navegacao.tsx` removido); o sino vai para a barra
 - `app/page.tsx` — landing nova; `app/auth/layout.tsx` (novo) e `app/auth/*/page.tsx` — layout dividido
 - `app/dashboard/page.tsx`, `app/dashboard/trips/page.tsx`, `app/dashboard/trips/[id]/page.tsx` — próxima viagem, cartões e cabeçalho com capa
@@ -107,23 +107,23 @@ Não muda: `components/ui/*` (herda dos tokens), `project_id` do Supabase, e-mai
 
 ## 5. O que validar
 
-- [ ] `grep -rE "viaja-(navy|orange|green)" app components` não devolve nada
-- [ ] `grep -rE "Viaja ?\+|ViajaMais" app components supabase/templates supabase/config.toml` não devolve nada
-- [ ] `app/globals.css` não define `--color-navy`, `--color-orange` nem `--color-green`
-- [ ] Nenhum arquivo de `components/ui/` foi alterado, exceto `confirm-modal.tsx`
+- [x] `grep -rE "viaja-(navy|orange|green)" app components` não devolve nada
+- [x] `grep -rE "Viaja ?\+|ViajaMais" app components supabase/templates supabase/config.toml` não devolve nada
+- [x] `app/globals.css` não define `--color-navy`, `--color-orange` nem `--color-green`
+- [x] Nenhum arquivo de `components/ui/` foi alterado, exceto `confirm-modal.tsx`
 - [ ] O logotipo é sempre `<img>` de um SVG de `public/brand/`; a palavra "avori" não é composta em texto para imitar a marca
-- [ ] Nenhum texto usa cítrico (`#D7EC92`) sobre marfim; sobre fundo cítrico o texto é grafite
+- [x] Nenhum texto usa cítrico (`#D7EC92`) sobre marfim; sobre fundo cítrico o texto é grafite
 - [ ] `e2e/acessibilidade.spec.ts` passa sem regra desligada a mais
-- [ ] Nenhuma rota em `app/api/**`, migration ou arquivo de `lib/` foi alterado
+- [x] Nenhuma rota em `app/api/**`, migration ou arquivo de `lib/` foi alterado
 - [ ] Funciona em mobile (412px) e desktop; nenhuma tela perde função
 - [ ] Toda tela com dados de exemplo mostra o selo de prévia e não grava nada
-- [ ] `npm run verify` verde
+- [x] `npm run verify` verde
 
 ## 6. Evidência
 
 - [ ] Saída de `npm run verify` e da suíte E2E
 - [ ] Screenshots antes e depois da landing, do painel e de uma viagem, em celular e computador
-- [ ] Saída dos dois `grep` do bloco 5
+- [x] Saída dos dois `grep` do bloco 5
 
 ## 7. Etapas e PRs
 

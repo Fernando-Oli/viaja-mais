@@ -24,8 +24,9 @@ import { cn } from "@/lib/utils";
  *
  * Desktop (lg+): barra superior Floresta com a assinatura, as seções em
  * pílulas, Pesquisar, o sino, "Nova viagem" em Cítrico e o avatar.
- * Celular: a mesma barra, com as seções numa faixa rolável logo abaixo, e a
- * barra de abas fixa no rodapé (Início · Pesquisar · Nova · Viagens · Perfil).
+ * Celular: a barra superior só com a assinatura, o sino e o avatar, e a barra
+ * de abas fixa no rodapé (Início · Pesquisar · Nova · Viagens · Perfil). As
+ * seções que não cabem nas abas (SO_NO_MENU) ficam no menu do avatar.
  * O `pb-28` do conteúdo reserva o espaço da barra de abas.
  */
 
@@ -38,6 +39,9 @@ const SECOES = [
   { nome: "Reservas", href: "/dashboard/bookings" },
   { nome: "Lugares", href: "/dashboard/places" },
 ] as const;
+
+/** Seções sem aba no celular: lá, entram no menu do avatar. */
+const SO_NO_MENU = SECOES.filter((s) => s.href !== "/feed" && s.href !== "/dashboard/trips");
 
 const ABAS = [
   { nome: "Início", href: "/feed", Icone: House },
@@ -161,6 +165,14 @@ export default function DashboardLayout({
                   <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {SO_NO_MENU.map((s) => (
+                  <DropdownMenuItem key={s.href} asChild className="lg:hidden">
+                    <Link href={s.href} aria-current={estaEm(caminho, s.href, "exato" in s ? s.exato : undefined) ? "page" : undefined}>
+                      {s.nome}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator className="lg:hidden" />
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/perfil">
                     <UserRound className="mr-2 h-4 w-4" />
@@ -183,19 +195,6 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* Celular e tablet: as mesmas seções numa faixa rolável. */}
-        <nav aria-label="Seções" className="lg:hidden">
-          <div className="mx-auto flex max-w-[1360px] gap-1 overflow-x-auto px-4 pb-3 md:px-10">
-            {SECOES.map((s) => {
-              const ativo = estaEm(caminho, s.href, "exato" in s ? s.exato : undefined);
-              return (
-                <Link key={s.href} href={s.href} aria-current={ativo ? "page" : undefined} className={cn(pilula(ativo), "h-9")}>
-                  {s.nome}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
       </header>
 
       <main id="conteudo" className="mx-auto w-full min-w-0 max-w-[1360px] flex-1 px-4 pb-28 pt-6 md:px-10 lg:pb-10 lg:pt-8">
