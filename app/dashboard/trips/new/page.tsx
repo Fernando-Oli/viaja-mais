@@ -166,7 +166,7 @@ export default function NewTripPage() {
               <div className="space-y-2">
                 <Label htmlFor="budget">Orçamento</Label>
                 <Input
-                  id="number"
+                  id="budget"
                   type="text"
                   name="budget"
                   value={Number(formData.budget)}

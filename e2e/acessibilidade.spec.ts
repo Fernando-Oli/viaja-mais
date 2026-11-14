@@ -85,3 +85,26 @@ test("telas logadas: dashboard, viagem, avaliações e nova atividade", async ({
   await expect(page.locator("#title")).toBeVisible()
   await semViolacoes(page, "nova atividade do itinerário")
 })
+
+test("telas novas da Avori: landing, criar viagem, prévias e compra", async ({ dona }) => {
+  const { page } = dona
+  const telas: [string, string, string][] = [
+    ["/dashboard/trips/criar", "criar viagem: escolha", "Como você quer criar a viagem?"],
+    ["/dashboard/trips/criar/ia", "criar viagem com a Avori", "Nova viagem com a Avori"],
+    ["/dashboard/trips/new", "criar viagem do meu jeito", "Criar do meu jeito"],
+    ["/feed", "feed (prévia)", "Feed"],
+    ["/dashboard/bookings", "reservas com a busca", "Reservas"],
+    ["/dashboard/reservar/voos", "voos (prévia)", "Voos para Lisboa"],
+    ["/dashboard/reservar/hoteis", "hotéis (prévia)", "Hotéis em Lisboa"],
+  ]
+  for (const [rota, tela, titulo] of telas) {
+    await page.goto(rota)
+    await expect(page.getByRole("heading", { level: 1, name: titulo })).toBeVisible()
+    await semViolacoes(page, tela)
+  }
+
+  // A página inicial pública, com a mesma sessão (a landing não depende dela).
+  await page.goto("/")
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+  await semViolacoes(page, "página inicial")
+})
