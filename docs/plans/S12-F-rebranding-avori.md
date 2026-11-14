@@ -111,12 +111,12 @@ Não muda: `components/ui/*` (herda dos tokens), `project_id` do Supabase, e-mai
 - [x] `grep -rE "Viaja ?\+|ViajaMais" app components supabase/templates supabase/config.toml` não devolve nada
 - [x] `app/globals.css` não define `--color-navy`, `--color-orange` nem `--color-green`
 - [x] Nenhum arquivo de `components/ui/` foi alterado, exceto `confirm-modal.tsx`
-- [ ] O logotipo é sempre `<img>` de um SVG de `public/brand/`; a palavra "avori" não é composta em texto para imitar a marca
+- [x] O logotipo é sempre `<img>` de um SVG de `public/brand/`; a palavra "avori" não é composta em texto para imitar a marca
 - [x] Nenhum texto usa cítrico (`#D7EC92`) sobre marfim; sobre fundo cítrico o texto é grafite
-- [ ] `e2e/acessibilidade.spec.ts` passa sem regra desligada a mais
+- [x] `e2e/acessibilidade.spec.ts` passa sem regra desligada a mais
 - [x] Nenhuma rota em `app/api/**`, migration ou arquivo de `lib/` foi alterado
 - [ ] Funciona em mobile (412px) e desktop; nenhuma tela perde função
-- [ ] Toda tela com dados de exemplo mostra o selo de prévia e não grava nada
+- [x] Toda tela com dados de exemplo mostra o selo de prévia e não grava nada
 - [x] `npm run verify` verde
 
 ## 6. Evidência
