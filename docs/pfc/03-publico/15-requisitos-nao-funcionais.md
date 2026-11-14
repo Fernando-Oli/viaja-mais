@@ -146,7 +146,18 @@ perdiam o texto na largura de celular. A correção de contraste alterou a
 identidade visual: o laranja passou de `#FF7F50` para `#C2410C` e o verde de
 `#319F43` para `#267E35`, que atingem a razão mínima de 4,5:1 exigida pelo nível
 AA para texto. O logotipo manteve as cores originais, pois a norma isenta
-logotipos dessa exigência. O requisito permanece Parcial porque as telas fora
+logotipos dessa exigência. Em novembro de 2026, o rebranding para Avori
+substituiu essa paleta por marfim, floresta, grafite e cítrico, escolhida já com
+razão de contraste de pelo menos 4,5:1 para texto; o cítrico, mais claro, é usado
+apenas como fundo, sempre com texto grafite, e nunca como cor de texto sobre
+marfim. Na mesma ocasião, o teste passou a cobrir também a página inicial, a
+escolha entre criar a viagem com a Avori ou manualmente, a criação com a Avori,
+o formulário de criação manual, o feed, a busca de reservas e as prévias de
+compra de passagens e de hospedagem. Essa ampliação encontrou dois problemas,
+ambos corrigidos: o campo de orçamento da criação de viagem tinha um rótulo
+associado a um identificador inexistente, de modo que ficava sem nome acessível,
+e os botões de curtir e comentar do feed exibiam a contagem sem que ela fizesse
+parte do nome lido pelo leitor de tela. O requisito permanece Parcial porque as telas fora
 dessa lista não são verificadas; a tela de criação de despesa, por exemplo, tem
 campos de seleção sem nome acessível. Foco visível e navegação por teclado não
 são verificáveis pela ferramenta e constam do roteiro manual da atividade

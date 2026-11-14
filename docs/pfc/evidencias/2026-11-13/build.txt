@@ -1,0 +1,97 @@
+
+> viaja-mais@0.1.0 build
+> next build
+
+▲ Next.js 16.3.3 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.mjs took 63ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.1s
+  Running TypeScript ...
+  Finished TypeScript in 8.8s ...
+  Collecting page data using 23 workers ...
+  Generating static pages using 23 workers (0/33) ...
+  Generating static pages using 23 workers (8/33) 
+  Generating static pages using 23 workers (16/33) 
+  Generating static pages using 23 workers (24/33) 
+✓ Generating static pages using 23 workers (33/33) in 1341ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/auth/change-password
+├ ƒ /api/invitations
+├ ƒ /api/invitations/[invitationId]/accept
+├ ƒ /api/invitations/[invitationId]/decline
+├ ƒ /api/profile/[userId]
+├ ƒ /api/social/perfil
+├ ƒ /api/social/perfil/foto
+├ ƒ /api/social/perfis
+├ ƒ /api/social/perfis/[username]
+├ ƒ /api/social/perfis/[username]/seguidores
+├ ƒ /api/social/perfis/[username]/seguindo
+├ ƒ /api/social/perfis/[username]/seguir
+├ ƒ /api/social/pesquisas
+├ ƒ /api/social/pesquisas/[username]
+├ ƒ /api/social/seguidores/[username]
+├ ƒ /api/social/solicitacoes
+├ ƒ /api/social/solicitacoes/[username]
+├ ƒ /api/trips
+├ ƒ /api/trips/[tripId]
+├ ƒ /api/trips/[tripId]/acerto
+├ ƒ /api/trips/[tripId]/acerto/transferencias
+├ ƒ /api/trips/[tripId]/bookings
+├ ƒ /api/trips/[tripId]/bookings/[bookingId]
+├ ƒ /api/trips/[tripId]/expenses
+├ ƒ /api/trips/[tripId]/expenses/[expenseId]
+├ ƒ /api/trips/[tripId]/itinerary
+├ ƒ /api/trips/[tripId]/itinerary/[itemId]
+├ ƒ /api/trips/[tripId]/members
+├ ƒ /api/trips/[tripId]/places
+├ ƒ /api/trips/[tripId]/places/[placeId]
+├ ƒ /api/trips/[tripId]/places/[placeId]/reviews
+├ ○ /auth/login
+├ ○ /auth/reset-password
+├ ○ /auth/sign-up
+├ ○ /auth/sign-up-success
+├ ƒ /auth/signout
+├ ○ /dashboard
+├ ƒ /dashboard/bookings
+├ ƒ /dashboard/finances
+├ ƒ /dashboard/itinerary
+├ ○ /dashboard/perfil
+├ ƒ /dashboard/places
+├ ○ /dashboard/reservar/hoteis
+├ ○ /dashboard/reservar/voos
+├ ○ /dashboard/settings
+├ ○ /dashboard/trips
+├ ƒ /dashboard/trips/[id]
+├ ƒ /dashboard/trips/[id]/acerto
+├ ƒ /dashboard/trips/[id]/bookings/[bookingId]/edit
+├ ƒ /dashboard/trips/[id]/bookings/new
+├ ƒ /dashboard/trips/[id]/edit
+├ ƒ /dashboard/trips/[id]/expenses/[expenseId]/edit
+├ ƒ /dashboard/trips/[id]/expenses/new
+├ ƒ /dashboard/trips/[id]/itinerary/[itemId]/edit
+├ ƒ /dashboard/trips/[id]/itinerary/new
+├ ƒ /dashboard/trips/[id]/places
+├ ○ /dashboard/trips/criar
+├ ○ /dashboard/trips/criar/ia
+├ ○ /dashboard/trips/new
+├ ○ /feed
+├ ○ /icon.svg
+├ ○ /notificacoes
+├ ○ /pesquisar
+├ ƒ /u/[username]
+├ ƒ /u/[username]/seguidores
+└ ƒ /u/[username]/seguindo
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+saida 0
