@@ -16,7 +16,7 @@ export default function ErroGlobal({ error, retry }: { error: Error & { digest?:
   return (
     <html lang="pt-BR">
       <body className="font-sans antialiased">
-        <title>Erro · Viaja +</title>
+        <title>Erro · Avori</title>
         <main className="flex min-h-screen items-center justify-center p-4">
           <EstadoErro error={error} retry={retry} voltarPara="/" />
         </main>

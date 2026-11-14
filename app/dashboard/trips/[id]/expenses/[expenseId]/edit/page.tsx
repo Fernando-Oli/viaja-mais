@@ -106,7 +106,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
   }
 
   if (isFetching) {
-    return <p className="text-gray-600">Carregando...</p>
+    return <p className="text-muted-foreground">Carregando...</p>
   }
 
   return (
@@ -118,7 +118,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Editar Despesa</h1>
+        <h1 className="text-3xl font-bold text-foreground">Editar Despesa</h1>
       </div>
 
       <Card>
@@ -214,7 +214,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <Button type="submit" disabled={isLoading} className="bg-viaja-orange">
+              <Button type="submit" disabled={isLoading} className="bg-primary">
                 {isLoading ? "Salvando..." : "Salvar alterações"}
               </Button>
               <Button type="button" variant="outline" asChild>

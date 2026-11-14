@@ -9,7 +9,7 @@ import { SENHA_TESTE } from "../tests/fixtures/usuarios"
 test.describe("páginas públicas", () => {
   test("a landing page carrega e leva ao cadastro", async ({ page }) => {
     await page.goto("/")
-    await expect(page).toHaveTitle(/Viaja/i)
+    await expect(page).toHaveTitle(/Avori/i)
 
     const cadastrar = page.getByRole("link", { name: /cadastr|começar|criar conta/i }).first()
     await expect(cadastrar).toBeVisible()

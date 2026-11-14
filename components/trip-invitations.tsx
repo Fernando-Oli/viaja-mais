@@ -97,9 +97,9 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
   if (invitations.length === 0) return null;
 
   return (
-    <Card className="border-viaja-orange/20 bg-orange-50/50">
+    <Card className="border-primary/20 bg-orange-50/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-viaja-orange">
+        <CardTitle className="flex items-center gap-2 text-primary">
           <Bell className="h-5 w-5" />
           Convites Pendentes
         </CardTitle>
@@ -112,15 +112,15 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
         {invitations.map((invitation) => (
           <div
             key={invitation.id}
-            className="rounded-lg border border-viaja-orange/20 bg-white p-4"
+            className="rounded-lg border border-primary/20 bg-card p-4"
           >
             <div className="mb-3">
-              <h4 className="font-semibold text-viaja-navy">
+              <h4 className="font-semibold text-foreground">
                 {invitation.trip?.title ?? "Viagem em grupo"}
               </h4>
             </div>
             {invitation.trip ? (
-              <div className="mb-4 space-y-1 text-sm text-gray-600">
+              <div className="mb-4 space-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   <span>{invitation.trip.destination}</span>
@@ -134,7 +134,7 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
                 </div>
               </div>
             ) : (
-              <p className="mb-4 text-sm text-gray-600">
+              <p className="mb-4 text-sm text-muted-foreground">
                 Os detalhes da viagem aparecem depois que você aceitar.
               </p>
             )}
@@ -143,7 +143,7 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
                 size="sm"
                 disabled={pendente !== null}
                 onClick={() => responder(invitation.id, "accept")}
-                className="flex-1 bg-viaja-green hover:bg-viaja-green/90"
+                className="flex-1 bg-primary hover:bg-primary/90"
               >
                 {pendente === invitation.id ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -157,7 +157,7 @@ export function TripInvitations({ invitations }: TripInvitationsProps) {
                 variant="outline"
                 disabled={pendente !== null}
                 onClick={() => responder(invitation.id, "decline")}
-                className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
               >
                 <X className="mr-2 h-4 w-4" />
                 Recusar

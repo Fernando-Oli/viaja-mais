@@ -3,90 +3,108 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Updated color scheme to match Viaja+ brand identity */
+/*
+ * Tokens da marca Avori (manual de marca, rebranding/). Proporção de uso:
+ * Marfim ≈60% (superfícies), Floresta ≈25% (identidade, navegação, botão
+ * primário), Grafite ≈10% (texto), Cítrico ≈5% (destaque pontual).
+ * Cítrico nunca é cor de texto sobre Marfim: sobre ele o texto é Grafite.
+ * Componentes usam só os tokens semânticos (bg-primary, text-muted-foreground…),
+ * nunca o hex direto.
+ */
 @theme inline {
-  --font-sans: "Poppins", "Poppins Fallback", system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-instrument-sans), Arial, sans-serif;
 
-  /* Viaja+ Color System */
-  --color-navy: #051b38;
-  --color-orange: #c2410c;
-  --color-green: #267e35;
-  --color-black: #000000;
-  --color-white: #ffffff;
+  /* Marca */
+  --color-marfim: #f5f3ed;
+  --color-floresta: #24483e;
+  --color-grafite: #202522;
+  --color-citrico: #d7ec92;
 
   --radius: 0.75rem;
 
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.145 0 0);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.145 0 0);
-  --color-primary: oklch(0.205 0 0);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-secondary: oklch(0.97 0 0);
-  --color-secondary-foreground: oklch(0.205 0 0);
-  --color-muted: oklch(0.97 0 0);
-  --color-muted-foreground: oklch(0.556 0 0);
-  --color-accent: oklch(0.97 0 0);
-  --color-accent-foreground: oklch(0.205 0 0);
-  --color-destructive: oklch(0.577 0.245 27.325);
-  --color-destructive-foreground: oklch(0.985 0 0);
-  --color-border: oklch(0.922 0 0);
-  --color-input: oklch(0.922 0 0);
-  --color-ring: oklch(0.708 0 0);
-  --color-chart-1: oklch(0.646 0.222 41.116);
-  --color-chart-2: oklch(0.6 0.118 184.704);
-  --color-chart-3: oklch(0.398 0.07 227.392);
-  --color-chart-4: oklch(0.828 0.189 84.429);
-  --color-chart-5: oklch(0.769 0.188 70.08);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: oklch(0.985 0 0);
-  --color-sidebar-foreground: oklch(0.145 0 0);
-  --color-sidebar-primary: oklch(0.205 0 0);
-  --color-sidebar-primary-foreground: oklch(0.985 0 0);
-  --color-sidebar-accent: oklch(0.97 0 0);
-  --color-sidebar-accent-foreground: oklch(0.205 0 0);
-  --color-sidebar-border: oklch(0.922 0 0);
-  --color-sidebar-ring: oklch(0.708 0 0);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --color-sidebar: var(--primary);
+  --color-sidebar-foreground: var(--primary-foreground);
+  --color-sidebar-primary: var(--color-citrico);
+  --color-sidebar-primary-foreground: var(--color-grafite);
+  --color-sidebar-accent: var(--primary-foreground);
+  --color-sidebar-accent-foreground: var(--foreground);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--ring);
+}
+
+:root {
+  --background: #f5f3ed;
+  --foreground: #202522;
+  --card: #fbfaf6;
+  --muted: #ece9e0;
+  --muted-foreground: #5b625d;
+  --border: #dfdcd2;
+  --input: #7f877f;
+  --primary: #24483e;
+  --primary-foreground: #f5f3ed;
+  /* accent é o fundo de hover do shadcn (ghost, outline, itens de menu): discreto.
+     O Cítrico de destaque é bg-citrico + text-grafite, usado à mão. */
+  --accent: #ece9e0;
+  --accent-foreground: #202522;
+  --destructive: #b3261e;
+  --destructive-foreground: #f5f3ed;
+  --ring: #24483e;
+  --chart-1: #24483e;
+  --chart-2: #d7ec92;
+  --chart-3: #5b7f73;
+  --chart-4: #202522;
+  --chart-5: #a9c46a;
 }
 
 .dark {
-  --color-background: oklch(0.145 0 0);
-  --color-foreground: oklch(0.985 0 0);
-  --color-card: oklch(0.145 0 0);
-  --color-card-foreground: oklch(0.985 0 0);
-  --color-popover: oklch(0.145 0 0);
-  --color-popover-foreground: oklch(0.985 0 0);
-  --color-primary: oklch(0.985 0 0);
-  --color-primary-foreground: oklch(0.205 0 0);
-  --color-secondary: oklch(0.269 0 0);
-  --color-secondary-foreground: oklch(0.985 0 0);
-  --color-muted: oklch(0.269 0 0);
-  --color-muted-foreground: oklch(0.708 0 0);
-  --color-accent: oklch(0.269 0 0);
-  --color-accent-foreground: oklch(0.985 0 0);
-  --color-destructive: oklch(0.396 0.141 25.723);
-  --color-destructive-foreground: oklch(0.637 0.237 25.331);
-  --color-border: oklch(0.269 0 0);
-  --color-input: oklch(0.269 0 0);
-  --color-ring: oklch(0.439 0 0);
-  --color-chart-1: oklch(0.488 0.243 264.376);
-  --color-chart-2: oklch(0.696 0.17 162.48);
-  --color-chart-3: oklch(0.769 0.188 70.08);
-  --color-chart-4: oklch(0.627 0.265 303.9);
-  --color-chart-5: oklch(0.645 0.246 16.439);
-  --color-sidebar: oklch(0.205 0 0);
-  --color-sidebar-foreground: oklch(0.985 0 0);
-  --color-sidebar-primary: oklch(0.488 0.243 264.376);
-  --color-sidebar-primary-foreground: oklch(0.985 0 0);
-  --color-sidebar-accent: oklch(0.269 0 0);
-  --color-sidebar-accent-foreground: oklch(0.985 0 0);
-  --color-sidebar-border: oklch(0.269 0 0);
-  --color-sidebar-ring: oklch(0.439 0 0);
+  --background: #202522;
+  --foreground: #f5f3ed;
+  --card: #2a302c;
+  --muted: #323934;
+  --muted-foreground: #b9bfb8;
+  --border: #3e463f;
+  --input: #8b938b;
+  --primary: #d7ec92;
+  --primary-foreground: #202522;
+  --accent: #323934;
+  --accent-foreground: #f5f3ed;
+  --destructive: #f2b8b5;
+  --destructive-foreground: #202522;
+  --ring: #d7ec92;
+  --chart-1: #d7ec92;
+  --chart-2: #8fb5a8;
+  --chart-3: #f5f3ed;
+  --chart-4: #5b7f73;
+  --chart-5: #a9c46a;
 }
 
 @layer base {
@@ -111,33 +129,7 @@
   .text-balance {
     text-wrap: balance;
   }
-
-  /* Viaja+ brand color utilities */
-  .bg-viaja-navy {
-    background-color: #051b38;
-  }
-
-  .bg-viaja-orange {
-    background-color: #c2410c;
-  }
-
-  .bg-viaja-green {
-    background-color: #267e35;
-  }
-
-  .text-viaja-navy {
-    color: #051b38;
-  }
-
-  .text-viaja-orange {
-    color: #c2410c;
-  }
-
-  .text-viaja-green {
-    color: #267e35;
-  }
-
-  .border-viaja-orange {
-    border-color: #c2410c;
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }

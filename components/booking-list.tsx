@@ -47,7 +47,7 @@ const typeLabels: Record<string, string> = {
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
   confirmed: "bg-emerald-100 text-emerald-800",
-  cancelled: "bg-red-100 text-red-800",
+  cancelled: "bg-destructive/10 text-destructive",
 }
 
 const statusLabels: Record<string, string> = {
@@ -100,8 +100,8 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Plane className="mb-4 h-12 w-12 text-slate-300" />
-        <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma reserva cadastrada</h3>
-        <p className="text-center text-slate-600">Adicione voos, hotéis e outras reservas da viagem</p>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma reserva cadastrada</h3>
+        <p className="text-center text-muted-foreground">Adicione voos, hotéis e outras reservas da viagem</p>
       </div>
     )
   }
@@ -126,19 +126,19 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
         const ocupado = pendente === booking.id
 
         return (
-          <div key={booking.id} className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4">
+          <div key={booking.id} className="flex flex-col gap-4 rounded-lg border border-border p-4">
             <div className="flex items-start gap-3">
               <div className="rounded-lg bg-sky-100 p-2">
                 <Icon className="h-5 w-5 text-sky-600" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="font-medium text-slate-900">{booking.title}</h4>
+                  <h4 className="font-medium text-foreground">{booking.title}</h4>
                   <Badge variant="secondary">{typeLabels[booking.type] ?? booking.type}</Badge>
                   <Badge className={statusColors[status]}>{statusLabels[status] ?? status}</Badge>
                 </div>
 
-                <div className="mt-2 space-y-1 text-sm text-slate-600">
+                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 shrink-0" />
                     <span>
@@ -163,7 +163,7 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
                     </div>
                   )}
                   {booking.price !== null && (
-                    <p className="pt-1 font-semibold text-slate-900">
+                    <p className="pt-1 font-semibold text-foreground">
                       {new Intl.NumberFormat("pt-BR", {
                         style: "currency",
                         currency: booking.currency || "BRL",
@@ -186,7 +186,7 @@ export function BookingList({ bookings, tripId }: BookingListProps) {
                 variant="outline"
                 disabled={ocupado}
                 onClick={() => setParaExcluir(booking)}
-                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <Trash2 className="mr-1 h-4 w-4" />
                 Excluir

@@ -212,8 +212,8 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
             Voltar
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold text-slate-900">Nova Despesa</h1>
-        <p className="mt-2 text-slate-600">Registre um gasto da sua viagem</p>
+        <h1 className="text-3xl font-bold text-foreground">Nova Despesa</h1>
+        <p className="mt-2 text-muted-foreground">Registre um gasto da sua viagem</p>
       </div>
 
       <Card>
@@ -320,14 +320,14 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
             </div>
 
             {estadoMembros === "carregando" && (
-              <div role="status" className="flex items-center gap-2 rounded-lg border p-4 text-sm text-slate-600">
+              <div role="status" className="flex items-center gap-2 rounded-lg border p-4 text-sm text-muted-foreground">
                 <Spinner />
                 Carregando participantes...
               </div>
             )}
 
             {estadoMembros === "erro" && (
-              <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
                 <span className="flex-1">Não foi possível carregar os participantes da viagem.</span>
                 <Button type="button" variant="outline" size="sm" onClick={tentarDeNovo}>
                   Tentar novamente
@@ -350,7 +350,7 @@ export default function NewExpensePage({ params }: { params: Promise<{ id: strin
             )}
 
             <div className="flex flex-wrap gap-4">
-              <Button type="submit" disabled={!podeEnviar} className="bg-viaja-orange">
+              <Button type="submit" disabled={!podeEnviar} className="bg-primary">
                 {isLoading ? "Salvando..." : "Salvar Despesa"}
               </Button>
               <Button type="button" variant="outline" asChild>

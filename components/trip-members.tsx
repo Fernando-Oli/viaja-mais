@@ -37,8 +37,8 @@ interface TripMembersProps {
  */
 const AVISO_DO_ENVIO: Record<string, string> = {
   enviado: "Enviamos um e-mail com o convite.",
-  "ja-cadastrado": "A pessoa já tem conta e vai ver o convite ao entrar no ViajaMais.",
-  falhou: "O e-mail não pôde ser enviado, mas o convite aparece para a pessoa ao entrar no ViajaMais.",
+  "ja-cadastrado": "A pessoa já tem conta e vai ver o convite ao entrar na Avori.",
+  falhou: "O e-mail não pôde ser enviado, mas o convite aparece para a pessoa ao entrar na Avori.",
 }
 
 /**
@@ -116,7 +116,7 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-viaja-orange" />
+          <Users className="h-5 w-5 text-primary" />
           Membros da Viagem
         </CardTitle>
         <CardDescription>
@@ -151,9 +151,9 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
               <div key={member.id} className="flex items-center justify-between gap-2 rounded-lg border p-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar>
-                    <AvatarFallback className="bg-viaja-green text-white">{initials}</AvatarFallback>
+                    <AvatarFallback className="bg-primary text-primary-foreground">{initials}</AvatarFallback>
                   </Avatar>
-                  <p className="min-w-0 truncate font-medium text-viaja-navy">
+                  <p className="min-w-0 truncate font-medium text-foreground">
                     {member.profiles?.full_name || "Usuário"}
                   </p>
                 </div>
@@ -169,7 +169,7 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
                       disabled={removendo === member.user_id}
                       onClick={() => setParaRemover(member)}
                     >
-                      <X className="h-4 w-4 text-red-600" />
+                      <X className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
                 </div>
@@ -181,14 +181,14 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
         {/* Invite Form */}
         {isOwner && (
           <div className="border-t pt-6">
-            <h4 className="mb-3 flex items-center gap-2 font-medium text-viaja-navy">
+            <h4 className="mb-3 flex items-center gap-2 font-medium text-foreground">
               <UserPlus className="h-4 w-4" />
               Convidar Pessoas
             </h4>
             <form onSubmit={handleInvite} className="space-y-3">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative flex-1">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="email"
                     aria-label="E-mail de quem convidar"
@@ -199,7 +199,7 @@ export function TripMembers({ tripId, members, isOwner }: TripMembersProps) {
                     required
                   />
                 </div>
-                <Button type="submit" disabled={isLoading} className="bg-viaja-orange hover:bg-viaja-orange/90">
+                <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90">
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -60,12 +60,15 @@ function sino(page: Page) {
   return page.getByRole("link", { name: /^Notificações/ })
 }
 
-/** O sino fica no canto superior direito: encostado à direita e acima do título da página. */
+/**
+ * O sino fica no canto superior direito: no grupo de ações à direita da barra
+ * do app (rebranding Avori, S12) e acima do título da página.
+ */
 async function noCantoSuperiorDireito(page: Page, link: Locator) {
   const caixa = (await link.boundingBox())!
   const titulo = (await page.getByRole("heading", { level: 1 }).boundingBox())!
   const largura = page.viewportSize()!.width
-  expect(caixa.x + caixa.width, "o sino encosta na direita da tela").toBeGreaterThan(largura - 64)
+  expect(caixa.x, "o sino fica na metade direita da tela").toBeGreaterThan(largura / 2)
   expect(caixa.y + caixa.height, "o sino fica acima do título da página").toBeLessThanOrEqual(titulo.y + 1)
 }
 

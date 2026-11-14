@@ -68,15 +68,15 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-viaja-navy">Configurações</h1>
-        <p className="mt-2 text-gray-600">Gerencie sua conta e sua senha</p>
+        <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
+        <p className="mt-2 text-muted-foreground">Gerencie sua conta e sua senha</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="h-fit">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-viaja-orange" />
+              <Mail className="h-5 w-5 text-primary" />
               Conta
             </CardTitle>
             <CardDescription>Informações da sua conta</CardDescription>
@@ -87,15 +87,15 @@ export default function SettingsPage() {
               <Input
                 value={user?.email || ""}
                 disabled
-                className="bg-gray-50"
+                className="bg-background"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 O email não pode ser alterado
               </p>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Nome, foto, nome de usuário e bio ficam em{" "}
-              <Link href="/dashboard/perfil" className="font-medium text-viaja-orange hover:underline">
+              <Link href="/dashboard/perfil" className="font-medium text-primary hover:underline">
                 Meu perfil
               </Link>
               .
@@ -106,7 +106,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-viaja-orange" />
+              <Lock className="h-5 w-5 text-primary" />
               Segurança
             </CardTitle>
             <CardDescription>Altere sua senha</CardDescription>
@@ -147,7 +147,7 @@ export default function SettingsPage() {
               </div>
               <Button
                 type="submit"
-                className="bg-viaja-orange hover:bg-viaja-orange/90"
+                className="bg-primary hover:bg-primary/90"
                 disabled={isChangingPassword}
               >
                 {isChangingPassword ? "Alterando..." : "Alterar Senha"}

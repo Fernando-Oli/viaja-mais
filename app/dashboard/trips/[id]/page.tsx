@@ -138,10 +138,10 @@ export default async function TripDetailPage({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="break-words text-3xl font-bold text-viaja-navy">{trip.title}</h1>
+              <h1 className="break-words text-3xl font-bold text-foreground">{trip.title}</h1>
               <Badge variant={trip.status === "confirmed" ? "default" : "secondary"}>{statusLabels[trip.status]}</Badge>
             </div>
-            <div className="mt-2 flex flex-wrap gap-4 text-gray-600">
+            <div className="mt-2 flex flex-wrap gap-4 text-muted-foreground">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 <span>{trip.destination}</span>
@@ -166,7 +166,7 @@ export default async function TripDetailPage({
                 </div>
               )}
             </div>
-            {trip.description && <p className="mt-4 text-gray-600">{trip.description}</p>}
+            {trip.description && <p className="mt-4 text-muted-foreground">{trip.description}</p>}
           </div>
           {isOwner && (
             <Button asChild variant="outline" className="shrink-0 self-start">
@@ -188,7 +188,7 @@ export default async function TripDetailPage({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{itineraryItems?.length || 0}</div>
-            <p className="text-xs text-gray-600">atividades</p>
+            <p className="text-xs text-muted-foreground">atividades</p>
           </CardContent>
         </Card>
 
@@ -204,7 +204,7 @@ export default async function TripDetailPage({
                 currency: trip.currency || "BRL",
               }).format(totalExpenses)}
             </div>
-            <p className="text-xs text-gray-600">{expenses?.length || 0} despesas</p>
+            <p className="text-xs text-muted-foreground">{expenses?.length || 0} despesas</p>
           </CardContent>
         </Card>
 
@@ -215,7 +215,7 @@ export default async function TripDetailPage({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{places?.length || 0}</div>
-            <p className="text-xs text-gray-600">salvos</p>
+            <p className="text-xs text-muted-foreground">salvos</p>
           </CardContent>
         </Card>
 
@@ -230,7 +230,7 @@ export default async function TripDetailPage({
                 (new Date(parseLocalDate(trip.end_date)).getTime() - new Date(parseLocalDate(trip.start_date)).getTime()) / (1000 * 60 * 60 * 24),
               )}
             </div>
-            <p className="text-xs text-gray-600">dias</p>
+            <p className="text-xs text-muted-foreground">dias</p>
           </CardContent>
         </Card>
       </div>
@@ -255,7 +255,7 @@ export default async function TripDetailPage({
                   <CardTitle>Itinerário</CardTitle>
                   <CardDescription>Organize suas atividades dia a dia</CardDescription>
                 </div>
-                <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+                <Button asChild className="bg-primary hover:bg-primary/90">
                   <Link href={`/dashboard/trips/${id}/itinerary/new`}>
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Atividade
@@ -281,7 +281,7 @@ export default async function TripDetailPage({
                   <Button asChild variant="outline">
                     <Link href={`/dashboard/trips/${id}/acerto`}>Acerto de contas</Link>
                   </Button>
-                  <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+                  <Button asChild className="bg-primary hover:bg-primary/90">
                     <Link href={`/dashboard/trips/${id}/expenses/new`}>
                       <Plus className="mr-2 h-4 w-4" />
                       Adicionar Despesa
@@ -304,7 +304,7 @@ export default async function TripDetailPage({
                   <CardTitle>Lugares Salvos</CardTitle>
                   <CardDescription>Pontos turísticos e locais de interesse</CardDescription>
                 </div>
-                <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+                <Button asChild className="bg-primary hover:bg-primary/90">
                   <Link href={`/dashboard/trips/${id}/places`}>
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Lugar
@@ -326,7 +326,7 @@ export default async function TripDetailPage({
                   <CardTitle>Reservas</CardTitle>
                   <CardDescription>Voos, hospedagens e demais reservas da viagem</CardDescription>
                 </div>
-                <Button asChild className="bg-viaja-orange hover:bg-viaja-orange/90">
+                <Button asChild className="bg-primary hover:bg-primary/90">
                   <Link href={`/dashboard/trips/${id}/bookings/new`}>
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Reserva

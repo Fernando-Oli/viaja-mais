@@ -39,8 +39,8 @@ test("viagem que não existe: 404 dentro do dashboard, sem perder a navegação"
   await page.goto("/dashboard/trips/00000000-0000-4000-8000-000000000000")
 
   await expect(page.getByText("Página não encontrada")).toBeVisible()
-  // O layout do dashboard continua: a barra lateral está lá.
-  await expect(page.getByRole("link", { name: "Minhas Viagens" }).first()).toBeVisible()
+  // O layout do dashboard continua: a barra do app está lá.
+  await expect(page.getByRole("link", { name: "Viagens", exact: true }).first()).toBeVisible()
   await page.screenshot({ path: `docs/pfc/evidencias/S07-F-nao-encontrado-${projeto()}.png`, fullPage: true })
 
   await page.getByRole("link", { name: "Ver minhas viagens" }).click()

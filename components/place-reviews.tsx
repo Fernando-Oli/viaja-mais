@@ -160,18 +160,18 @@ export function PlaceReviews({ tripId, placeId, placeName }: PlaceReviewsProps) 
           </DialogHeader>
 
           {carregando && reviews.length === 0 ? (
-            <p className="flex items-center gap-2 py-6 text-sm text-gray-600">
+            <p className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Carregando avaliações...
             </p>
           ) : erro ? (
-            <p role="alert" className="py-6 text-sm text-red-600">
+            <p role="alert" className="py-6 text-sm text-destructive">
               {erro}
             </p>
           ) : (
             <div className="space-y-5">
-              <form onSubmit={salvar} className="space-y-3 rounded-lg border border-gray-200 p-3">
-                <p className="text-sm font-medium text-viaja-navy">Sua avaliação</p>
+              <form onSubmit={salvar} className="space-y-3 rounded-lg border border-border p-3">
+                <p className="text-sm font-medium text-foreground">Sua avaliação</p>
                 <div className="flex gap-1" role="group" aria-label="Nota">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -193,7 +193,7 @@ export function PlaceReviews({ tripId, placeId, placeName }: PlaceReviewsProps) 
                   value={comentario}
                   onChange={(e) => setComentario(e.target.value)}
                 />
-                {nota < 1 && <p className="text-xs text-gray-500">Escolha uma nota de 1 a 5</p>}
+                {nota < 1 && <p className="text-xs text-muted-foreground">Escolha uma nota de 1 a 5</p>}
                 <div className="flex flex-wrap gap-2">
                   <Button type="submit" size="sm" disabled={nota < 1 || salvando}>
                     {salvando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
@@ -206,7 +206,7 @@ export function PlaceReviews({ tripId, placeId, placeName }: PlaceReviewsProps) 
                       size="sm"
                       disabled={salvando}
                       onClick={() => setConfirmarExclusao(true)}
-                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     >
                       Excluir minha avaliação
                     </Button>
@@ -219,13 +219,13 @@ export function PlaceReviews({ tripId, placeId, placeName }: PlaceReviewsProps) 
                   {reviews.map((r) => (
                     <li key={r.id} className="border-b border-gray-100 pb-3 last:border-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-viaja-navy">
+                        <span className="text-sm font-medium text-foreground">
                           {r.autor || "Usuário"}
                           {r.minha && " (você)"}
                         </span>
                         <Estrelas nota={r.rating} />
                       </div>
-                      {r.comment && <p className="mt-1 break-words text-sm text-gray-700">{r.comment}</p>}
+                      {r.comment && <p className="mt-1 break-words text-sm text-foreground">{r.comment}</p>}
                     </li>
                   ))}
                 </ul>

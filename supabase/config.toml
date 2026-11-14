@@ -248,7 +248,7 @@ otp_expiry = 3600
 # O modelo padrão do GoTrue é em inglês ("You've been invited"). O produto é em
 # português, então o convite também é.
 [auth.email.template.invite]
-subject = "Você foi convidado para uma viagem no ViajaMais"
+subject = "Você foi convidado para uma viagem na Avori"
 content_path = "./supabase/templates/convite.html"
 
 # Uncomment to customize notification email template

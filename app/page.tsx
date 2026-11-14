@@ -5,23 +5,23 @@ import { Plane, MapPin, Wallet, Calendar, Star, Globe } from "lucide-react"
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-viaja-green rounded-xl flex items-center justify-center relative">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center relative">
               <Plane className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-bold text-viaja-navy">Viaja+</span>
+            <span className="text-2xl font-bold text-foreground">Avori</span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/auth/login">
-              <Button variant="ghost" size="sm" className="text-viaja-navy">
+              <Button variant="ghost" size="sm" className="text-foreground">
                 Entrar
               </Button>
             </Link>
             <Link href="/auth/sign-up">
-              <Button size="sm" className="bg-viaja-orange hover:bg-viaja-orange/90 text-white">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 Começar Grátis
               </Button>
             </Link>
@@ -31,20 +31,20 @@ export default function LandingPage() {
 
       <section className="container mx-auto px-4 py-20 md:py-32">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-viaja-green/10 text-viaja-green rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
             <Star className="w-4 h-4 fill-current" />
             Planejamento Inteligente de Viagens
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold text-balance mb-6 leading-tight text-viaja-navy">
-            Todas as suas viagens em <span className="text-viaja-orange">um só lugar</span>
+          <h1 className="text-5xl md:text-7xl font-bold text-balance mb-6 leading-tight text-foreground">
+            Todas as suas viagens em <span className="text-primary">um só lugar</span>
           </h1>
-          <p className="text-xl text-gray-600 text-balance mb-8 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground text-balance mb-8 leading-relaxed max-w-2xl mx-auto">
             Centralize reservas, controle gastos, organize itinerários e descubra pontos turísticos. Tudo que você
             precisa para uma viagem perfeita.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/auth/sign-up">
-              <Button size="lg" className="bg-viaja-orange hover:bg-viaja-orange/90 text-white text-lg px-8 h-14">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 h-14">
                 Começar Agora
               </Button>
             </Link>
@@ -52,10 +52,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-20 bg-gray-50">
+      <section className="container mx-auto px-4 py-20 bg-background">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-viaja-navy">Recursos Completos</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Recursos Completos</h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Tudo que você precisa para planejar e gerenciar suas viagens de forma eficiente
           </p>
         </div>
@@ -101,24 +101,24 @@ export default function LandingPage() {
       </section>
 
       <section className="container mx-auto px-4 py-20">
-        <div className="bg-viaja-navy rounded-3xl p-12 md:p-16 text-center text-white">
+        <div className="bg-primary rounded-3xl p-12 md:p-16 text-center text-primary-foreground">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">Pronto para sua próxima aventura?</h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             Junte-se a milhares de viajantes que já simplificaram seu planejamento
           </p>
           <Link href="/auth/sign-up">
-            <Button size="lg" className="bg-viaja-orange hover:bg-viaja-orange/90 text-white text-lg px-8 h-14">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 h-14">
               Criar Conta Gratuita
             </Button>
           </Link>
         </div>
       </section>
 
-      <footer className="border-t bg-gray-50 py-12">
+      <footer className="border-t bg-background py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-viaja-green rounded-lg flex items-center justify-center relative">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center relative">
                 <Plane className="w-4 h-4 text-white absolute" style={{ transform: "rotate(-45deg)" }} />
                 <span
                   className="text-white text-sm font-bold absolute"
@@ -127,9 +127,9 @@ export default function LandingPage() {
                   +
                 </span>
               </div>
-              <span className="text-xl font-bold text-viaja-navy">Viaja+</span>
+              <span className="text-xl font-bold text-foreground">Avori</span>
             </div>
-            <p className="text-sm text-gray-600">© 2025 Viaja+. Todos os direitos reservados.</p>
+            <p className="text-sm text-muted-foreground">© 2025 Avori. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
@@ -143,14 +143,14 @@ function FeatureCard({
   description,
   color,
 }: { icon: React.ReactNode; title: string; description: string; color: "green" | "orange" }) {
-  const bgColor = color === "green" ? "bg-viaja-green/10" : "bg-viaja-orange/10"
-  const textColor = color === "green" ? "text-viaja-green" : "text-viaja-orange"
+  const bgColor = color === "green" ? "bg-primary/10" : "bg-primary/10"
+  const textColor = color === "green" ? "text-primary" : "text-primary"
 
   return (
-    <div className="p-6 rounded-2xl border bg-white hover:shadow-lg transition-shadow">
+    <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
       <div className={`w-14 h-14 ${bgColor} ${textColor} rounded-xl flex items-center justify-center mb-4`}>{icon}</div>
-      <h3 className="text-xl font-semibold mb-2 text-viaja-navy">{title}</h3>
-      <p className="text-gray-600 leading-relaxed">{description}</p>
+      <h3 className="text-xl font-semibold mb-2 text-foreground">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
     </div>
   )
 }

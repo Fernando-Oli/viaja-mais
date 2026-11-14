@@ -87,14 +87,14 @@ export function Pesquisa() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-viaja-navy">Pesquisar</h1>
+      <h1 className="text-3xl font-bold text-foreground">Pesquisar</h1>
       <Card>
         <CardContent className="space-y-4">
           <div className="relative">
             <label htmlFor={id} className="sr-only">
               Buscar pessoas
             </label>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <Input
               id={id}
               type="search"
@@ -182,29 +182,29 @@ function Resultados({ busca, aoAbrir }: { busca: ReturnType<typeof useBusca>; ao
       </p>
 
       {curto ? (
-        <p className="text-sm text-gray-500">Digite pelo menos {BUSCA_MIN} caracteres do nome ou do @usuário.</p>
+        <p className="text-sm text-muted-foreground">Digite pelo menos {BUSCA_MIN} caracteres do nome ou do @usuário.</p>
       ) : longo ? (
-        <p className="text-sm text-gray-500">Use até {BUSCA_MAX} caracteres.</p>
+        <p className="text-sm text-muted-foreground">Use até {BUSCA_MAX} caracteres.</p>
       ) : !permitido ? (
-        <p className="text-sm text-gray-500">Use letras, números, espaço e . _ - &apos;</p>
+        <p className="text-sm text-muted-foreground">Use letras, números, espaço e . _ - &apos;</p>
       ) : !atual ? (
-        <p className="flex items-center gap-2 text-sm text-gray-500">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           Buscando...
         </p>
       ) : atual.tipo === "invalido" ? (
-        <p className="text-sm text-gray-500">Não dá para buscar por esse termo.</p>
+        <p className="text-sm text-muted-foreground">Não dá para buscar por esse termo.</p>
       ) : atual.tipo === "sessao" ? (
         <SessaoVencida />
       ) : atual.tipo === "erro" ? (
-        <div role="alert" className="space-y-2 text-sm text-red-600">
+        <div role="alert" className="space-y-2 text-sm text-destructive">
           <p>Não foi possível buscar agora.</p>
           <Button variant="outline" size="sm" onClick={tentarDeNovo}>
             Tentar de novo
           </Button>
         </div>
       ) : atual.pessoas.length === 0 ? (
-        <p className="break-words text-sm text-gray-500">Ninguém encontrado para “{normalizado}”.</p>
+        <p className="break-words text-sm text-muted-foreground">Ninguém encontrado para “{normalizado}”.</p>
       ) : (
         <ul aria-label="Pessoas encontradas" className="space-y-1">
           {atual.pessoas.map((pessoa) => (
@@ -292,7 +292,7 @@ function Recentes({ aoAbrir }: { aoAbrir: () => void }) {
 
   if (estado.tipo === "carregando") {
     return (
-      <p role="status" className="flex items-center gap-2 text-sm text-gray-500">
+      <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
         Carregando pesquisas recentes...
       </p>
@@ -301,7 +301,7 @@ function Recentes({ aoAbrir }: { aoAbrir: () => void }) {
   if (estado.tipo === "sessao") return <SessaoVencida />;
   if (estado.tipo === "erro") {
     return (
-      <div role="alert" className="space-y-2 text-sm text-red-600">
+      <div role="alert" className="space-y-2 text-sm text-destructive">
         <p>Não foi possível carregar as pesquisas recentes.</p>
         <Button variant="outline" size="sm" onClick={() => setTentativa((t) => t + 1)}>
           Tentar de novo
@@ -316,18 +316,18 @@ function Recentes({ aoAbrir }: { aoAbrir: () => void }) {
         {aviso}
       </p>
       <div className="flex items-center justify-between">
-        <h2 id={idTitulo} ref={titulo} tabIndex={-1} className="rounded-sm font-semibold text-viaja-navy">
+        <h2 id={idTitulo} ref={titulo} tabIndex={-1} className="rounded-sm font-semibold text-foreground">
           Recentes
         </h2>
         {estado.pessoas.length > 0 ? (
-          <Button variant="link" size="sm" className="px-0 text-viaja-orange" onClick={() => setConfirmarLimpeza(true)}>
+          <Button variant="link" size="sm" className="px-0 text-primary" onClick={() => setConfirmarLimpeza(true)}>
             Limpar tudo
           </Button>
         ) : null}
       </div>
 
       {estado.pessoas.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhuma pesquisa recente.</p>
+        <p className="text-sm text-muted-foreground">Nenhuma pesquisa recente.</p>
       ) : (
         <ul aria-label="Pesquisas recentes" className="space-y-1">
           {estado.pessoas.map((pessoa) => (
@@ -363,7 +363,7 @@ function Recentes({ aoAbrir }: { aoAbrir: () => void }) {
 
 function SessaoVencida() {
   return (
-    <div role="alert" className="space-y-2 text-sm text-red-600">
+    <div role="alert" className="space-y-2 text-sm text-destructive">
       <p>Sua sessão expirou.</p>
       <Button asChild variant="outline" size="sm">
         <Link href="/auth/login">Entrar de novo</Link>
@@ -385,24 +385,24 @@ function ItemPessoa({ pessoa, aoAbrir }: { pessoa: Pessoa; aoAbrir: () => void }
       onAuxClick={(e) => {
         if (e.button === 1) registrarNoHistorico(pessoa.username);
       }}
-      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-100 focus-visible:bg-gray-100"
+      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted focus-visible:bg-muted"
     >
       <Avatar className="h-10 w-10">
         {pessoa.avatar_url ? <AvatarImage src={pessoa.avatar_url} alt={`Foto de ${nome}`} /> : null}
-        <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-viaja-green text-white">
+        <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-primary text-primary-foreground">
           <UserRound className="h-5 w-5" aria-hidden />
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0">
-        <p className="flex items-center gap-1 text-sm font-medium text-viaja-navy">
+        <p className="flex items-center gap-1 text-sm font-medium text-foreground">
           <span className="truncate">{nome}</span>
           {pessoa.is_public ? null : (
             <span role="img" aria-label="Perfil privado" title="Perfil privado" className="shrink-0">
-              <Lock className="h-3.5 w-3.5 text-gray-500" aria-hidden />
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
             </span>
           )}
         </p>
-        <p className="truncate text-xs text-gray-500">@{pessoa.username}</p>
+        <p className="truncate text-xs text-muted-foreground">@{pessoa.username}</p>
       </div>
     </Link>
   );

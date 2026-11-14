@@ -43,7 +43,7 @@ export default function ConfirmModal({
           <AlertDialogCancel>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className={variant === "destructive" ? "bg-red-600 hover:bg-red-700" : "bg-viaja-orange hover:bg-viaja-orange/90"}
+            className={variant === "destructive" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}
           >
             {confirmText}
           </AlertDialogAction>

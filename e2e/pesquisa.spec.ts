@@ -130,7 +130,7 @@ test("Pesquisar no menu começa uma pesquisa nova, sem o termo anterior (regress
   await expect(campo).toHaveValue("carla")
   await expect(area.getByRole("list", { name: "Pessoas encontradas" }).getByText("Carla Teste")).toBeVisible()
 
-  await page.getByRole("navigation", { name: "Rede social" }).getByRole("link", { name: "Pesquisar" }).click()
+  await page.locator('a[href="/pesquisar"]:visible').first().click()
   await page.waitForURL("/pesquisar")
   await expect(campo).toHaveValue("")
   await expect(area.getByRole("heading", { name: "Recentes" })).toBeVisible()

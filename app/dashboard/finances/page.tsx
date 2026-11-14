@@ -55,8 +55,8 @@ export default async function FinancesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Controle Financeiro</h1>
-        <p className="mt-2 text-slate-600">Acompanhe seus gastos e orçamentos de viagem</p>
+        <h1 className="text-3xl font-bold text-foreground">Controle Financeiro</h1>
+        <p className="mt-2 text-muted-foreground">Acompanhe seus gastos e orçamentos de viagem</p>
       </div>
 
       {/* Summary Cards */}
@@ -80,7 +80,7 @@ export default async function FinancesPage() {
                 <div className="text-2xl font-bold">R$ 0,00</div>
               )}
             </div>
-            <p className="text-xs text-slate-600">{allExpenses?.length || 0} despesas registradas</p>
+            <p className="text-xs text-muted-foreground">{allExpenses?.length || 0} despesas registradas</p>
           </CardContent>
         </Card>
 
@@ -93,7 +93,7 @@ export default async function FinancesPage() {
             <div className="text-2xl font-bold">
               {trips?.filter((t) => t.status === "confirmed" || t.status === "ongoing").length || 0}
             </div>
-            <p className="text-xs text-slate-600">com orçamento definido</p>
+            <p className="text-xs text-muted-foreground">com orçamento definido</p>
           </CardContent>
         </Card>
 
@@ -108,7 +108,7 @@ export default async function FinancesPage() {
                 ? categoryLabels[Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0][0]]
                 : "-"}
             </div>
-            <p className="text-xs text-slate-600">maior gasto</p>
+            <p className="text-xs text-muted-foreground">maior gasto</p>
           </CardContent>
         </Card>
       </div>
@@ -131,25 +131,25 @@ export default async function FinancesPage() {
               {!allExpenses || allExpenses.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <DollarSign className="mb-4 h-12 w-12 text-slate-300" />
-                  <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma despesa registrada</h3>
-                  <p className="text-center text-slate-600">Comece a registrar seus gastos de viagem</p>
+                  <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma despesa registrada</h3>
+                  <p className="text-center text-muted-foreground">Comece a registrar seus gastos de viagem</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {allExpenses.slice(0, 10).map((expense) => (
                     <div
                       key={expense.id}
-                      className="flex items-center justify-between border-b border-slate-200 pb-4 last:border-0"
+                      className="flex items-center justify-between border-b border-border pb-4 last:border-0"
                     >
                       <div className="flex-1">
-                        <h4 className="font-medium text-slate-900">{expense.title}</h4>
-                        <p className="text-sm text-slate-600">
+                        <h4 className="font-medium text-foreground">{expense.title}</h4>
+                        <p className="text-sm text-muted-foreground">
                           {expense.trips?.title} • {categoryLabels[expense.category]} •{" "}
                           {new Date(expense.date).toLocaleDateString("pt-BR")}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-foreground">
                           {new Intl.NumberFormat("pt-BR", {
                             style: "currency",
                             currency: expense.currency || "BRL",
@@ -169,8 +169,8 @@ export default async function FinancesPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <TrendingDown className="mb-4 h-12 w-12 text-slate-300" />
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma viagem cadastrada</h3>
-                <p className="text-center text-slate-600">Crie uma viagem para começar a controlar gastos</p>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma viagem cadastrada</h3>
+                <p className="text-center text-muted-foreground">Crie uma viagem para começar a controlar gastos</p>
               </CardContent>
             </Card>
           ) : (
@@ -190,8 +190,8 @@ export default async function FinancesPage() {
                     <CardContent>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600">Gasto</span>
-                          <span className="font-semibold text-slate-900">
+                          <span className="text-sm text-muted-foreground">Gasto</span>
+                          <span className="font-semibold text-foreground">
                             {new Intl.NumberFormat("pt-BR", {
                               style: "currency",
                               currency: trip.currency || "BRL",
@@ -201,8 +201,8 @@ export default async function FinancesPage() {
                         {budget > 0 && (
                           <>
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-slate-600">Orçamento</span>
-                              <span className="font-semibold text-slate-900">
+                              <span className="text-sm text-muted-foreground">Orçamento</span>
+                              <span className="font-semibold text-foreground">
                                 {new Intl.NumberFormat("pt-BR", {
                                   style: "currency",
                                   currency: trip.currency || "BRL",
@@ -211,23 +211,23 @@ export default async function FinancesPage() {
                             </div>
                             <div>
                               <div className="mb-2 flex items-center justify-between text-sm">
-                                <span className="text-slate-600">Utilizado</span>
+                                <span className="text-muted-foreground">Utilizado</span>
                                 <span
-                                  className={`font-medium ${percentage > 100 ? "text-red-600" : percentage > 80 ? "text-amber-600" : "text-emerald-600"}`}
+                                  className={`font-medium ${percentage > 100 ? "text-destructive" : percentage > 80 ? "text-amber-600" : "text-emerald-600"}`}
                                 >
                                   {percentage.toFixed(1)}%
                                 </span>
                               </div>
-                              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                                 <div
-                                  className={`h-full transition-all ${percentage > 100 ? "bg-red-500" : percentage > 80 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                  className={`h-full transition-all ${percentage > 100 ? "bg-destructive/100" : percentage > 80 ? "bg-amber-500" : "bg-emerald-500"}`}
                                   style={{ width: `${Math.min(percentage, 100)}%` }}
                                 />
                               </div>
                             </div>
                           </>
                         )}
-                        <div className="pt-2 text-sm text-slate-600">{tripExpenses.length} despesas</div>
+                        <div className="pt-2 text-sm text-muted-foreground">{tripExpenses.length} despesas</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -247,8 +247,8 @@ export default async function FinancesPage() {
               {!byCategory || Object.keys(byCategory).length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <PieChart className="mb-4 h-12 w-12 text-slate-300" />
-                  <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma despesa por categoria</h3>
-                  <p className="text-center text-slate-600">Registre despesas para ver a distribuição</p>
+                  <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma despesa por categoria</h3>
+                  <p className="text-center text-muted-foreground">Registre despesas para ver a distribuição</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -261,13 +261,13 @@ export default async function FinancesPage() {
                       return (
                         <div key={category} className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-slate-900">{categoryLabels[category]}</span>
-                            <span className="text-sm text-slate-600">{percentage.toFixed(1)}%</span>
+                            <span className="font-medium text-foreground">{categoryLabels[category]}</span>
+                            <span className="text-sm text-muted-foreground">{percentage.toFixed(1)}%</span>
                           </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                             <div className="h-full bg-sky-500 transition-all" style={{ width: `${percentage}%` }} />
                           </div>
-                          <div className="text-right text-sm font-semibold text-slate-900">R$ {amount.toFixed(2)}</div>
+                          <div className="text-right text-sm font-semibold text-foreground">R$ {amount.toFixed(2)}</div>
                         </div>
                       )
                     })}

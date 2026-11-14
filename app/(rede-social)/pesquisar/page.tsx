@@ -14,7 +14,7 @@ export default function PesquisarPage() {
   return (
     <Suspense
       fallback={
-        <p role="status" className="text-sm text-gray-500">
+        <p role="status" className="text-sm text-muted-foreground">
           Carregando...
         </p>
       }

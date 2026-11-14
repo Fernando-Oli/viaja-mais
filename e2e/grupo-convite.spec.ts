@@ -51,7 +51,7 @@ test("dona cria a viagem pela tela, convida e o convidado aceita", async ({ dona
   await dona.page.getByRole("button", { name: "Enviar Convite" }).click()
   await expect(dona.page.getByText("Convite enviado", { exact: true })).toBeVisible()
   await expect(
-    dona.page.getByText("A pessoa já tem conta e vai ver o convite ao entrar no ViajaMais.", { exact: true }),
+    dona.page.getByText("A pessoa já tem conta e vai ver o convite ao entrar na Avori.", { exact: true }),
   ).toBeVisible()
   await expect(dona.page.getByLabel("E-mail de quem convidar")).toHaveValue("")
 

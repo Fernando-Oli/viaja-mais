@@ -49,7 +49,7 @@ export default async function BookingsPage() {
   const statusColors: Record<string, string> = {
     pending: "bg-amber-100 text-amber-800",
     confirmed: "bg-emerald-100 text-emerald-800",
-    cancelled: "bg-red-100 text-red-800",
+    cancelled: "bg-destructive/10 text-destructive",
   }
 
   const statusLabels: Record<string, string> = {
@@ -62,8 +62,8 @@ export default async function BookingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Reservas</h1>
-          <p className="mt-2 text-slate-600">Gerencie todas as suas reservas de viagem</p>
+          <h1 className="text-3xl font-bold text-foreground">Reservas</h1>
+          <p className="mt-2 text-muted-foreground">Gerencie todas as suas reservas de viagem</p>
         </div>
       </div>
 
@@ -123,8 +123,8 @@ export default async function BookingsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="mb-4 h-12 w-12 text-slate-300" />
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma reserva futura</h3>
-                <p className="text-center text-slate-600">Suas próximas reservas aparecerão aqui</p>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma reserva futura</h3>
+                <p className="text-center text-muted-foreground">Suas próximas reservas aparecerão aqui</p>
               </CardContent>
             </Card>
           ) : (
@@ -148,7 +148,7 @@ export default async function BookingsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
                         <span>
                           {new Date(booking.start_date).toLocaleDateString("pt-BR", {
@@ -166,26 +166,26 @@ export default async function BookingsPage() {
                       </div>
 
                       {booking.provider && (
-                        <div className="text-sm text-slate-600">
+                        <div className="text-sm text-muted-foreground">
                           <span className="font-medium">Provedor:</span> {booking.provider}
                         </div>
                       )}
 
                       {booking.confirmation_number && (
-                        <div className="text-sm text-slate-600">
+                        <div className="text-sm text-muted-foreground">
                           <span className="font-medium">Confirmação:</span> {booking.confirmation_number}
                         </div>
                       )}
 
                       {booking.location && (
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
                           <span>{booking.location}</span>
                         </div>
                       )}
 
                       {booking.price && (
-                        <div className="pt-2 text-lg font-semibold text-slate-900">
+                        <div className="pt-2 text-lg font-semibold text-foreground">
                           {new Intl.NumberFormat("pt-BR", {
                             style: "currency",
                             currency: booking.currency || "BRL",
@@ -205,8 +205,8 @@ export default async function BookingsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="mb-4 h-12 w-12 text-slate-300" />
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma reserva anterior</h3>
-                <p className="text-center text-slate-600">Suas reservas passadas aparecerão aqui</p>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma reserva anterior</h3>
+                <p className="text-center text-muted-foreground">Suas reservas passadas aparecerão aqui</p>
               </CardContent>
             </Card>
           ) : (
@@ -218,8 +218,8 @@ export default async function BookingsPage() {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className="rounded-lg bg-slate-100 p-2">
-                            <Icon className="h-5 w-5 text-slate-600" />
+                          <div className="rounded-lg bg-muted p-2">
+                            <Icon className="h-5 w-5 text-muted-foreground" />
                           </div>
                           <div className="flex-1">
                             <CardTitle className="text-lg">{booking.title}</CardTitle>
@@ -230,7 +230,7 @@ export default async function BookingsPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
                         <span>
                           {new Date(booking.start_date).toLocaleDateString("pt-BR", {
@@ -253,8 +253,8 @@ export default async function BookingsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="mb-4 h-12 w-12 text-slate-300" />
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma reserva cadastrada</h3>
-                <p className="text-center text-slate-600">Adicione reservas às suas viagens</p>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma reserva cadastrada</h3>
+                <p className="text-center text-muted-foreground">Adicione reservas às suas viagens</p>
               </CardContent>
             </Card>
           ) : (
@@ -278,7 +278,7 @@ export default async function BookingsPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
                         <span>
                           {new Date(booking.start_date).toLocaleDateString("pt-BR", {

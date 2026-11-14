@@ -86,8 +86,8 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Calendar className="mb-4 h-12 w-12 text-slate-300" />
-        <h3 className="mb-2 text-lg font-semibold text-slate-900">Nenhuma atividade planejada</h3>
-        <p className="text-center text-slate-600">Adicione atividades ao seu itinerário</p>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma atividade planejada</h3>
+        <p className="text-center text-muted-foreground">Adicione atividades ao seu itinerário</p>
       </div>
     )
   }
@@ -123,7 +123,7 @@ export function ItineraryList({ items, tripId }: ItineraryListProps) {
         <div key={date}>
           <div className="mb-4 flex items-center gap-2">
             <Calendar className="h-5 w-5 text-sky-600" />
-            <h3 className="text-lg font-semibold text-slate-900 capitalize">
+            <h3 className="text-lg font-semibold text-foreground capitalize">
               {new Date(parseLocalDate(date)).toLocaleDateString("pt-BR", {
                 weekday: "long",
                 year: "numeric",
@@ -157,7 +157,7 @@ const categoryColors: Record<string, string> = {
   activity: "bg-green-100 text-green-800",
   restaurant: "bg-orange-100 text-orange-800",
   attraction: "bg-pink-100 text-pink-800",
-  other: "bg-slate-100 text-slate-800",
+  other: "bg-muted text-foreground",
 }
 
 const categoryLabels: Record<string, string> = {
@@ -184,14 +184,14 @@ function ItineraryItemCard({ item, tripId, ocupado, onAlternarConclusao, onExclu
     <div
       data-status={item.status}
       className={cn(
-        "rounded-lg border border-slate-200 p-4 transition-all hover:shadow-md",
+        "rounded-lg border border-border p-4 transition-all hover:shadow-md",
         concluida && "border-green-200 bg-green-50/60 opacity-70",
       )}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className={cn("font-medium text-slate-900", concluida && "text-slate-500 line-through")}>
+            <h4 className={cn("font-medium text-foreground", concluida && "text-muted-foreground line-through")}>
               {item.title}
             </h4>
             {item.category && (
@@ -207,9 +207,9 @@ function ItineraryItemCard({ item, tripId, ocupado, onAlternarConclusao, onExclu
             )}
           </div>
 
-          {item.description && <p className="mt-2 text-sm text-slate-600">{item.description}</p>}
+          {item.description && <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>}
 
-          <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-600">
+          <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
             {item.start_time && (
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
@@ -244,7 +244,7 @@ function ItineraryItemCard({ item, tripId, ocupado, onAlternarConclusao, onExclu
             variant="outline"
             disabled={ocupado}
             onClick={onExcluir}
-            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2 className="mr-1 h-4 w-4" />
             Excluir

@@ -110,7 +110,7 @@ function FormularioPagamento({
           onChange={(e) => setValor(e.target.value)}
         />
         {tocado && !valido && (
-          <p id="erro-valor-pagamento" className="text-sm text-red-700">
+          <p id="erro-valor-pagamento" className="text-sm text-destructive">
             Informe um valor maior que zero, com até duas casas.
           </p>
         )}
@@ -120,7 +120,7 @@ function FormularioPagamento({
         <Button type="button" variant="outline" onClick={onCancelar} disabled={enviando}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={enviando} className="bg-viaja-orange hover:bg-viaja-orange/90">
+        <Button type="submit" disabled={enviando} className="bg-primary hover:bg-primary/90">
           {enviando ? "Registrando..." : "Confirmar pagamento"}
         </Button>
       </DialogFooter>

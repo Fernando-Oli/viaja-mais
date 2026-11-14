@@ -97,8 +97,8 @@ export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <MapPin className="mb-4 h-12 w-12 text-gray-300" />
-        <h3 className="mb-2 text-lg font-semibold text-viaja-navy">Nenhum lugar salvo</h3>
-        <p className="text-center text-gray-600">Adicione lugares que deseja visitar</p>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhum lugar salvo</h3>
+        <p className="text-center text-muted-foreground">Adicione lugares que deseja visitar</p>
       </div>
     )
   }
@@ -111,13 +111,13 @@ export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
           return (
             <li
               key={place.id}
-              className="rounded-lg border border-gray-200 p-4 transition-colors hover:border-viaja-orange/30"
+              className="rounded-lg border border-border p-4 transition-colors hover:border-primary/30"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-medium text-viaja-navy">{place.name}</h4>
-                  {place.address && <p className="mt-1 line-clamp-2 text-sm text-gray-600">{place.address}</p>}
-                  {place.notes && <p className="mt-2 text-sm italic text-gray-700">{place.notes}</p>}
+                  <h4 className="font-medium text-foreground">{place.name}</h4>
+                  {place.address && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{place.address}</p>}
+                  {place.notes && <p className="mt-2 text-sm italic text-foreground">{place.notes}</p>}
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     {place.category && (
                       <Badge variant="secondary" className="text-xs">
@@ -157,7 +157,7 @@ export function PlaceList({ places, tripId, onChange }: PlaceListProps) {
                     aria-label={`Excluir ${place.name}`}
                     disabled={ocupado}
                     onClick={() => setParaExcluir(place)}
-                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
