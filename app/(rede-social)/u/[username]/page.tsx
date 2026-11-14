@@ -205,7 +205,7 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
     <div className="space-y-6">
       <Card role="region" aria-label={`Perfil de @${perfil.username}`}>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <Avatar className="h-24 w-24 shrink-0">
+          <Avatar className="h-28 w-28 shrink-0">
             {perfil.avatar_url ? <AvatarImage src={perfil.avatar_url} alt={`Foto de ${nome}`} /> : null}
             <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-primary text-primary-foreground">
               <UserRound className="h-12 w-12" aria-hidden />
@@ -213,7 +213,7 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
           </Avatar>
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-2xl font-semibold text-foreground">{nome}</h1>
+              <h1 className="break-words text-3xl font-semibold tracking-tight text-foreground">{nome}</h1>
               {perfil.is_public ? null : (
                 <Badge variant="outline" className="gap-1">
                   <Lock aria-hidden />
