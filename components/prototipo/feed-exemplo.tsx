@@ -115,21 +115,23 @@ function Publicacao({ post, onComentar }: { post: Post; onComentar: () => void }
         <button
           type="button"
           aria-pressed={curtiu}
-          aria-label={curtiu ? "Descurtir" : "Curtir"}
           onClick={() => setCurtiu((v) => !v)}
           className="inline-flex h-11 items-center gap-1.5 rounded-xl px-2.5 text-sm font-medium hover:bg-muted"
         >
           <Heart className={cn("h-[22px] w-[22px]", curtiu && "fill-primary text-primary")} aria-hidden />
+          <span className="sr-only">Curtir, </span>
           {post.curtidas + (curtiu ? 1 : 0)}
+          <span className="sr-only"> curtidas</span>
         </button>
         <button
           type="button"
-          aria-label="Comentar"
           onClick={onComentar}
           className="inline-flex h-11 items-center gap-1.5 rounded-xl px-2.5 text-sm font-medium hover:bg-muted"
         >
           <MessageCircle className="h-[22px] w-[22px]" aria-hidden />
+          <span className="sr-only">Comentar, </span>
           {post.comentarios.length}
+          <span className="sr-only"> comentários</span>
         </button>
         <span className="flex-1" />
         <button
