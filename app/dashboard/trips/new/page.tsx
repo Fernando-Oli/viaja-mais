@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,17 +79,31 @@ export default function NewTripPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Button variant="ghost" asChild className="mb-4">
-          <Link href="/dashboard/trips">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Link>
-        </Button>
-        <h1 className="text-3xl font-bold text-foreground">Nova Viagem</h1>
-        <p className="mt-2 text-muted-foreground">
-          Preencha os detalhes da sua próxima aventura
+        <Link
+          href="/dashboard/trips/criar"
+          className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Nova viagem
+        </Link>
+        <h1 className="text-3xl font-semibold tracking-tight">Criar do meu jeito</h1>
+        <p className="mt-1 text-muted-foreground">
+          Comece pelo essencial. Roteiro, reservas e despesas você adiciona depois.
         </p>
       </div>
+
+      <Link
+        href="/dashboard/trips/criar/ia"
+        className="flex items-center gap-3 rounded-2xl bg-citrico px-4 py-3.5 text-grafite transition-colors hover:bg-citrico/90"
+      >
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-citrico">
+          <Sparkles className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="flex-1 text-sm">
+          <strong className="font-semibold">Prefere responder perguntas?</strong> A Avori monta o roteiro para você.
+        </span>
+        <ChevronRight className="h-5 w-5" aria-hidden />
+      </Link>
 
       <Card>
         <CardHeader>

@@ -2,7 +2,6 @@ import { notFound, redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { ArrowLeft, Calendar, MapPin, DollarSign, Plus, Clock, MapPinned, Pencil } from "lucide-react"
@@ -12,6 +11,8 @@ import { PlaceList } from "@/components/place-list"
 import { ExpenseList } from "@/components/expense-list"
 import { TripMembers } from "@/components/trip-members"
 import { nomesDosPerfis } from "@/lib/social/perfis"
+import { CapaViagem } from "@/components/brand/capa-viagem"
+import { BotaoPublicar } from "@/components/prototipo/botao-publicar"
 
 function parseLocalDate(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
@@ -127,55 +128,62 @@ export default async function TripDetailPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Button variant="ghost" asChild className="mb-4">
-          <Link href="/dashboard/trips">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Link>
-        </Button>
+      <div className="space-y-4">
+        <Link
+          href="/dashboard/trips"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Viagens
+        </Link>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="break-words text-3xl font-bold text-foreground">{trip.title}</h1>
-              <Badge variant={trip.status === "confirmed" ? "default" : "secondary"}>{statusLabels[trip.status]}</Badge>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-4 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span>{trip.destination}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+        <div className="flex flex-col overflow-hidden rounded-3xl bg-primary text-primary-foreground md:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col justify-end gap-3 p-6 md:p-8">
+            <span className="self-start rounded-full bg-citrico px-3 py-1 text-xs font-medium text-grafite">
+              {statusLabels[trip.status]}
+            </span>
+            <h1 className="break-words text-4xl font-semibold leading-none tracking-tight md:text-5xl">{trip.title}</h1>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 font-medium">
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" aria-hidden />
+                {trip.destination}
+              </span>
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" aria-hidden />
                 <span>
                   {parseLocalDate(trip.start_date).toLocaleDateString("pt-BR")} -{" "}
-                {parseLocalDate(trip.end_date).toLocaleDateString("pt-BR")}
+                  {parseLocalDate(trip.end_date).toLocaleDateString("pt-BR")}
                 </span>
-              </div>
+              </span>
               {Number(trip.budget) > 0 && (
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span>
-                    Orçamento:{" "}
-                    {new Intl.NumberFormat("pt-BR", {
-                      style: "currency",
-                      currency: trip.currency || "BRL",
-                    }).format(Number(trip.budget))}
-                  </span>
-                </div>
+                <span className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" aria-hidden />
+                  Orçamento:{" "}
+                  {new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: trip.currency || "BRL",
+                  }).format(Number(trip.budget))}
+                </span>
               )}
             </div>
-            {trip.description && <p className="mt-4 text-muted-foreground">{trip.description}</p>}
+            {trip.description && <p className="max-w-2xl">{trip.description}</p>}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {isOwner && (
+                <Button asChild variant="outline" className="h-10 rounded-xl border-0 bg-primary-foreground text-foreground">
+                  <Link href={`/dashboard/trips/${id}/edit`}>
+                    <Pencil className="h-4 w-4" aria-hidden />
+                    Editar
+                  </Link>
+                </Button>
+              )}
+              <BotaoPublicar
+                viagemId={id}
+                titulo={trip.title}
+                datas={`${parseLocalDate(trip.start_date).toLocaleDateString("pt-BR")} – ${parseLocalDate(trip.end_date).toLocaleDateString("pt-BR")}`}
+              />
+            </div>
           </div>
-          {isOwner && (
-            <Button asChild variant="outline" className="shrink-0 self-start">
-              <Link href={`/dashboard/trips/${id}/edit`}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Editar
-              </Link>
-            </Button>
-          )}
+          <CapaViagem src={trip.cover_image} semente={trip.id} className="h-44 md:h-auto md:w-[40%]" />
         </div>
       </div>
 
@@ -184,7 +192,7 @@ export default async function TripDetailPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Itinerário</CardTitle>
-            <Calendar className="h-4 w-4 text-sky-600" />
+            <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{itineraryItems?.length || 0}</div>
@@ -195,7 +203,7 @@ export default async function TripDetailPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gastos</CardTitle>
-            <DollarSign className="h-4 w-4 text-amber-600" />
+            <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -211,7 +219,7 @@ export default async function TripDetailPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Lugares</CardTitle>
-            <MapPinned className="h-4 w-4 text-emerald-600" />
+            <MapPinned className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{places?.length || 0}</div>
@@ -222,7 +230,7 @@ export default async function TripDetailPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Duração</CardTitle>
-            <Clock className="h-4 w-4 text-purple-600" />
+            <Clock className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
