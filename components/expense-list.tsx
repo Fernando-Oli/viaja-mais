@@ -71,7 +71,7 @@ export function ExpenseList({ expenses, tripId, currentUserId, isOwner }: Expens
   if (expenses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <DollarSign className="mb-4 h-12 w-12 text-gray-300" />
+        <DollarSign className="mb-4 h-12 w-12 text-muted-foreground" />
         <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma despesa registrada</h3>
         <p className="text-center text-muted-foreground">Comece a registrar seus gastos</p>
       </div>
