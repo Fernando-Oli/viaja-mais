@@ -161,6 +161,12 @@
   border-radius: 1rem;
   box-shadow: none;
 }
+/* Iniciais no lugar da foto: Floresta com texto Marfim (a barra do app fica fora do main). */
+main [data-slot="avatar-fallback"] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+}
 [data-slot="badge"] {
   border-radius: 999px;
 }
