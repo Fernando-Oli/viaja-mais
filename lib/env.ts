@@ -70,6 +70,9 @@ const esquemaServidor = z.object({
   SUPABASE_SERVICE_ROLE_KEY: opcional,
   DATABASE_URL: opcional,
   AI_PROVIDER: z.preprocess(vazioComoAusente, z.enum(["fake", "gemini", "anthropic"]).default("fake")),
+  // Endereço da API em Hono visto pelo servidor do Next (proxy.ts). O mesmo valor
+  // alimenta o rewrite de /api/* em next.config.mjs.
+  API_URL_INTERNA: z.preprocess(vazioComoAusente, z.string().url().default("http://localhost:3001")),
   GEMINI_API_KEY: opcional,
   ANTHROPIC_API_KEY: opcional,
 })
@@ -92,6 +95,7 @@ export function envServidor(): EnvServidor {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     DATABASE_URL: process.env.DATABASE_URL,
     AI_PROVIDER: process.env.AI_PROVIDER,
+    API_URL_INTERNA: process.env.API_URL_INTERNA,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   })

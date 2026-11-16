@@ -17,7 +17,9 @@ import fs from "node:fs"
 import path from "node:path"
 import { execSync } from "node:child_process"
 
-const RAIZ_CODIGO = ["app", "lib", "components", "context", "hooks"]
+// api/: a API em Hono (migração S13-F-sem-supabase). As rotas portadas carregam
+// as tags que antes estavam em app/api/.
+const RAIZ_CODIGO = ["api", "app", "lib", "components", "context", "hooks"]
 const RAIZ_TESTES = ["tests", "e2e"]
 const CATALOGO = ["docs/pfc/03-publico/14-requisitos-funcionais.md", "docs/pfc/03-publico/15-requisitos-nao-funcionais.md"]
 const SAIDA = "docs/pfc/rastreabilidade.md"

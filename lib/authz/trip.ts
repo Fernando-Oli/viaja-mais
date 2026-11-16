@@ -1,4 +1,4 @@
-import { ErroHttp, naoAutenticado, semPermissao } from "@/lib/http"
+import { ErroHttp, naoAutenticado, semPermissao } from "@/lib/erros"
 
 export type PapelNaViagem = "owner" | "member"
 
@@ -27,6 +27,17 @@ export interface ClienteConsulta {
   from(tabela: string): unknown
 }
 
+/**
+ * Alternativa ao cliente: uma função que devolve o papel do usuário na viagem
+ * (`"owner"`, `"member"`) ou `null`. É o que a API em Hono passa, consultando
+ * pelo Kysely dentro da transação do usuário. A regra de autorização abaixo é a
+ * mesma para os dois lados da migração.
+ */
+export type BuscarPapel = (tripId: string, userId: string) => Promise<string | null>
+
+/** De onde vem o papel: o cliente Supabase (rotas antigas) ou uma função (API). */
+export type FontePapel = ClienteConsulta | BuscarPapel
+
 async function consultarPapel(
   supabase: ClienteConsulta,
   tripId: string,
@@ -51,25 +62,31 @@ async function consultarPapel(
  * O predicado correto é **participação**, não propriedade.
  */
 export async function papelNaViagem(
-  supabase: ClienteConsulta,
+  fonte: FontePapel,
   tripId: string,
   userId: string,
 ): Promise<PapelNaViagem | null> {
-  const { data, error } = await consultarPapel(supabase, tripId, userId)
+  let role: string | null
+  if (typeof fonte === "function") {
+    role = await fonte(tripId, userId)
+  } else {
+    const { data, error } = await consultarPapel(fonte, tripId, userId)
+    if (error) throw new ErroHttp(500, error.message)
+    role = data?.role ?? null
+  }
 
-  if (error) throw new ErroHttp(500, error.message)
-  if (!data) return null
-  return data.role === "owner" ? "owner" : "member"
+  if (!role) return null
+  return role === "owner" ? "owner" : "member"
 }
 
 /** Exige que o usuário participe da viagem. Devolve o papel para quem precisar dele. */
 export async function exigirMembro(
-  supabase: ClienteConsulta,
+  fonte: FontePapel,
   tripId: string,
   userId: string | undefined,
 ): Promise<PapelNaViagem> {
   if (!userId) throw naoAutenticado()
-  const papel = await papelNaViagem(supabase, tripId, userId)
+  const papel = await papelNaViagem(fonte, tripId, userId)
   // 403 e não 404: quem não participa não deveria nem descobrir se a viagem
   // existe, mas separar os dois casos exigiria uma consulta a mais que vaza
   // justamente essa informação.
@@ -79,10 +96,10 @@ export async function exigirMembro(
 
 /** Exige que o usuário seja o dono. Excluir viagem e remover membro passam por aqui. */
 export async function exigirDono(
-  supabase: ClienteConsulta,
+  fonte: FontePapel,
   tripId: string,
   userId: string | undefined,
 ): Promise<void> {
-  const papel = await exigirMembro(supabase, tripId, userId)
+  const papel = await exigirMembro(fonte, tripId, userId)
   if (papel !== "owner") throw semPermissao("esta ação, restrita ao dono da viagem")
 }

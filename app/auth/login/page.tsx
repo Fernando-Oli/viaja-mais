@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createClient } from "@/lib/supabase/client"
+import { authCliente } from "@/lib/auth-cliente"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,16 +21,16 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
+      const { error } = await authCliente.signIn.email({ email, password });
+      // Mensagem única para e-mail inexistente e senha errada: diferenciar
+      // diria a quem tenta adivinhar quais e-mails têm conta.
+      if (error) {
+        throw new Error(error.status === 429 ? "Muitas tentativas. Aguarde um minuto e tente de novo." : "E-mail ou senha incorretos");
+      }
       router.push("/dashboard");
       router.refresh();
     } catch (error: unknown) {

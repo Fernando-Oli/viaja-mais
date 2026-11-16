@@ -88,3 +88,40 @@ describe("exigirDono", () => {
     expect(erro.status).toBe(403)
   })
 })
+
+/**
+ * Mesma regra, com o papel vindo de uma função — o caminho da API em Hono, que
+ * consulta pelo Kysely dentro da transação do usuário.
+ */
+describe("fonte de papel por função (API)", () => {
+  const buscar = (role: string | null) => async () => role
+
+  it("devolve owner e member como pelo cliente", async () => {
+    expect(await papelNaViagem(buscar("owner"), VIAGEM, USUARIO)).toBe("owner")
+    expect(await papelNaViagem(buscar("member"), VIAGEM, USUARIO)).toBe("member")
+  })
+
+  it("exigirMembro lança 403 para quem não participa", async () => {
+    await expect(exigirMembro(buscar(null), VIAGEM, USUARIO)).rejects.toMatchObject({ status: 403 })
+  })
+
+  it("exigirDono lança 403 para membro que não é dono", async () => {
+    await expect(exigirDono(buscar("member"), VIAGEM, USUARIO)).rejects.toMatchObject({ status: 403 })
+  })
+
+  it("exigirMembro lança 401 sem usuário, sem consultar o papel", async () => {
+    let consultou = false
+    const espia = async () => {
+      consultou = true
+      return "owner"
+    }
+    await expect(exigirMembro(espia, VIAGEM, undefined)).rejects.toBeInstanceOf(ErroHttp)
+    expect(consultou).toBe(false)
+  })
+
+  it("passa viagem e usuário para a função", async () => {
+    const recebidos: string[] = []
+    await exigirDono(async (t, u) => (recebidos.push(t, u), "owner"), VIAGEM, USUARIO)
+    expect(recebidos).toEqual([VIAGEM, USUARIO])
+  })
+})

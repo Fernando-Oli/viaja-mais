@@ -18,7 +18,9 @@ export default defineConfig({
     // não vierem do ambiente. Sem isso, os testes estruturais eram pulados em
     // silêncio na máquina de quem não exportasse as variáveis à mão.
     setupFiles: ["./tests/rls/preparar-ambiente.ts"],
-    include: ["tests/rls/**/*.test.ts"],
+    // tests/integracao: a API inteira (app.request) contra o banco local. Moram
+    // aqui pelo mesmo motivo dos testes de RLS: precisam de banco de pé.
+    include: ["tests/rls/**/*.test.ts", "tests/integracao/**/*.test.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
     fileParallelism: false,

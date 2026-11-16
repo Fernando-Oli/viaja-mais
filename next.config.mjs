@@ -14,6 +14,22 @@ const nextConfig = {
     unoptimized: true,
   },
 
+  // A API em Hono (api/) atende tudo em /api/* que o Next não atender.
+  //
+  // `fallback`, e não `beforeFiles`: o Next confere primeiro as próprias rotas
+  // em app/api/ e só repassa o que não existe ali. Assim a migração anda rota a
+  // rota — apagar um route handler do Next basta para a API assumir o caminho —
+  // e ao fim, sem app/api/, tudo vai para a API.
+  //
+  // Mesma origem para o navegador: o cookie de sessão do Better Auth chega à API
+  // sem CORS, e as telas continuam chamando fetch('/api/...').
+  //
+  // Lido direto do ambiente porque next.config não importa lib/env.ts (TypeScript).
+  async rewrites() {
+    const api = (process.env.API_URL_INTERNA ?? "http://localhost:3001").replace(/\/$/, "")
+    return { fallback: [{ source: "/api/:path*", destination: `${api}/api/:path*` }] }
+  },
+
   async headers() {
     return [
       {
