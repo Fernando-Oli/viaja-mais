@@ -598,13 +598,12 @@ export type Database = {
           destination: string
           end_date: string
           id: string
-          items: NonNullable<Json>
+          items: Json
           start_date: string
           title: string
           trip_id: string
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           author_id: string
           cover_path?: string | null
@@ -612,7 +611,7 @@ export type Database = {
           destination: string
           end_date: string
           id?: string
-          items?: NonNullable<Json>
+          items?: Json
           start_date: string
           title: string
           trip_id: string
@@ -625,7 +624,7 @@ export type Database = {
           destination?: string
           end_date?: string
           id?: string
-          items?: NonNullable<Json>
+          items?: Json
           start_date?: string
           title?: string
           trip_id?: string

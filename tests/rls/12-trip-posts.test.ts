@@ -5,7 +5,7 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
 
 /**
  * Publicar viagem (S06-M-publicar-viagem): a tabela `trip_posts` e o bucket
- * `capas-posts` da migration 20261111222825.
+ * `capas-posts` da migration 20261116195039.
  *
  * Mesmo princípio de 04-social: cada pessoa loga de verdade pelo GoTrue com a
  * chave anon e fala com o PostgREST como o navegador. A conexão direta só monta
