@@ -124,6 +124,30 @@ Não fecha nesta etapa (é da etapa 3, como previsto):
   envio por SMTP (`sendResetPassword`).
 - `lib/seguranca/csp.ts` ainda monta `connect-src` com a URL do Supabase.
 
+### Antecipado da etapa 3 (16/11/2026): o painel volta a carregar
+
+Decidido depois do molde verde: sem o contexto de autenticação nenhuma rota
+portada na etapa 2 pode ser conferida pela tela.
+
+- `context/auth-context.tsx` lê a sessão por `authCliente.useSession()` e sai
+  por `authCliente.signOut()`; expõe um `Usuario` próprio (`id`, `email`) em
+  vez do `User` do Supabase.
+- Rotas que o contexto consome, portadas para a API e removidas do Next:
+  `GET`/`POST /api/trips` (lista e criação, em `api/modulos/viagens/`) e
+  `GET /api/profile/:userId` (`api/modulos/perfis/`). `avatar_url` sai `null`
+  até existir armazenamento de arquivos — o Storage saiu com o Supabase.
+- Testes: `tests/integracao/viagens-lista.test.ts` (7) e
+  `tests/integracao/perfis.test.ts` (5), no lugar de `trips-get`, `trips-post`
+  e `profile-userid-route`, que simulavam o cliente do Supabase. Integração:
+  30 de 30. Unitária: 894 de 894 (eram 920; saíram os 26 casos simulados).
+  Rastreabilidade sem inconsistências.
+- Navegador (Chromium): login da Ana → `/dashboard` com "Olá, Ana." e a
+  viagem dela; `/dashboard/trips` lista as viagens.
+
+Ainda respondem 401 no painel, porque continuam no Next com Supabase:
+`/api/invitations` (convites, RF04) e `/api/social/solicitacoes` (sino de
+notificações). O contexto tolera a falha e o painel segue navegável.
+
 Encontrado no caminho: espalhar `esquemaAuth` e depois declarar `session`
 substituía a chave inteira, e o Better Auth procurava a tabela `session`. O
 comentário em `api/auth/auth.ts` registra o motivo do `...esquemaAuth.session`.

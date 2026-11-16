@@ -4,6 +4,7 @@ import { auth } from "./auth/auth"
 import { banco } from "./db/conexao"
 import { envApi } from "./env"
 import { tratarErro } from "./http/erros"
+import { rotasPerfis } from "./modulos/perfis/rotas"
 import { rotasViagens } from "./modulos/viagens/rotas"
 
 /**
@@ -36,6 +37,7 @@ export const app = new Hono()
   .on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw))
 
   .route("/api/trips", rotasViagens)
+  .route("/api/profile", rotasPerfis)
 
   .notFound((c) => c.json({ error: "Rota não encontrada" }, 404))
   .onError(tratarErro)

@@ -2,7 +2,7 @@ import { Hono } from "hono"
 import { z } from "zod"
 import { exigirDono, exigirMembro } from "../../../lib/authz/trip"
 import { ErroHttp } from "../../../lib/erros"
-import { atualizarViagemSchema } from "../../../lib/schemas/viagem"
+import { atualizarViagemSchema, criarViagemSchema } from "../../../lib/schemas/viagem"
 import { comoUsuario } from "../../db/como-usuario"
 import { respostaInvalida } from "../../http/erros"
 import { exigirSessao, type VariaveisSessao } from "../../http/sessao"
@@ -29,6 +29,7 @@ import * as repo from "./repositorio"
  * (tests/integracao/viagens.test.ts).
  *
  * @RF03.5 visualizar detalhes da viagem · @RF03.2 editar viagem · @RF03.3 excluir viagem
+ * @RF03.1 criar viagem · @RF03.4 listar viagens
  */
 
 const parametros = z.object({ tripId: z.string().uuid("id de viagem inválido") })
@@ -41,6 +42,25 @@ function lerTripId(param: Record<string, string>) {
 
 export const rotasViagens = new Hono<{ Variables: VariaveisSessao }>()
   .use(exigirSessao)
+
+  // Listagem e criação não têm viagem para autorizar: a lista é filtrada pela
+  // participação do próprio usuário, e quem cria vira dono pelo gatilho.
+  .get("/", async (c) => {
+    const usuario = c.var.usuario
+    const trips = await comoUsuario(usuario, (tx) => repo.listarViagens(tx, usuario.id))
+    return c.json({ trips })
+  })
+
+  .post("/", async (c) => {
+    const usuario = c.var.usuario
+    const analise = criarViagemSchema.safeParse(await c.req.json().catch(() => null))
+    if (!analise.success) return respostaInvalida(c, analise.error)
+
+    const trip = await comoUsuario(usuario, (tx) => repo.criarViagem(tx, usuario.id, analise.data))
+    // `{ data: [trip] }`, e não `{ trip }`: é o formato que `addTrip` do
+    // context/auth-context.tsx já lia quando a rota estava no Next.
+    return c.json({ data: [trip] })
+  })
 
   .get("/:tripId", async (c) => {
     const tripId = lerTripId(c.req.param())

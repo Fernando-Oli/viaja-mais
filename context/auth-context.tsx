@@ -8,10 +8,28 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from "react";
-import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { authCliente } from "@/lib/auth-cliente";
+
+/**
+ * Sessão, perfil, viagens e convites do usuário, para todas as telas do painel.
+ *
+ * A sessão vem do Better Auth (`authCliente.useSession`), que pergunta à API em
+ * `/api/auth/get-session`. O cookie é httpOnly: o navegador não lê o token, só
+ * recebe de volta quem é o usuário. Até S13 isto lia a sessão pelo Supabase, e
+ * sem ele o painel ficava parado em "Carregando...".
+ *
+ * Só `id` e `email` saem daqui: é o que as telas usam, e o tipo próprio evita
+ * que alguma volte a depender do formato do `User` do Supabase.
+ *
+ * @RF01.3 autenticação com e-mail e senha · @RF01.4 encerrar a sessão
+ */
+export interface Usuario {
+  id: string;
+  email: string;
+}
 
 interface Profile {
   id: string;
@@ -34,7 +52,7 @@ export interface TripCreate {
 
 // <CHANGE> Expanded context type with trips and invitations
 interface AuthContextType {
-  user: User | null;
+  user: Usuario | null;
   profile: Profile | null;
   trips: Trip[];
   invitations: Invitation[];
@@ -53,14 +71,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const { data: sessao, isPending, refetch } = authCliente.useSession();
+  const userId = sessao?.user.id;
+  const userEmail = sessao?.user.email;
+  // Memorizado por id e e-mail: `useSession` devolve objeto novo a cada
+  // renovação, e `user` novo dispararia de novo a busca de viagens e convites.
+  const user = useMemo<Usuario | null>(
+    () => (userId && userEmail ? { id: userId, email: userEmail } : null),
+    [userId, userEmail],
+  );
+  const loading = isPending;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [tripsLoading, setTripsLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -120,17 +145,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      if (user) {
-        await fetchProfile(user.id);
-      } else {
-        setProfile(null);
-        setTrips([]);
-        setInvitations([]);
-      }
+      await refetch();
+      if (user) await fetchProfile(user.id);
     } catch (error) {
       console.error("Error refreshing user:", error);
     }
@@ -184,33 +200,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  // Entrou, saiu ou trocou de conta: o perfil acompanha a sessão.
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setTrips([]);
-        setInvitations([]);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (userId) {
+      fetchProfile(userId);
+    } else {
+      setProfile(null);
+      setTrips([]);
+      setInvitations([]);
+    }
+  }, [userId]);
 
   // <CHANGE> Fetch trips and invitations when user is authenticated
   useEffect(() => {
@@ -221,8 +220,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchTrips, fetchInvitations]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    // Apaga a sessão no banco, não só o cookie: o token deixa de valer em
+    // qualquer réplica na hora.
+    await authCliente.signOut();
     setProfile(null);
     setTrips([]);
     setInvitations([]);
