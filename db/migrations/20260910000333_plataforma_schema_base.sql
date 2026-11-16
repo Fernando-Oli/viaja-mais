@@ -17,7 +17,8 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
-CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
+-- [S13-F-banco-proprio] Removido: CREATE EXTENSION "pg_graphql". Extensão do
+-- Supabase, inexistente no Postgres oficial e nunca usada pela aplicação.
 
 
 
@@ -38,7 +39,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 
 
 
-CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
+-- [S13-F-banco-proprio] Removido: CREATE EXTENSION "supabase_vault". Extensão do
+-- Supabase, nunca usada pela aplicação.
 
 
 
@@ -755,7 +757,8 @@ CREATE POLICY "users can insert their own trips" ON "public"."trips" FOR INSERT 
 
 
 
-ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
+-- [S13-F-banco-proprio] Removido: ALTER PUBLICATION "supabase_realtime". A
+-- publicação era do Realtime do Supabase, que a aplicação nunca usou.
 
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";

@@ -1,34 +1,61 @@
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      # Variáveis públicas precisam existir no BUILD: o Next as embute no bundle
-      # do navegador. Passá-las apenas em `environment` deixa o cliente com
-      # credenciais `undefined`.
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-    ports:
-      - "3000:3000"
-    environment:
-      # Só variáveis de servidor. Segredo não entra em camada de imagem.
-      - NODE_ENV=production
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - DATABASE_URL=${DATABASE_URL}
-      - AI_PROVIDER=${AI_PROVIDER:-fake}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      # Repetidas no runtime porque o servidor do Next também as lê em SSR.
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-    restart: unless-stopped
-    networks:
-      - viaja-mais
+# Ambiente local do Avori, sem Supabase.
+#
+#   docker compose up -d --wait     sobe tudo e espera ficar saudável
+#   npm run db:reset                recria o banco do zero: migrations + seed
+#
+# Etapa 0 da migração (docs/plans/S13-F-banco-proprio.md): só o banco e o
+# e-mail. A API (com réplicas atrás de um load balancer) e o armazenamento de
+# arquivos entram nas etapas seguintes.
+#
+# Portas escolhidas para não colidir com o Supabase local (54321-54324), que
+# continua instalado na máquina de quem ainda trabalha na `main`.
+name: avori
 
-networks:
-  viaja-mais:
-    driver: bridge
+services:
+  db:
+    build: ./db
+    environment:
+      POSTGRES_USER: postgres
+      # Senhas de desenvolvimento local. Nunca as mesmas de um ambiente real.
+      POSTGRES_PASSWORD: ${POSTGRES_SENHA:-postgres}
+      POSTGRES_DB: avori
+      APP_API_SENHA: ${APP_API_SENHA:-app_api_local}
+      APP_AUTH_SENHA: ${APP_AUTH_SENHA:-app_auth_local}
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_cron,pg_stat_statements
+      - -c
+      - cron.database_name=avori
+      # Sessão ociosa dentro de transação segura uma conexão do pool e os locks
+      # dela. Em desenvolvimento isso aparece como teste travado sem motivo.
+      - -c
+      - idle_in_transaction_session_timeout=60s
+    ports:
+      - "55432:5432"
+    volumes:
+      - dados-db:/var/lib/postgresql/data
+    healthcheck:
+      # Por TCP, não pelo socket. Durante os scripts de db/init o Postgres sobe
+      # um servidor temporário só no socket; checando pelo socket, o serviço
+      # ficava "saudável" antes de o banco existir e a migration falhava.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d avori"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  mailpit:
+    # Recebe todo e-mail enviado em desenvolvimento (cadastro, recuperação de
+    # senha, convite). Nada sai da máquina. Interface em http://localhost:58025.
+    image: axllent/mailpit:v1.33.1
+    ports:
+      - "58025:8025"
+      - "51025:1025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  dados-db:

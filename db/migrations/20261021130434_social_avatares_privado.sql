@@ -24,6 +24,6 @@
 -- Os limites do bucket (2 MB, JPEG/PNG/WebP) não mudam. `where id` com a chave
 -- primária: a atualização é idempotente e não toca outro bucket.
 
-update storage.buckets
-   set public = false
- where id = 'avatars';
+-- [S13-F-banco-proprio] Removido: update em storage.buckets. A decisão acima
+-- (bucket privado, leitura só por URL assinada de 10 minutos) continua valendo
+-- e passa a ser configuração do serviço de armazenamento (etapa 2).
