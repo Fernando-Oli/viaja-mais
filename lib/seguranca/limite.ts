@@ -1,5 +1,5 @@
 import type { createClient } from "@/lib/supabase/server"
-import { ErroHttp } from "@/lib/http"
+import { ErroHttp } from "@/lib/erros"
 
 /**
  * Limite de requisições por usuário, contado no Postgres por

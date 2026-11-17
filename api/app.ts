@@ -5,6 +5,7 @@ import { banco } from "./db/conexao"
 import { envApi } from "./env"
 import { tratarErro } from "./http/erros"
 import { rotasAcerto } from "./modulos/acerto/rotas"
+import { rotasConvites } from "./modulos/convites/rotas"
 import { rotasDespesas, rotasDespesasDoUsuario } from "./modulos/despesas/rotas"
 import { rotasAgenda, rotasItinerario } from "./modulos/itinerario/rotas"
 import { rotasLugares, rotasLugaresDoUsuario } from "./modulos/lugares/rotas"
@@ -52,6 +53,7 @@ export const app = new Hono()
   .route("/api/expenses", rotasDespesasDoUsuario)
   .route("/api/itinerary", rotasAgenda)
   .route("/api/profile", rotasPerfis)
+  .route("/api/invitations", rotasConvites)
 
   .notFound((c) => c.json({ error: "Rota não encontrada" }, 404))
   .onError(tratarErro)
