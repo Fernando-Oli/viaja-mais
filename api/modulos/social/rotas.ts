@@ -7,6 +7,7 @@ import { consultaSolicitacoesSchema } from "../../../lib/schemas/solicitacoes"
 import { registrarPesquisaSchema } from "../../../lib/schemas/pesquisa"
 import { LIMITES } from "../../../lib/seguranca/limite"
 import { juntarResultados } from "../../../lib/social/busca"
+import { assinarAvatar, assinarAvatares } from "../../arquivos/avatares"
 import { comoUsuario, type Tx } from "../../db/como-usuario"
 import { respostaInvalida } from "../../http/erros"
 import { exigirLimiteNaTx } from "../../http/limite"
@@ -15,9 +16,8 @@ import { exigirSessao, type VariaveisSessao } from "../../http/sessao"
 import * as repo from "./repositorio"
 
 /**
- * A rede social, em `/api/social`. Portada de `app/api/social/**`, menos a
- * foto de perfil (`/api/social/perfil/foto`), que depende de armazenamento de
- * arquivos e continua no Next até ele existir.
+ * A rede social, em `/api/social`. Portada de `app/api/social/**`. A foto do
+ * próprio perfil (`/perfil/foto`) está em `./foto.ts`.
  *
  * Nada aqui é recurso de viagem, então não há `exigirMembro`. A regra de cada
  * rota se garante pela origem do id: quem age é sempre a sessão, e a URL ou o
@@ -29,8 +29,8 @@ import * as repo from "./repositorio"
  * As respostas levam o que a tela mostra, campo a campo, sem o `id` de
  * ninguém, e não vão para cache compartilhado.
  *
- * Fotos: `avatar_url` sai sempre nulo até o armazenamento de arquivos voltar
- * (o Storage saiu com o Supabase). As telas já tratam a foto ausente.
+ * Fotos: o banco guarda o caminho no bucket, e as respostas levam um link
+ * assinado de validade curta (`api/arquivos/avatares.ts`).
  *
  * @RF02.1 @RF02.2 @RF02.5 @RF02.6 @RF02.7 @RF02.8 perfil
  * @RF09.1 @RF09.2 @RF09.3 @RF09.4 @RF09.5 @RF09.6 @RF09.9 @RF09.10 @RF09.12 rede social
@@ -42,12 +42,15 @@ const SEM_CACHE = { "Cache-Control": "private, no-store" } as const
 /** Violação de unicidade. Em `profiles`, a única unique editável é o username. */
 const VIOLA_UNICIDADE = "23505"
 
-/** A foto de perfil, quando houver armazenamento de arquivos. @RF02.2 */
-const foto = (_perfil: { id: string; avatar_url: string | null }): string | null => null
+type Pessoa = { id: string; username: string; full_name: string | null; avatar_url: string | null; is_public: boolean }
 
-/** Uma pessoa como as listas a mostram: sem o id. */
-function pessoa(p: { id: string; username: string; full_name: string | null; avatar_url: string | null; is_public: boolean }) {
-  return { username: p.username, full_name: p.full_name, avatar_url: foto(p), is_public: p.is_public }
+/**
+ * As pessoas como as listas as mostram: sem o id, e com a foto como link
+ * assinado (o banco guarda o caminho no bucket). Todas as fotos de uma vez.
+ */
+async function pessoas(lista: Pessoa[]) {
+  const fotos = await assinarAvatares(lista)
+  return lista.map((p, i) => ({ username: p.username, full_name: p.full_name, avatar_url: fotos[i], is_public: p.is_public }))
 }
 
 /** O username da URL, no formato da leitura; fora dele, 400 sem ir ao banco. */
@@ -73,7 +76,7 @@ async function perfilVisto(tx: Tx, quemVe: string, perfil: repo.PerfilAlvo) {
   return {
     username: perfil.username as string,
     full_name: perfil.full_name,
-    avatar_url: foto(perfil),
+    avatar_url: await assinarAvatar(perfil),
     bio: perfil.bio,
     is_public: perfil.is_public,
     vinculo,
@@ -103,7 +106,7 @@ function listaDaRede(lado: repo.Lado) {
     })
     if (!resultado) return c.json({ error: "A lista mudou; recarregue", codigo: "cursor_invalido" }, 400)
     return c.json(
-      { pessoas: resultado.pagina.map(pessoa), proximo: resultado.proximo, proprio: resultado.proprio },
+      { pessoas: await pessoas(resultado.pagina), proximo: resultado.proximo, proprio: resultado.proprio },
       200,
       SEM_CACHE,
     )
@@ -119,7 +122,7 @@ export const rotasSocial = new Hono<{ Variables: VariaveisSessao }>()
   .get("/perfil", async (c) => {
     const perfil = await comoUsuario(c.var.usuario, (tx) => repo.proprioPerfil(tx, c.var.usuario.id))
     if (!perfil) throw naoEncontrado("Perfil")
-    return c.json({ perfil: { ...perfil, avatar_url: foto(perfil) } }, 200, SEM_CACHE)
+    return c.json({ perfil: { ...perfil, avatar_url: await assinarAvatar(perfil) } }, 200, SEM_CACHE)
   })
 
   .patch("/perfil", async (c) => {
@@ -137,7 +140,7 @@ export const rotasSocial = new Hono<{ Variables: VariaveisSessao }>()
       }
     })
     if (!perfil) throw naoEncontrado("Perfil")
-    return c.json({ perfil: { ...perfil, avatar_url: foto(perfil) } }, 200, SEM_CACHE)
+    return c.json({ perfil: { ...perfil, avatar_url: await assinarAvatar(perfil) } }, 200, SEM_CACHE)
   })
 
   // ── Busca e perfil de outra pessoa ───────────────────────────────────────
@@ -146,7 +149,7 @@ export const rotasSocial = new Hono<{ Variables: VariaveisSessao }>()
     const analise = buscaPessoasSchema.safeParse(c.req.query("busca") ?? "")
     if (!analise.success) return respostaInvalida(c, analise.error)
     const listas = await comoUsuario(c.var.usuario, (tx) => repo.buscarPessoas(tx, c.var.usuario.id, analise.data))
-    return c.json({ pessoas: juntarResultados(listas, analise.data).map(pessoa) }, 200, SEM_CACHE)
+    return c.json({ pessoas: await pessoas(juntarResultados(listas, analise.data)) }, 200, SEM_CACHE)
   })
 
   .get("/perfis/:username", async (c) => {
@@ -230,7 +233,7 @@ export const rotasSocial = new Hono<{ Variables: VariaveisSessao }>()
       return c.json({ total }, 200, SEM_CACHE)
     }
     const { perfis, total } = await comoUsuario(c.var.usuario, (tx) => repo.listarSolicitacoes(tx, dono))
-    return c.json({ solicitacoes: perfis.map(pessoa), total }, 200, SEM_CACHE)
+    return c.json({ solicitacoes: await pessoas(perfis), total }, 200, SEM_CACHE)
   })
 
   .post("/solicitacoes/:username", (c) => resolverSolicitacao(c, "aprovar"))
@@ -241,7 +244,7 @@ export const rotasSocial = new Hono<{ Variables: VariaveisSessao }>()
 
   .get("/pesquisas", async (c) => {
     const recentes = await comoUsuario(c.var.usuario, (tx) => repo.listarRecentes(tx, c.var.usuario.id))
-    return c.json({ recentes: recentes.map(pessoa) }, 200, SEM_CACHE)
+    return c.json({ recentes: await pessoas(recentes) }, 200, SEM_CACHE)
   })
 
   .post("/pesquisas", async (c) => {

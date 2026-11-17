@@ -20,7 +20,9 @@
  * Imagens aceitam qualquer `https:`: as capas de viagem e as fotos de lugares
  * vêm de URLs externas informadas pelo usuário e pelo Google. Uma imagem não
  * executa código; o pior que ela faz é avisar ao servidor de origem que foi
- * vista.
+ * vista. As fotos de perfil vêm por link assinado do armazenamento S3: em
+ * produção, `https:` já as cobre; localmente o armazenamento é `http://`, e só
+ * a origem dele entra.
  *
  * @RNF02.12 política de segurança de conteúdo que restringe as origens de script
  */
@@ -28,6 +30,8 @@
 export type OpcoesCsp = {
   /** `NEXT_PUBLIC_SUPABASE_URL` do ambiente — local, preview ou produção. */
   supabaseUrl: string
+  /** Endereço público do armazenamento S3 das fotos de perfil, se houver um próprio. */
+  armazenamentoUrl?: string
   /** `next dev`: libera `'unsafe-eval'`, que o React usa para montar a pilha de erro. */
   desenvolvimento: boolean
 }
@@ -36,18 +40,26 @@ export type OpcoesCsp = {
 const GOOGLE_MAPS = ["https://maps.googleapis.com", "https://places.googleapis.com"]
 const GOOGLE_ESTATICOS = ["https://maps.gstatic.com", "https://*.googleapis.com", "https://*.ggpht.com"]
 
-export function montarCsp({ supabaseUrl, desenvolvimento }: OpcoesCsp): string {
+export function montarCsp({ supabaseUrl, armazenamentoUrl, desenvolvimento }: OpcoesCsp): string {
   const supabase = new URL(supabaseUrl)
   const supabaseHttp = supabase.origin
   // Realtime do Supabase: mesma origem, por WebSocket.
   const supabaseWs = `${supabase.protocol === "https:" ? "wss:" : "ws:"}//${supabase.host}`
+  const armazenamento = armazenamentoUrl ? new URL(armazenamentoUrl) : null
 
   const diretivas: Record<string, string[]> = {
     "default-src": ["'self'"],
     "script-src": ["'self'", "'unsafe-inline'", ...(desenvolvimento ? ["'unsafe-eval'"] : []), ...GOOGLE_MAPS],
     // O Maps e o Tailwind em tempo de execução injetam <style> inline.
     "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-    "img-src": ["'self'", "data:", "blob:", "https:", ...(supabase.protocol === "http:" ? [supabaseHttp] : [])],
+    "img-src": [
+      "'self'",
+      "data:",
+      "blob:",
+      "https:",
+      ...(supabase.protocol === "http:" ? [supabaseHttp] : []),
+      ...(armazenamento?.protocol === "http:" ? [armazenamento.origin] : []),
+    ],
     "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
     "connect-src": [
       "'self'",

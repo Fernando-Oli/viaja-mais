@@ -73,6 +73,14 @@ const esquemaServidor = z.object({
   // Endereço da API em Hono visto pelo servidor do Next (proxy.ts). O mesmo valor
   // alimenta o rewrite de /api/* em next.config.mjs.
   API_URL_INTERNA: z.preprocess(vazioComoAusente, z.string().url().default("http://localhost:3001")),
+  // Endereço público do armazenamento S3 das fotos de perfil, para a CSP liberar
+  // as imagens dele. Em produção (S3 da AWS, https) fica vazio: `https:` já cobre.
+  ARMAZENAMENTO_URL_PUBLICA: z.preprocess(
+    vazioComoAusente,
+    process.env.NODE_ENV === "production"
+      ? z.string().url().optional()
+      : z.string().url().default("http://localhost:58333"),
+  ),
   GEMINI_API_KEY: opcional,
   ANTHROPIC_API_KEY: opcional,
 })
@@ -96,6 +104,7 @@ export function envServidor(): EnvServidor {
     DATABASE_URL: process.env.DATABASE_URL,
     AI_PROVIDER: process.env.AI_PROVIDER,
     API_URL_INTERNA: process.env.API_URL_INTERNA,
+    ARMAZENAMENTO_URL_PUBLICA: process.env.ARMAZENAMENTO_URL_PUBLICA,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   })

@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "avori-local",
+      "credentials": [{ "accessKey": "avori_local", "secretKey": "avori_local_segredo" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

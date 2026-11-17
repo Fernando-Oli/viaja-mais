@@ -3,9 +3,8 @@
 #   docker compose up -d --wait     sobe tudo e espera ficar saudável
 #   npm run db:reset                recria o banco do zero: migrations + seed
 #
-# Etapa 0 da migração (docs/plans/S13-F-banco-proprio.md): só o banco e o
-# e-mail. A API (com réplicas atrás de um load balancer) e o armazenamento de
-# arquivos entram nas etapas seguintes.
+# Banco, e-mail e armazenamento de arquivos. A API roda fora do compose em
+# desenvolvimento (`npm run api:dev`).
 #
 # Portas escolhidas para não colidir com o Supabase local (54321-54324), que
 # continua instalado na máquina de quem ainda trabalha na `main`.
@@ -57,5 +56,35 @@ services:
       timeout: 3s
       retries: 30
 
+  armazenamento:
+    # Armazenamento de arquivos compatível com S3, só para desenvolvimento: em
+    # produção as fotos vão para o S3 da AWS, e a API fala com os dois pelo
+    # mesmo SDK (docs/plans/S13-F-foto-s3.md). O MinIO comunitário, que o plano
+    # previa, deixou de publicar imagem em 2025.
+    #
+    # Gateway S3 em http://localhost:58333, com as chaves de
+    # armazenamento/s3.json. O bucket é criado pela própria API na primeira
+    # foto (só fora de produção).
+    image: chrislusf/seaweedfs:4.52
+    command:
+      - server
+      - -dir=/data
+      - -s3
+      - -s3.port=8333
+      - -s3.config=/etc/seaweedfs/s3.json
+      - -volume.max=10
+      - -master.volumeSizeLimitMB=64
+    ports:
+      - "58333:8333"
+    volumes:
+      - dados-armazenamento:/data
+      - ./armazenamento/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
 volumes:
   dados-db:
+  dados-armazenamento:

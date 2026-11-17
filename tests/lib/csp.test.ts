@@ -92,6 +92,16 @@ describe("montarCsp — o que precisa ficar aberto", () => {
     expect(E2E.get("img-src")).toContain("http://127.0.0.1:54321")
   })
 
+  // @RF02.2 a foto de perfil vem por link assinado do armazenamento S3.
+  it("foto de perfil do armazenamento local (http) carrega; o https da AWS já está coberto", () => {
+    const comArmazenamento = (url: string) =>
+      diretivas(montarCsp({ supabaseUrl: "http://127.0.0.1:54321", armazenamentoUrl: url, desenvolvimento: true }))
+    expect(comArmazenamento("http://localhost:58333/avatars").get("img-src")).toContain("http://localhost:58333")
+    const aws = comArmazenamento("https://avori-fotos.s3.us-east-1.amazonaws.com").get("img-src")!
+    expect(aws.filter((o) => o.includes("amazonaws"))).toEqual([])
+    expect(aws).toContain("https:")
+  })
+
   it("HMR do next dev só em desenvolvimento", () => {
     expect(LOCAL.get("connect-src")).toContain("ws:")
     expect(PRODUCAO.get("connect-src")).not.toContain("ws:")

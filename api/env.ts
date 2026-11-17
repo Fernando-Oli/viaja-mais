@@ -19,6 +19,9 @@ const emProducao = process.env.NODE_ENV === "production"
 /** Valor padrão só em desenvolvimento e teste. Em produção, obrigatório. */
 const local = (padrao: string) => (emProducao ? z.string().min(1) : z.string().min(1).default(padrao))
 
+/** Opcional, com vazio valendo como ausente (`CHAVE=` copiada de um exemplo). */
+const opcionalApi = z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional())
+
 const esquema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(3001),
@@ -45,6 +48,18 @@ const esquema = z.object({
 
   SMTP_URL: local("smtp://localhost:51025"),
   EMAIL_REMETENTE: local("Avori <nao-responda@avori.local>"),
+
+  // Armazenamento de arquivos (fotos de perfil), por S3. Em produção, o S3 da
+  // AWS: sem `S3_ENDPOINT`, o SDK vai à AWS, e sem chaves usa as credenciais do
+  // ambiente (papel IAM da máquina). Em desenvolvimento, o SeaweedFS do compose.
+  S3_ENDPOINT: emProducao ? opcionalApi : z.string().url().default("http://localhost:58333"),
+  // O endereço que vai nos links assinados que o navegador abre. Só difere do
+  // anterior quando a API fala com o armazenamento por um nome interno (rede do compose).
+  S3_ENDPOINT_PUBLICO: opcionalApi,
+  S3_REGIAO: z.string().min(1).default("us-east-1"),
+  S3_CHAVE_ACESSO: emProducao ? opcionalApi : z.string().min(1).default("avori_local"),
+  S3_CHAVE_SECRETA: emProducao ? opcionalApi : z.string().min(1).default("avori_local_segredo"),
+  S3_BUCKET_AVATARES: local("avatars"),
 
   // Nome da réplica no cabeçalho X-Replica. No compose, o hostname do container.
   REPLICA: z.string().min(1).default(process.env.HOSTNAME ?? "local"),

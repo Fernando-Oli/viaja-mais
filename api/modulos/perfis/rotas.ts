@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { z } from "zod"
 import { ErroHttp, naoEncontrado } from "../../../lib/erros"
+import { assinarAvatar } from "../../arquivos/avatares"
 import { comoUsuario } from "../../db/como-usuario"
 import { exigirSessao, type VariaveisSessao } from "../../http/sessao"
 
@@ -13,10 +14,8 @@ import { exigirSessao, type VariaveisSessao } from "../../http/sessao"
  * é recurso de viagem, e os dados básicos são visíveis a qualquer autenticado
  * (detalhamento do RF02). A RLS de `profiles` continua valendo por baixo.
  *
- * `avatar_url` sai sempre `null` por enquanto: a foto morava no Storage do
- * Supabase, que saiu junto com ele (S13-F-banco-proprio). O cabeçalho já trata
- * a ausência e mostra a inicial. A foto volta quando o armazenamento de arquivos
- * da API existir.
+ * `avatar_url` sai como link assinado de validade curta: o banco guarda o
+ * caminho no bucket privado (`api/arquivos/avatares.ts`).
  *
  * @RF02.1 visualizar perfil · @RNF02.11 erro do banco não vaza
  */
@@ -33,12 +32,12 @@ export const rotasPerfis = new Hono<{ Variables: VariaveisSessao }>()
     const profile = await comoUsuario(c.var.usuario, (tx) =>
       tx
         .selectFrom("profiles")
-        .select(["id", "full_name", "created_at", "updated_at"])
+        .select(["id", "full_name", "avatar_url", "created_at", "updated_at"])
         .where("id", "=", analise.data.userId)
         .executeTakeFirst(),
     )
 
     if (!profile) throw naoEncontrado("Perfil")
     c.header("Cache-Control", "private, no-store")
-    return c.json({ profile: { ...profile, avatar_url: null } })
+    return c.json({ profile: { ...profile, avatar_url: await assinarAvatar(profile) } })
   })

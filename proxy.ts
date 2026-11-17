@@ -1,6 +1,6 @@
 import { controlarAcesso } from "@/lib/sessao/proxy"
 import { montarCsp } from "@/lib/seguranca/csp"
-import { env, emDesenvolvimento } from "@/lib/env"
+import { env, envServidor, emDesenvolvimento } from "@/lib/env"
 import type { NextRequest } from "next/server"
 
 /**
@@ -19,7 +19,11 @@ import type { NextRequest } from "next/server"
  *
  * @RNF02.12 política de segurança de conteúdo
  */
-const CSP = montarCsp({ supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL, desenvolvimento: emDesenvolvimento })
+const CSP = montarCsp({
+  supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+  armazenamentoUrl: envServidor().ARMAZENAMENTO_URL_PUBLICA,
+  desenvolvimento: emDesenvolvimento,
+})
 
 export async function proxy(request: NextRequest) {
   // Toda saída — a página e o redirect para o login — leva a política.

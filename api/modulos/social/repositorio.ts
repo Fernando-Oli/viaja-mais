@@ -328,3 +328,28 @@ export async function apagarDoHistorico(tx: Tx, dono: string, perfil: string) {
 export async function limparHistorico(tx: Tx, dono: string) {
   await tx.deleteFrom("search_history").where("user_id", "=", dono).execute()
 }
+
+// ── Foto de perfil ─────────────────────────────────────────────────────────
+
+/** O caminho da foto atual no bucket, ou nulo. @RF02.2 */
+export async function avatarAtual(tx: Tx, userId: string) {
+  const linha = await tx.selectFrom("profiles").select("avatar_url").where("id", "=", userId).executeTakeFirst()
+  return linha ? linha.avatar_url : undefined
+}
+
+/**
+ * Troca `avatar_url` só se ele ainda for o que foi lido antes do envio. Duas
+ * abas enviando ao mesmo tempo, ou um envio e uma remoção, não podem as duas
+ * apagar a mesma foto anterior e deixar a outra órfã: a segunda não acha a
+ * linha e a rota responde 409. O gatilho de `profiles` confere o formato do
+ * caminho. @RF02.2
+ */
+export function trocarAvatar(tx: Tx, userId: string, anterior: string | null, novo: string | null) {
+  return tx
+    .updateTable("profiles")
+    .set({ avatar_url: novo })
+    .where("id", "=", userId)
+    .where((eb) => (anterior === null ? eb("avatar_url", "is", null) : eb("avatar_url", "=", anterior)))
+    .returning(COLUNAS_PERFIL)
+    .executeTakeFirst()
+}
