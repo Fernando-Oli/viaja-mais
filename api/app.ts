@@ -11,6 +11,8 @@ import { rotasAgenda, rotasItinerario } from "./modulos/itinerario/rotas"
 import { rotasLugares, rotasLugaresDoUsuario } from "./modulos/lugares/rotas"
 import { rotasPerfis } from "./modulos/perfis/rotas"
 import { rotasSocial } from "./modulos/social/rotas"
+import { trocarSenha } from "./modulos/senha/rotas"
+import { exigirSessao } from "./http/sessao"
 import { rotasReservas, rotasReservasDoUsuario } from "./modulos/reservas/rotas"
 import { rotasViagens } from "./modulos/viagens/rotas"
 
@@ -41,6 +43,9 @@ export const app = new Hono()
     return c.json({ status: "ok", replica: envApi.REPLICA })
   })
 
+  // Antes do handler do Better Auth: encobre o endpoint nativo de troca de
+  // senha, que não tem o limite por usuário (api/modulos/senha/rotas.ts).
+  .post("/api/auth/change-password", exigirSessao, trocarSenha)
   .on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw))
 
   .route("/api/trips/:tripId/itinerary", rotasItinerario)
