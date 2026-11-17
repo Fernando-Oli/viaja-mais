@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react"
 import { redirect } from "next/navigation"
-import { lerDaApi, lerDaApiOpcional, usuarioDaSessao } from "@/lib/api-servidor"
+import { lerDaApi, usuarioDaSessao } from "@/lib/api-servidor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -55,7 +55,7 @@ export default async function TripDetailPage({
   // mesmo 404 (`lerDaApi` trata 403 e 404 igual), para não revelar que existe.
   const user = await usuarioDaSessao()
 
-  const [{ trip }, { members }, { itinerary: itineraryItems }, { places }, { bookings }, despesas] = await Promise.all([
+  const [{ trip }, { members }, { itinerary: itineraryItems }, { places }, { bookings }, { expenses }] = await Promise.all([
     lerDaApi<{ trip: Trip & { description?: string | null; cover_image?: string | null } }>(`/api/trips/${id}`),
     lerDaApi<{ members: { id: string; user_id: string; role: string; profiles: { full_name: string | null } }[] }>(
       `/api/trips/${id}/members`,
@@ -63,11 +63,8 @@ export default async function TripDetailPage({
     lerDaApi<{ itinerary: ItemItinerario[] }>(`/api/trips/${id}/itinerary`),
     lerDaApi<{ places: Lugar[] }>(`/api/trips/${id}/places`),
     lerDaApi<{ bookings: Reserva[] }>(`/api/trips/${id}/bookings`),
-    // Despesas ainda não foram portadas para a API (financeiro, etapa 2): até
-    // lá a aba fica vazia em vez de derrubar a página.
-    lerDaApiOpcional<{ expenses: Despesa[] }>(`/api/trips/${id}/expenses`),
+    lerDaApi<{ expenses: Despesa[] }>(`/api/trips/${id}/expenses`),
   ])
-  const expenses = despesas?.expenses ?? []
 
   const isOwner = trip.user_id === user.id
 

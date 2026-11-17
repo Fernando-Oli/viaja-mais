@@ -1,44 +1,47 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { selecaoDeViagens, selecaoPorViagem, FILTRO_EM_VIAGENS, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
+import { lerDaApi } from "@/lib/api-servidor"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, TrendingUp, TrendingDown, PieChart } from "lucide-react"
 
+/** Formato de `GET /api/trips`: viagens de que o usuário participa. */
+type ViagemDoPainel = {
+  id: string
+  title: string
+  destination: string
+  status: string | null
+  budget: number | null
+  currency: string | null
+}
+
+/** Formato de `GET /api/expenses`, com a viagem junto, em `trips`. */
+type DespesaDoPainel = {
+  id: string
+  trip_id: string
+  title: string
+  amount: number
+  currency: string | null
+  category: string
+  date: string
+  trips: { title: string; currency: string | null }
+}
+
 export default async function FinancesPage() {
-  const supabase = await createClient()
+  // A despesa do grupo é do grupo: a API devolve as despesas de todas as
+  // viagens de que a pessoa participa, de qualquer autor. Filtrar por `user_id`
+  // mostrava ao convidado só o que ele mesmo lançou, e o total saía errado.
+  const [{ trips }, { expenses: allExpenses }] = await Promise.all([
+    lerDaApi<{ trips: ViagemDoPainel[] }>("/api/trips"),
+    lerDaApi<{ expenses: DespesaDoPainel[] }>("/api/expenses"),
+  ])
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error || !user) {
-    redirect("/auth/login")
-  }
-
-  const { data: trips } = await supabase
-    .from("trips")
-    .select(selecaoDeViagens())
-    .eq(FILTRO_EM_VIAGENS, user.id)
-
-  // A despesa do grupo é do grupo. Filtrar por `user_id` mostrava ao convidado
-  // só o que ele mesmo lançou, e o total da viagem saía errado para ele.
-  const { data: allExpenses } = await supabase
-    .from("expenses")
-    .select(selecaoPorViagem("title, currency"))
-    .eq(FILTRO_POR_VIAGEM, user.id)
-
-  // Somatórios por moeda. O reduce é tipado explicitamente e parte de [] em vez
-  // de `allExpenses?`: sem isso o resultado é `Record<string, number> | undefined`,
-  // e todo `Object.entries` mais abaixo devolve `unknown`.
-  const totalsByCurrency = (allExpenses ?? []).reduce<Record<string, number>>((acc, expense) => {
+  // Somatórios por moeda, a da viagem.
+  const totalsByCurrency = allExpenses.reduce<Record<string, number>>((acc, expense) => {
     const currency = expense.trips?.currency || "BRL"
     acc[currency] = (acc[currency] ?? 0) + Number(expense.amount)
     return acc
   }, {})
 
-  // Somatórios por categoria — mesmo motivo do bloco acima.
-  const byCategory = (allExpenses ?? []).reduce<Record<string, number>>((acc, expense) => {
+  const byCategory = allExpenses.reduce<Record<string, number>>((acc, expense) => {
     acc[expense.category] = (acc[expense.category] ?? 0) + Number(expense.amount)
     return acc
   }, {})

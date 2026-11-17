@@ -4,6 +4,8 @@ import { auth } from "./auth/auth"
 import { banco } from "./db/conexao"
 import { envApi } from "./env"
 import { tratarErro } from "./http/erros"
+import { rotasAcerto } from "./modulos/acerto/rotas"
+import { rotasDespesas, rotasDespesasDoUsuario } from "./modulos/despesas/rotas"
 import { rotasAgenda, rotasItinerario } from "./modulos/itinerario/rotas"
 import { rotasLugares, rotasLugaresDoUsuario } from "./modulos/lugares/rotas"
 import { rotasPerfis } from "./modulos/perfis/rotas"
@@ -42,9 +44,12 @@ export const app = new Hono()
   .route("/api/trips/:tripId/itinerary", rotasItinerario)
   .route("/api/trips/:tripId/bookings", rotasReservas)
   .route("/api/trips/:tripId/places", rotasLugares)
+  .route("/api/trips/:tripId/expenses", rotasDespesas)
+  .route("/api/trips/:tripId/acerto", rotasAcerto)
   .route("/api/trips", rotasViagens)
   .route("/api/bookings", rotasReservasDoUsuario)
   .route("/api/places", rotasLugaresDoUsuario)
+  .route("/api/expenses", rotasDespesasDoUsuario)
   .route("/api/itinerary", rotasAgenda)
   .route("/api/profile", rotasPerfis)
 

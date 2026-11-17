@@ -164,7 +164,7 @@ Não mudam: `lib/finance/balances.ts`, `lib/finance/rateio.ts`, `supabase/seed.s
 
 | Risco | Tratamento |
 |---|---|
-| Dois pagamentos com chaves diferentes ao mesmo tempo (duas abas) passam juntos pela conferência de saldo e somam mais que a dívida | **Limitação aceita nesta entrega.** Não há transação entre a leitura do saldo e o `insert`. O excesso não quebra a conta: o saldo só se inverte e `minimizarTransferencias()` sugere a devolução. Fechar isso exige RPC com lock por viagem — fora do escopo. |
+| Dois pagamentos com chaves diferentes ao mesmo tempo (duas abas) passam juntos pela conferência de saldo e somam mais que a dívida | **Limitação aceita nesta entrega.** Não há transação entre a leitura do saldo e o `insert`. O excesso não quebra a conta: o saldo só se inverte e `minimizarTransferencias()` sugere a devolução. Fechar isso exige RPC com lock por viagem — fora do escopo. **Fechada em S13** (`S13-F-porte-financeiro`): a API trava o acerto da viagem na transação antes de ler o saldo. |
 | Clique duplo / reenvio depois de queda de rede | Botão desabilitado durante o envio + chave de idempotência com unique no banco. |
 | Pagamento registrado em nome de outra pessoa | 403 na rota e `WITH CHECK (from_user_id = auth.uid())` na RLS. |
 | Recebedor que não participa da viagem | A rota recusa (422, "recebedor não participa do acerto"). A RLS **não** confere o recebedor: as funções de participação só respondem sobre quem está na sessão, de propósito (S06-F). |

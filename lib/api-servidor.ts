@@ -25,20 +25,6 @@ export async function lerDaApi<T>(caminho: string): Promise<T> {
 }
 
 /**
- * Como `lerDaApi`, mas para dado acessório da página: qualquer falha devolve
- * `null` e a página segue com o resto. Serve para parte que ainda não foi
- * portada para a API (as despesas, na S13) não derrubar a tela inteira.
- */
-export async function lerDaApiOpcional<T>(caminho: string): Promise<T | null> {
-  try {
-    const resposta = await chamarApi(caminho)
-    return resposta.ok ? ((await resposta.json()) as T) : null
-  } catch {
-    return null
-  }
-}
-
-/**
  * Usuário da sessão, para o que a página decide sozinha (mostrar o botão do
  * dono, marcar "você" numa lista). Sem sessão, vai para o login. A decisão de
  * acesso continua sendo da API: isto só ajusta a tela.

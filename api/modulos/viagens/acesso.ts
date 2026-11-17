@@ -17,3 +17,11 @@ export function exigirMembroNaTx(tx: Tx, tripId: string, userId: string): Promis
 export function exigirDonoNaTx(tx: Tx, tripId: string, userId: string): Promise<void> {
   return exigirDono((t, u) => papelNaViagem(tx, t, u), tripId, userId)
 }
+
+/**
+ * Papel de qualquer pessoa na viagem, ou `null` se ela não participa. Para
+ * regra que pergunta por um terceiro — o participante de um rateio, por exemplo.
+ */
+export function papelNaViagemTx(tx: Tx, tripId: string, userId: string): Promise<string | null> {
+  return papelNaViagem(tx, tripId, userId)
+}
