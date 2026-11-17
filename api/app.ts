@@ -10,6 +10,7 @@ import { rotasDespesas, rotasDespesasDoUsuario } from "./modulos/despesas/rotas"
 import { rotasAgenda, rotasItinerario } from "./modulos/itinerario/rotas"
 import { rotasLugares, rotasLugaresDoUsuario } from "./modulos/lugares/rotas"
 import { rotasPerfis } from "./modulos/perfis/rotas"
+import { rotasSocial } from "./modulos/social/rotas"
 import { rotasReservas, rotasReservasDoUsuario } from "./modulos/reservas/rotas"
 import { rotasViagens } from "./modulos/viagens/rotas"
 
@@ -54,6 +55,7 @@ export const app = new Hono()
   .route("/api/itinerary", rotasAgenda)
   .route("/api/profile", rotasPerfis)
   .route("/api/invitations", rotasConvites)
+  .route("/api/social", rotasSocial)
 
   .notFound((c) => c.json({ error: "Rota não encontrada" }, 404))
   .onError(tratarErro)

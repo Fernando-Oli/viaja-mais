@@ -119,7 +119,7 @@ export async function criarViagem(tx: Tx, userId: string, campos: CriarViagem) {
  *
  * `left join` em `profiles`: perfil ausente não pode sumir com o participante
  * — a tela mostra "Usuário" no lugar do nome. É a mesma tolerância de
- * `lib/social/perfis.ts`, agora numa consulta só, porque aqui o join é SQL e
+ * antigo `lib/social/perfis.ts`, agora numa consulta só, porque aqui o join é SQL e
  * não um embed do PostgREST.
  *
  * @RF04.4 os membros visualizam a viagem e seus dados
