@@ -113,3 +113,34 @@ export async function criarViagem(tx: Tx, userId: string, campos: CriarViagem) {
     .returningAll()
     .executeTakeFirstOrThrow()
 }
+
+/**
+ * Participantes da viagem com o nome de exibição, para a aba de membros.
+ *
+ * `left join` em `profiles`: perfil ausente não pode sumir com o participante
+ * — a tela mostra "Usuário" no lugar do nome. É a mesma tolerância de
+ * `lib/social/perfis.ts`, agora numa consulta só, porque aqui o join é SQL e
+ * não um embed do PostgREST.
+ *
+ * @RF04.4 os membros visualizam a viagem e seus dados
+ */
+export async function listarMembros(tx: Tx, tripId: string) {
+  const linhas = await tx
+    .selectFrom("trip_members")
+    .leftJoin("profiles", "profiles.id", "trip_members.user_id")
+    .select(["trip_members.id", "trip_members.user_id", "trip_members.role", "profiles.full_name"])
+    .where("trip_members.trip_id", "=", tripId)
+    .orderBy("trip_members.joined_at")
+    .execute()
+
+  return linhas.map(({ full_name, ...membro }) => ({ ...membro, profiles: { full_name: full_name ?? null } }))
+}
+
+export async function removerMembro(tx: Tx, tripId: string, userId: string): Promise<boolean> {
+  const resultado = await tx
+    .deleteFrom("trip_members")
+    .where("trip_id", "=", tripId)
+    .where("user_id", "=", userId)
+    .executeTakeFirst()
+  return resultado.numDeletedRows > BigInt(0)
+}

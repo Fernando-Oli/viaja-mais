@@ -18,6 +18,9 @@ export type VariaveisSessao = { usuario: Identidade }
  * @RNF02.3 sessão validada no servidor a cada requisição
  */
 export const exigirSessao = createMiddleware<{ Variables: VariaveisSessao }>(async (c, next) => {
+  // Módulos montados dentro de /api/trips/:tripId/... passam pelo middleware do
+  // módulo de viagens e pelo próprio. A sessão é validada uma vez por requisição.
+  if (c.get("usuario")) return next()
   const sessao = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!sessao) throw naoAutenticado()
   c.set("usuario", { id: sessao.user.id, email: sessao.user.email })

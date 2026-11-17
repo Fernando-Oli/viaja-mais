@@ -1,10 +1,22 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { selecaoPorViagem, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
+import { lerDaApi } from "@/lib/api-servidor"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin } from "lucide-react"
 import Link from "next/link"
+
+/** Formato de `GET /api/...` com a viagem junto, em `trips`. */
+type ItemDaAgenda = {
+  id: string
+  trip_id: string
+  title: string
+  description: string | null
+  date: string
+  start_time: string | null
+  end_time: string | null
+  location: string | null
+  category: string | null
+  trips: { title: string; destination: string }
+}
 
 function parseLocalDate(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
@@ -12,26 +24,11 @@ function parseLocalDate(dateString: string) {
 }
 
 export default async function ItineraryPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error || !user) {
-    redirect("/auth/login")
-  }
-
-  const { data: itineraryItems } = await supabase
-    .from("itinerary_items")
-    .select(selecaoPorViagem("title, destination"))
-    .eq(FILTRO_POR_VIAGEM, user.id)
-    .gte("date", new Date().toISOString().split("T")[0])
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true })
-    .limit(20)
-
-
+  // Próximas 20 atividades de todas as viagens de que a pessoa participa. A
+  // API filtra pela participação e devolve a viagem junto, em `trips`.
+  const { itinerary: itineraryItems } = await lerDaApi<{ itinerary: ItemDaAgenda[] }>(
+    `/api/itinerary?desde=${new Date().toISOString().split("T")[0]}&limite=20`,
+  )
 
   const categoryColors: Record<string, string> = {
     accommodation: "bg-muted text-foreground",

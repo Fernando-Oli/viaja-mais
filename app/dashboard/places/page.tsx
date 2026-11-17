@@ -1,30 +1,24 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { selecaoPorViagem, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
+import { lerDaApi } from "@/lib/api-servidor"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Star } from "lucide-react"
-import { LIMITE_LISTAGEM } from "@/lib/listagem"
+
+/** Formato de `GET /api/...` com a viagem junto, em `trips`. */
+type LugarDoPainel = {
+  id: string
+  name: string
+  address: string | null
+  category: string | null
+  rating: number | null
+  notes: string | null
+  visited: boolean | null
+  trips: { title: string; destination: string }
+}
 
 export default async function PlacesPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error || !user) {
-    redirect("/auth/login")
-  }
-
   // Participação, não propriedade: o lugar que um membro salvou interessa ao
-  // grupo inteiro — é para isso que a viagem é compartilhada.
-  const { data: places } = await supabase
-    .from("places")
-    .select(selecaoPorViagem("title, destination"))
-    .eq(FILTRO_POR_VIAGEM, user.id)
-    .order("created_at", { ascending: false })
-    .limit(LIMITE_LISTAGEM)
+  // grupo inteiro. A API filtra e devolve a viagem junto, em `trips`.
+  const { places } = await lerDaApi<{ places: LugarDoPainel[] }>("/api/places")
 
   return (
     <div className="space-y-6">

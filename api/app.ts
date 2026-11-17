@@ -4,7 +4,10 @@ import { auth } from "./auth/auth"
 import { banco } from "./db/conexao"
 import { envApi } from "./env"
 import { tratarErro } from "./http/erros"
+import { rotasAgenda, rotasItinerario } from "./modulos/itinerario/rotas"
+import { rotasLugares, rotasLugaresDoUsuario } from "./modulos/lugares/rotas"
 import { rotasPerfis } from "./modulos/perfis/rotas"
+import { rotasReservas, rotasReservasDoUsuario } from "./modulos/reservas/rotas"
 import { rotasViagens } from "./modulos/viagens/rotas"
 
 /**
@@ -36,7 +39,13 @@ export const app = new Hono()
 
   .on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw))
 
+  .route("/api/trips/:tripId/itinerary", rotasItinerario)
+  .route("/api/trips/:tripId/bookings", rotasReservas)
+  .route("/api/trips/:tripId/places", rotasLugares)
   .route("/api/trips", rotasViagens)
+  .route("/api/bookings", rotasReservasDoUsuario)
+  .route("/api/places", rotasLugaresDoUsuario)
+  .route("/api/itinerary", rotasAgenda)
   .route("/api/profile", rotasPerfis)
 
   .notFound((c) => c.json({ error: "Rota não encontrada" }, 404))

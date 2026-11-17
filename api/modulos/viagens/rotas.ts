@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { z } from "zod"
 import { exigirDono, exigirMembro } from "../../../lib/authz/trip"
-import { ErroHttp } from "../../../lib/erros"
+import { ErroHttp, naoEncontrado, semPermissao } from "../../../lib/erros"
 import { atualizarViagemSchema, criarViagemSchema } from "../../../lib/schemas/viagem"
 import { comoUsuario } from "../../db/como-usuario"
 import { respostaInvalida } from "../../http/erros"
@@ -30,6 +30,7 @@ import * as repo from "./repositorio"
  *
  * @RF03.5 visualizar detalhes da viagem · @RF03.2 editar viagem · @RF03.3 excluir viagem
  * @RF03.1 criar viagem · @RF03.4 listar viagens
+ * @RF04.4 membros visualizam a viagem · @RF04.7 o dono remove membros · @RF04.8 o membro sai da viagem
  */
 
 const parametros = z.object({ tripId: z.string().uuid("id de viagem inválido") })
@@ -108,5 +109,45 @@ export const rotasViagens = new Hono<{ Variables: VariaveisSessao }>()
     })
 
     if (!apagou) throw new ErroHttp(400, "Não foi possível excluir a viagem")
+    return c.json({ success: true })
+  })
+
+  // Participantes, com o nome de exibição. Qualquer membro vê quem está no grupo.
+  .get("/:tripId/members", async (c) => {
+    const tripId = lerTripId(c.req.param())
+    const usuario = c.var.usuario
+
+    const members = await comoUsuario(usuario, async (tx) => {
+      await exigirMembro((t, u) => repo.papelNaViagem(tx, t, u), tripId, usuario.id)
+      return repo.listarMembros(tx, tripId)
+    })
+    return c.json({ members })
+  })
+
+  // Remover participante espelha a policy `trip_members_delete`
+  // (`is_trip_owner OR user_id = auth.uid()`): o dono remove quem quiser, e a
+  // pessoa sai por conta própria. `?userId=` diz quem sai.
+  .delete("/:tripId/members", async (c) => {
+    const tripId = lerTripId(c.req.param())
+    const usuario = c.var.usuario
+
+    const alvo = c.req.query("userId")
+    if (!alvo || !z.string().uuid().safeParse(alvo).success) {
+      return c.json({ error: "Dados inválidos", detalhes: { fieldErrors: { userId: ["informe quem sai da viagem"] } } }, 400)
+    }
+
+    await comoUsuario(usuario, async (tx) => {
+      // Participar é pré-requisito: quem está de fora recebe 403 sem descobrir
+      // se a viagem existe.
+      const papel = await exigirMembro((t, u) => repo.papelNaViagem(tx, t, u), tripId, usuario.id)
+      const saindoSozinho = alvo === usuario.id
+
+      if (papel !== "owner" && !saindoSozinho) throw semPermissao("remover outro participante")
+      // O dono sair da própria viagem a faria sumir da lista dele sem deixar de
+      // ser dele: GET /api/trips filtra por participação.
+      if (papel === "owner" && saindoSozinho) throw new ErroHttp(400, "O dono não pode sair da própria viagem")
+
+      if (!(await repo.removerMembro(tx, tripId, alvo))) throw naoEncontrado("Participante")
+    })
     return c.json({ success: true })
   })

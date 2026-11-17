@@ -1,5 +1,6 @@
-import { notFound, redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import type { ComponentProps } from "react"
+import { redirect } from "next/navigation"
+import { lerDaApi, lerDaApiOpcional, usuarioDaSessao } from "@/lib/api-servidor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,9 +11,13 @@ import { BookingList } from "@/components/booking-list"
 import { PlaceList } from "@/components/place-list"
 import { ExpenseList } from "@/components/expense-list"
 import { TripMembers } from "@/components/trip-members"
-import { nomesDosPerfis } from "@/lib/social/perfis"
 import { CapaViagem } from "@/components/brand/capa-viagem"
 import { BotaoPublicar } from "@/components/prototipo/botao-publicar"
+
+type ItemItinerario = ComponentProps<typeof ItineraryList>["items"][number]
+type Lugar = ComponentProps<typeof PlaceList>["places"][number]
+type Reserva = ComponentProps<typeof BookingList>["bookings"][number]
+type Despesa = ComponentProps<typeof ExpenseList>["expenses"][number]
 
 function parseLocalDate(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number)
@@ -45,81 +50,26 @@ export default async function TripDetailPage({
     redirect("/dashboard/trips/new")
   }
 
-  const supabase = await createClient()
+  // Tudo vem da API, com o cookie da sessão: ela decide sessão, participação e
+  // RLS. Viagem que não existe e viagem de que a pessoa não participa dão o
+  // mesmo 404 (`lerDaApi` trata 403 e 404 igual), para não revelar que existe.
+  const user = await usuarioDaSessao()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
-    redirect("/auth/login")
-  }
-
-  const { data: trip, error } = await supabase
-    .from("trips")
-    .select(
-      `
-      *,
-      trip_members!inner(user_id, role)
-    `,
-    )
-    .eq("id", id)
-    .eq("trip_members.user_id", user.id)
-    .single()
-
-  // PGRST116 é o `.single()` sem linha: a viagem não existe ou a sessão não
-  // participa dela — as duas respondem o mesmo 404, para não revelar que a
-  // viagem existe. Qualquer outro erro é falha de verdade e vai para o
-  // error.tsx do dashboard. Antes os dois casos mandavam de volta para a
-  // lista, sem explicar nada (S07-F).
-  if (error && error.code !== "PGRST116") {
-    throw new Error("Não foi possível carregar a viagem")
-  }
-  if (!trip) notFound()
-
-  // O nome vem numa segunda consulta: o embed `profiles(...)` direto daqui
-  // falhava com PGRST200 e a lista chegava vazia, sem nem a dona.
-  const { data: participantes } = await supabase
-    .from("trip_members")
-    .select("id, user_id, role")
-    .eq("trip_id", id)
-    .order("joined_at", { ascending: true })
-
-  const nomes = await nomesDosPerfis(
-    supabase,
-    (participantes ?? []).map((p) => p.user_id),
-  )
-  const members = (participantes ?? []).map((p) => ({
-    ...p,
-    profiles: { full_name: nomes.get(p.user_id) ?? null },
-  }))
+  const [{ trip }, { members }, { itinerary: itineraryItems }, { places }, { bookings }, despesas] = await Promise.all([
+    lerDaApi<{ trip: Trip & { description?: string | null; cover_image?: string | null } }>(`/api/trips/${id}`),
+    lerDaApi<{ members: { id: string; user_id: string; role: string; profiles: { full_name: string | null } }[] }>(
+      `/api/trips/${id}/members`,
+    ),
+    lerDaApi<{ itinerary: ItemItinerario[] }>(`/api/trips/${id}/itinerary`),
+    lerDaApi<{ places: Lugar[] }>(`/api/trips/${id}/places`),
+    lerDaApi<{ bookings: Reserva[] }>(`/api/trips/${id}/bookings`),
+    // Despesas ainda não foram portadas para a API (financeiro, etapa 2): até
+    // lá a aba fica vazia em vez de derrubar a página.
+    lerDaApiOpcional<{ expenses: Despesa[] }>(`/api/trips/${id}/expenses`),
+  ])
+  const expenses = despesas?.expenses ?? []
 
   const isOwner = trip.user_id === user.id
-
-  const { data: itineraryItems } = await supabase
-    .from("itinerary_items")
-    .select("*")
-    .eq("trip_id", id)
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true })
-
-  const { data: expenses } = await supabase
-    .from("expenses")
-    .select("*")
-    .eq("trip_id", id)
-    .order("date", { ascending: false })
-
-  const { data: places } = await supabase
-    .from("places")
-    .select("*")
-    .eq("trip_id", id)
-    .order("created_at", { ascending: false })
-
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select("*")
-    .eq("trip_id", id)
-    .order("start_date", { ascending: true })
 
   const totalExpenses = expenses?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0
 

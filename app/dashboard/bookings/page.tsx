@@ -1,32 +1,30 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { selecaoPorViagem, FILTRO_POR_VIAGEM } from "@/lib/trips/escopo"
+import { lerDaApi } from "@/lib/api-servidor"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plane, Hotel, Car, Calendar, MapPin } from "lucide-react"
-import { LIMITE_LISTAGEM } from "@/lib/listagem"
 import { BuscaReserva } from "@/components/prototipo/compra/busca-reserva"
 
+/** Formato de `GET /api/...` com a viagem junto, em `trips`. */
+type ReservaDoPainel = {
+  id: string
+  type: string
+  title: string
+  provider: string | null
+  confirmation_number: string | null
+  start_date: string
+  end_date: string | null
+  location: string | null
+  price: number | null
+  currency: string | null
+  status: string
+  trips: { title: string; destination: string }
+}
+
 export default async function BookingsPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error || !user) {
-    redirect("/auth/login")
-  }
-
   // Participação, não propriedade: quem foi convidado precisa ver as reservas
-  // que o grupo fez, não só as que ele mesmo cadastrou.
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select(selecaoPorViagem("title, destination"))
-    .eq(FILTRO_POR_VIAGEM, user.id)
-    .order("start_date", { ascending: true })
-    .limit(LIMITE_LISTAGEM)
+  // que o grupo fez. A API filtra e devolve a viagem junto, em `trips`.
+  const { bookings } = await lerDaApi<{ bookings: ReservaDoPainel[] }>("/api/bookings")
 
   const upcomingBookings = bookings?.filter((b) => new Date(b.start_date) >= new Date()) || []
   const pastBookings = bookings?.filter((b) => new Date(b.start_date) < new Date()) || []
