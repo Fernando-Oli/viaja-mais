@@ -636,12 +636,14 @@ export type Database = {
       trip_posts: {
         Row: {
           author_id: string
+          caption: string | null
           cover_path: string | null
           created_at: string
           destination: string
           end_date: string
           id: string
           items: Json
+          places: Json
           start_date: string
           title: string
           trip_id: string
@@ -649,12 +651,14 @@ export type Database = {
         }
         Insert: {
           author_id: string
+          caption?: string | null
           cover_path?: string | null
           created_at?: string
           destination: string
           end_date: string
           id?: string
           items?: Json
+          places?: Json
           start_date: string
           title: string
           trip_id: string
@@ -662,12 +666,14 @@ export type Database = {
         }
         Update: {
           author_id?: string
+          caption?: string | null
           cover_path?: string | null
           created_at?: string
           destination?: string
           end_date?: string
           id?: string
           items?: Json
+          places?: Json
           start_date?: string
           title?: string
           trip_id?: string
@@ -790,6 +796,11 @@ export type Database = {
       pode_editar_despesa: { Args: { expense_uuid: string }; Returns: boolean }
       pode_ver_rede: { Args: { perfil: string }; Returns: boolean }
       social_itens_do_post_validos: { Args: { itens: Json }; Returns: boolean }
+      social_lugares_do_post_validos: {
+        Args: { lugares: Json }
+        Returns: boolean
+      }
+      social_membros_marcaveis: { Args: { viagem: string }; Returns: string[] }
       social_meu_post_da_viagem: { Args: { viagem: string }; Returns: string }
       social_pode_marcar: {
         Args: { marcado: string; post: string }

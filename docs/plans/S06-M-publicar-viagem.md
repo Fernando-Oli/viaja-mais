@@ -21,6 +21,23 @@ status: em-desenvolvimento
 
 ## 1. Contexto
 
+**Readequação de 18/11 (decisões do Micael; substituem as de 11/11 onde conflitam).** A tela segue a
+prévia visual do Fernando (`components/prototipo/botao-publicar.tsx`): um diálogo aberto da tela da
+viagem, e não mais a subpágina `/publicar`.
+- **Capa:** o grafismo da marca, mais "Trocar capa" (upload opcional pela rota da capa).
+- **Legenda:** até 280 caracteres, opcional.
+- **Roteiro dia a dia** (chave única, sem escolha por item): ligada, sai de cada item não cancelado o
+  título, a data, o horário e a categoria. **Mostrar local** e **Mostrar descrição** continuam opcionais
+  para o post inteiro, como em 11/11. Notas, coordenadas e preço nunca saem.
+- **Lugares salvos** (chave): cada lugar sai com nome e categoria. O endereço é escolhido **por lugar**:
+  sem endereço (padrão), "usar o endereço disponibilizado pelo Google" ou texto livre. A tabela
+  `places` é da Audrey: os lugares chegam pela projeção pública dela.
+- **Quem viajou com você** (chave) é a marcação de 16/11: lista só os membros **com username**, porque
+  usar a rede social exige username. Quem não tem não aparece.
+- **Banco:** migration nova `..._social_trip_posts_legenda_lugares.sql` (proposta), com `caption`,
+  `places` e um `CHECK` de formato, mais a função `social_membros_marcaveis`, que substitui o helper
+  `membrosDaViagem`. A `trip_posts` aprovada em 11/11 não muda.
+
 O RF09.7 pede publicar uma viagem expondo só título, destino, datas, capa e itinerário, e nunca
 despesas, orçamento ou os demais membros. É o ponto técnico da seção 25: a viagem é dado privado do
 grupo, e o post é a única janela dela para fora.
@@ -222,6 +239,13 @@ página dela.
   - nenhuma requisição do navegador vai a `/rest/v1/trip_posts`;
   - sessão vencida ao publicar oferece entrar de novo;
   - no fim, os posts criados saem.
+- [ ] **Readequação de 18/11:**
+  - RLS: `caption` (até 280, nunca em branco) e `places` (só `name`, `category` e `address`, no máximo 200
+    lugares) recusados com 23514 fora do formato; `social_membros_marcaveis` devolve só membros com
+    username, sem a sessão, e nada a quem não é membro;
+  - integração: corpo novo (`legenda`, `roteiro`, `lugares`, `marcados`) estrito em todos os níveis;
+    lugar fora da projeção é ignorado; "google" sem endereço omite `address`; `marcado_invalido` 400 sem
+    gravar; chaves exatas de `previa.lugares`, `marcaveis` e `post.marcados`.
 - [ ] **Mutação** no código e na migration (cada policy, grant por coluna, `CHECK` e a função),
   com o script copiando e devolvendo os dados, e não só o schema.
 
@@ -286,3 +310,9 @@ página dela.
   Fernando sobre a migration; o resto entra em commits novos no mesmo PR.
 - 11/11: escrita direta pela Data API, opção A — policy de INSERT com o `CHECK` de formato, como em
   `follows` (bloco 1).
+- 18/11: a tela segue a prévia do Fernando (bloco 1, "Readequação"). A legenda e os lugares entram por
+  migration nova, e não editando a aprovada. O `CHECK` dos itens não muda, porque local e descrição
+  continuam opcionais. Os membros marcáveis vêm de uma função no banco (`social_membros_marcaveis`),
+  sem helper de outro domínio.
+- 18/11: execução em quatro instâncias paralelas, com arquivos exclusivos para cada uma: banco, lib e
+  rotas do post, aba Marcações e tela.

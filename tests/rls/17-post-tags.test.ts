@@ -22,7 +22,10 @@ import { CONEXAO, logar, novoCliente } from "./apoio"
  *   - a pessoa marcada remove a própria marca; a autora desmarca; um terceiro
  *     não apaga nada; não há UPDATE;
  *   - as cascatas: apagar o post leva as marcas; sair da viagem não leva;
- *   - a função só responde sobre o post da sessão.
+ *   - a função só responde sobre o post da sessão;
+ *   - social_membros_marcaveis (migration 20261118092400): o membro recebe os
+ *     outros membros com username, nunca a si mesmo; quem não é membro recebe
+ *     vazio; anon não executa.
  *
  * @RF09.13 @RF09.14 @RNF02.4
  */
@@ -405,5 +408,69 @@ describe("cascatas e a função", () => {
   it("o visitante sem sessão não executa a função", async () => {
     const { error } = await visitante.rpc("social_pode_marcar", { post: viagemA, marcado: membro.id })
     expect(error).not.toBeNull()
+  })
+})
+
+/**
+ * A lista "Quem viajou com você": social_membros_marcaveis, migration
+ * 20261118092400 (decisões do Micael em 18/11).
+ *
+ * @RF09.13
+ */
+describe("social_membros_marcaveis: quem a sessão pode marcar", () => {
+  async function marcaveis(ator: Ator | SupabaseClient, viagem: string) {
+    const cliente = "cliente" in ator ? ator.cliente : ator
+    const { data, error } = await cliente.rpc("social_membros_marcaveis", { viagem })
+    return { ids: ((data as string[] | null) ?? []).slice().sort(), error }
+  }
+
+  it("o membro recebe os outros membros com username, e não a si mesmo", async () => {
+    const daAutora = await marcaveis(autora, viagemA)
+    expect(daAutora.error).toBeNull()
+    expect(daAutora.ids).toEqual([membro.id])
+
+    expect((await marcaveis(membro, viagemA)).ids).toEqual([autora.id])
+    expect((await marcaveis(privado, viagemB)).ids).toEqual([davi.id])
+    expect((await marcaveis(davi, viagemB)).ids).toEqual([privado.id])
+  })
+
+  it("membro sem username não aparece para ninguém, mas ele mesmo recebe os outros", async () => {
+    for (const ator of [autora, membro]) {
+      expect((await marcaveis(ator, viagemA)).ids).not.toContain(semNome.id)
+    }
+    expect((await marcaveis(semNome, viagemA)).ids).toEqual([autora.id, membro.id].sort())
+  })
+
+  it("quem não é membro da viagem recebe vazio, mesmo sendo membro de outra", async () => {
+    for (const [ator, viagem] of [
+      [estranho, viagemA],
+      [seguidora, viagemB],
+      [autora, viagemB],
+      [davi, viagemA],
+    ] as const) {
+      const { ids, error } = await marcaveis(ator, viagem)
+      expect(error).toBeNull()
+      expect(ids).toEqual([])
+    }
+  })
+
+  it("quem saiu da viagem recebe vazio", async () => {
+    await db.query("delete from public.trip_members where trip_id = $1 and user_id = $2", [viagemA, membro.id])
+    try {
+      expect((await marcaveis(membro, viagemA)).ids).toEqual([])
+      // E deixa de ser marcável para quem ficou.
+      expect((await marcaveis(autora, viagemA)).ids).toEqual([])
+    } finally {
+      await db.query("insert into public.trip_members (trip_id, user_id, role) values ($1, $2, 'member')", [
+        viagemA,
+        membro.id,
+      ])
+    }
+  })
+
+  it("o visitante sem sessão não executa a função", async () => {
+    const { data, error } = await visitante.rpc("social_membros_marcaveis", { viagem: viagemA })
+    expect(data).toBeNull()
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 })

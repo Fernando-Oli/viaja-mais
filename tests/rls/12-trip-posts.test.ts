@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest"
+import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest"
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
 import { SENHA_TESTE } from "../fixtures/usuarios"
@@ -26,7 +26,10 @@ import { CONEXAO, logar, novoCliente } from "./apoio"
  *     do item, nem capa fora da pasta do autor;
  *   - a cascata: excluir a viagem apaga os posts;
  *   - ler o post não abre a viagem, os membros nem as despesas;
- *   - nenhuma policy em storage.objects, e o bucket nasce privado.
+ *   - nenhuma policy em storage.objects, e o bucket nasce privado;
+ *   - a legenda e os lugares salvos (migration 20261118092400): legenda até
+ *     280 e nunca em branco; dos lugares, só nome, categoria e endereço — nem
+ *     notas, coordenadas ou nota do Google; só o autor os atualiza.
  *
  * @RF09.7 @RNF02.4
  */
@@ -36,7 +39,8 @@ const VIOLA_CHECK = "23514"
 const VIOLA_UNIQUE = "23505"
 
 /** Tudo o que `authenticated` pode ler: todas as colunas, menos `trip_id`. */
-const COLUNAS = "id, author_id, title, destination, start_date, end_date, items, cover_path, created_at, updated_at"
+const COLUNAS =
+  "id, author_id, title, destination, start_date, end_date, items, caption, places, cover_path, created_at, updated_at"
 
 /** As únicas chaves que um item copiado pode ter. */
 const CHAVES_DO_ITEM = ["title", "date", "start_time", "end_time", "category", "location", "description"]
@@ -538,5 +542,151 @@ describe("o bucket da capa", () => {
       .from("capas-posts")
       .upload(`${autora.id}/${autora.id}.webp`, new Blob(["x"], { type: "image/webp" }))
     expect(enviado.data).toBeNull()
+  })
+})
+
+/**
+ * Legenda e lugares salvos: migration 20261118092400 (decisões do Micael em 18/11).
+ *
+ * @RF09.7
+ */
+describe("legenda e lugares salvos, mesmo pela Data API", () => {
+  /** Um lugar com tudo o que pode sair: nome, categoria e endereço. */
+  const LUGAR_COMPLETO = { name: "Time Out Market", category: "restaurant", address: "Av. 24 de Julho, Lisboa" }
+
+  function publicarCom(ator: Ator, viagem: string, extra: { caption?: unknown; places?: unknown }) {
+    const { trip_id, author_id, title, destination, start_date, end_date, items } = postDe(ator.id, viagem)
+    return ator.cliente
+      .from("trip_posts")
+      .insert({ trip_id, author_id, title, destination, start_date, end_date, items, ...extra })
+      .select("id")
+      .single()
+  }
+
+  // Os posts da viagem B vivem um teste só: se uma proteção falhar e um post
+  // inválido entrar, o próximo teste não esbarra no "um post por viagem" e
+  // falha pelo motivo certo. O da viagem A atravessa os testes de atualização.
+  afterEach(async () => {
+    await apagarPostsDe(viagemB)
+  })
+
+  afterAll(async () => {
+    await apagarPostsDe(viagemA)
+  })
+
+  it("aceita legenda de 280 e lugares com nome, categoria e endereço, e os devolve na leitura", async () => {
+    const caption = "x".repeat(280)
+    const places = [LUGAR_COMPLETO, { name: "Miradouro" }, { name: "Castelo", category: "attraction" }]
+    const { data, error } = await publicarCom(privado, viagemB, { caption, places })
+    expect(error).toBeNull()
+
+    const lido = await privado.cliente.from("trip_posts").select("caption, places").eq("id", data!.id).single()
+    expect(lido.error).toBeNull()
+    expect(lido.data).toEqual({ caption, places })
+  })
+
+  it("sem legenda nem lugares: caption nula e places vazio", async () => {
+    const { data, error } = await publicarCom(privado, viagemB, {})
+    expect(error).toBeNull()
+    const { rows } = await db.query("select caption, places from public.trip_posts where id = $1", [data!.id])
+    expect(rows[0]).toEqual({ caption: null, places: [] })
+  })
+
+  it.each([
+    ["acima de 280", "x".repeat(281)],
+    ["vazia", ""],
+    ["só espaços", "   "],
+    ["só quebras de linha e tabulação", "\n\t \r\n"],
+  ])("recusa legenda %s", async (_rotulo, caption) => {
+    const { error } = await publicarCom(privado, viagemB, { caption })
+    expect(error?.code).toBe(VIOLA_CHECK)
+  })
+
+  it.each([
+    ["sem name", { category: "restaurant" }],
+    ["name vazio", { name: "   " }],
+    ["name acima de 200", { name: "x".repeat(201) }],
+    ["name que não é texto", { name: 123 }],
+    ["notes", { name: "Hotel", notes: "código da porta 4321" }],
+    ["latitude", { name: "Hotel", latitude: "-23.5" }],
+    ["longitude", { name: "Hotel", longitude: "-46.6" }],
+    ["rating", { name: "Hotel", rating: "4.5" }],
+    ["visited", { name: "Hotel", visited: "true" }],
+    ["place_id", { name: "Hotel", place_id: "ChIJ0X31pIK3voARo3mz1ebVzDo" }],
+    ["id do lugar", { name: "Hotel", id: "11111111-1111-4111-8111-111111111111" }],
+    ["address vazio", { name: "Hotel", address: "" }],
+    ["address só espaços", { name: "Hotel", address: "   " }],
+    ["address acima de 300", { name: "Hotel", address: "x".repeat(301) }],
+    ["address nulo", { name: "Hotel", address: null }],
+    ["category acima de 60", { name: "Hotel", category: "x".repeat(61) }],
+  ])("recusa lugar com %s", async (_rotulo, lugar) => {
+    const { error } = await publicarCom(privado, viagemB, { places: [lugar] })
+    expect(error?.code).toBe(VIOLA_CHECK)
+  })
+
+  it("recusa lugar que não é objeto, places que não é array e mais de 200 lugares", async () => {
+    expect((await publicarCom(privado, viagemB, { places: ["Hotel"] })).error?.code).toBe(VIOLA_CHECK)
+    expect((await publicarCom(privado, viagemB, { places: { name: "Hotel" } })).error?.code).toBe(VIOLA_CHECK)
+    const muitos = Array.from({ length: 201 }, (_, i) => ({ name: `Lugar ${i}` }))
+    expect((await publicarCom(privado, viagemB, { places: muitos })).error?.code).toBe(VIOLA_CHECK)
+    const limite = Array.from({ length: 200 }, (_, i) => ({ name: `Lugar ${i}` }))
+    expect((await publicarCom(privado, viagemB, { places: limite })).error).toBeNull()
+  })
+
+  it("o autor atualiza a legenda e os lugares, e apaga a legenda com nulo", async () => {
+    const { data } = await publicarCom(autora, viagemA, { caption: "Primeira versão", places: [] })
+    const id = data!.id
+
+    const atualizado = await autora.cliente
+      .from("trip_posts")
+      .update({ caption: "Segunda versão", places: [LUGAR_COMPLETO] })
+      .eq("id", id)
+      .select("caption, places")
+      .single()
+    expect(atualizado.error).toBeNull()
+    expect(atualizado.data).toEqual({ caption: "Segunda versão", places: [LUGAR_COMPLETO] })
+
+    const semLegenda = await autora.cliente.from("trip_posts").update({ caption: null }).eq("id", id)
+    expect(semLegenda.error).toBeNull()
+    const { rows } = await db.query("select caption from public.trip_posts where id = $1", [id])
+    expect(rows[0].caption).toBeNull()
+
+    await autora.cliente.from("trip_posts").update({ caption: "Segunda versão" }).eq("id", id)
+  })
+
+  it("nem o autor grava, na atualização, legenda ou lugar fora do formato", async () => {
+    const id = (await autora.cliente.rpc("social_meu_post_da_viagem", { viagem: viagemA })).data as string
+    const longa = await autora.cliente.from("trip_posts").update({ caption: "x".repeat(281) }).eq("id", id)
+    expect(longa.error?.code).toBe(VIOLA_CHECK)
+    const comNotas = await autora.cliente
+      .from("trip_posts")
+      .update({ places: [{ name: "Hotel", notes: "senha do wi-fi" }] })
+      .eq("id", id)
+    expect(comNotas.error?.code).toBe(VIOLA_CHECK)
+    const { rows } = await db.query("select caption, places from public.trip_posts where id = $1", [id])
+    expect(rows[0]).toEqual({ caption: "Segunda versão", places: [LUGAR_COMPLETO] })
+  })
+
+  it("um terceiro, mesmo membro da viagem e vendo o post, não altera a legenda nem os lugares", async () => {
+    const id = (await autora.cliente.rpc("social_meu_post_da_viagem", { viagem: viagemA })).data as string
+    for (const ator of [membro, estranho]) {
+      const visto = await ator.cliente.from("trip_posts").select("caption").eq("id", id)
+      expect(visto.data).toHaveLength(1)
+      const alterado = await ator.cliente
+        .from("trip_posts")
+        .update({ caption: "invadido", places: [{ name: "Lugar invadido" }] })
+        .eq("id", id)
+        .select("id")
+      expect(alterado.data ?? []).toEqual([])
+    }
+    const { rows } = await db.query("select caption, places from public.trip_posts where id = $1", [id])
+    expect(rows[0]).toEqual({ caption: "Segunda versão", places: [LUGAR_COMPLETO] })
+  })
+
+  it("o visitante sem sessão não lê a legenda nem os lugares", async () => {
+    const id = (await autora.cliente.rpc("social_meu_post_da_viagem", { viagem: viagemA })).data as string
+    const { data, error } = await visitante.from("trip_posts").select("caption, places").eq("id", id)
+    expect(data).toBeNull()
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 })
