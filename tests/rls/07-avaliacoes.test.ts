@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type Cliente, type Usuario } from "./apoio"
 import { entrarPorConvite } from "./convite"
 import { USUARIOS } from "../fixtures/usuarios"
 import { logar, novoCliente } from "./apoio"
@@ -27,10 +27,10 @@ const VIOLA_RLS_OU_GRANT = "42501"
 const VIOLA_UNIQUE = "23505"
 const VIOLA_CHECK = "23514"
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let usuarioAna: User
-let usuarioBruno: User
+let ana: Cliente
+let bruno: Cliente
+let usuarioAna: Usuario
+let usuarioBruno: Usuario
 let viagemDaAna: string
 let idAvaliacaoDaAna: string
 

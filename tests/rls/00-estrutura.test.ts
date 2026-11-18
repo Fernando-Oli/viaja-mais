@@ -8,7 +8,7 @@ import { CONEXAO } from "./apoio"
  * toda tabela precisa nascer com RLS habilitada.
  *
  * Esse teste existe porque o projeto passou meses com o schema apenas dentro do
- * painel do Supabase. Enquanto `supabase/migrations/` estiver vazio, ele falha —
+ * painel do Supabase. Enquanto `db/migrations/` estiver vazio, ele falha —
  * e é isso mesmo que deve acontecer.
  */
 
@@ -19,19 +19,19 @@ import { CONEXAO } from "./apoio"
 
 describe("migrations versionadas", () => {
   it("existe pelo menos uma migration no repositório", () => {
-    const arquivos = fs.existsSync("supabase/migrations")
-      ? fs.readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql"))
+    const arquivos = fs.existsSync("db/migrations")
+      ? fs.readdirSync("db/migrations").filter((f) => f.endsWith(".sql"))
       : []
 
     expect(
       arquivos.length,
-      "supabase/migrations/ está vazio: o schema ainda não foi extraído do Supabase. Ver supabase/README.md.",
+      "db/migrations/ está vazio: o banco não é reproduzível a partir do repositório.",
     ).toBeGreaterThan(0)
   })
 
   it("os nomes seguem o padrão <timestamp>_<dominio>_<descricao>.sql", () => {
-    if (!fs.existsSync("supabase/migrations")) return
-    const arquivos = fs.readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql"))
+    if (!fs.existsSync("db/migrations")) return
+    const arquivos = fs.readdirSync("db/migrations").filter((f) => f.endsWith(".sql"))
     // Timestamp e não sequência: quatro pessoas criam migration em paralelo e
     // numeração sequencial colidiria toda semana.
     const padrao = /^\d{12,14}_[a-z]+_[a-z0-9_]+\.sql$/

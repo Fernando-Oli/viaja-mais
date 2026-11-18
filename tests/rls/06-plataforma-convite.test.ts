@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type Cliente, type Usuario } from "./apoio"
 import { entrarPorConvite } from "./convite"
 import { SENHA_TESTE, USUARIOS } from "../fixtures/usuarios"
-import { logar, novoCliente } from "./apoio"
+import { apagarConta, cadastrar, logar, novoCliente } from "./apoio"
 
 /**
  * As três explorações que a S03-M reproduziu na plataforma, bloqueadas pela
@@ -18,10 +18,10 @@ import { logar, novoCliente } from "./apoio"
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let usuarioAna: User
-let usuarioBruno: User
+let ana: Cliente
+let bruno: Cliente
+let usuarioAna: Usuario
+let usuarioBruno: Usuario
 
 async function viagemDaAna(titulo: string) {
   const { data, error } = await ana
@@ -147,18 +147,14 @@ describe("as funções de participação só respondem sobre quem pergunta", () 
 
 describe("cadastro com nome longo", () => {
   it("cria a conta e guarda os 120 primeiros caracteres do nome", async () => {
-    const novo = novoCliente()
     const nome = "N".repeat(121)
     const email = `nome-longo-${Date.now()}@viajamais.local`
 
-    const { data, error } = await novo.auth.signUp({
-      email,
-      password: SENHA_TESTE,
-      options: { data: { full_name: nome } },
-    })
-    expect(error, "o cadastro falhou por causa do nome").toBeNull()
+    const { erro, cliente: novo, usuario } = await cadastrar(email, SENHA_TESTE, nome)
+    expect(erro, "o cadastro falhou por causa do nome").toBeUndefined()
 
-    const { data: perfil } = await novo.from("profiles").select("full_name").eq("id", data.user!.id).single()
+    const { data: perfil } = await novo!.from("profiles").select("full_name").eq("id", usuario!.id).single()
     expect(perfil?.full_name).toBe(nome.slice(0, 120))
+    await apagarConta(usuario!.id)
   })
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
 import { USUARIOS } from "../fixtures/usuarios"
 import { CONEXAO, logar, novoCliente } from "./apoio"
@@ -41,13 +41,13 @@ const VIOLA_CHECK = "23514"
 
 const LIMITE = 15
 const JOB = "social-apagar-pesquisas-vencidas"
-/** O Davi do seed (supabase/seed.sql), que este arquivo não loga. */
+/** O Davi do seed (db/seed.sql), que este arquivo não loga. */
 const DAVI = "44444444-4444-4444-8444-444444444444"
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let carla: SupabaseClient
-let visitante: SupabaseClient
+let ana: Cliente
+let bruno: Cliente
+let carla: Cliente
+let visitante: Cliente
 let db: Client
 let idAna: string
 let idBruno: string
@@ -66,7 +66,7 @@ async function limparHistoricos() {
 }
 
 /** O histórico como o dono o vê, do mais recente para o mais antigo. */
-async function historico(cliente: SupabaseClient) {
+async function historico(cliente: Cliente) {
   const { data, error } = await cliente.from("search_history").select("user_id, profile_id").order("searched_at", { ascending: false })
   if (error) throw new Error(`leitura do histórico falhou: ${error.message}`)
   return data
@@ -101,8 +101,8 @@ async function entradasComIdade(entradas: [dono: string, perfil: string, idade: 
 /** Dentro de uma transação: cria N contas descartáveis (o perfil nasce pelo trigger). */
 async function contasDescartaveis(n: number) {
   const { rows } = await db.query<{ id: string }>(
-    `insert into auth.users (id, email)
-     select gen_random_uuid(), 'descartavel.' || g || '.' || floor(random() * 1e9)::bigint || '@viajamais.local'
+    `insert into auth.users (id, name, email, email_verified)
+     select gen_random_uuid(), 'Descartável ' || g, 'descartavel.' || g || '.' || floor(random() * 1e9)::bigint || '@viajamais.local', true
        from generate_series(1, $1) g
      returning id`,
     [n],
@@ -442,20 +442,11 @@ describe("histórico — catálogo", () => {
   })
 
   it("o pg_cron continua reconfigurável: um novo CREATE EXTENSION não quebra (regressão)", async () => {
-    // O event trigger da Supabase (issue_pg_cron_access) refaz os grants do
-    // schema cron a cada CREATE EXTENSION. A primeira versão da migration repetia
-    // um "grant all ... to postgres", que gravava postgres concedendo a si mesmo,
-    // e o REVOKE do event trigger passava a falhar com "dependent privileges
-    // exist" em qualquer migration futura que criasse a extensão.
-    const { rows } = await db.query(
-      `select count(*)::int as n
-         from pg_class c, aclexplode(c.relacl) a
-        where c.relnamespace = 'cron'::regnamespace
-          and a.grantor = 'postgres'::regrole
-          and a.grantee = 'postgres'::regrole`,
-    )
-    expect(rows[0].n, "nenhum grant de postgres para si mesmo no schema cron").toBe(0)
-
+    // No Supabase, um event trigger (issue_pg_cron_access) refazia os grants do
+    // schema cron a cada CREATE EXTENSION, e um "grant all ... to postgres" da
+    // primeira versão da migration o fazia falhar. O banco próprio não tem esse
+    // gatilho (lá postgres é o dono do cron); fica a garantia que importa:
+    // migration futura que crie a extensão continua aplicando.
     await db.query("begin")
     try {
       await db.query("create extension if not exists pg_cron with schema pg_catalog")

@@ -26,13 +26,9 @@ COPY . .
 
 # Precisam existir no build: o Next as substitui por texto no bundle do
 # navegador. Chegam por --build-arg (ver docker-compose.yml).
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
-    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
 # Liga o modo standalone só aqui: o runner abaixo depende de .next/standalone.

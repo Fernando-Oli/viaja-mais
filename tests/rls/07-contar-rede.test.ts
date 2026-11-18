@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
 import { USUARIOS } from "../fixtures/usuarios"
 import { CONEXAO, logar, novoCliente } from "./apoio"
@@ -39,10 +39,10 @@ const CARLA = USUARIOS.carla
 const VIOLA_RLS_OU_GRANT = "42501"
 const NINGUEM = "00000000-0000-4000-8000-000000000000"
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let carla: SupabaseClient
-let visitante: SupabaseClient
+let ana: Cliente
+let bruno: Cliente
+let carla: Cliente
+let visitante: Cliente
 let db: Client
 let idAna: string
 let idBruno: string
@@ -65,7 +65,7 @@ async function limparVinculos() {
  * Confere a linha que voltou: um update que não acha a linha não dá erro, e um
  * perfil não restaurado quebraria a rodada seguinte longe da causa.
  */
-async function restaurarPerfil(cliente: SupabaseClient, id: string, valores: Record<string, unknown>) {
+async function restaurarPerfil(cliente: Cliente, id: string, valores: Record<string, unknown>) {
   const { data, error } = await cliente.from("profiles").update(valores).eq("id", id).select("id")
   if (error || data?.length !== 1) {
     throw new Error(`não gravou ${JSON.stringify(valores)} no perfil ${id}: ${error?.message ?? "nenhuma linha"}`)
@@ -73,7 +73,7 @@ async function restaurarPerfil(cliente: SupabaseClient, id: string, valores: Rec
 }
 
 /** A chamada da rota: uma linha, com os dois números. */
-async function contar(cliente: SupabaseClient, perfil: string) {
+async function contar(cliente: Cliente, perfil: string) {
   const { data, error } = await cliente.rpc("contar_rede", { perfil }).single()
   if (error) throw new Error(`contar_rede(${perfil}) falhou: ${error.message}`)
   return data as { seguidores: number; seguindo: number }

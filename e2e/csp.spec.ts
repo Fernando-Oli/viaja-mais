@@ -7,8 +7,8 @@ import { test, expect, entrar, DONA } from "./fixtures/contas"
  * A CSP quebra em silêncio: o navegador só bloqueia e escreve no console. Por
  * isso aqui se confere, no build de produção, que o cabeçalho chega e que as
  * telas principais carregam sem nenhuma violação registrada — inclusive as
- * chamadas ao Supabase, que são as primeiras a parar se `connect-src` estiver
- * errado.
+ * chamadas à API e as fotos do armazenamento, que são as primeiras a parar se
+ * `connect-src` ou `img-src` estiverem errados.
  *
  * O que NÃO se prova: o autocomplete do Google Maps, que não carrega com a
  * chave de teste do CI. Ele fica no roteiro manual do plano

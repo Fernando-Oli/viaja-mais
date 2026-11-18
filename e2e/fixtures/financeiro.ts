@@ -10,7 +10,7 @@ export { entrar, idDe }
  * Só o que é estrutural passa pela API: contas, viagem e convite. Despesa,
  * rateio e pagamento são ações da jornada e acontecem pela tela, nas specs.
  *
- * Usuários: Ana e Bruno do seed (`supabase/seed.sql`) e uma terceira conta
+ * Usuários: Ana e Bruno do seed (`db/seed.sql`) e uma terceira conta
  * criada pelo cadastro a cada preparo — o seed só tem duas, e o acerto com
  * uma cadeia de dívidas precisa de três pessoas.
  */

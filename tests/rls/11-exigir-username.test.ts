@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest"
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
 import { SENHA_TESTE, USUARIOS } from "../fixtures/usuarios"
-import { CONEXAO, logar, novoCliente } from "./apoio"
+import { CONEXAO, cadastrar, logar } from "./apoio"
 
 /**
  * Exigir username para entrar na rede (S05-M-listas, achado I1 da revisão
@@ -39,14 +39,14 @@ const VIOLA_CHECK = "23514"
 
 /** A migration desta correção, pelo nome: o timestamp vem do `migration new`. */
 function sqlDaMigration() {
-  const pasta = path.join(process.cwd(), "supabase", "migrations")
+  const pasta = path.join(process.cwd(), "db", "migrations")
   const arquivo = readdirSync(pasta).find((nome) => /^\d{14}_social_exigir_username\.sql$/.test(nome))
   if (!arquivo) throw new Error("a migration *_social_exigir_username.sql não existe")
   return readFileSync(path.join(pasta, arquivo), "utf8")
 }
 
-let carla: SupabaseClient
-let semNome: SupabaseClient
+let carla: Cliente
+let semNome: Cliente
 let db: Client
 let idAna: string
 let idCarla: string
@@ -72,11 +72,11 @@ beforeAll(async () => {
   idCarla = c.usuario.id
 
   // Conta nova pelo cadastro, como qualquer pessoa: o perfil nasce sem username.
-  semNome = novoCliente()
   const email = `semnome.${Date.now()}.${Math.floor(Math.random() * 1e6)}@viajamais.local`
-  const { data, error } = await semNome.auth.signUp({ email, password: SENHA_TESTE })
-  if (error || !data.user) throw new Error(`falha no cadastro: ${error?.message}`)
-  idSemNome = data.user.id
+  const conta = await cadastrar(email, SENHA_TESTE)
+  if (!conta.cliente) throw new Error(`falha no cadastro: ${conta.erro?.message}`)
+  semNome = conta.cliente
+  idSemNome = conta.usuario.id
   const { data: perfil } = await semNome.from("profiles").select("username").eq("id", idSemNome).single()
   expect(perfil?.username, "a conta nova nasce sem username").toBeNull()
 

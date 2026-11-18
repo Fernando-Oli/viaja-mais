@@ -27,10 +27,20 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
-  webServer: {
-    command: "npm run start",
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  // A API em Hono e o Next, que entrega /api/* a ela pelo rewrite. O banco, o
+  // e-mail e o armazenamento vêm do docker-compose.yml.
+  webServer: [
+    {
+      command: "npm run api:start",
+      url: "http://localhost:3001/health",
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    {
+      command: "npm run start",
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 })

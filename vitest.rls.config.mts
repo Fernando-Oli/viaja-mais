@@ -14,10 +14,6 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-    // Preenche API_URL, ANON_KEY e DATABASE_URL a partir do `.env.local` quando
-    // não vierem do ambiente. Sem isso, os testes estruturais eram pulados em
-    // silêncio na máquina de quem não exportasse as variáveis à mão.
-    setupFiles: ["./tests/rls/preparar-ambiente.ts"],
     // tests/integracao: a API inteira (app.request) contra o banco local. Moram
     // aqui pelo mesmo motivo dos testes de RLS: precisam de banco de pé.
     include: ["tests/rls/**/*.test.ts", "tests/integracao/**/*.test.ts"],

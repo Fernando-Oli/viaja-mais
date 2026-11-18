@@ -9,12 +9,15 @@
  * acontece). Nunca entram: da viagem, `budget`, `currency`, `description`,
  * `status` e os membros; dos itens, `notes`, `latitude`, `longitude` e `status`.
  *
- * Roda com o cliente da sessão: a RLS da viagem continua valendo. A
- * autorização explícita (`exigirMembro`) é de quem chama.
+ * Roda na transação do usuário (`comoUsuario`): a RLS da viagem continua
+ * valendo. A autorização explícita (`exigirMembro`) é de quem chama.
+ *
+ * Saiu de `lib/trips/publico.ts`, que lia pelo cliente do Supabase.
  *
  * @RF09.7 publicar uma viagem expõe só título, destino, datas e itinerário
  */
-import type { SupabaseClient } from "@supabase/supabase-js"
+import { sql } from "kysely"
+import type { Tx } from "../../db/como-usuario"
 
 export type ItemPublico = {
   /** Só para a tela marcar quais itens entram no post; não vai para o post. */
@@ -37,53 +40,38 @@ export type ViagemPublica = {
   itens: ItemPublico[]
 }
 
-const COLUNAS_VIAGEM = "title, destination, start_date, end_date"
 /** O mesmo limite da checagem de `trip_posts.items` no banco. */
 export const MAXIMO_ITENS_NO_POST = 200
-const COLUNAS_ITEM = "id, title, date, start_time, end_time, category, location, description"
 
-type LinhaViagem = Omit<ViagemPublica, "itens">
+/** Devolve `null` quando a viagem não existe ou a sessão não a enxerga. */
+export async function projecaoPublicaDaViagem(tx: Tx, tripId: string): Promise<ViagemPublica | null> {
+  const viagem = await tx
+    .selectFrom("trips")
+    .select(["title", "destination", "start_date", "end_date"])
+    .where("id", "=", tripId)
+    .executeTakeFirst()
+  if (!viagem) return null
 
-/**
- * Devolve `null` quando a viagem não existe ou a sessão não a enxerga.
- * Erro ao ler os itens lança: publicar um itinerário pela metade, sem avisar,
- * seria pior do que não publicar.
- */
-export async function projecaoPublicaDaViagem(
-  supabase: SupabaseClient,
-  tripId: string,
-): Promise<ViagemPublica | null> {
-  const { data: viagem, error: erroViagem } = await supabase
-    .from("trips")
-    .select(COLUNAS_VIAGEM)
-    .eq("id", tripId)
-    .maybeSingle<LinhaViagem>()
-
-  if (erroViagem || !viagem) return null
-
-  const { data: itens, error: erroItens } = await supabase
-    .from("itinerary_items")
-    .select(COLUNAS_ITEM)
-    .eq("trip_id", tripId)
-    // `status` aceita nulo, e `neq` sozinho descartaria os itens sem status.
-    .or("status.is.null,status.neq.cancelled")
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true, nullsFirst: false })
+  const itens = await tx
+    .selectFrom("itinerary_items")
+    .select(["id", "title", "date", "start_time", "end_time", "category", "location", "description"])
+    .where("trip_id", "=", tripId)
+    // `status` aceita nulo, e `<>` sozinho descartaria os itens sem status.
+    .where((eb) => eb.or([eb("status", "is", null), eb("status", "<>", "cancelled")]))
+    .orderBy("date", "asc")
+    .orderBy(sql`start_time asc nulls last`)
     // O post aceita no máximo 200 itens (`social_itens_do_post_validos`, no
     // banco). Sem o teto, uma viagem maior fazia o insert do post falhar.
     .limit(MAXIMO_ITENS_NO_POST)
-    .returns<ItemPublico[]>()
+    .execute()
 
-  if (erroItens) {
-    throw new Error("Não foi possível ler o itinerário da viagem")
-  }
-
+  // Lista branca: campo a campo, nunca o objeto que veio do banco.
   return {
     title: viagem.title,
     destination: viagem.destination,
     start_date: viagem.start_date,
     end_date: viagem.end_date,
-    itens: (itens ?? []).map((item) => ({
+    itens: itens.map((item) => ({
       id: item.id,
       title: item.title,
       date: item.date,

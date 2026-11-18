@@ -1,21 +1,22 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
-import { listarRede, podeVerRede, POR_PAGINA, removerSeguidor, type Lado } from "@/lib/social/rede"
+import * as repo from "@/api/modulos/social/repositorio"
+import { POR_PAGINA, type Lado } from "@/api/modulos/social/repositorio"
 import { USUARIOS } from "../fixtures/usuarios"
-import { CONEXAO, logar, novoCliente } from "./apoio"
+import { CONEXAO, logar, naApi, novoCliente } from "./apoio"
 
 /**
  * As listas da rede de um perfil e remover seguidor (S05-M-listas). Não há
  * tabela nem policy nova: aqui se prova que a RLS, os grants e a `pode_ver_rede`
  * da S03 (migration 20261007105848) seguram as listas e a remoção, e que a
- * paginação da lib, contra o PostgREST de verdade, não duplica nem pula
- * ninguém, também com `created_at` empatado.
+ * paginação do repositório da API (`api/modulos/social/repositorio.ts`), com a
+ * RLS valendo, não duplica nem pula ninguém, também com `created_at` empatado.
  *
- * Mesmo princípio de 04-social: cada usuário loga de verdade pelo GoTrue com a
- * chave anon e fala com o PostgREST como o navegador. A conexão direta só monta
- * estado (vínculos e contas descartáveis), e tudo o que ela cria sai no fim:
- * fica gravado, e não numa transação, porque o PostgREST lê por outra conexão.
+ * As funções do repositório rodam pelo `comoUsuario()` de produção, com a
+ * identidade de cada um. A conexão direta só monta estado (vínculos e contas
+ * descartáveis), e tudo o que ela cria sai no fim: fica gravado, e não numa
+ * transação, porque a API lê por outra conexão.
  *
  * O que se prova aqui:
  *   - quem não segue o Bruno (privado) não vê o vínculo dele com um perfil
@@ -37,20 +38,45 @@ import { CONEXAO, logar, novoCliente } from "./apoio"
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
 const CARLA = USUARIOS.carla
-/** O Davi do seed (supabase/seed.sql), que este arquivo não loga. */
+/** O Davi do seed (db/seed.sql), que este arquivo não loga. */
 const DAVI = "44444444-4444-4444-8444-444444444444"
 
 const VIOLA_RLS_OU_GRANT = "42501"
 
 /** As fotos não entram nestes testes: ninguém do seed nem das contas descartáveis tem foto. */
-const semStorage = () => {
-  throw new Error("o Storage não deveria ser chamado: ninguém aqui tem foto")
+const semStorage = null
+
+/*
+ * As funções que as rotas usam, do repositório da API, rodando pelo
+ * `comoUsuario()` de produção com a identidade de cada cliente. O visitante não
+ * passa pela API (ela só age como usuário logado): para ele, a mesma pergunta
+ * vai direto ao banco com o papel `anon`, e o erro sobe.
+ */
+async function podeVerRede(cliente: Cliente, perfil: string) {
+  if (cliente.quem.papel === "anon") {
+    const { data, error } = await cliente.rpc("pode_ver_rede", { perfil })
+    if (error) throw error
+    return data === true
+  }
+  return naApi(cliente, (tx) => repo.podeVerRede(tx, perfil))
 }
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let carla: SupabaseClient
-let visitante: SupabaseClient
+async function listarRede(cliente: Cliente, _semFotos: null, dono: string, lado: Lado, cursor?: string) {
+  const r = await naApi(cliente, (tx) => repo.listarRede(tx, dono, lado, cursor))
+  if (!r) return null
+  return {
+    pessoas: r.pagina.map(({ username, full_name, is_public }) => ({ username, full_name, avatar_url: null, is_public })),
+    proximo: r.proximo,
+  }
+}
+
+const removerSeguidor = (cliente: Cliente, dono: string, seguidor: string) =>
+  naApi(cliente, (tx) => repo.removerSeguidor(tx, dono, seguidor))
+
+let ana: Cliente
+let bruno: Cliente
+let carla: Cliente
+let visitante: Cliente
 let db: Client
 let idAna: string
 let idBruno: string
@@ -63,8 +89,8 @@ const marca = `l${Date.now().toString(36)}`
 /** Cria contas com username `<marca>_<prefixo>NN`, o perfil nasce pelo trigger. Devolve os ids na ordem. */
 async function contas(prefixo: string, n: number, opcoes: { privado?: boolean } = {}) {
   const { rows } = await db.query<{ id: string }>(
-    `insert into auth.users (id, email)
-     select gen_random_uuid(), 'listas.' || $2 || '.' || g || '.' || floor(random() * 1e9)::bigint || '@viajamais.local'
+    `insert into auth.users (id, name, email, email_verified)
+     select gen_random_uuid(), 'Lista ' || g, 'listas.' || $2 || '.' || g || '.' || floor(random() * 1e9)::bigint || '@viajamais.local', true
        from generate_series(1, $1) g
      returning id`,
     [n, `${marca}${prefixo}`],
@@ -119,7 +145,7 @@ async function limparVinculosDoSeed() {
 }
 
 /** A lista inteira, página por página, como a tela faz com "Ver mais". */
-async function listaInteira(cliente: SupabaseClient, dono: string, lado: Lado) {
+async function listaInteira(cliente: Cliente, dono: string, lado: Lado) {
   const paginas: string[][] = []
   let cursor: string | undefined
   do {
@@ -168,7 +194,7 @@ describe("listas — quem vê a rede", () => {
 
     const { data, error } = await carla.from("follows").select("follower_id").eq("followee_id", idBruno)
     expect(error).toBeNull()
-    const vistos = (data ?? []).map((l) => l.follower_id)
+    const vistos = (data ?? []).map((l: { follower_id: string }) => l.follower_id)
     // O da Ana (pública) aparece, porque está na lista de seguindo dela: é a
     // decisão da S03, como no Instagram. O da conta privada, não.
     expect(vistos).toContain(idAna)
@@ -267,7 +293,7 @@ describe("listas — remover seguidor", () => {
   })
 })
 
-describe("listas — paginação contra o PostgREST de verdade", () => {
+describe("listas — paginação do repositório da API, com a RLS valendo", () => {
   // Um perfil-alvo com 25 seguidores empatados (mesmo created_at), 3 mais
   // antigos e 1 pendente. O alvo também segue os 28.
   let alvo: string

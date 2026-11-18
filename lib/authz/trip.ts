@@ -1,55 +1,14 @@
-import { ErroHttp, naoAutenticado, semPermissao } from "@/lib/erros"
+import { naoAutenticado, semPermissao } from "@/lib/erros"
 
 export type PapelNaViagem = "owner" | "member"
 
-type RespostaPapel = {
-  data: { role: string } | null
-  error: { message: string } | null
-}
-
-/** Forma da cadeia de consulta usada aqui — o mínimo, nada além. */
-interface CadeiaPapel {
-  select(colunas: string): {
-    eq(
-      coluna: string,
-      valor: string,
-    ): {
-      eq(coluna: string, valor: string): { maybeSingle(): PromiseLike<RespostaPapel> }
-    }
-  }
-}
-
 /**
- * Contrato mínimo do cliente. Tipar `SupabaseClient` inteiro aqui obrigaria todo
- * teste a montar um mock do SDK; com esta interface, um objeto literal basta.
- */
-export interface ClienteConsulta {
-  from(tabela: string): unknown
-}
-
-/**
- * Alternativa ao cliente: uma função que devolve o papel do usuário na viagem
- * (`"owner"`, `"member"`) ou `null`. É o que a API em Hono passa, consultando
- * pelo Kysely dentro da transação do usuário. A regra de autorização abaixo é a
- * mesma para os dois lados da migração.
+ * De onde vem o papel: uma função que devolve o papel do usuário na viagem
+ * (`"owner"`, `"member"`) ou `null`. A API passa uma consulta pelo Kysely dentro
+ * da transação do usuário (`api/modulos/viagens/acesso.ts`); o teste passa uma
+ * função qualquer. Falha da consulta propaga como está.
  */
 export type BuscarPapel = (tripId: string, userId: string) => Promise<string | null>
-
-/** De onde vem o papel: o cliente Supabase (rotas antigas) ou uma função (API). */
-export type FontePapel = ClienteConsulta | BuscarPapel
-
-async function consultarPapel(
-  supabase: ClienteConsulta,
-  tripId: string,
-  userId: string,
-): Promise<RespostaPapel> {
-  // Único cast do módulo. Os tipos genéricos do supabase-js não são
-  // estruturalmente compatíveis com uma interface reduzida (o builder é
-  // "thenable", não Promise), e comparar a árvore inteira estoura a
-  // profundidade de instanciação do TypeScript.
-  const tabela = supabase.from("trip_members") as CadeiaPapel
-  return tabela.select("role").eq("trip_id", tripId).eq("user_id", userId).maybeSingle()
-}
 
 /**
  * Autorização de viagem, em um lugar só.
@@ -62,26 +21,18 @@ async function consultarPapel(
  * O predicado correto é **participação**, não propriedade.
  */
 export async function papelNaViagem(
-  fonte: FontePapel,
+  fonte: BuscarPapel,
   tripId: string,
   userId: string,
 ): Promise<PapelNaViagem | null> {
-  let role: string | null
-  if (typeof fonte === "function") {
-    role = await fonte(tripId, userId)
-  } else {
-    const { data, error } = await consultarPapel(fonte, tripId, userId)
-    if (error) throw new ErroHttp(500, error.message)
-    role = data?.role ?? null
-  }
-
+  const role = await fonte(tripId, userId)
   if (!role) return null
   return role === "owner" ? "owner" : "member"
 }
 
 /** Exige que o usuário participe da viagem. Devolve o papel para quem precisar dele. */
 export async function exigirMembro(
-  fonte: FontePapel,
+  fonte: BuscarPapel,
   tripId: string,
   userId: string | undefined,
 ): Promise<PapelNaViagem> {
@@ -96,7 +47,7 @@ export async function exigirMembro(
 
 /** Exige que o usuário seja o dono. Excluir viagem e remover membro passam por aqui. */
 export async function exigirDono(
-  fonte: FontePapel,
+  fonte: BuscarPapel,
   tripId: string,
   userId: string | undefined,
 ): Promise<void> {

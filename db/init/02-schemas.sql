@@ -8,6 +8,18 @@ create schema extensions;
 revoke all on schema extensions from public;
 grant usage on schema extensions to anon, authenticated, service_role;
 
+-- `extensions` no search_path de toda conexão, como o Supabase configurava.
+-- Sem isto, os operadores do citext (que moram em `extensions`) não são
+-- encontrados e `profiles.username = 'Ana'` cai na comparação de text, que
+-- diferencia maiúsculas: /u/Ana deixava de achar a conta `ana`. Vale no
+-- banco, e não por papel, porque papel assumido por SET ROLE não lê a
+-- configuração do papel.
+do $$
+begin
+  execute format('alter database %I set search_path = "$user", public, extensions', current_database());
+end
+$$;
+
 create schema auth;
 revoke all on schema auth from public;
 -- USAGE para que as policies possam chamar auth.uid(). Não dá acesso a nenhuma

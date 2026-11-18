@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
 import { entrarPorConvite } from "./convite"
 import { CONEXAO, logar } from "./apoio"
@@ -41,7 +41,7 @@ const EMAIL = {
 
 const VIOLA_GRANT = "42501"
 
-let ana: SupabaseClient, bruno: SupabaseClient, carla: SupabaseClient
+let ana: Cliente, bruno: Cliente, carla: Cliente
 let idAna: string, idBruno: string, idCarla: string
 let db: Client
 
@@ -59,7 +59,7 @@ async function linha<T = Record<string, unknown>>(sql: string, params: unknown[]
   return rows[0] as T
 }
 
-async function criar(cliente: SupabaseClient, tabela: string, valores: Record<string, unknown>) {
+async function criar(cliente: Cliente, tabela: string, valores: Record<string, unknown>) {
   const { data, error } = await cliente.from(tabela).insert(valores).select("id").single()
   if (error) throw new Error(`preparo: insert em ${tabela} falhou: ${error.message}`)
   return (data as { id: string }).id

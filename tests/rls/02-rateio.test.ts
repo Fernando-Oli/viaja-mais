@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type Cliente, type Usuario } from "./apoio"
 import { entrarPorConvite } from "./convite"
 import { USUARIOS } from "../fixtures/usuarios"
 import { logar } from "./apoio"
@@ -30,10 +30,10 @@ import { logar } from "./apoio"
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let usuarioAna: User
-let usuarioBruno: User
+let ana: Cliente
+let bruno: Cliente
+let usuarioAna: Usuario
+let usuarioBruno: Usuario
 
 /** Viagem só da Ana: o Bruno não participa. */
 let viagemFechada: string
@@ -175,7 +175,7 @@ describe("isolamento das partes do rateio", () => {
       .eq("expense_id", despesaCompartilhada)
 
     expect(data).toHaveLength(2)
-    expect(data?.map((l) => l.user_id).sort()).toEqual([usuarioAna.id, usuarioBruno.id].sort())
+    expect(data?.map((l: { user_id: string }) => l.user_id).sort()).toEqual([usuarioAna.id, usuarioBruno.id].sort())
   })
 
   it("membro marca a própria parte como quitada", async () => {

@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest"
 import { randomUUID } from "node:crypto"
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
 import { entrarPorConvite } from "./convite"
 import { USUARIOS } from "../fixtures/usuarios"
-import { API, CHAVE, logar } from "./apoio"
+import { type Cliente, type Usuario, logar, novoCliente } from "./apoio"
 
 /**
  * Pagamentos do acerto de contas (`settlements`): isolamento e imutabilidade,
@@ -28,10 +27,10 @@ import { API, CHAVE, logar } from "./apoio"
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let usuarioAna: User
-let usuarioBruno: User
+let ana: Cliente
+let bruno: Cliente
+let usuarioAna: Usuario
+let usuarioBruno: Usuario
 
 /** Viagem só da Ana: o Bruno não participa. */
 let viagemFechada: string
@@ -74,7 +73,7 @@ beforeAll(async () => {
     return data.id as string
   }
 
-  async function registrar(cliente: SupabaseClient, linha: ReturnType<typeof pagamento>) {
+  async function registrar(cliente: Cliente, linha: ReturnType<typeof pagamento>) {
     const { data, error } = await cliente.from("settlements").insert(linha).select("id").single()
     if (error) throw new Error(`pagamento não registrado: ${error.message}`)
     return data.id as string
@@ -118,8 +117,8 @@ describe("leitura dos pagamentos", () => {
     const { data, error } = await bruno.from("settlements").select("id, from_user_id").eq("trip_id", viagemCompartilhada)
 
     expect(error).toBeNull()
-    expect(data?.map((l) => l.id)).toContain(pagamentoCompartilhado)
-    expect(data?.find((l) => l.id === pagamentoCompartilhado)?.from_user_id).toBe(usuarioAna.id)
+    expect(data?.map((l: { id: string }) => l.id)).toContain(pagamentoCompartilhado)
+    expect(data?.find((l: { id: string }) => l.id === pagamentoCompartilhado)?.from_user_id).toBe(usuarioAna.id)
   })
 
   it("quem não participa da viagem não lê nenhum pagamento dela", async () => {
@@ -133,7 +132,7 @@ describe("leitura dos pagamentos", () => {
   })
 
   it("visitante anônimo não lê pagamento nenhum", async () => {
-    const anonimo = createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
+    const anonimo = novoCliente()
     const { data } = await anonimo.from("settlements").select("id")
     expect(data ?? []).toEqual([])
   })

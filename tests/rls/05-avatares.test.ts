@@ -1,355 +1,47 @@
-import fs from "node:fs"
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { variavelObrigatoria } from "./guarda-ambiente"
-import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
-import { API, CHAVE, CONEXAO, logar, novoCliente } from "./apoio"
+import { type Cliente, CONEXAO, logar } from "./apoio"
+import { USUARIOS } from "../fixtures/usuarios"
 
 /**
- * Bucket de avatares e o trigger de `profiles.avatar_url` (migration social_avatares).
+ * `profiles.avatar_url` só aceita nulo ou `<id do perfil>/<uuid>.(webp|jpg|png)`
+ * (migration social_avatares), também na escrita direta e no INSERT.
  *
- * O bucket é privado e não tem policy nenhuma para usuário. Quem grava e apaga é
- * a rota de foto, com a chave de serviço, depois de conferir os bytes; quem lê é
- * o navegador, por URL assinada que só o servidor emite (S04-M-foto-privada).
- * Aqui se prova que, com o JWT que está no navegador, ninguém faz nada nele pela
- * API do Storage — nem na própria pasta: enviar, sobrescrever, mover, copiar,
- * listar, apagar, ler ou assinar — e que a URL assinada pelo servidor abre, e
- * deixa de abrir quando o arquivo é apagado.
- *
- * O bucket fica privado na migration social_avatares_privado, que corrige para
- * a frente a social_avatares (que o criou público).
- *
- * O arquivo de teste é criado pela API do Storage com a chave de serviço, para
- * existir de verdade: linha em storage.objects e arquivo no disco. Uma linha
- * inserida só no banco não basta — o Storage confere a RLS e depois copia o
- * arquivo; se uma policy liberasse o move, a cópia falharia por falta do
- * arquivo e o teste veria erro pelo motivo errado. "Apagar deu certo" do
- * Storage também não prova nada (ele responde sem erro e apaga zero), então
- * cada caso confere o estado depois, pelo banco.
- *
- * O bucket é compartilhado com a aplicação (o E2E da foto, por exemplo): a
- * limpeza e as conferências olham só para os nomes que este arquivo usa.
- *
- * E avatar_url só aceita nulo ou `<id do perfil>/<uuid>.(webp|jpg|png)`, também
- * pelo PostgREST direto e no INSERT.
+ * Os casos do bucket (ninguém envia, lista, apaga ou lê com a própria sessão)
+ * eram do Storage do Supabase e saíram com ele. O armazenamento agora é S3, com
+ * o bucket privado e sem credencial nenhuma no navegador: quem envia, apaga e
+ * assina link é só a API, e isso é provado em `tests/integracao/foto.test.ts` e
+ * `tests/api/avatares.test.ts`.
  *
  * @RF02.2 @RNF02.4
  */
 
-/** Arquivo só do caso de remoção: ele é apagado, então não pode ser o da Ana. */
-const PREFIXO_REMOVIDO = "5b"
-
-
 const VIOLA_CHECK = "23514"
-const BUCKET = "avatars"
 const ARQUIVO = "0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c"
-const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])
-/** Outro conteúdo, para que uma sobrescrita bem-sucedida apareça nos bytes. */
-const PNG_OUTRO = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
 
-/**
- * Chave de serviço: no setup, na limpeza, nas conferências de estado e para
- * emitir a URL assinada, como faz a rota. Ela nunca é o ator que se testa:
- * quem tenta escrever, ler ou assinar é sempre a Ana, o Bruno ou o visitante. No
- * CI vem de `supabase status -o env` (SERVICE_ROLE_KEY), como API_URL e
- * ANON_KEY; na máquina, do SUPABASE_SERVICE_ROLE_KEY do `.env.local`, que o
- * preparar-ambiente.ts não repassa. A API_URL já passou por `exigirLocal`, e é
- * só com ela que a chave é usada.
- */
-function chaveDeServico(): string {
-  const doAmbiente = process.env.SERVICE_ROLE_KEY
-  if (doAmbiente) return doAmbiente
-  const linha = fs.existsSync(".env.local")
-    ? fs.readFileSync(".env.local", "utf8").match(/^\s*SUPABASE_SERVICE_ROLE_KEY\s*=\s*"?([^"#\s]+)/m)
-    : null
-  return linha?.[1] ?? variavelObrigatoria("SERVICE_ROLE_KEY")
-}
-
-/** `<pasta>/<variação do ARQUIVO>.png`: cada tentativa escreve num nome conhecido. */
-function nomeNaPasta(pasta: string, prefixo = "0b") {
-  return `${pasta}/${ARQUIVO.replace("0b", prefixo)}.png`
-}
-
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let visitante: SupabaseClient
-let servico: SupabaseClient
+let ana: Cliente
 let db: Client
 let idAna: string
 let idBruno: string
 let idCarla: string
-let arquivoDaAna: string
-
-/**
- * Todo nome em que algum caso tenta escrever — enviar, mover ou copiar. Se a RLS
- * deixasse passar, o arquivo apareceria num destes; a limpeza e a prova de
- * estado olham só para eles.
- */
-function nomesDoTeste() {
-  return [
-    arquivoDaAna,
-    ...["1b", "2b", "3b", "4b", PREFIXO_REMOVIDO].map((prefixo) => nomeNaPasta(idAna, prefixo)),
-    nomeNaPasta(idBruno),
-  ]
-}
-
-/** Nomes do teste no bucket, vistos pelo banco — a prova de estado depois de cada tentativa. */
-async function objetosNoBucket() {
-  const { rows } = await db.query(
-    "select name from storage.objects where bucket_id = $1 and name = any($2) order by name",
-    [BUCKET, nomesDoTeste()],
-  )
-  return rows.map((r) => r.name as string)
-}
-
-/**
- * Bytes do arquivo da Ana, baixados com a chave de serviço: sobrescrever não muda
- * o nome, só o conteúdo. Com o bucket privado, não há mais URL pública para ler.
- */
-async function conteudoDoArquivoDaAna() {
-  const { data, error } = await servico.storage.from(BUCKET).download(arquivoDaAna)
-  if (error || !data) throw new Error(`não baixou o arquivo da Ana: ${error?.message}`)
-  return Buffer.from(await data.arrayBuffer())
-}
-
-/** Token de acesso do usuário logado, para chamar o Storage como o navegador chamaria. */
-async function tokenDe(cliente: SupabaseClient) {
-  const { data } = await cliente.auth.getSession()
-  return data.session!.access_token
-}
-
-/**
- * Apaga só o que o teste pode ter criado, pela API com a chave de serviço — sai
- * a linha e o arquivo no disco. Confere pelo banco que não sobrou nada.
- */
-async function limparArquivosDoTeste() {
-  const { error } = await servico.storage.from(BUCKET).remove(nomesDoTeste())
-  if (error) throw new Error(`limpeza do bucket falhou: ${error.message}`)
-  const sobra = await objetosNoBucket()
-  if (sobra.length) throw new Error(`limpeza do bucket deixou: ${sobra.join(", ")}`)
-}
+let fotoOriginal: string | null
 
 beforeAll(async () => {
-  const a = await logar("teste.a@viajamais.local")
-  const b = await logar("teste.b@viajamais.local")
+  const a = await logar(USUARIOS.ana.email)
+  const b = await logar(USUARIOS.bruno.email)
+  const c = await logar(USUARIOS.carla.email)
   ana = a.cliente
-  bruno = b.cliente
-  idAna = a.usuario.id
-  idBruno = b.usuario.id
-  visitante = novoCliente()
-  servico = novoCliente(chaveDeServico())
-
+  idAna = a.id
+  idBruno = b.id
+  idCarla = c.id
   db = new Client({ connectionString: CONEXAO })
   await db.connect()
-  const { rows } = await db.query("select id from auth.users where email = 'teste.c@viajamais.local'")
-  idCarla = rows[0].id
-
-  arquivoDaAna = nomeNaPasta(idAna)
-  await limparArquivosDoTeste() // sobra de uma rodada interrompida
-
-  const { error } = await servico.storage.from(BUCKET).upload(arquivoDaAna, PNG, { contentType: "image/png" })
-  if (error) throw new Error(`não criou o arquivo de teste: ${error.message}`)
-  // A chave de serviço não tem dono; a Ana como dona é o pior caso, para uma
-  // policy por owner_id também aparecer aqui.
-  await db.query("update storage.objects set owner_id = $1 where bucket_id = $2 and name = $3", [
-    idAna,
-    BUCKET,
-    arquivoDaAna,
-  ])
+  fotoOriginal = (await db.query("select avatar_url from public.profiles where id = $1", [idAna])).rows[0].avatar_url
 })
 
 afterAll(async () => {
-  try {
-    await limparArquivosDoTeste()
-    await ana.from("profiles").update({ avatar_url: null }).eq("id", idAna)
-  } finally {
-    await db.end()
-  }
-})
-
-describe("bucket avatars — configuração", () => {
-  it("é privado, com 2 MB e só JPEG, PNG e WebP", async () => {
-    const { rows } = await db.query(
-      "select public, file_size_limit, allowed_mime_types from storage.buckets where id = $1",
-      [BUCKET],
-    )
-    expect(rows).toHaveLength(1)
-    expect(rows[0].public).toBe(false)
-    expect(Number(rows[0].file_size_limit)).toBe(2 * 1024 * 1024)
-    expect([...rows[0].allowed_mime_types].sort()).toEqual(["image/jpeg", "image/png", "image/webp"])
-  })
-
-  it("não há policy nenhuma em storage.objects", async () => {
-    // As mutações provam o comportamento; a contagem pega o que o comportamento
-    // deixaria passar, como uma policy que só valesse para .webp (o arquivo de
-    // teste é .png). Se outro bucket ganhar policy, este teste passa a filtrar
-    // pelo bucket avatars.
-    const { rows } = await db.query(
-      "select policyname from pg_policies where schemaname = 'storage' and tablename = 'objects'",
-    )
-    expect(rows).toEqual([])
-  })
-})
-
-describe("bucket avatars — nenhum usuário escreve, lista ou apaga pela API", () => {
-  it("o arquivo de teste existe de verdade: linha no banco e bytes no Storage", async () => {
-    // Sem isso, os casos de mover e copiar abaixo poderiam passar pelo motivo
-    // errado: a RLS deixaria, e a cópia falharia por falta do arquivo.
-    expect(await objetosNoBucket()).toEqual([arquivoDaAna])
-    expect(await conteudoDoArquivoDaAna()).toEqual(PNG)
-  })
-
-  it("Ana não envia nem na própria pasta (só a rota envia)", async () => {
-    const { error } = await ana.storage
-      .from(BUCKET)
-      .upload(nomeNaPasta(idAna, "1b"), PNG, { contentType: "image/png" })
-    expect(error).not.toBeNull()
-    expect(await objetosNoBucket()).toEqual([arquivoDaAna])
-  })
-
-  it("Ana não envia na pasta do Bruno, e o visitante não envia em lugar nenhum", async () => {
-    const { error: daAna } = await ana.storage
-      .from(BUCKET)
-      .upload(nomeNaPasta(idBruno), PNG, { contentType: "image/png" })
-    expect(daAna).not.toBeNull()
-
-    const { error: doVisitante } = await visitante.storage
-      .from(BUCKET)
-      .upload(nomeNaPasta(idAna, "2b"), PNG, { contentType: "image/png" })
-    expect(doVisitante).not.toBeNull()
-
-    expect(await objetosNoBucket()).toEqual([arquivoDaAna])
-  })
-
-  it("ninguém lista o bucket: nem a própria pasta, nem a dos outros, nem a raiz", async () => {
-    for (const [cliente, pasta] of [
-      [ana, idAna],
-      [bruno, idAna],
-      [bruno, ""],
-      [visitante, idAna],
-    ] as const) {
-      const { data } = await cliente.storage.from(BUCKET).list(pasta)
-      expect(data ?? []).toEqual([])
-    }
-  })
-
-  it("ninguém apaga pela API: nem a Ana o próprio arquivo, nem o Bruno o dela", async () => {
-    // O Storage responde sem erro e apaga zero arquivos: só o estado prova.
-    await ana.storage.from(BUCKET).remove([arquivoDaAna])
-    await bruno.storage.from(BUCKET).remove([arquivoDaAna])
-    expect(await objetosNoBucket()).toEqual([arquivoDaAna])
-  })
-
-  it("ninguém sobrescreve, move nem copia — nem a Ana dentro da própria pasta", async () => {
-    // Dentro da própria pasta é o caso que uma policy "cada um na sua pasta"
-    // liberaria; entre pastas, o WITH CHECK dela ainda barraria o destino.
-    for (const cliente of [ana, bruno]) {
-      const { error: sobrescreveu } = await cliente.storage
-        .from(BUCKET)
-        .update(arquivoDaAna, PNG_OUTRO, { contentType: "image/png" })
-      expect(sobrescreveu).not.toBeNull()
-    }
-
-    const { error: moveuNaPasta } = await ana.storage.from(BUCKET).move(arquivoDaAna, nomeNaPasta(idAna, "3b"))
-    expect(moveuNaPasta).not.toBeNull()
-
-    const { error: moveu } = await ana.storage.from(BUCKET).move(arquivoDaAna, nomeNaPasta(idBruno))
-    expect(moveu).not.toBeNull()
-
-    const { error: copiouNaPasta } = await ana.storage.from(BUCKET).copy(arquivoDaAna, nomeNaPasta(idAna, "4b"))
-    expect(copiouNaPasta).not.toBeNull()
-
-    const { error: copiou } = await bruno.storage.from(BUCKET).copy(arquivoDaAna, nomeNaPasta(idBruno))
-    expect(copiou).not.toBeNull()
-
-    expect(await objetosNoBucket()).toEqual([arquivoDaAna])
-    expect(await conteudoDoArquivoDaAna()).toEqual(PNG)
-  })
-})
-
-describe("bucket avatars — leitura só por URL assinada pelo servidor", () => {
-  it("a URL pública não abre para o visitante, para a dona nem para outro usuário logado", async () => {
-    const publica = `${API}/storage/v1/object/public/${BUCKET}/${arquivoDaAna}`
-    const semSessao = await fetch(publica)
-    expect(semSessao.ok).toBe(false)
-    for (const cliente of [ana, bruno]) {
-      const logado = await fetch(publica, { headers: { apikey: CHAVE, Authorization: `Bearer ${await tokenDe(cliente)}` } })
-      expect(logado.ok).toBe(false)
-    }
-  })
-
-  it("ninguém lê pela API com o próprio JWT — nem a Ana a própria foto", async () => {
-    // O caminho /authenticated/ é o que o Storage abre para quem tem policy de
-    // leitura; sem policy, nem a dona passa.
-    for (const cliente of [ana, bruno]) {
-      const { data, error } = await cliente.storage.from(BUCKET).download(arquivoDaAna)
-      expect(error).not.toBeNull()
-      expect(data).toBeNull()
-      const autenticada = await fetch(`${API}/storage/v1/object/authenticated/${BUCKET}/${arquivoDaAna}`, {
-        headers: { apikey: CHAVE, Authorization: `Bearer ${await tokenDe(cliente)}` },
-      })
-      expect(autenticada.ok).toBe(false)
-    }
-    const { error: doVisitante } = await visitante.storage.from(BUCKET).download(arquivoDaAna)
-    expect(doVisitante).not.toBeNull()
-  })
-
-  it("ninguém gera URL assinada com o próprio JWT — nem a Ana para a própria foto", async () => {
-    // Se o usuário assinasse, escolheria a validade: um link de meses é um bucket
-    // público com outro nome. Só o servidor assina.
-    for (const cliente of [ana, bruno, visitante]) {
-      const uma = await cliente.storage.from(BUCKET).createSignedUrl(arquivoDaAna, 60)
-      expect(uma.error).not.toBeNull()
-      expect(uma.data).toBeNull()
-
-      const varias = await cliente.storage.from(BUCKET).createSignedUrls([arquivoDaAna], 60)
-      const assinadas = (varias.data ?? []).filter((item) => item.signedUrl)
-      expect(assinadas).toEqual([])
-    }
-  })
-
-  it("a URL assinada pela chave de serviço abre, com os bytes e o tipo da imagem", async () => {
-    const { data, error } = await servico.storage.from(BUCKET).createSignedUrl(arquivoDaAna, 60)
-    expect(error).toBeNull()
-    expect(data!.signedUrl).toContain(`/object/sign/${BUCKET}/${arquivoDaAna}?token=`)
-
-    // Sem sessão nenhuma: o link vale por si, até expirar (risco aceito no plano).
-    const resposta = await fetch(data!.signedUrl)
-    expect(resposta.ok).toBe(true)
-    expect(resposta.headers.get("content-type")).toBe("image/png")
-    expect(Buffer.from(await resposta.arrayBuffer())).toEqual(PNG)
-  })
-
-  it("o navegador guarda a foto só até o link vencer: Expires no fim da validade, sem Cache-Control", async () => {
-    // É por isso que a validade é curta: o Storage ignora o cacheControl gravado
-    // no arquivo quando serve por URL assinada, e manda só o Expires do token.
-    const { data } = await servico.storage.from(BUCKET).createSignedUrl(arquivoDaAna, VALIDADE_URL_AVATAR_S)
-    const resposta = await fetch(data!.signedUrl)
-    expect(resposta.ok).toBe(true)
-    expect(resposta.headers.get("cache-control")).toBeNull()
-
-    const expira = Date.parse(resposta.headers.get("expires")!)
-    const enviada = Date.parse(resposta.headers.get("date")!)
-    const segundos = (expira - enviada) / 1000
-    expect(segundos).toBeGreaterThanOrEqual(VALIDADE_URL_AVATAR_S - 5)
-    expect(segundos).toBeLessThanOrEqual(VALIDADE_URL_AVATAR_S + 5)
-  })
-
-  it("apagado o arquivo, a URL assinada emitida antes deixa de abrir", async () => {
-    const removido = nomeNaPasta(idAna, PREFIXO_REMOVIDO)
-    const { error: erroEnvio } = await servico.storage.from(BUCKET).upload(removido, PNG, { contentType: "image/png" })
-    if (erroEnvio) throw new Error(`não criou o arquivo a remover: ${erroEnvio.message}`)
-
-    const { data } = await servico.storage.from(BUCKET).createSignedUrl(removido, 3600)
-    expect((await fetch(data!.signedUrl)).ok).toBe(true)
-
-    const { error: erroRemocao } = await servico.storage.from(BUCKET).remove([removido])
-    expect(erroRemocao).toBeNull()
-
-    // O mesmo link, ainda dentro da validade de 1 hora que este caso pediu.
-    expect((await fetch(data!.signedUrl)).ok).toBe(false)
-  })
+  await db.query("update public.profiles set avatar_url = $2 where id = $1", [idAna, fotoOriginal])
+  await db.end()
 })
 
 describe("profiles.avatar_url — só arquivo no formato da rota, na própria pasta", () => {
@@ -360,7 +52,7 @@ describe("profiles.avatar_url — só arquivo no formato da rota, na própria pa
 
   it.each([
     ["URL externa", () => "https://exemplo.com/foto.png"],
-    ["URL externa imitando o caminho do bucket", () => `https://exemplo.com/storage/v1/object/public/avatars/${idAna}/${ARQUIVO}.png`],
+    ["URL externa imitando o caminho do bucket", () => `https://exemplo.com/avatars/${idAna}/${ARQUIVO}.png`],
     ["arquivo na pasta de outra pessoa", () => `${idBruno}/${ARQUIVO}.webp`],
     ["arquivo fora de pasta", () => `${ARQUIVO}.webp`],
     ["subpasta", () => `${idAna}/sub/${ARQUIVO}.webp`],
@@ -370,7 +62,7 @@ describe("profiles.avatar_url — só arquivo no formato da rota, na própria pa
     ["subida de pasta depois do nome", () => `${idAna}/${ARQUIVO}.png/../${idBruno}/x.png`],
     ["quebra de linha no fim", () => `${idAna}/${ARQUIVO}.png\n`],
     ["maiúsculas", () => `${idAna}/${ARQUIVO}.PNG`],
-  ])("recusa %s, mesmo pelo PostgREST direto", async (_caso, valor) => {
+  ])("recusa %s, mesmo na escrita direta", async (_caso, valor) => {
     expect((await gravar(valor()))?.code).toBe(VIOLA_CHECK)
   })
 

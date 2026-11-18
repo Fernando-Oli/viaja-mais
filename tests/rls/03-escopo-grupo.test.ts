@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { type SupabaseClient, type User } from "@supabase/supabase-js"
+import { type Cliente, type Usuario } from "./apoio"
 import { entrarPorConvite } from "./convite"
-import { selecaoPorViagem, selecaoDeViagens, FILTRO_POR_VIAGEM, FILTRO_EM_VIAGENS } from "@/lib/trips/escopo"
+import { listarViagens } from "@/api/modulos/viagens/repositorio"
+import * as despesas from "@/api/modulos/despesas/repositorio"
+import * as reservas from "@/api/modulos/reservas/repositorio"
+import * as lugares from "@/api/modulos/lugares/repositorio"
 import { USUARIOS } from "../fixtures/usuarios"
-import { logar } from "./apoio"
+import { logar, naApi } from "./apoio"
 
 /**
  * O convidado enxerga o que é do grupo.
@@ -13,10 +16,11 @@ import { logar } from "./apoio"
  * as telas filtravam por `user_id`, então o convidado entrava na viagem e via
  * "nenhuma despesa" com o grupo tendo lançado várias.
  *
- * As consultas aqui usam **as mesmas funções que as telas usam**, de propósito.
- * Um teste que remontasse a string à mão passaria mesmo depois de alguém apagar
- * o `!inner` do `lib/trips/escopo.ts` — e é justamente esse apagão silencioso
- * que precisa ser pego.
+ * As consultas aqui usam **as mesmas funções que as rotas usam** (os
+ * repositórios da API), pelo `comoUsuario()` de produção, de propósito. Um
+ * teste que remontasse a consulta à mão passaria mesmo depois de alguém trocar
+ * o filtro por participação de volta para `user_id` — e é justamente esse
+ * apagão silencioso que precisa ser pego.
  *
  * @RF04.4 os membros visualizam a viagem e seus dados
  */
@@ -25,10 +29,10 @@ import { logar } from "./apoio"
 const ANA = USUARIOS.ana
 const BRUNO = USUARIOS.bruno
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let usuarioAna: User
-let usuarioBruno: User
+let ana: Cliente
+let bruno: Cliente
+let usuarioAna: Usuario
+let usuarioBruno: Usuario
 
 /** Viagem da Ana em que o Bruno foi aceito. */
 let compartilhada: string
@@ -110,13 +114,7 @@ beforeAll(async () => {
 
 describe("o convidado enxerga o que é do grupo", () => {
   it("vê a viagem compartilhada na lista, e não a particular", async () => {
-    const { data, error } = await bruno
-      .from("trips")
-      .select(selecaoDeViagens())
-      .eq(FILTRO_EM_VIAGENS, usuarioBruno.id)
-
-    expect(error).toBeNull()
-    const titulos = (data ?? []).map((t) => t.title)
+    const titulos = (await naApi(bruno, (tx) => listarViagens(tx, usuarioBruno.id))).map((t) => t.title)
     expect(titulos).toContain("Viagem compartilhada")
     expect(titulos).not.toContain("Viagem particular da Ana")
   })
@@ -124,58 +122,36 @@ describe("o convidado enxerga o que é do grupo", () => {
   it("vê a despesa que a Ana lançou", async () => {
     // Era isto que quebrava: o filtro por `user_id` devolvia zero despesas ao
     // Bruno, e o total da viagem aparecia errado para ele.
-    const { data, error } = await bruno
-      .from("expenses")
-      .select(selecaoPorViagem("title, currency"))
-      .eq(FILTRO_POR_VIAGEM, usuarioBruno.id)
-
-    expect(error).toBeNull()
-    const titulos = (data ?? []).map((e) => e.title)
+    const titulos = (await naApi(bruno, (tx) => despesas.doUsuario(tx, usuarioBruno.id))).map((e) => e.title)
     expect(titulos).toContain(TITULO_COMPARTILHADO)
     expect(titulos).not.toContain(TITULO_PARTICULAR)
   })
 
   it("vê a reserva que a Ana cadastrou", async () => {
-    const { data, error } = await bruno
-      .from("bookings")
-      .select(selecaoPorViagem("title, destination"))
-      .eq(FILTRO_POR_VIAGEM, usuarioBruno.id)
-
-    expect(error).toBeNull()
-    const titulos = (data ?? []).map((b) => b.title)
+    const titulos = (await naApi(bruno, (tx) => reservas.doUsuario(tx, usuarioBruno.id))).map((b) => b.title)
     expect(titulos).toContain(TITULO_COMPARTILHADO)
     expect(titulos).not.toContain(TITULO_PARTICULAR)
   })
 
   it("vê o lugar que a Ana salvou", async () => {
-    const { data, error } = await bruno
-      .from("places")
-      .select(selecaoPorViagem("title, destination"))
-      .eq(FILTRO_POR_VIAGEM, usuarioBruno.id)
-
-    expect(error).toBeNull()
-    const nomes = (data ?? []).map((l) => l.name)
+    const nomes = (await naApi(bruno, (tx) => lugares.doUsuario(tx, usuarioBruno.id))).map((l) => l.name)
     expect(nomes).toContain(TITULO_COMPARTILHADO)
     expect(nomes).not.toContain(TITULO_PARTICULAR)
   })
 })
 
 describe("o escopo não vira porta dos fundos", () => {
-  it("a mesma consulta não devolve dado de viagem alheia", async () => {
+  it("a listagem por viagem não devolve dado de viagem alheia", async () => {
     // O escopo amplia o que o membro vê; não pode ampliar o que qualquer
-    // autenticado vê. Aqui o Bruno pede explicitamente pelo id da viagem
-    // particular da Ana — e continua sem alcançá-la.
-    const { data } = await bruno
-      .from("expenses")
-      .select(selecaoPorViagem("title, currency"))
-      .eq(FILTRO_POR_VIAGEM, usuarioBruno.id)
-      .eq("trip_id", particular)
-
-    expect(data).toEqual([])
+    // autenticado vê. Aqui o Bruno pede explicitamente pela viagem particular
+    // da Ana — e continua sem alcançá-la, mesmo sem a checagem da rota.
+    expect(await naApi(bruno, (tx) => despesas.listar(tx, particular))).toEqual([])
+    expect(await naApi(bruno, (tx) => reservas.listar(tx, particular))).toEqual([])
+    expect(await naApi(bruno, (tx) => lugares.listar(tx, particular))).toEqual([])
   })
 
   it("nem sem o filtro de participação, porque a RLS é a segunda linha", async () => {
-    // Se alguém apagar o `.eq(...)` da tela por engano, quem segura é a RLS.
+    // Se alguém apagar o filtro da rota por engano, quem segura é a RLS.
     const { data } = await bruno.from("expenses").select("*").eq("trip_id", particular)
 
     expect(data).toEqual([])

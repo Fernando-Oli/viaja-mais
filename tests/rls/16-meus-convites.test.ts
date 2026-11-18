@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
 import { CONEXAO, logar, novoCliente } from "./apoio"
 
@@ -14,7 +14,7 @@ import { CONEXAO, logar, novoCliente } from "./apoio"
  */
 
 
-let ana: SupabaseClient, bruno: SupabaseClient, carla: SupabaseClient
+let ana: Cliente, bruno: Cliente, carla: Cliente
 let idAna: string
 let db: Client
 let viagem: string

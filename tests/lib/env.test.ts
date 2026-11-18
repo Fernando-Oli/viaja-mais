@@ -13,7 +13,6 @@ async function carregar() {
 }
 
 beforeEach(() => {
-  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "chave-service-de-teste")
   vi.stubEnv("AI_PROVIDER", "fake")
 })
 
@@ -51,14 +50,5 @@ describe("envServidor", () => {
     const { envServidor } = await carregar()
 
     expect(() => envServidor()).toThrow(/AI_PROVIDER/)
-  })
-})
-
-describe("chaveServiceRole", () => {
-  it("vazia explica onde pegar a chave, em vez de quebrar a validação inteira", async () => {
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "")
-    const { chaveServiceRole } = await carregar()
-
-    expect(() => chaveServiceRole()).toThrow(/SUPABASE_SERVICE_ROLE_KEY não configurada/)
   })
 })

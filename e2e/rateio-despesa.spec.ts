@@ -1,9 +1,7 @@
 import { test, expect, type Browser, type Page, type Response } from "@playwright/test"
-import { createClient } from "@supabase/supabase-js"
-import { exigirLocal } from "../tests/rls/guarda-ambiente"
 import { entrarPorConvite } from "../tests/rls/convite"
-import { SENHA_TESTE as SENHA } from "../tests/fixtures/usuarios"
 import { cadastrar, entrar } from "./fixtures/contas"
+import { comoUsuario } from "./fixtures/banco"
 
 /**
  * @RF06.9 tipo de rateio: igual, por peso ou por valor exato
@@ -22,16 +20,8 @@ let tripId = ""
 /** Ids dos três membros. A RNE-020 dá o centavo de sobra ao menor deles (#41). */
 let idsMembros: string[] = []
 
-/** Cliente Supabase com a sessão de quem entrou, sob RLS — como nos testes de RLS. */
-async function logar(email: string) {
-  const url = exigirLocal(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", "NEXT_PUBLIC_SUPABASE_URL")
-  const cliente = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: SENHA })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return { cliente, id: data.user.id }
-}
+/** Cliente com a identidade de quem entrou, sob RLS — como nos testes de RLS. */
+const logar = (email: string) => comoUsuario(email)
 
 /**
  * Os membros entram pelo convite, o único caminho que a RLS aceita: a dona

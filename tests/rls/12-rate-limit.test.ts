@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
 import { USUARIOS } from "../fixtures/usuarios"
 import { CONEXAO, logar, novoCliente } from "./apoio"
@@ -39,15 +39,15 @@ const PARAMETRO_INVALIDO = "22023"
 const SUFIXO = Math.random().toString(36).slice(2, 8)
 const chave = (caso: string) => `rls-${caso}-${SUFIXO}`
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let visitante: SupabaseClient
+let ana: Cliente
+let bruno: Cliente
+let visitante: Cliente
 let idAna: string
 let db: Client
 
 type Veredito = { permitido: boolean; retry_after: number }
 
-async function consumir(cliente: SupabaseClient, p_chave: string, p_maximo: number, p_janela_segundos = 3600) {
+async function consumir(cliente: Cliente, p_chave: string, p_maximo: number, p_janela_segundos = 3600) {
   const { data, error } = await cliente.rpc("consumir_limite", { p_chave, p_maximo, p_janela_segundos })
   if (error) throw Object.assign(new Error(error.message), { code: error.code })
   return (data as Veredito[])[0]

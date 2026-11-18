@@ -40,8 +40,7 @@ O Viaja+ integra todas as funcionalidades necessárias em uma única plataforma:
 ## 🚀 Funcionalidades
 
 ### Autenticação e Segurança
-- Sistema de login e registro com Supabase
-- Confirmação de email
+- Login, cadastro e recuperação de senha por e-mail (Better Auth, na própria API)
 - Proteção de rotas
 - Row Level Security (RLS) no banco de dados
 
@@ -92,11 +91,10 @@ O Viaja+ integra todas as funcionalidades necessárias em uma única plataforma:
 - **shadcn/ui** - Componentes UI
 
 ### Backend & Database
-- **Supabase** - Backend as a Service
-  - PostgreSQL Database
-  - Authentication
-  - Row Level Security
-  - Real-time subscriptions
+- **API em Hono** (`api/`) - toda leitura e escrita passa por ela
+- **PostgreSQL** próprio, com Row Level Security, acessado por Kysely
+- **Better Auth** - sessão com estado no banco, hash scrypt
+- **S3** - fotos de perfil (AWS em produção, SeaweedFS local)
 
 ### Integrações
 - **Google Maps JavaScript API** - Mapas e busca de lugares
@@ -110,9 +108,10 @@ O Viaja+ integra todas as funcionalidades necessárias em uma única plataforma:
 ## 📦 Pré-requisitos
 
 - **Node.js 22+**
-- **Docker Desktop** — o Supabase local (Postgres, Auth, Storage, Studio) roda em
-  contêineres. Sem ele dá para mexer em tela e regra de negócio, mas não dá para
-  rodar migrations, testes de RLS nem E2E.
+- **Docker Desktop** — o banco (Postgres), o e-mail (Mailpit) e o armazenamento
+  (SeaweedFS) rodam em contêineres, pelo `docker-compose.yml`. Sem ele dá para
+  mexer em tela e regra de negócio, mas não dá para rodar a API, os testes de
+  RLS nem o E2E.
 - Uma chave da **Google Maps JavaScript API** (peça ao Fernando)
 
 ## ⚙️ Instalação e Configuração
@@ -124,29 +123,30 @@ npm ci
 npm run setup
 ```
 
-O `setup` sobe o Supabase local, aplica as migrations, roda o seed e **escreve o
-`.env.local` sozinho**, com as credenciais que o próprio stack gerou.
+O `setup` sobe os serviços, recria o banco (migrations + seed) e **escreve o
+`.env.local` sozinho**. Fora de produção, a API já usa os endereços locais como
+padrão (`api/env.ts`).
 
 Nenhuma credencial de banco precisa ser enviada por mensagem: cada pessoa tem o
-próprio Postgres, com as próprias chaves, válidas só na máquina dela. A única
-variável que vem de fora é a `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — acrescente ao
-`.env.local` e rode `npm run dev`.
+próprio Postgres, com senhas que só valem na máquina dela. A única variável que
+vem de fora é a `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — acrescente ao `.env.local`.
 
 ## 🚀 Execução
 
 ```bash
-npm run dev              # http://localhost:3000
+npm run api:dev          # API em http://localhost:3001
+npm run dev              # aplicação em http://localhost:3000
 npm run verify           # lint + tipos + testes + build (o mesmo gate do CI)
 ```
 
 | Serviço | Endereço |
 |---|---|
 | Aplicação | http://localhost:3000 |
-| Studio (SQL, tabelas) | http://localhost:54323 |
-| E-mails de teste | http://localhost:54324 |
+| API | http://localhost:3001 |
+| Banco | `postgresql://localhost:55432/avori` |
+| E-mails de teste | http://localhost:58025 |
 
-O último é o Inbucket: confirmação de cadastro, reset de senha e convite caem ali,
-sem sair da máquina.
+O último é o Mailpit: convite e recuperação de senha caem ali, sem sair da máquina.
 
 **Login de teste:** `teste.a@viajamais.local` / `Viaja+mais123`
 (existe também `teste.b@`, para provar isolamento entre usuários nos testes.)
@@ -157,11 +157,10 @@ sem sair da máquina.
 |---|---|
 | `npm run setup` | Sobe o ambiente e gera o `.env.local`. Idempotente. |
 | `npm run db:reset` | Recria o banco: migrations + seed |
-| `npm run db:diff -- nome` | Gera migration a partir do que você mudou no Studio |
-| `npm run db:types` | Regenera `types/database.ts` |
-| `npm run db:stop` | Derruba o stack local |
+| `npm run db:types` | Regenera `api/db/tipos.ts` (tipos do Kysely) |
+| `npm run db:down` | Derruba os serviços locais |
 | `npm run test` | Testes unitários |
-| `npm run test:rls` | Isolamento por RLS, com dois usuários |
+| `npm run test:rls` | RLS com dois usuários e integração da API, contra o banco |
 | `npm run e2e` | Playwright |
 | `npm run lint` | ESLint (com teto de avisos herdados) |
 
@@ -208,11 +207,9 @@ viaja-plus/
 │   ├── place-search.tsx         # Busca de lugares
 │   ├── trip-members.tsx         # Gestão de membros
 │   └── trip-invitations.tsx     # Convites de viagem
-├── lib/                         # Utilitários
-│   └── supabase/                # Clientes Supabase
-│       ├── client.ts            # Cliente browser
-│       ├── server.ts            # Cliente server
-│       └── middleware.ts        # Cliente middleware
+├── api/                         # API em Hono (rotas, auth, banco)
+├── db/                          # Postgres: init, migrations e seed
+├── lib/                         # Regras e utilitários compartilhados
 ├── scripts/                     # Scripts SQL
 │   ├── 001_create_tables.sql
 │   └── 002_add_group_travel.sql
@@ -233,7 +230,7 @@ viaja-plus/
 
 ## 🔒 Segurança
 
-- Autenticação via Supabase Auth
+- Autenticação pelo Better Auth, na própria API, com sessão validada no servidor
 - Row Level Security (RLS) em todas as tabelas
 - Proteção de rotas via middleware
 - Validação de dados no cliente e servidor

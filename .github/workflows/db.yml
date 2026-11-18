@@ -2,14 +2,14 @@ name: Banco de dados
 
 on:
   pull_request:
-    paths: ["supabase/**", "tests/rls/**", ".github/workflows/db.yml"]
+    paths: ["db/**", "api/**", "tests/rls/**", "tests/integracao/**", "docker-compose.yml", ".github/workflows/db.yml"]
   push:
     branches: [main]
-    paths: ["supabase/**", "tests/rls/**"]
+    paths: ["db/**", "api/**", "tests/rls/**", "tests/integracao/**", "docker-compose.yml"]
 
 jobs:
   migrations:
-    name: Migrations e RLS
+    name: Migrations, RLS e integração
     runs-on: ubuntu-latest
 
     steps:
@@ -20,36 +20,16 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Stack real do Supabase, e não `services: postgres`, porque o schema
-      # versionado é um dump do projeto hospedado: depende de pg_graphql,
-      # supabase_vault, do schema `auth` e dos roles anon/authenticated/
-      # service_role. Nada disso existe num Postgres puro — foi exatamente
-      # assim que este job quebrou quando a primeira migration entrou.
-      #
-      # Versão fixa, igual à que roda nas máquinas da equipe. Com `latest`, uma
-      # release do CLI que deixou de aceitar `[inbucket]` no config.toml
-      # derrubou este job em todos os PRs a partir de 10/11/2026, sem nenhuma
-      # mudança no repositório. Atualizar a versão é decisão de PR, não surpresa.
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.104.0
-
-      # `supabase start` aplica supabase/migrations/ e roda supabase/seed.sql.
-      # É a prova de que o banco é reproduzível **só a partir do repositório**,
-      # que foi o que faltou no início do projeto, quando o schema existia
-      # apenas dentro do painel do Supabase.
-      - name: Subir o Supabase local
-        run: supabase start
-
-      # Os testes de isolamento logam de verdade pelo GoTrue, então precisam da
-      # URL da API e da chave anon deste stack efêmero. O `-o env` sai com
-      # aspas e manda ruído para o stderr; filtramos as duas coisas.
-      - name: Exportar credenciais do stack
+      # `db:reset` recria o banco do zero: o Postgres roda db/init/ (papéis,
+      # schemas, tabelas do Better Auth), e o script aplica db/migrations/ e
+      # db/seed.sql. É a prova de que o banco é reproduzível **só a partir do
+      # repositório**, que foi o que faltou no início do projeto.
+      - name: Subir os serviços e recriar o banco
         run: |
-          supabase status -o env 2>/dev/null \
-            | grep -E '^[A-Z0-9_]+=' | sed 's/"//g' >> "$GITHUB_ENV"
-          echo "DATABASE_URL=$(supabase status -o env 2>/dev/null \
-            | grep '^DB_URL=' | cut -d= -f2- | tr -d '"')" >> "$GITHUB_ENV"
+          docker compose up --detach --wait mailpit armazenamento
+          npm run db:reset
 
-      - name: Testes de RLS
+      # tests/rls: a RLS com dois usuários, pelo papel e a identidade de cada
+      # um. tests/integracao: a API inteira (sessão, banco, e-mail e S3 reais).
+      - name: Testes de RLS e de integração
         run: npm run test:rls

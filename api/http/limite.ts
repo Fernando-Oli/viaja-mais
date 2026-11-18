@@ -3,12 +3,14 @@ import { limiteExcedido, type RegraLimite } from "../../lib/seguranca/limite"
 import type { Tx } from "../db/como-usuario"
 
 /**
- * Limite por usuário, contado no Postgres por `public.consumir_limite()`, como
- * `exigirLimite()` de `lib/seguranca/limite.ts` faz pelo PostgREST. As regras
- * (`LIMITES`) continuam lá; aqui só muda o caminho até o banco.
+ * Limite por usuário, contado no Postgres por `public.consumir_limite()`. As
+ * regras (`LIMITES`) ficam em `lib/seguranca/limite.ts`.
  *
- * **Fail-open**, como o original: se a contagem falhar, a requisição segue e o
- * erro vai para o log. A contagem roda num savepoint, para a falha não abortar
+ * **Fail-open:** se a contagem falhar (banco fora, função ausente), a
+ * requisição segue e o erro vai para o log. O limitador protege contra abuso;
+ * ele não pode ser o motivo de um convite ou de uma troca de senha legítimos
+ * falharem. O risco residual está em
+ * `docs/pfc/evidencias/seguranca/S06-F-rate-limit-csp.md`. A contagem roda num savepoint, para a falha não abortar
  * a transação da rota junto.
  *
  * @RNF02.8 limite por usuário e por janela de tempo

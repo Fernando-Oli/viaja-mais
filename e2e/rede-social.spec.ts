@@ -6,7 +6,7 @@ import { SENHA_TESTE } from "../tests/fixtures/usuarios"
  *
  * Só o Davi faz login, porque é o usuário do seed reservado aos specs de perfil,
  * e este spec só lê. Ana, Bruno e Carla continuam como o seed os deixa
- * (supabase/seed.sql): Bruno é o perfil privado.
+ * (db/seed.sql): Bruno é o perfil privado.
  *
  * Desde a S05-M-pesquisa a busca mora na tela /pesquisar, aberta pelo menu da
  * aba (no celular, a barra do rodapé). O histórico de pesquisa tem o próprio spec

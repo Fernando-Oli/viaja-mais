@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
+import { type Cliente } from "./apoio"
 import { Client } from "pg"
 import { USUARIOS } from "../fixtures/usuarios"
 import { CONEXAO, logar, novoCliente } from "./apoio"
@@ -51,10 +51,10 @@ function ehDeAgora(timestamp: string) {
   return Date.parse(timestamp) < Date.now() + 60_000
 }
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let carla: SupabaseClient
-let visitante: SupabaseClient
+let ana: Cliente
+let bruno: Cliente
+let carla: Cliente
+let visitante: Cliente
 let db: Client
 let idAna: string
 let idBruno: string
@@ -73,7 +73,7 @@ async function limparVinculos() {
 }
 
 /** Apaga um vínculo pelo lado de quem é parte, falhando alto se não conseguir. */
-async function desfazer(cliente: SupabaseClient, followerId: string, followeeId: string) {
+async function desfazer(cliente: Cliente, followerId: string, followeeId: string) {
   const { error } = await cliente.from("follows").delete().eq("follower_id", followerId).eq("followee_id", followeeId)
   if (error) throw new Error(`não desfez ${followerId}→${followeeId}: ${error.message}`)
 }
@@ -84,7 +84,7 @@ async function desfazer(cliente: SupabaseClient, followerId: string, followeeId:
  * dá erro. Estado não restaurado quebra a rodada seguinte em cascata, longe da
  * causa.
  */
-async function restaurarPerfil(cliente: SupabaseClient, id: string, valores: Record<string, unknown>) {
+async function restaurarPerfil(cliente: Cliente, id: string, valores: Record<string, unknown>) {
   const { data, error } = await cliente.from("profiles").update(valores).eq("id", id).select("id")
   if (error || data?.length !== 1) {
     throw new Error(`não restaurou ${JSON.stringify(valores)} no perfil ${id}: ${error?.message ?? "nenhuma linha"}`)
@@ -92,7 +92,7 @@ async function restaurarPerfil(cliente: SupabaseClient, id: string, valores: Rec
 }
 
 /** Lê o vínculo como um dos lados, para conferir o estado sem depender de quem testou. */
-async function vinculo(cliente: SupabaseClient, followerId: string, followeeId: string) {
+async function vinculo(cliente: Cliente, followerId: string, followeeId: string) {
   const { data } = await cliente
     .from("follows")
     .select("status, created_at, updated_at")

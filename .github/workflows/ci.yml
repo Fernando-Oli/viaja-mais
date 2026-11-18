@@ -14,8 +14,6 @@ env:
   # precisam existir aqui. Usamos os secrets quando houver e caem para
   # placeholders quando não — o artefato do CI não é publicado, só verificamos
   # que o build compila.
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
   NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'placeholder-maps-key' }}
 
@@ -94,17 +92,19 @@ jobs:
             echo "::notice::Só documentação mudou: E2E pulado."
           fi
 
-  # E2E contra um Supabase local efêmero, o mesmo stack do job "Migrations e
-  # RLS": migrations + seed aplicados do zero, usuários teste.a/teste.b do seed.
+  # E2E contra o ambiente local efêmero (docker-compose.yml), o mesmo do job
+  # "Migrations, RLS e integração": banco recriado do zero, usuários
+  # teste.a/teste.b do seed, e-mail no Mailpit e fotos no SeaweedFS. O
+  # Playwright sobe a API e o Next (playwright.config.ts).
   #
   # Antes este job dependia de secrets E2E_USER_* que nunca foram configurados,
   # e caía num `echo "E2E pulado"` — ficava verde em 50 s sem executar teste
   # nenhum, de setembro a 11/11/2026.
   #
   # A suíte é dividida em 4 partes que rodam em paralelo, cada uma com o seu
-  # próprio Supabase: os testes compartilham os usuários do seed e por isso
-  # rodam um de cada vez dentro de um banco (workers: 1), mas bancos separados
-  # não disputam nada. Em série eram ~15 min; em 4 partes, ~6.
+  # próprio banco: os testes compartilham os usuários do seed e por isso rodam
+  # um de cada vez dentro de um banco (workers: 1), mas bancos separados não
+  # disputam nada. Em série eram ~15 min; em 4 partes, ~6.
   e2e:
     name: Playwright (${{ matrix.parte }}/4)
     runs-on: ubuntu-latest
@@ -124,39 +124,22 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Mesma versão fixa do db.yml e das máquinas da equipe.
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.104.0
-
-      - name: Subir o Supabase local
-        run: supabase start
-
-      # Nomes do próprio CLI (API_URL, ANON_KEY, ...). Eles são repassados com os
-      # nomes da aplicação no `env:` de cada passo, porque o `env:` do topo do
-      # workflow (os placeholders) tem precedência sobre o $GITHUB_ENV.
-      - name: Exportar credenciais do stack
+      - name: Subir os serviços e recriar o banco
         run: |
-          supabase status -o env 2>/dev/null \
-            | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY|DB_URL)=' | sed 's/"//g' >> "$GITHUB_ENV"
+          docker compose up --detach --wait mailpit armazenamento
+          npm run db:reset
 
       - run: npx playwright install --with-deps chromium
 
-      - name: Build contra o stack local
+      - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
           NEXT_PUBLIC_APP_URL: http://localhost:3000
 
       - name: E2E
         run: npm run e2e -- --shard=${{ matrix.parte }}/4
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SERVICE_ROLE_KEY }}
-          DATABASE_URL: ${{ env.DB_URL }}
 
       - name: Arquivar relatório
         if: always()

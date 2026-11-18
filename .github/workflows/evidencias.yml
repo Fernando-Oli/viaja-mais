@@ -13,8 +13,6 @@ jobs:
   coletar:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
       NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'placeholder-maps-key' }}
     steps:

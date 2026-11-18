@@ -28,7 +28,8 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "json-summary"],
       reportsDirectory: "./coverage",
-      include: ["lib/**/*.ts", "app/api/**/*.ts"],
+      // A API (api/**) é medida pelos testes de integração, contra o banco.
+      include: ["lib/**/*.ts"],
       exclude: ["**/*.test.ts", "lib/utils.ts", "types/**"],
       // Corte ligado em S10 (RNF05). A meta do documento é 70% em lib/; o
       // `test:cov` do CI falha se qualquer uma das quatro métricas cair abaixo.
@@ -36,9 +37,7 @@ export default defineConfig({
       // folga é proposital, para um PR com regra nova e teste fraco não passar
       // sem ninguém ver.
       //
-      // Nenhum arquivo foi excluído para o número fechar. `lib/supabase/client`,
-      // `server` e `proxy` estão com 0% (são invólucros do SDK, exercitados só
-      // pelo E2E) e continuam contando contra a média de lib/.
+      // Nenhum arquivo foi excluído para o número fechar.
       thresholds: {
         lines: 70,
         branches: 70,

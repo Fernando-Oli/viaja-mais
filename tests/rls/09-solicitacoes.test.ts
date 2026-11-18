@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest"
-import { type SupabaseClient } from "@supabase/supabase-js"
-import { aprovarSolicitacao, contarSolicitacoes, listarSolicitacoes, recusarSolicitacao } from "@/lib/social/solicitacoes"
+import { type Cliente } from "./apoio"
 import { USUARIOS } from "../fixtures/usuarios"
-import { logar, novoCliente } from "./apoio"
+import { logar, naApi, novoCliente } from "./apoio"
+import * as repo from "@/api/modulos/social/repositorio"
 
 /**
  * As solicitações para seguir (S05-M-solicitacoes): a Zona 1 da central de
@@ -10,9 +10,10 @@ import { logar, novoCliente } from "./apoio"
  * followee. Não há tabela nem policy nova: aqui se prova que a RLS e os grants
  * da S03 (migration 20261007105848) seguram o aprovar e o recusar.
  *
- * Mesmo princípio de 04-social: cada usuário loga de verdade pelo GoTrue com a
- * chave anon e fala com o PostgREST como o navegador. As funções da lib, que as
- * rotas usam, rodam aqui contra o PostgREST de verdade, com a sessão de cada um.
+ * Mesmo princípio de 04-social: cada consulta roda com o papel e a identidade de
+ * quem a faz (`cliente-sql.ts`). Os auxiliares abaixo chamam o repositório da
+ * API (`api/modulos/social/repositorio.ts`) pelo `comoUsuario()` de produção; a
+ * rota em si é provada em `tests/integracao/social.test.ts`.
  *
  * O que se prova aqui:
  *   - o dono (Bruno, privado) vê a solicitação da Ana, aprova e recusa;
@@ -35,15 +36,41 @@ const CARLA = USUARIOS.carla
 
 const VIOLA_RLS_OU_GRANT = "42501"
 
-/** As fotos não entram nestes testes: ninguém do seed tem foto, e o Storage não é chamado. */
-const semStorage = () => {
-  throw new Error("o Storage não deveria ser chamado: ninguém do seed tem foto")
+/** As fotos não entram nestes testes: ninguém do seed tem foto. */
+const semStorage = null
+
+/**
+ * O visitante não passa pela API (ela só age como usuário logado): para ele, a
+ * mesma leitura vai direto ao banco com o papel `anon`, e o erro sobe.
+ */
+async function comoVisitante(cliente: Cliente, dono: string): Promise<never> {
+  const { error } = await cliente.from("follows").select("follower_id").eq("followee_id", dono)
+  throw error ?? new Error("o visitante leu follows sem erro")
 }
 
-let ana: SupabaseClient
-let bruno: SupabaseClient
-let carla: SupabaseClient
-let visitante: SupabaseClient
+async function listarSolicitacoes(cliente: Cliente, _semFotos: null, dono: string) {
+  if (cliente.quem.papel === "anon") return comoVisitante(cliente, dono)
+  const { perfis, total } = await naApi(cliente, (tx) => repo.listarSolicitacoes(tx, dono))
+  return {
+    solicitacoes: perfis.map(({ username, full_name, is_public }) => ({ username, full_name, avatar_url: null, is_public })),
+    total,
+  }
+}
+
+async function contarSolicitacoes(cliente: Cliente, dono: string) {
+  if (cliente.quem.papel === "anon") return comoVisitante(cliente, dono)
+  return naApi(cliente, (tx) => repo.contarSolicitacoes(tx, dono))
+}
+
+const aprovarSolicitacao = (cliente: Cliente, dono: string, quemPediu: string) =>
+  naApi(cliente, (tx) => repo.resolverSolicitacao(tx, dono, quemPediu, "aprovar"))
+const recusarSolicitacao = (cliente: Cliente, dono: string, quemPediu: string) =>
+  naApi(cliente, (tx) => repo.resolverSolicitacao(tx, dono, quemPediu, "recusar"))
+
+let ana: Cliente
+let bruno: Cliente
+let carla: Cliente
+let visitante: Cliente
 let idAna: string
 let idBruno: string
 let idCarla: string
@@ -62,7 +89,7 @@ async function limparVinculos() {
 }
 
 /** Pede para seguir pelo PostgREST, como a rota de seguir; o status quem decide é o trigger. */
-async function pedir(cliente: SupabaseClient, de: string, para: string) {
+async function pedir(cliente: Cliente, de: string, para: string) {
   const { error } = await cliente.from("follows").insert({ follower_id: de, followee_id: para })
   if (error) throw new Error(`não pediu ${de}→${para}: ${error.message}`)
 }
@@ -246,13 +273,12 @@ describe("solicitações — a lista do dono", () => {
     expect(await contarSolicitacoes(bruno, idBruno)).toBe(0)
   })
 
-  it("visitante sem sessão não conta: 401 sem número, e a função lança em vez de devolver zero", async () => {
-    // Com head: true a resposta não tem corpo, então o erro vem sem código: quem diz é o status.
-    const { status, count } = await visitante
+  it("visitante sem sessão não conta: permissão negada, sem número, e a contagem lança em vez de devolver zero", async () => {
+    const { error, count } = await visitante
       .from("follows")
-      .select("perfil:profiles!follows_follower_id_fkey!inner(username)", { count: "exact", head: true })
+      .select("*", { count: "exact", head: true })
       .eq("followee_id", idBruno)
-    expect(status).toBe(401)
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
     expect(count).toBeNull()
     await expect(contarSolicitacoes(visitante, idBruno)).rejects.toBeTruthy()
   })

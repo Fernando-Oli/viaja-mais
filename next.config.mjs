@@ -52,7 +52,8 @@ const nextConfig = {
   },
 }
 
-// A Content-Security-Policy não está aqui: ela depende da URL do Supabase do
-// ambiente e é aplicada pelo proxy.ts, a partir de lib/seguranca/csp.ts.
+// A Content-Security-Policy não está aqui: ela depende de endereços do ambiente
+// (aplicação e armazenamento) e é aplicada pelo proxy.ts, a partir de
+// lib/seguranca/csp.ts.
 
 export default nextConfig

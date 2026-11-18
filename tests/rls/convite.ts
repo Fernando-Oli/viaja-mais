@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Cliente } from "./apoio"
 
 /**
  * Põe alguém numa viagem pelo único caminho que a RLS aceita: a dona convida
@@ -9,9 +9,9 @@ import type { SupabaseClient } from "@supabase/supabase-js"
  * @RF04.3 aceitar convite
  */
 export async function entrarPorConvite(opcoes: {
-  dona: SupabaseClient
+  dona: Cliente
   idDona: string
-  convidado: SupabaseClient
+  convidado: Cliente
   idConvidado: string
   emailConvidado: string
   tripId: string

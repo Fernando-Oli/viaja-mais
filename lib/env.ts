@@ -26,8 +26,6 @@ function explodir(contexto: string, erro: z.ZodError): never {
 /* -------------------------------------------------------------------------- */
 
 const esquemaPublico = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url("precisa ser uma URL completa"),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "obrigatória"),
   NEXT_PUBLIC_APP_URL: z
     .string()
     .url("precisa ser uma URL completa")
@@ -38,8 +36,6 @@ const esquemaPublico = z.object({
 // As referências precisam ser literais: o Next substitui `process.env.NEXT_PUBLIC_X`
 // no build por texto. Acesso dinâmico (process.env[nome]) resulta em undefined.
 const brutoPublico = {
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
 }
@@ -67,8 +63,6 @@ const vazioComoAusente = (v: unknown) => (v === "" ? undefined : v)
 const opcional = z.preprocess(vazioComoAusente, z.string().min(1).optional())
 
 const esquemaServidor = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: opcional,
-  DATABASE_URL: opcional,
   AI_PROVIDER: z.preprocess(vazioComoAusente, z.enum(["fake", "gemini", "anthropic"]).default("fake")),
   // Endereço da API em Hono visto pelo servidor do Next (proxy.ts). O mesmo valor
   // alimenta o rewrite de /api/* em next.config.mjs.
@@ -100,8 +94,6 @@ export function envServidor(): EnvServidor {
   if (cacheServidor) return cacheServidor
 
   const analise = esquemaServidor.safeParse({
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    DATABASE_URL: process.env.DATABASE_URL,
     AI_PROVIDER: process.env.AI_PROVIDER,
     API_URL_INTERNA: process.env.API_URL_INTERNA,
     ARMAZENAMENTO_URL_PUBLICA: process.env.ARMAZENAMENTO_URL_PUBLICA,
@@ -112,19 +104,4 @@ export function envServidor(): EnvServidor {
 
   cacheServidor = analise.data
   return cacheServidor
-}
-
-/**
- * A chave service role ignora toda a RLS. Use apenas em `lib/supabase/admin.ts`,
- * apenas em código de servidor, e nunca para operação que a RLS já resolveria.
- */
-export function chaveServiceRole(): string {
-  const chave = envServidor().SUPABASE_SERVICE_ROLE_KEY
-  if (!chave) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY não configurada. É necessária para convites por e-mail. " +
-        "Pegue em Supabase > Project Settings > API.",
-    )
-  }
-  return chave
 }

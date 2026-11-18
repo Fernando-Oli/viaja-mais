@@ -1,7 +1,6 @@
 import { test as base, expect, type APIRequestContext, type Browser, type Page } from "@playwright/test"
-import { createClient } from "@supabase/supabase-js"
-import { exigirLocal } from "../../tests/rls/guarda-ambiente"
 import { zerarLimites } from "./limite"
+export { idDe } from "./banco"
 import { SENHA_TESTE as SENHA } from "../../tests/fixtures/usuarios"
 export { SENHA }
 
@@ -10,7 +9,7 @@ export { SENHA }
  * de navegador — cookies separados, como duas janelas anônimas —, então a dona
  * e o convidado ficam logados ao mesmo tempo sem um derrubar a sessão do outro.
  *
- * Os usuários do seed vêm de `supabase/seed.sql`. Contas novas saem do cadastro
+ * Os usuários do seed vêm de `db/seed.sql`. Contas novas saem do cadastro
  * da tela (o ambiente local não pede confirmação de e-mail), com e-mail único
  * por execução: a suíte roda de novo sem `db:reset` e não colide.
  */
@@ -96,17 +95,6 @@ export const test = base.extend<Fixtures>({
 })
 
 export { expect }
-
-/** Id de um usuário, logando pelo GoTrue com a chave anon (sem passar pela tela). */
-export async function idDe(email: string) {
-  const url = exigirLocal(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", "NEXT_PUBLIC_SUPABASE_URL")
-  const cliente = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-  const { data, error } = await cliente.auth.signInWithPassword({ email, password: SENHA })
-  if (error) throw new Error(`falha ao logar como ${email}: ${error.message}`)
-  return data.user.id
-}
 
 /**
  * Põe `email` na viagem pelo caminho da aplicação: a dona convida pela API e o
