@@ -5,18 +5,19 @@ trilha: T1
 responsavel: micael
 revisor: fernando
 semana: S06
-requisitos: [RF09.7]
+requisitos: [RF09.7, RF09.13, RF09.14]
 secoes_doc: [14, 16, 22.1, 25]
 branch: feat/S06-M-publicar-viagem
 tipo: [migration, rls, route-handler, regra-de-negocio, tela]
-depende_de: [S05-M-listas, helper lib/trips/publico.ts (Audrey), página trips/[id]/publicar (Audrey)]
+depende_de: [S05-M-listas, helper lib/trips/publico.ts (Audrey), página trips/[id]/publicar (Audrey), helper de membros da viagem (Fernando ou Audrey), aval da migration post_tags (Fernando)]
 status: em-desenvolvimento
 ---
 # Publicar viagem no perfil, sem vazar despesas nem os outros membros
 
 > **Micael** · semana **S06** · decisões do Micael em 11/11. É a primeira de três atividades da S06,
-> empilhadas: esta (banco, rotas e a tela de publicar), `S06-M-posts-no-perfil` ("Viagens publicadas"
-> no `/u/<username>` e o detalhe em `/feed/<postId>`) e `S06-M-marcacao` (marcar pessoas no post).
+> empilhadas: esta (banco, rotas, a tela de publicar e, desde 16/11, a marcação de membros) e
+> `S06-M-posts-no-perfil` ("Viagens publicadas" no `/u/<username>` e o detalhe em `/feed/<postId>`).
+> A antiga `S06-M-marcacao` entrou nesta atividade (decisão do Micael em 16/11).
 
 ## 1. Contexto
 
@@ -37,7 +38,7 @@ grupo, e o post é a única janela dela para fora.
 - **Capa:** upload opcional, num bucket privado, servida por URL assinada como a foto de perfil.
   Sem capa, o post mostra um fundo com o destino.
 - **Membros:** o post nunca mostra a lista de membros da viagem. Outros participantes só aparecem
-  por marcação, na `S06-M-marcacao`.
+  por marcação (ver "Marcação", abaixo).
 - **Despublicar** apaga o post e a capa. Não há legenda.
 
 **Quem lê.** A visibilidade segue o perfil do autor, pela `pode_ver_rede(author_id)` da S03: o
@@ -94,6 +95,23 @@ Trocar ou despublicar apaga o arquivo antigo.
 Enquanto o helper não existe, a integração usa um dublê com o mesmo contrato, e o E2E espera a
 página dela.
 
+**Marcação (decisões do Micael em 16/11; RF09.13 e RF09.14).** Substituem o item 7 de 11/11.
+- No diálogo de publicar, a opção **"Marcar membros"**: o autor escolhe **só entre os membros da
+  viagem** que têm username; quem não tem aparece desabilitado. Ninguém marca a si mesmo.
+- A pessoa marcada vê os posts em que foi marcada na **aba "Marcações" do `/u/<username>` dela** e
+  remove a própria marcação ali, com `ConfirmModal`. Sem aviso no sino.
+- **Ser marcado não abre o post** (opção 2, como no Instagram): se o autor é privado e a pessoa
+  marcada não o segue com vínculo aceito, ela vê só quem a marcou e o botão de remover. A
+  `trip_posts` e a policy de leitura dela, já aprovadas, não mudam.
+- A marca continua se a pessoa sair da viagem (como o post); some com o post; o autor desmarca.
+- **Banco:** migration separada `20261116234030_social_post_tags.sql` (proposta, aval do Fernando).
+  Tabela `post_tags (post_id, tagged_id, author_id, created_at)`, PK `(post_id, tagged_id)`;
+  `author_id` repete o autor para a pessoa marcada saber quem a marcou sem ler o post. A RLS não
+  consegue checar a filiação de outra pessoa pelas `is_trip_*` (só respondem sobre quem pergunta,
+  B1/#34), então a função `social_pode_marcar(post, marcado)`, `SECURITY DEFINER`, responde só
+  dentro do post da sessão, enquanto ela participa da viagem. A rota confere de novo pelo helper de
+  membros (regra 2: a RLS é a segunda linha).
+
 ## 2. Arquivos afetados
 
 - `supabase/migrations/<timestamp>_social_trip_posts.sql` (criar, **proposta**, aval do Fernando):
@@ -104,7 +122,13 @@ página dela.
   cópia), `postDaViagem`, `publicar`, `atualizar`, `despublicar`.
 - `lib/social/capa.ts` (criar): caminho, envio, remoção e `assinarCapas`, reaproveitando
   `lib/social/foto.ts`.
-- `lib/schemas/post.ts` (criar): `{ itens: uuid[], mostrar: { local, descricao, horario, categoria } }`.
+- `lib/schemas/post.ts` (criar): `{ itens: uuid[], mostrar: { local, descricao, horario, categoria } }`;
+  com a marcação, ganha `marcados: uuid[]` (vazio por padrão).
+- `supabase/migrations/20261116234030_social_post_tags.sql` (criar, **proposta**, aval do Fernando).
+- `lib/social/marcacoes.ts` (criar): sincronizar as marcas ao publicar e atualizar, listar os marcados
+  (nome, username, foto), remover a minha marca, posts em que alguém foi marcado.
+- `app/api/social/marcacoes/[postId]/route.ts` (criar): `DELETE` remove a marca da sessão.
+- `app/api/social/perfis/[username]/marcacoes/route.ts` (criar): `GET` da aba Marcações.
 - `app/api/social/viagens/[tripId]/post/route.ts` (criar): `GET` (a projeção para a prévia e o post
   da sessão, se houver), `POST`, `PATCH` e `DELETE`.
 - `app/api/social/viagens/[tripId]/post/capa/route.ts` (criar): `PUT` (multipart) e `DELETE`.
@@ -115,7 +139,8 @@ página dela.
   - `tests/lib/social-posts.test.ts` (criar);
   - `tests/api/social-post-route.test.ts`, `tests/api/social-post-capa-route.test.ts` e o dublê
     `tests/api/post-dubles.ts` (criar);
-  - `tests/rls/12-trip-posts.test.ts` (criar);
+  - `tests/rls/12-trip-posts.test.ts` (criar) e `tests/rls/17-post-tags.test.ts` (criar);
+  - integração das duas rotas de marcação e dos `marcados` no POST/PATCH do post;
   - `e2e/publicar-viagem.spec.ts` (criar).
 
 ## 3. Passos
@@ -172,7 +197,21 @@ página dela.
   - **as tabelas de outros domínios continuam fechadas:** ler o post não dá acesso a `trips`,
     `expenses` nem `trip_members` da viagem;
   - **o caso legítimo:** dois membros publicam a mesma viagem, cada um com o seu post.
+- [x] **RLS da marcação** (`tests/rls/17-post-tags.test.ts`, 22 testes, em 16/11): a autora marca
+  membro com username; não marca quem não foi na viagem, membro sem username, a si mesma, nem em
+  post de viagem alheia; outro membro não marca nem forja a autora; quem saiu da viagem não marca;
+  sem UPDATE; anon não lê nem escreve; marcas de post público lidas por qualquer autenticado, de
+  privado só por seguidor aceito; **o marcado que não segue o autor privado vê a própria marca e o
+  autor, mas não o post**; terceiro não apaga; o marcado remove a sua mesmo sem ver o post; a
+  autora desmarca; cascata do post; a marca fica quando o marcado sai; a função só responde sobre
+  o post da sessão; anon não a executa.
+- [ ] **Integração da marcação:** `POST`/`PATCH` com `marcados` — 400 para quem não é membro, para
+  si mesmo e acima do limite, sem gravar; a resposta lista os marcados sem id interno nem e-mail;
+  `DELETE /api/social/marcacoes/[postId]` — 200 remove a da sessão, 401, 404 sem marca; `GET` da aba
+  — 200 com post visível e com o "marcou você numa publicação que só os seguidores veem", 401, perfil
+  privado da pessoa marcada fechado a quem não a segue.
 - [ ] **E2E** (`chromium` e `mobile`, com screenshots):
+  - marcar membros no diálogo; o nome aparece no post; remover a própria marca pela aba Marcações;
   - na tela de publicar, a prévia mostra exatamente o que fica público; ligar e desligar local,
     descrição, data e hora e categoria muda a prévia; hospedagem vem desmarcada;
   - publicar mostra a confirmação e o estado "Publicada"; atualizar copia de novo; despublicar pede
@@ -225,7 +264,10 @@ página dela.
 - [ ] Tela funciona em mobile e desktop; feedback por `toast()`, confirmação por `ConfirmModal`,
   sem `alert()` nem `confirm()`; estados de carregamento e de erro tratados.
 - [ ] Nada consulta `trips` nem `itinerary_items` fora de `lib/trips/publico.ts`.
-- [ ] Tags `@RF09.7` no código e nos testes; `pfc:rastreabilidade` sem inconsistência nova.
+- [ ] Ser marcado não dá leitura do post: a policy `trip_posts_select` é idêntica à aprovada em 11/11.
+- [ ] Só membros da viagem com username são marcáveis, conferido na rota e na RLS.
+- [ ] Tags `@RF09.7`, `@RF09.13` e `@RF09.14` no código e nos testes; `pfc:rastreabilidade` sem
+  inconsistência nova.
 
 ## 6. Evidência
 

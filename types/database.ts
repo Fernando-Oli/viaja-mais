@@ -389,6 +389,49 @@ export type Database = {
           },
         ]
       }
+      post_tags: {
+        Row: {
+          author_id: string
+          created_at: string
+          post_id: string
+          tagged_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          post_id: string
+          tagged_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          post_id?: string
+          tagged_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_tags_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "trip_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tags_tagged_id_fkey"
+            columns: ["tagged_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -748,6 +791,10 @@ export type Database = {
       pode_ver_rede: { Args: { perfil: string }; Returns: boolean }
       social_itens_do_post_validos: { Args: { itens: Json }; Returns: boolean }
       social_meu_post_da_viagem: { Args: { viagem: string }; Returns: string }
+      social_pode_marcar: {
+        Args: { marcado: string; post: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

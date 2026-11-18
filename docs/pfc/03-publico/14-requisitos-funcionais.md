@@ -97,6 +97,8 @@ plataforma, a tabela `profiles` recebe as colunas `username` (única), `bio` e
 | RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | Alta |
 | RF09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | Média |
 | RF09.12 | O usuário deve poder ver, reabrir e apagar o histórico dos perfis que abriu pela pesquisa | Não iniciado | Média |
+| RF09.13 | O autor de uma publicação deve poder marcar nela membros da viagem publicada | Não iniciado | Média |
+| RF09.14 | O usuário marcado deve poder ver, na aba Marcações do próprio perfil, as publicações em que foi marcado e remover a própria marcação | Não iniciado | Média |
 
 **Detalhamento:** seguir um perfil público cria o vínculo já no estado aceito;
 seguir um perfil privado cria um vínculo pendente, que só se torna aceito após a
@@ -134,10 +136,22 @@ trinta dias; é visível somente ao próprio usuário, acompanha a conta em qual
 dispositivo, não notifica a pessoa pesquisada e pode ser apagado entrada a
 entrada ou por inteiro. Nas sugestões do feed (RF09.11),
 somente publicações de perfis públicos podem ser sugeridas; uma publicação de
-perfil privado nunca é sugerida a quem não é seguidor aprovado. Como decisão de
+perfil privado nunca é sugerida a quem não é seguidor aprovado. A marcação
+(RF09.13) é a única forma de uma publicação indicar outros participantes da
+viagem: o autor escolhe, entre os membros da viagem que têm nome de usuário,
+quem marcar, e nunca marca a si mesmo; quem não foi na viagem não pode ser
+marcado. As marcações são visíveis a quem enxerga a publicação. Ser marcado não
+concede acesso à publicação: quando o autor tem perfil privado e a pessoa
+marcada não o segue com vínculo aceito, ela vê apenas quem a marcou e pode
+remover a marcação, sem ver o conteúdo, como ocorre no Instagram. A aba
+Marcações (RF09.14) segue a visibilidade do perfil da pessoa marcada e, dentro
+dela, a de cada publicação. A pessoa marcada pode remover a própria marcação a
+qualquer momento, e o autor pode desmarcar quem marcou. A marcação permanece se
+a pessoa marcada sair da viagem e é apagada junto com a publicação. Como decisão de
 dado a cargo da plataforma,
 criam-se a tabela `follows`, com estado pendente ou aceito, a tabela
-`trip_posts` e a tabela `search_history`, do histórico de pesquisa.
+`trip_posts`, a tabela `post_tags`, das marcações, e a tabela `search_history`,
+do histórico de pesquisa.
 
 ## RF10 — Interação Social
 
