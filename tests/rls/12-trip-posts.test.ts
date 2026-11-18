@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
-import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
+import { SENHA_TESTE } from "../fixtures/usuarios"
+import { CONEXAO, logar, novoCliente } from "./apoio"
 
 /**
  * Publicar viagem (S06-M-publicar-viagem): a tabela `trip_posts` e o bucket
@@ -30,11 +31,6 @@ import { exigirLocal, variavelObrigatoria } from "./guarda-ambiente"
  * @RF09.7 @RNF02.4
  */
 
-const API = exigirLocal(variavelObrigatoria("API_URL"), "API_URL")
-const CHAVE = variavelObrigatoria("ANON_KEY")
-const CONEXAO = exigirLocal(variavelObrigatoria("DATABASE_URL"), "DATABASE_URL")
-
-const SENHA = "viajamais123"
 const VIOLA_RLS_OU_GRANT = "42501"
 const VIOLA_CHECK = "23514"
 const VIOLA_UNIQUE = "23505"
@@ -70,10 +66,6 @@ let viagemB: string
 const contas: string[] = []
 const viagens: string[] = []
 
-function novoCliente() {
-  return createClient(API, CHAVE, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
 /** Conta descartável e logável, como as do seed.sql; o perfil nasce pelo trigger. */
 async function criarAtor(rotulo: string, opcoes: { username?: boolean; privado?: boolean } = {}): Promise<Ator> {
   const email = `posts.${marca}.${rotulo}@viajamais.local`
@@ -90,7 +82,7 @@ async function criarAtor(rotulo: string, opcoes: { username?: boolean; privado?:
        '{"provider":"email","providers":["email"]}'::jsonb, jsonb_build_object('full_name', $3::text),
        '', '', '', ''
      ) returning id`,
-    [email, SENHA, `Posts ${rotulo}`],
+    [email, SENHA_TESTE, `Posts ${rotulo}`],
   )
   const id = rows[0].id
   contas.push(id)
@@ -110,9 +102,7 @@ async function criarAtor(rotulo: string, opcoes: { username?: boolean; privado?:
     await db.query("update public.profiles set is_public = true where id = $1", [id])
   }
 
-  const cliente = novoCliente()
-  const { error } = await cliente.auth.signInWithPassword({ email, password: SENHA })
-  if (error) throw new Error(`falha ao logar como ${rotulo}: ${error.message}`)
+  const { cliente } = await logar(email)
   return { id, cliente }
 }
 
