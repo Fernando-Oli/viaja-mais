@@ -1,16 +1,22 @@
 /**
  * @RF09.13 marcar no post só membros da viagem com username: quem pode ser marcado vem da função
  * social_membros_marcaveis, os perfis saem campo a campo com a foto assinada, e a sincronização confere
- * os permitidos antes de escrever, insere só os novos e apaga só os removidos
+ * os permitidos antes de escrever, insere só os novos e apaga só os removidos. Quem removeu a própria
+ * marca num post do autor (decisões de 18/11: vale para a viagem e o autor, lida pela função
+ * social_recusas_da_viagem) sai com `recusou: true` e marcá-lo é 400 marcado_recusou
  */
 import { describe, it, expect, beforeEach } from "vitest"
 import { ErroHttp } from "@/lib/http"
 import { esquecerLinksEmitidos } from "@/lib/social/avatar"
 import {
   MARCADO_INVALIDO,
+  MARCADO_RECUSOU,
+  comRecusas,
   conferirMarcados,
+  conferirRecusas,
   marcadosDoPost,
   membrosMarcaveis,
+  recusasDaViagem,
   sincronizarMarcacoes,
 } from "@/lib/social/marcacoes"
 
@@ -286,6 +292,77 @@ describe("conferirMarcados", () => {
   })
 })
 
+describe("recusasDaViagem", () => {
+  it("pergunta à função do banco, sem ler tabela, e devolve em minúsculas, ignorando o que não é id em texto", async () => {
+    const { cliente, consultas, rpcs } = clienteFalso({
+      rpc: { data: [CAIO.toUpperCase(), DORA, 42, null], error: null },
+    })
+
+    const recusas = await recusasDaViagem(cliente, VIAGEM)
+
+    expect(rpcs).toEqual([["social_recusas_da_viagem", { viagem: VIAGEM }]])
+    // A sessão não lê post_tag_recusas direto: o trip_id não é legível.
+    expect(consultas).toEqual([])
+    expect([...recusas]).toEqual([CAIO, DORA])
+  })
+
+  it.each([
+    ["lista vazia", []],
+    ["nulo", null],
+    ["algo que não é lista", { id: CAIO }],
+  ])("função responde %s: conjunto vazio", async (_caso, data) => {
+    expect((await recusasDaViagem(clienteFalso({ rpc: { data, error: null } }).cliente, VIAGEM)).size).toBe(0)
+  })
+
+  it("erro lança sem a mensagem crua; 42501 vira 403", async () => {
+    await lancaSemMensagemCrua(recusasDaViagem(clienteFalso({ rpc: { data: null, error: ERRO_CRU } }).cliente, VIAGEM))
+    await lancaHttp(
+      recusasDaViagem(clienteFalso({ rpc: { data: null, error: { code: "42501", message: "x" } } }).cliente, VIAGEM),
+      403,
+    )
+  })
+})
+
+describe("comRecusas", () => {
+  const BIA_P = { id: BIA, username: "bia", full_name: "Bia", avatar_url: URL_BIA }
+  const CAIO_P = { id: CAIO.toUpperCase(), username: "caio", full_name: null, avatar_url: null }
+
+  it("marca recusou em quem recusou (sem diferenciar maiúsculas), nas chaves exatas", () => {
+    const marcaveis = comRecusas([{ ...BIA_P, email: "x" } as typeof BIA_P, CAIO_P], new Set([CAIO]))
+
+    expect(marcaveis).toStrictEqual([
+      { ...BIA_P, recusou: false },
+      { ...CAIO_P, recusou: true },
+    ])
+    for (const p of marcaveis) expect(Object.keys(p).sort()).toEqual([...CHAVES_PESSOA, "recusou"].sort())
+  })
+
+  it("sem recusas, todos com recusou false", () => {
+    expect(comRecusas([BIA_P, CAIO_P], new Set()).map((p) => p.recusou)).toEqual([false, false])
+  })
+})
+
+describe("conferirRecusas", () => {
+  it("aceita lista vazia e quem não recusou", () => {
+    expect(() => conferirRecusas([], [CAIO])).not.toThrow()
+    expect(() => conferirRecusas([BIA], [CAIO])).not.toThrow()
+    expect(() => conferirRecusas([BIA], [])).not.toThrow()
+  })
+
+  it("quem recusou é 400 marcado_recusou, sem diferenciar maiúsculas", () => {
+    let erro: unknown
+    try {
+      conferirRecusas([BIA, CAIO.toUpperCase()], new Set([CAIO]))
+    } catch (e) {
+      erro = e
+    }
+    expect(erro).toBeInstanceOf(ErroHttp)
+    expect(erro).toMatchObject({ status: 400, message: MARCADO_RECUSOU })
+    expect(MARCADO_RECUSOU).toBe("marcado_recusou")
+    expect(() => conferirRecusas([CAIO], [CAIO.toUpperCase()])).toThrow(MARCADO_RECUSOU)
+  })
+})
+
 describe("sincronizarMarcacoes", () => {
   it("insere só os novos, campo a campo, e apaga só os removidos; os que ficam não são tocados", async () => {
     const { cliente, consultas } = clienteFalso({
@@ -339,17 +416,42 @@ describe("sincronizarMarcacoes", () => {
     expect(consultas).toEqual([])
   })
 
-  it("policy recusa (42501) vira 403; marca duplicada em corrida (23505) vira 409", async () => {
+  it("marcado que recusou, mesmo entre os permitidos: 400 marcado_recusou sem ler nem escrever nada", async () => {
+    const { cliente, consultas } = clienteFalso({})
+    await lancaHttp(sincronizarMarcacoes(cliente, POST, AUTOR, [BIA, CAIO], [BIA, CAIO], [CAIO]), 400, MARCADO_RECUSOU)
+    expect(consultas).toEqual([])
+  })
+
+  it("com recusas, quem não recusou é marcado normalmente", async () => {
+    const { cliente, consultas } = clienteFalso({ respostas: [{ data: [], error: null }] })
+    await sincronizarMarcacoes(cliente, POST, AUTOR, [BIA], [BIA, CAIO], new Set([CAIO]))
+    expect(consultas.map((c) => c.chamadas[0][0])).toEqual(["select", "insert"])
+  })
+
+  it("corrida (S1): a policy recusa o INSERT (42501) porque a pessoa acabou de remover a marca — 400 marcado_recusou, e nada é apagado", async () => {
+    // Bia é nova; Caio estava marcado e sai. O INSERT falha antes da remoção.
+    const { cliente, consultas } = clienteFalso({
+      respostas: [{ data: [{ tagged_id: CAIO }], error: null }, { data: null, error: { code: "42501" } }],
+    })
+    await lancaHttp(sincronizarMarcacoes(cliente, POST, AUTOR, [BIA], [BIA, CAIO]), 400, MARCADO_RECUSOU)
+    expect(consultas.map((c) => c.chamadas[0][0])).toEqual(["select", "insert"])
+  })
+
+  it("42501 na remoção continua 403: ali não há recusa possível, é a policy de DELETE", async () => {
     await lancaHttp(
       sincronizarMarcacoes(
-        clienteFalso({ respostas: [{ data: [], error: null }, { data: null, error: { code: "42501" } }] }).cliente,
+        clienteFalso({ respostas: [{ data: [{ tagged_id: BIA }], error: null }, { data: null, error: { code: "42501" } }] })
+          .cliente,
         POST,
         AUTOR,
-        [BIA],
-        [BIA],
+        [],
+        [],
       ),
       403,
     )
+  })
+
+  it("marca duplicada em corrida (23505) vira 409", async () => {
     await lancaHttp(
       sincronizarMarcacoes(
         clienteFalso({ respostas: [{ data: [], error: null }, { data: null, error: { code: "23505" } }] }).cliente,

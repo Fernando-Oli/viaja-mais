@@ -35,8 +35,20 @@ import {
  * endereço digitado; chave extra em qualquer nível é 400 sem ler nada além da
  * autorização.
  *
- * O que prova a marcação: o `conferirMarcados` é o real; marcado fora dos
- * marcáveis é 400 `marcado_invalido` antes de gravar o post.
+ * O que prova a marcação: o `conferirMarcados` e o `conferirRecusas` são os
+ * reais; marcado fora dos marcáveis é 400 `marcado_invalido`, e quem removeu a
+ * própria marca é 400 `marcado_recusou`, os dois antes de gravar o post. O
+ * `comRecusas` também é o real: os marcáveis saem com `recusou`. A recusa vale
+ * para a viagem e o autor (`recusasDaViagem`), e não para o post: é lida com ou
+ * sem post, e o POST de quem republica também a confere.
+ *
+ * O que prova o título (decisão de 18/11): o escolhido vai para a cópia, sem os
+ * espaços das pontas; ausente, nulo ou só espaços, vale o da viagem; acima de
+ * 120 caracteres é 400. `previa.title` continua o da viagem.
+ *
+ * O que prova os tetos do CHECK (S1): item da projeção com título acima de 120
+ * fica fora da cópia, e local acima de 200 e descrição acima de 2000 saem do
+ * item; publicar dá 201, e não o 500 do CHECK.
  *
  * Em todo caminho, `ler()` confere o `Cache-Control: private, no-store` e que
  * nenhuma chave proibida aparece em nível nenhum do corpo; os 200 conferem
@@ -81,6 +93,7 @@ vi.mock("@/lib/social/marcacoes", async (original) => {
     ...(await original<typeof import("@/lib/social/marcacoes")>()),
     membrosMarcaveis: dubles.membrosMarcaveis,
     marcadosDoPost: dubles.marcadosDoPost,
+    recusasDaViagem: dubles.recusasDaViagem,
     sincronizarMarcacoes: dubles.sincronizarMarcacoes,
   }
 })
@@ -120,6 +133,7 @@ const CHAVES_PREVIA = ["destination", "end_date", "itens", "lugares", "start_dat
 const CHAVES_ITEM_PREVIA = ["category", "date", "description", "end_time", "location", "start_time", "title"]
 const CHAVES_LUGAR_PREVIA = ["address", "category", "id", "name"]
 const CHAVES_PESSOA = ["avatar_url", "full_name", "id", "username"]
+const CHAVES_MARCAVEL = ["avatar_url", "full_name", "id", "recusou", "username"]
 const CHAVES_POST = [
   "caption",
   "cover_url",
@@ -212,6 +226,8 @@ const COPIA_ESPERADA = {
 
 const BIA_NA_RESPOSTA = { id: BIA, username: "bia", full_name: "BIA", avatar_url: URL_FOTO_BIA }
 const CAIO_NA_RESPOSTA = { id: CAIO, username: "caio", full_name: "CAIO", avatar_url: null }
+const BIA_MARCAVEL = { ...BIA_NA_RESPOSTA, recusou: false }
+const CAIO_MARCAVEL = { ...CAIO_NA_RESPOSTA, recusou: false }
 
 let log: ReturnType<typeof vi.spyOn>
 
@@ -241,6 +257,8 @@ const CORPOS_INVALIDOS: [string, unknown][] = [
     { ...CORPO_VALIDO, lugares: [{ id: LUGAR_BAR, endereco: { texto: "Rua", latitude: 1 } }] },
   ],
   ["legenda acima de 280", { ...CORPO_VALIDO, legenda: "a".repeat(281) }],
+  ["título acima de 120", { ...CORPO_VALIDO, titulo: "a".repeat(121) }],
+  ["título que não é texto", { ...CORPO_VALIDO, titulo: 42 }],
   [
     "mais de 200 lugares",
     {
@@ -326,8 +344,10 @@ describe("GET /api/social/viagens/[tripId]/post", () => {
       { id: LUGAR_BAR, name: "Bar do Largo", category: null, address: null },
     ])
 
-    for (const p of corpo.marcaveis) expect(Object.keys(p).sort()).toEqual(CHAVES_PESSOA)
-    expect(corpo.marcaveis).toEqual([BIA_NA_RESPOSTA, CAIO_NA_RESPOSTA])
+    // Sem recusas na viagem: todos com `recusou: false`; as recusas são lidas mesmo sem post.
+    for (const p of corpo.marcaveis) expect(Object.keys(p).sort()).toEqual(CHAVES_MARCAVEL)
+    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, CAIO_MARCAVEL])
+    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
 
     // Autorização com o cliente e o id da sessão, antes de ler qualquer coisa.
     expect(funcoesChamadas()[0]).toBe("exigirMembro")
@@ -371,6 +391,47 @@ describe("GET /api/social/viagens/[tripId]/post", () => {
     for (const p of corpo.post.marcados) expect(Object.keys(p).sort()).toEqual(CHAVES_PESSOA)
     expect(argumentosDe("assinarCapa")).toEqual([criarClienteAdmin, CAPA])
     expect(argumentosDe("marcadosDoPost")).toEqual([sessao(), POST_ID, criarClienteAdmin])
+    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
+    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, CAIO_MARCAVEL])
+  })
+
+  it("200 sem post (despublicado ou ainda não publicado): quem recusou na viagem já vem com recusou true", async () => {
+    estado.recusas = [CAIO]
+
+    const corpo = await ler(await pedido("GET"))
+
+    expect(corpo.post).toBeNull()
+    for (const p of corpo.marcaveis) expect(Object.keys(p).sort()).toEqual(CHAVES_MARCAVEL)
+    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, { ...CAIO_NA_RESPOSTA, recusou: true }])
+  })
+
+  it("200 com post: quem removeu a própria marca vem em marcaveis com recusou true, nas chaves exatas", async () => {
+    estado.post = postPadrao()
+    // Em maiúsculas: a comparação é em minúsculas, como os uuids do Postgres.
+    estado.recusas = [CAIO.toUpperCase()]
+
+    const corpo = await ler(await pedido("GET"))
+
+    for (const p of corpo.marcaveis) expect(Object.keys(p).sort()).toEqual(CHAVES_MARCAVEL)
+    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, { ...CAIO_NA_RESPOSTA, recusou: true }])
+  })
+
+  it("200 com título do post diferente: previa.title continua o da viagem", async () => {
+    estado.post = postPadrao({ title: "Réveillon sem a família" })
+
+    const corpo = await ler(await pedido("GET"))
+
+    expect(corpo.previa.title).toBe("Lisboa em família")
+    expect(corpo.post.title).toBe("Réveillon sem a família")
+  })
+
+  it("500 sem a mensagem crua quando a leitura das recusas falha", async () => {
+    estado.erroRecusas = new Error("[marcações do post] x", { cause: { message: "segredo do postgres" } })
+
+    const resposta = await pedido("GET")
+
+    expect(resposta.status).toBe(500)
+    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
   })
 
   it("200 com a assinatura da capa falhando: cover_url nulo, e a resposta continua", async () => {
@@ -441,6 +502,7 @@ describe("POST /api/social/viagens/[tripId]/post", () => {
       "temUsername",
       "projecaoPublicaDaViagem",
       "membrosMarcaveis",
+      "recusasDaViagem",
       "publicar",
       "sincronizarMarcacoes",
       "marcadosDoPost",
@@ -448,7 +510,43 @@ describe("POST /api/social/viagens/[tripId]/post", () => {
     expect(argumentosDe("exigirMembro")).toEqual([sessao(), TRIP, ANA])
     expect(argumentosDe("temUsername")).toEqual([sessao(), ANA])
     expect(argumentosDe("publicar")).toEqual([sessao(), { tripId: TRIP, autorId: ANA, copia: COPIA_ESPERADA }])
-    expect(argumentosDe("sincronizarMarcacoes")).toEqual([sessao(), POST_ID, ANA, [BIA], [BIA, CAIO]])
+    expect(argumentosDe("sincronizarMarcacoes")).toEqual([sessao(), POST_ID, ANA, [BIA], [BIA, CAIO], []])
+    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
+  })
+
+  it.each([
+    ["escolhido, sem os espaços das pontas", "  Réveillon em Lisboa  ", "Réveillon em Lisboa"],
+    ["com 120 caracteres, no teto", "t".repeat(120), "t".repeat(120)],
+    ["só com espaços: o da viagem", "   ", "Lisboa em família"],
+    ["vazio: o da viagem", "", "Lisboa em família"],
+    ["nulo: o da viagem", null, "Lisboa em família"],
+    ["ausente: o da viagem", undefined, "Lisboa em família"],
+  ])("201 com título %s", async (_caso, titulo, esperado) => {
+    const resposta = await pedido("POST", { ...CORPO_VALIDO, titulo })
+
+    expect(resposta.status).toBe(201)
+    expect((await ler(resposta)).post.title).toBe(esperado)
+    const { copia } = (argumentosDe("publicar") as [unknown, { copia: unknown }])[1]
+    expect(copia).toEqual({ ...COPIA_ESPERADA, title: esperado })
+  })
+
+  it("201 com texto do grupo acima dos tetos do CHECK: item longo fora, local e descrição longos omitidos", async () => {
+    const projecao = estado.projecao as unknown as { itens: Record<string, unknown>[] }
+    projecao.itens = [
+      { title: "x".repeat(121), date: "2026-12-10", location: "Belém", description: "curta" },
+      { title: "Título no teto".padEnd(120, "."), location: "l".repeat(201), description: "d".repeat(2001) },
+      { title: "No limite", location: "l".repeat(200), description: "d".repeat(2000) },
+    ]
+
+    const resposta = await pedido("POST", { ...CORPO_VALIDO, roteiro: { local: true, descricao: true } })
+
+    expect(resposta.status).toBe(201)
+    await ler(resposta)
+    const { copia } = (argumentosDe("publicar") as [unknown, { copia: { items: unknown[] } }])[1]
+    expect(copia.items).toEqual([
+      { title: "Título no teto".padEnd(120, ".") },
+      { title: "No limite", location: "l".repeat(200), description: "d".repeat(2000) },
+    ])
   })
 
   it("201 com roteiro e lugares desligados e sem legenda: post só com a viagem, sem marcas", async () => {
@@ -459,7 +557,7 @@ describe("POST /api/social/viagens/[tripId]/post", () => {
     expect(corpo.post).toMatchObject({ caption: null, items: [], places: [], marcados: [] })
     const { copia } = (argumentosDe("publicar") as [unknown, { copia: unknown }])[1]
     expect(copia).toEqual({ ...COPIA_ESPERADA, caption: null, items: [], places: [] })
-    expect(argumentosDe("sincronizarMarcacoes")).toEqual([sessao(), POST_ID, ANA, [], [BIA, CAIO]])
+    expect(argumentosDe("sincronizarMarcacoes")).toEqual([sessao(), POST_ID, ANA, [], [BIA, CAIO], []])
   })
 
   it("201 com descrição ligada e local desligado: a subchave vale para o post inteiro", async () => {
@@ -539,6 +637,44 @@ describe("POST /api/social/viagens/[tripId]/post", () => {
     })
     expect(funcoesChamadas()).not.toContain("publicar")
     expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
+  })
+
+  it.each([
+    ["só quem recusou", [CAIO]],
+    ["quem recusou junto de outro marcável", [BIA, CAIO]],
+  ])("400 marcado_recusou ao republicar marcando %s, sem gravar o post", async (_caso, marcados) => {
+    // Recusa num post desta viagem que o autor já despublicou: vale para a viagem.
+    estado.recusas = [CAIO]
+
+    const resposta = await pedido("POST", { ...CORPO_VALIDO, marcados })
+
+    expect(resposta.status).toBe(400)
+    expect(await ler(resposta)).toEqual({
+      error: "Quem removeu a própria marcação numa publicação sua desta viagem não pode ser marcado de novo",
+      codigo: "marcado_recusou",
+    })
+    expect(funcoesChamadas()).not.toContain("publicar")
+    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
+  })
+
+  it("201 com recusa na viagem marcando outros: as recusas vão para a sincronização", async () => {
+    estado.recusas = [CAIO]
+
+    const resposta = await pedido("POST", { ...CORPO_VALIDO, marcados: [BIA] })
+
+    expect(resposta.status).toBe(201)
+    await ler(resposta)
+    expect((argumentosDe("sincronizarMarcacoes") as unknown[])[5]).toEqual([CAIO])
+  })
+
+  it("500 sem a mensagem crua e sem gravar quando a leitura das recusas falha no POST", async () => {
+    estado.erroRecusas = new Error("[marcações do post] x", { cause: { message: "segredo do postgres" } })
+
+    const resposta = await pedido("POST", CORPO_VALIDO)
+
+    expect(resposta.status).toBe(500)
+    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
+    expect(funcoesChamadas()).not.toContain("publicar")
   })
 
   it("404 quando a projeção não existe, sem gravar", async () => {
@@ -640,14 +776,59 @@ describe("PATCH /api/social/viagens/[tripId]/post", () => {
       "projecaoPublicaDaViagem",
       "membrosMarcaveis",
       "marcadosDoPost",
+      "recusasDaViagem",
       "atualizar",
       "sincronizarMarcacoes",
       "marcadosDoPost",
       "assinarCapa",
     ])
     expect(argumentosDe("exigirMembro")).toEqual([sessao(), TRIP, ANA])
+    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
     expect(argumentosDe("atualizar")).toEqual([sessao(), POST_ID, COPIA_ESPERADA])
-    expect(argumentosDe("sincronizarMarcacoes")).toEqual([sessao(), POST_ID, ANA, [DORA, BIA], [BIA, CAIO, DORA, CAIO]])
+    expect(argumentosDe("sincronizarMarcacoes")).toEqual([
+      sessao(),
+      POST_ID,
+      ANA,
+      [DORA, BIA],
+      [BIA, CAIO, DORA, CAIO],
+      [],
+    ])
+  })
+
+  it("200 com título escolhido: a cópia atualizada leva o título novo", async () => {
+    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, titulo: " Fim de ano " })
+
+    expect(resposta.status).toBe(200)
+    expect((await ler(resposta)).post.title).toBe("Fim de ano")
+    expect(argumentosDe("atualizar")).toEqual([sessao(), POST_ID, { ...COPIA_ESPERADA, title: "Fim de ano" }])
+  })
+
+  it("200 marcando outros: as recusas da viagem vão para a sincronização, que as confere de novo", async () => {
+    estado.recusas = [CAIO]
+
+    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, marcados: [BIA] })
+
+    expect(resposta.status).toBe(200)
+    await ler(resposta)
+    expect((argumentosDe("sincronizarMarcacoes") as unknown[])[5]).toEqual([CAIO])
+  })
+
+  it.each([
+    ["só quem recusou", [CAIO]],
+    ["quem recusou junto de outro marcável", [BIA, CAIO]],
+  ])("400 marcado_recusou ao marcar %s, sem atualizar nem marcar", async (_caso, marcados) => {
+    estado.marcados = [pessoa(DORA, "dora")]
+    estado.recusas = [CAIO]
+
+    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, marcados })
+
+    expect(resposta.status).toBe(400)
+    expect(await ler(resposta)).toEqual({
+      error: "Quem removeu a própria marcação numa publicação sua desta viagem não pode ser marcado de novo",
+      codigo: "marcado_recusou",
+    })
+    expect(funcoesChamadas()).not.toContain("atualizar")
+    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
   })
 
   it("400 marcado_invalido ao marcar alguém novo que não é marcável, sem atualizar", async () => {
@@ -719,6 +900,140 @@ describe("PATCH /api/social/viagens/[tripId]/post", () => {
     expect(resposta.status).toBe(500)
     expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
     // No PATCH o conteúdo novo fica: não há o que desfazer.
+    expect(funcoesChamadas()).not.toContain("despublicar")
+  })
+})
+
+/**
+ * Regressão da segunda revisão de segurança (18/11, R2): os casos que davam 500
+ * ao publicar. Os de item saem do item e publicam; os da viagem são 400 com
+ * código e mensagem, sem gravar nada.
+ */
+describe.each<"POST" | "PATCH">(["POST", "PATCH"])("%s — campos fora dos CHECKs não dão 500 (R2, @RF09.7)", (metodo) => {
+  const escrita = metodo === "POST" ? "publicar" : "atualizar"
+  const sucesso = metodo === "POST" ? 201 : 200
+  /** A cópia que chegou a `publicar`/`atualizar`. */
+  const copiaGravada = () => {
+    const argumentos = argumentosDe(escrita)!
+    return (metodo === "POST" ? (argumentos[1] as { copia: unknown }).copia : argumentos[2]) as {
+      items: Record<string, string>[]
+    }
+  }
+
+  beforeEach(() => {
+    if (metodo === "PATCH") estado.post = postPadrao()
+  })
+
+  const comItem = (campos: Record<string, string>) => {
+    const projecao = estado.projecao!
+    projecao.itens = [{ ...projecao.itens[1], ...campos }]
+  }
+
+  it.each([
+    ["hora 24:00:00 no início", { start_time: "24:00:00" }, "start_time"],
+    ["hora 24:00:00 no fim", { end_time: "24:00:00" }, "end_time"],
+    ["hora com fração de segundo", { start_time: "10:00:00.5" }, "start_time"],
+    ["data 10000-01-01", { date: "10000-01-01" }, "date"],
+    ["data 0044-03-15 BC", { date: "0044-03-15 BC" }, "date"],
+    ["categoria fora da lista do CHECK", { category: "hotel" }, "category"],
+  ])(`${sucesso}: item com %s publica sem o campo`, async (_caso, campos, omitido) => {
+    comItem(campos)
+
+    const resposta = await pedido(metodo, CORPO_VALIDO)
+
+    expect(resposta.status).toBe(sucesso)
+    await ler(resposta)
+    const [item] = copiaGravada().items
+    expect(item).not.toHaveProperty(omitido)
+    expect(item.title).toBe("Museu dos Coches")
+  })
+
+  it.each([
+    [
+      "título da viagem com 130 caracteres, sem `titulo` no corpo",
+      { title: "t".repeat(130) },
+      "titulo_da_viagem_longo",
+      "O título da viagem passa de 120 caracteres: escreva um título para a publicação",
+    ],
+    [
+      "destino com 170 caracteres",
+      { destination: "d".repeat(170) },
+      "destino_da_viagem_longo",
+      "O destino da viagem passa de 160 caracteres: encurte o destino na viagem para publicar",
+    ],
+    [
+      "datas invertidas",
+      { start_date: "2026-12-17", end_date: "2026-12-10" },
+      "datas_da_viagem_invertidas",
+      "A volta da viagem está antes da ida: corrija as datas na viagem para publicar",
+    ],
+    [
+      "data da viagem 10000-01-01",
+      { end_date: "10000-01-01" },
+      "datas_da_viagem_invalidas",
+      "As datas da viagem estão fora do formato: corrija a ida e a volta na viagem para publicar",
+    ],
+  ])("400: %s — código e mensagem, sem gravar nem marcar", async (_caso, campos, codigo, mensagem) => {
+    Object.assign(estado.projecao!, campos)
+
+    const resposta = await pedido(metodo, CORPO_VALIDO)
+
+    expect(resposta.status).toBe(400)
+    expect(await ler(resposta)).toEqual({ error: mensagem, codigo })
+    expect(funcoesChamadas()).not.toContain(escrita)
+    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
+  })
+
+  it(`${sucesso}: o título da viagem com 130 caracteres publica quando o corpo traz \`titulo\``, async () => {
+    estado.projecao!.title = "t".repeat(130)
+
+    const resposta = await pedido(metodo, { ...CORPO_VALIDO, titulo: "Lisboa, enfim" })
+
+    expect(resposta.status).toBe(sucesso)
+    await ler(resposta)
+    expect((copiaGravada() as unknown as { title: string }).title).toBe("Lisboa, enfim")
+  })
+
+  it(`${sucesso}: título só com invisíveis (U+200B, U+FEFF, U+2060) vale o da viagem, e a legenda vira null (R3)`, async () => {
+    const resposta = await pedido(metodo, { ...CORPO_VALIDO, titulo: "​﻿⁠", legenda: "⁠​" })
+
+    expect(resposta.status).toBe(sucesso)
+    await ler(resposta)
+    expect(copiaGravada()).toMatchObject({ title: "Lisboa em família", caption: null })
+  })
+})
+
+/**
+ * Corrida da revisão de 18/11 (S1): a pessoa remove a própria marca entre a
+ * leitura das recusas e o INSERT. A lib transforma o 42501 em
+ * `ErroHttp(400, "marcado_recusou")` (provado em tests/lib/marcacoes.test.ts);
+ * aqui, o que a rota faz com ele.
+ */
+describe("POST e PATCH — a recusa chega só no INSERT da marca (S1, @RF09.13)", () => {
+  const corrida = () => {
+    estado.erroSincronizar = new ErroHttp(400, "marcado_recusou")
+  }
+
+  it("POST: 400 marcado_recusou, e o post recém-criado é desfeito", async () => {
+    corrida()
+
+    const resposta = await pedido("POST", CORPO_VALIDO)
+
+    expect(resposta.status).toBe(400)
+    expect((await ler(resposta)).codigo).toBe("marcado_recusou")
+    expect(funcoesChamadas()).toContain("publicar")
+    expect(funcoesChamadas().at(-1)).toBe("despublicar")
+  })
+
+  it("PATCH: 400 marcado_recusou; o conteúdo já foi atualizado (limite registrado na rota)", async () => {
+    estado.post = postPadrao()
+    corrida()
+
+    const resposta = await pedido("PATCH", CORPO_VALIDO)
+
+    expect(resposta.status).toBe(400)
+    expect((await ler(resposta)).codigo).toBe("marcado_recusou")
+    expect(funcoesChamadas()).toContain("atualizar")
     expect(funcoesChamadas()).not.toContain("despublicar")
   })
 })

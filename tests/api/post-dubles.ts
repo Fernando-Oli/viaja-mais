@@ -9,9 +9,10 @@ import type { CopiaDoPost, PostDoAutor, ProjecaoComLugares } from "@/lib/social/
  * da viagem, as funções de banco de lib/social/posts.ts e de
  * lib/social/marcacoes.ts, e as de Storage de lib/social/capa.ts.
  *
- * O `montarPost` e o `conferirMarcados` NÃO são dublados: o teste usa os
- * reais, para provar que a cópia passada ao `publicar` sai da projeção, e não
- * do corpo, e que o marcado inválido é barrado antes de gravar. As funções de
+ * O `montarPost`, o `conferirMarcados`, o `conferirRecusas` e o `comRecusas`
+ * NÃO são dublados: o teste usa os reais, para provar que a cópia passada ao
+ * `publicar` sai da projeção, e não do corpo, e que o marcado inválido e o que
+ * recusou são barrados antes de gravar. As funções de
  * banco já têm unit próprio (tests/lib/social-posts.test.ts,
  * tests/lib/marcacoes.test.ts, tests/lib/capa.test.ts) e o banco real é
  * provado em tests/rls/12-trip-posts.test.ts e 17-post-tags.test.ts; aqui
@@ -149,6 +150,9 @@ export const estado = {
   erroMarcaveis: null as unknown,
   /** As marcas gravadas do post: o que `marcadosDoPost` devolve, e o que `sincronizarMarcacoes` troca. */
   marcados: [] as PessoaMarcada[],
+  /** Quem removeu a própria marca num post da sessão nesta viagem: o que `recusasDaViagem` devolve. */
+  recusas: [] as string[],
+  erroRecusas: null as unknown,
   erroSincronizar: null as unknown,
   /** O que `publicar` devolve; nulo = devolve o post montado da cópia recebida. */
   publicado: null as PostDoAutor | null,
@@ -181,6 +185,8 @@ export function reiniciar() {
   estado.marcaveis = [pessoa(BIA, "bia", URL_FOTO_BIA), pessoa(CAIO, "caio")]
   estado.erroMarcaveis = null
   estado.marcados = []
+  estado.recusas = []
+  estado.erroRecusas = null
   estado.erroSincronizar = null
   estado.publicado = null
   estado.erroPublicar = null
@@ -301,10 +307,17 @@ export async function marcadosDoPost(supabase: unknown, postId: string, criarAdm
   return estado.marcados
 }
 
+/** `recusasDaViagem` de lib/social/marcacoes.ts. */
+export async function recusasDaViagem(supabase: unknown, tripId: string) {
+  registrar("recusasDaViagem", supabase, tripId)
+  falharSe(estado.erroRecusas)
+  return new Set(estado.recusas)
+}
+
 /**
  * `sincronizarMarcacoes` de lib/social/marcacoes.ts: troca as marcas pelas
  * pessoas pedidas (das marcáveis ou das já marcadas). Repete a conferência da
- * lib real: marcado fora dos permitidos lança o 400 sem trocar nada.
+ * lib real: marcado que recusou ou fora dos permitidos lança o 400 sem trocar nada.
  */
 export async function sincronizarMarcacoes(
   supabase: unknown,
@@ -312,10 +325,13 @@ export async function sincronizarMarcacoes(
   autorId: string,
   marcados: readonly string[],
   permitidos: Iterable<string>,
+  recusas: Iterable<string> = [],
 ) {
   const lista = [...permitidos]
-  registrar("sincronizarMarcacoes", supabase, postId, autorId, [...marcados], lista)
+  const recusados = [...recusas]
+  registrar("sincronizarMarcacoes", supabase, postId, autorId, [...marcados], lista, recusados)
   falharSe(estado.erroSincronizar)
+  if (marcados.some((id) => recusados.includes(id))) throw new ErroHttp(400, "marcado_recusou")
   if (marcados.some((id) => !lista.includes(id))) throw new ErroHttp(400, "marcado_invalido")
   const conhecidas = new Map([...estado.marcados, ...estado.marcaveis].map((p) => [p.id, p]))
   estado.marcados = marcados.flatMap((id) => conhecidas.get(id) ?? [])

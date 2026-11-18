@@ -1,13 +1,26 @@
 /**
- * @RF09.7 o post é uma cópia da projeção pública: legenda limpa, o roteiro inteiro com local e descrição
- * só se ligados, os lugares escolhidos com o endereço escolhido, e nunca notas, coordenadas, status, preço
- * nem ids; as escritas usam só as colunas do grant, sem trip_id
+ * @RF09.7 o post é uma cópia da projeção pública: o título escolhido (ou o da viagem), legenda limpa, o
+ * roteiro inteiro com local e descrição só se ligados, os lugares escolhidos com o endereço escolhido, e
+ * nunca notas, coordenadas, status, preço nem ids; texto do grupo acima dos tetos do CHECK fica fora sem
+ * derrubar a publicação; data, hora e categoria fora do formato do CHECK saem do item; campo da viagem
+ * fora dos CHECKs de trip_posts é 400 com código (ViagemForaDoPost); título e legenda só com invisíveis
+ * valem como vazios; as escritas usam só as colunas do grant, sem trip_id
  */
 import { describe, it, expect } from "vitest"
 import type { ItemPublico } from "@/lib/trips/publico"
 import type { PedidoPost } from "@/lib/schemas/post"
 import { ErroHttp } from "@/lib/http"
 import {
+  CATEGORIAS_DO_ITEM,
+  FORMATO_DATA_ITEM,
+  FORMATO_HORA_ITEM,
+  MAXIMO_DESCRICAO_ITEM,
+  MAXIMO_DESTINO_VIAGEM,
+  MAXIMO_ITENS_POST,
+  MAXIMO_LOCAL_ITEM,
+  MAXIMO_TITULO_ITEM,
+  MAXIMO_TITULO_VIAGEM,
+  ViagemForaDoPost,
   atualizar,
   definirCapa,
   despublicar,
@@ -127,6 +140,233 @@ describe("montarPost — a viagem e a legenda", () => {
     ["com espaços nas pontas", "  Que viagem!  ", "Que viagem!"],
   ])("legenda %s", (_caso, legenda, esperada) => {
     expect(montarPost(projecao(), { ...DESLIGADO, legenda }).caption).toBe(esperada)
+  })
+})
+
+describe("montarPost — o título", () => {
+  it.each([
+    ["ausente", undefined, "Chapada"],
+    ["nulo", null, "Chapada"],
+    ["vazio", "", "Chapada"],
+    ["só espaços", "   ", "Chapada"],
+    ["escolhido", "Fim de ano no cerrado", "Fim de ano no cerrado"],
+    ["escolhido com espaços nas pontas", "  Fim de ano  ", "Fim de ano"],
+    ["escolhido no teto de 120", "t".repeat(120), "t".repeat(120)],
+    // O schema já recusa; se chegar mesmo assim, o CHECK recusaria: vale o da viagem.
+    ["acima do teto", "t".repeat(121), "Chapada"],
+  ])("título %s", (_caso, titulo, esperado) => {
+    expect(montarPost(projecao(), { ...DESLIGADO, titulo }).title).toBe(esperado)
+  })
+})
+
+describe("montarPost — título e legenda só com invisíveis (R3, defesa sem o zod)", () => {
+  it.each([
+    ["U+200B", "​"],
+    ["U+FEFF", "﻿"],
+    ["U+2060", "⁠"],
+    ["os três com espaços", " ​﻿ ⁠ "],
+  ])("%s: o título cai no da viagem e a legenda vira null", (_caso, invisivel) => {
+    const post = montarPost(projecao(), { ...DESLIGADO, titulo: invisivel, legenda: invisivel })
+    expect(post.title).toBe("Chapada")
+    expect(post.caption).toBeNull()
+  })
+
+  it("invisíveis nas pontas saem do título e da legenda escolhidos", () => {
+    const post = montarPost(projecao(), { ...DESLIGADO, titulo: "​Fim de ano⁠", legenda: "﻿Que viagem!​" })
+    expect(post.title).toBe("Fim de ano")
+    expect(post.caption).toBe("Que viagem!")
+  })
+})
+
+describe("montarPost — campos da viagem fora dos CHECKs de trip_posts (R2): 400 com código, não 500", () => {
+  const comViagem = (campos: Partial<ProjecaoComLugares>) => ({ ...projecao(), ...campos })
+
+  function recusa(campos: Partial<ProjecaoComLugares>, titulo?: string | null) {
+    const erro = (() => {
+      try {
+        montarPost(comViagem(campos), { ...DESLIGADO, titulo })
+        return null
+      } catch (e) {
+        return e
+      }
+    })()
+    expect(erro).toBeInstanceOf(ViagemForaDoPost)
+    expect(erro).toBeInstanceOf(ErroHttp)
+    expect((erro as ViagemForaDoPost).status).toBe(400)
+    return erro as ViagemForaDoPost
+  }
+
+  it("espelha os tetos dos CHECKs: título 120, destino 160", () => {
+    expect([MAXIMO_TITULO_VIAGEM, MAXIMO_DESTINO_VIAGEM]).toEqual([120, 160])
+  })
+
+  it("título da viagem com 130 caracteres e sem `titulo` no corpo: titulo_da_viagem_longo", () => {
+    const erro = recusa({ title: "t".repeat(130) })
+    expect(erro.codigo).toBe("titulo_da_viagem_longo")
+    expect(erro.message).toBe("O título da viagem passa de 120 caracteres: escreva um título para a publicação")
+  })
+
+  it("o mesmo título longo com `titulo` escolhido publica: o da viagem não é usado", () => {
+    expect(montarPost(comViagem({ title: "t".repeat(130) }), { ...DESLIGADO, titulo: "Meu título" }).title).toBe(
+      "Meu título",
+    )
+  })
+
+  it("título da viagem no teto (120, e 120 emojis) passa; vazio é titulo_da_viagem_vazio", () => {
+    expect(montarPost(comViagem({ title: "t".repeat(120) }), DESLIGADO).title).toBe("t".repeat(120))
+    expect(montarPost(comViagem({ title: "🌄".repeat(120) }), DESLIGADO).title).toBe("🌄".repeat(120))
+    expect(recusa({ title: "   " }).codigo).toBe("titulo_da_viagem_vazio")
+  })
+
+  it("destino com 170 caracteres: destino_da_viagem_longo, mesmo com `titulo` escolhido", () => {
+    const erro = recusa({ destination: "d".repeat(170) }, "Meu título")
+    expect(erro.codigo).toBe("destino_da_viagem_longo")
+    expect(erro.message).toContain("160 caracteres")
+  })
+
+  it("destino no teto (160) passa, sem os espaços das pontas; vazio é destino_da_viagem_vazio", () => {
+    expect(montarPost(comViagem({ destination: ` ${"d".repeat(160)} ` }), DESLIGADO).destination).toBe("d".repeat(160))
+    expect(recusa({ destination: "" }).codigo).toBe("destino_da_viagem_vazio")
+  })
+
+  it("datas invertidas (volta antes da ida): datas_da_viagem_invertidas", () => {
+    const erro = recusa({ start_date: "2026-12-05", end_date: "2026-12-01" })
+    expect(erro.codigo).toBe("datas_da_viagem_invertidas")
+    expect(erro.message).toContain("antes da ida")
+  })
+
+  it("ida e volta no mesmo dia passa", () => {
+    const post = montarPost(comViagem({ start_date: "2026-12-01", end_date: "2026-12-01" }), DESLIGADO)
+    expect([post.start_date, post.end_date]).toEqual(["2026-12-01", "2026-12-01"])
+  })
+
+  it.each([
+    ["ano 10000 na ida", { start_date: "10000-01-01" }],
+    ["antes de Cristo na ida", { start_date: "0044-03-15 BC" }],
+    ["ano 10000 na volta", { end_date: "10000-01-01" }],
+    ["volta vazia", { end_date: "" }],
+  ])("data da viagem fora do formato (%s): datas_da_viagem_invalidas", (_caso, campos) => {
+    expect(recusa(campos).codigo).toBe("datas_da_viagem_invalidas")
+  })
+})
+
+describe("montarPost — formato de data, hora e categoria do item (R2): o campo sai, o item fica", () => {
+  it("as regex são as do CHECK social_itens_do_post_validos", () => {
+    expect(FORMATO_DATA_ITEM.source).toBe("^\\d{4}-\\d{2}-\\d{2}$")
+    expect(FORMATO_HORA_ITEM.source).toBe("^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$")
+    expect([...CATEGORIAS_DO_ITEM].sort()).toEqual(
+      ["accommodation", "activity", "attraction", "other", "restaurant", "transport"],
+    )
+  })
+
+  it.each([
+    ["24:00:00 (o `time` do Postgres aceita)", "24:00:00"],
+    ["24:00", "24:00"],
+    ["fração de segundo", "08:00:00.5"],
+    ["fração de segundo com microssegundos", "23:59:59.999999"],
+    ["minuto 60", "08:60"],
+    ["sem zero à esquerda", "8:00"],
+    ["com fuso", "08:00:00+03"],
+  ])("hora fora do formato (%s) é omitida, no início e no fim", (_caso, hora) => {
+    const [item] = montarPost(projecao([{ ...trilha, start_time: hora, end_time: hora }]), SO_ROTEIRO).items
+    expect(item).toStrictEqual({ title: "Trilha", date: "2026-12-02", category: "activity" })
+  })
+
+  it.each([
+    ["00:00", "00:00"],
+    ["23:59:59", "23:59:59"],
+    ["08:05:00 (como o Postgres devolve)", "08:05:00"],
+  ])("hora no formato (%s) entra", (_caso, hora) => {
+    const [item] = montarPost(projecao([{ ...trilha, start_time: hora, end_time: null }]), SO_ROTEIRO).items
+    expect(item.start_time).toBe(hora)
+  })
+
+  it.each([
+    ["ano 10000", "10000-01-01"],
+    ["antes de Cristo", "0044-03-15 BC"],
+    ["com hora", "2026-12-02T10:00:00"],
+    ["com barras", "02/12/2026"],
+  ])("data do item fora do formato (%s) é omitida", (_caso, data) => {
+    const [item] = montarPost(projecao([{ ...trilha, date: data }]), SO_ROTEIRO).items
+    expect(item).toStrictEqual({ title: "Trilha", start_time: "08:00", end_time: "12:00", category: "activity" })
+  })
+
+  it.each([["viewpoint"], ["Activity"], ["hotel"]])("categoria fora da lista do CHECK (%s) é omitida", (categoria) => {
+    const [item] = montarPost(projecao([{ ...trilha, category: categoria }]), SO_ROTEIRO).items
+    expect(item).not.toHaveProperty("category")
+    expect(item.title).toBe("Trilha")
+  })
+
+  it("todas as categorias da lista entram", () => {
+    const itens = [...CATEGORIAS_DO_ITEM].map((category) => ({ ...trilha, category }))
+    expect(montarPost(projecao(itens), SO_ROTEIRO).items.map((i) => i.category)).toEqual([...CATEGORIAS_DO_ITEM])
+  })
+})
+
+describe("montarPost — tetos do CHECK de itens (S1)", () => {
+  it("espelha os tetos de social_itens_do_post_validos", () => {
+    expect([MAXIMO_TITULO_ITEM, MAXIMO_LOCAL_ITEM, MAXIMO_DESCRICAO_ITEM]).toEqual([120, 200, 2000])
+  })
+
+  it("item com título acima de 120 fica fora da cópia; no teto, entra", () => {
+    const longo: ItemPublico = { ...trilha, title: "x".repeat(MAXIMO_TITULO_ITEM + 1) }
+    const noTeto: ItemPublico = { ...jantar, title: "j".repeat(MAXIMO_TITULO_ITEM) }
+    const items = montarPost(projecao([longo, noTeto, pousada]), SO_ROTEIRO).items
+    expect(items.map((i) => i.title)).toEqual(["j".repeat(MAXIMO_TITULO_ITEM), "Pousada"])
+  })
+
+  it("no máximo 200 itens, os primeiros na ordem da projeção (o CHECK recusa mais)", () => {
+    expect(MAXIMO_ITENS_POST).toBe(200)
+    const muitos: ItemPublico[] = Array.from({ length: MAXIMO_ITENS_POST + 5 }, (_, i) => ({
+      ...pousada,
+      id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
+      title: `Item ${i}`,
+    }))
+    const items = montarPost(projecao(muitos), SO_ROTEIRO).items
+    expect(items).toHaveLength(MAXIMO_ITENS_POST)
+    expect(items[0].title).toBe("Item 0")
+    expect(items.at(-1)!.title).toBe(`Item ${MAXIMO_ITENS_POST - 1}`)
+  })
+
+  it("o teto de 200 conta só os itens que entram (título longo não ocupa vaga)", () => {
+    const longo: ItemPublico = { ...trilha, title: "x".repeat(MAXIMO_TITULO_ITEM + 1) }
+    const validos: ItemPublico[] = Array.from({ length: MAXIMO_ITENS_POST }, (_, i) => ({ ...pousada, title: `V${i}` }))
+    const items = montarPost(projecao([longo, ...validos]), SO_ROTEIRO).items
+    expect(items).toHaveLength(MAXIMO_ITENS_POST)
+    expect(items[0].title).toBe("V0")
+  })
+
+  it("o teto do título vale depois do trim e em caracteres (emojis contam 1)", () => {
+    const comEspacos: ItemPublico = { ...trilha, title: `  ${"x".repeat(MAXIMO_TITULO_ITEM)}  ` }
+    const emojis: ItemPublico = { ...jantar, title: "🌄".repeat(MAXIMO_TITULO_ITEM) }
+    expect(montarPost(projecao([comEspacos, emojis]), SO_ROTEIRO).items).toHaveLength(2)
+  })
+
+  it("local acima de 200 e descrição acima de 2000 são omitidos; o item fica", () => {
+    const longo: ItemPublico = {
+      ...trilha,
+      location: "l".repeat(MAXIMO_LOCAL_ITEM + 1),
+      description: "d".repeat(MAXIMO_DESCRICAO_ITEM + 1),
+    }
+    const [item] = montarPost(projecao([longo]), ROTEIRO_TODO).items
+    expect(item).toStrictEqual({
+      title: "Trilha",
+      date: "2026-12-02",
+      start_time: "08:00",
+      end_time: "12:00",
+      category: "activity",
+    })
+  })
+
+  it("local com 200 e descrição com 2000 entram inteiros", () => {
+    const noTeto: ItemPublico = {
+      ...trilha,
+      location: "l".repeat(MAXIMO_LOCAL_ITEM),
+      description: "d".repeat(MAXIMO_DESCRICAO_ITEM),
+    }
+    const [item] = montarPost(projecao([noTeto]), ROTEIRO_TODO).items
+    expect(item.location).toBe("l".repeat(MAXIMO_LOCAL_ITEM))
+    expect(item.description).toBe("d".repeat(MAXIMO_DESCRICAO_ITEM))
   })
 })
 
@@ -544,6 +784,24 @@ describe("postDaViagem", () => {
     const { cliente } = clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: gravado, error: null }] })
     const post = await postDaViagem(cliente, VIAGEM)
     expect(post!.items).toStrictEqual([{ title: "Trilha", date: "2026-12-02" }])
+  })
+
+  it("o items gravado passa pela mesma conferência de formato (R2): só volta o que o CHECK aceita", async () => {
+    const gravado = {
+      ...LINHA,
+      items: [{ title: "Trilha", date: "0044-03-15 BC", start_time: "24:00:00", end_time: "10:00", category: "hotel" }],
+    }
+    const { cliente } = clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: gravado, error: null }] })
+    const post = await postDaViagem(cliente, VIAGEM)
+    expect(post!.items).toStrictEqual([{ title: "Trilha", end_time: "10:00" }])
+  })
+
+  it("caption gravada só com invisíveis volta null (R3)", async () => {
+    const { cliente } = clienteFalso({
+      rpc: { data: POST, error: null },
+      respostas: [{ data: { ...LINHA, caption: "​﻿⁠" }, error: null }],
+    })
+    expect((await postDaViagem(cliente, VIAGEM))!.caption).toBeNull()
   })
 
   it("items e places que não são lista viram lista vazia", async () => {

@@ -17,6 +17,18 @@ import { assinarAvatares, type ClienteDeServico } from "./avatar"
  * **Quem está marcado** vem de `post_tags` (migration 20261116234030), também
  * com a sessão: o autor vê as marcas do próprio post.
  *
+ * **Quem recusou** (decisões de 18/11): quem removeu a própria marca do post de
+ * um autor não pode ser marcado de novo por esse autor **naquela viagem**. A
+ * recusa vale para a viagem e o autor, e não para o post: sobrevive a
+ * despublicar e publicar de novo. O banco grava a recusa em `post_tag_recusas`
+ * (trigger da migration 20261116234030), que o autor não lê direto (o
+ * `trip_id` não é legível): ele pergunta à função `social_recusas_da_viagem`
+ * (`recusasDaViagem`), que responde só sobre a sessão e funciona antes do
+ * primeiro POST. A tela mostra a pessoa desabilitada (`recusou: true` em
+ * `comRecusas`), e marcá-la é 400 `marcado_recusou` (`conferirRecusas`) antes
+ * de gravar qualquer coisa; a função `social_pode_marcar` recusa o mesmo no
+ * banco (42501), como segunda linha.
+ *
  * As fotos saem assinadas como em todo o domínio social
  * (`assinarAvatares`, lib/social/avatar.ts): a rota passa a fábrica do cliente
  * de serviço, e este módulo não cria cliente nem lê variável de ambiente. A
@@ -27,10 +39,11 @@ import { assinarAvatares, type ClienteDeServico } from "./avatar"
  * INSERT de `post_tags` (`social_pode_marcar`) é a segunda linha, depois da
  * conferência contra os permitidos, que é da rota e repetida aqui.
  *
- * Erro do banco nunca sai cru: 42501 vira 403, 23505 vira 409, e o resto lança
+ * Erro do banco nunca sai cru: 42501 vira 403 (no INSERT da marca, 400
+ * `marcado_recusou`: ver `sincronizarMarcacoes`), 23505 vira 409, e o resto lança
  * um `Error` com o original em `cause`, que `respostaDeErro` torna o 500 genérico.
  *
- * @RF09.13 marcar no post os membros da viagem que têm username
+ * @RF09.13 marcar no post os membros da viagem que têm username, menos quem recusou
  */
 
 type ClienteDaSessao = Pick<SupabaseClient, "from" | "rpc">
@@ -44,10 +57,15 @@ export type PessoaMarcada = {
   avatar_url: string | null
 }
 
+/** Uma pessoa na lista de marcáveis: `recusou` quando ela removeu a própria marca deste post. */
+export type PessoaMarcavel = PessoaMarcada & { recusou: boolean }
+
 type PerfilLido = { id: string; username: string | null; full_name: string | null; avatar_url: string | null }
 
 /** O código que a rota devolve quando um marcado não pode ser marcado. */
 export const MARCADO_INVALIDO = "marcado_invalido"
+/** O código que a rota devolve quando um marcado removeu a própria marca deste post. */
+export const MARCADO_RECUSOU = "marcado_recusou"
 
 const COLUNAS_PERFIL = "id, username, full_name, avatar_url"
 const SEM_PRIVILEGIO = "42501"
@@ -136,9 +154,44 @@ export function conferirMarcados(marcados: readonly string[], permitidos: Iterab
 }
 
 /**
+ * Quem removeu a própria marca de um post da sessão nesta viagem, em
+ * minúsculas. Pergunta à função `social_recusas_da_viagem` (SECURITY DEFINER,
+ * só sobre `auth.uid()` como autor): a sessão não lê `post_tag_recusas` direto.
+ * Responde também antes do primeiro POST, e depois de despublicar.
+ */
+export async function recusasDaViagem(supabase: ClienteDaSessao, tripId: string): Promise<Set<string>> {
+  const { data, error } = await supabase.rpc("social_recusas_da_viagem", { viagem: tripId })
+  if (error) throw erroDoBanco(error, "ler quem removeu a marcação")
+  const ids: unknown[] = Array.isArray(data) ? data : []
+  return new Set(ids.flatMap((id) => (typeof id === "string" ? [id.toLowerCase()] : [])))
+}
+
+/** Os marcáveis com `recusou`, campo a campo. */
+export function comRecusas(marcaveis: readonly PessoaMarcada[], recusas: ReadonlySet<string>): PessoaMarcavel[] {
+  return marcaveis.map((pessoa) => ({
+    id: pessoa.id,
+    username: pessoa.username,
+    full_name: pessoa.full_name,
+    avatar_url: pessoa.avatar_url,
+    recusou: recusas.has(pessoa.id.toLowerCase()),
+  }))
+}
+
+/**
+ * Lança `ErroHttp(400, "marcado_recusou")` se algum marcado removeu a própria
+ * marca deste post. Compara em minúsculas. Pura: a rota a chama antes de gravar
+ * o post, e `sincronizarMarcacoes` repete.
+ */
+export function conferirRecusas(marcados: readonly string[], recusas: Iterable<string>): void {
+  const recusados = new Set(Array.from(recusas, (id) => id.toLowerCase()))
+  if (marcados.some((id) => recusados.has(id.toLowerCase()))) throw new ErroHttp(400, MARCADO_RECUSOU)
+}
+
+/**
  * Deixa as marcas do post iguais a `marcados`: insere as novas e apaga as que
  * saíram; as que ficam não são tocadas (mantêm a data). Confere todos os
- * marcados contra `permitidos` antes de escrever qualquer coisa.
+ * marcados contra `permitidos` e contra `recusas` antes de escrever qualquer
+ * coisa.
  *
  * `permitidos` é de quem chama: ao publicar, os marcáveis; ao atualizar, os
  * marcáveis mais os já marcados, para quem saiu da viagem continuar marcado até
@@ -154,7 +207,9 @@ export async function sincronizarMarcacoes(
   autorId: string,
   marcados: readonly string[],
   permitidos: Iterable<string>,
+  recusas: Iterable<string> = [],
 ): Promise<void> {
+  conferirRecusas(marcados, recusas)
   conferirMarcados(marcados, permitidos)
   const desejados = new Set(marcados.map((id) => id.toLowerCase()))
 
@@ -169,6 +224,18 @@ export async function sincronizarMarcacoes(
     const insercao = await supabase
       .from("post_tags")
       .insert(novos.map((id) => ({ post_id: postId, tagged_id: id, author_id: autorId })))
+    // Corrida (revisão de 18/11, S1): a pessoa removeu a própria marca entre a
+    // leitura das recusas (`recusasDaViagem`, na rota) e este INSERT. A
+    // `social_pode_marcar` recusa (42501), e a resposta é a mesma de quando a
+    // rota pega a recusa antes: 400 `marcado_recusou`, e não um 403 genérico,
+    // que a tela mostraria como "sem permissão" para quem é o autor.
+    //
+    // O 42501 aqui também cobre outras corridas do mesmo instante (o marcado
+    // saiu da viagem ou apagou o username entre a leitura e o INSERT). Elas
+    // recebem a mesma resposta: em todas, a pessoa deixou de ser marcável e o
+    // autor tira a marca e tenta de novo. O INSERT é um comando só, então
+    // nenhuma marca do lote entra, e nenhuma sai (a remoção vem depois).
+    if (insercao.error?.code === SEM_PRIVILEGIO) throw new ErroHttp(400, MARCADO_RECUSOU)
     if (insercao.error) throw erroDoBanco(insercao.error, "marcar quem viajou com você")
   }
 

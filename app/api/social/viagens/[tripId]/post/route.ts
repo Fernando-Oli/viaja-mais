@@ -9,11 +9,16 @@ import { SEM_CACHE_COMPARTILHADO } from "@/lib/social/avatar"
 import { assinarCapa, removerCapa } from "@/lib/social/capa"
 import {
   MARCADO_INVALIDO,
+  MARCADO_RECUSOU,
+  comRecusas,
   conferirMarcados,
+  conferirRecusas,
   marcadosDoPost,
   membrosMarcaveis,
+  recusasDaViagem,
   sincronizarMarcacoes,
   type PessoaMarcada,
+  type PessoaMarcavel,
 } from "@/lib/social/marcacoes"
 import { temUsername } from "@/lib/social/perfil-visto"
 import {
@@ -23,6 +28,7 @@ import {
   montarPost,
   postDaViagem,
   publicar,
+  ViagemForaDoPost,
   type ItemDoPost,
   type LugarDoPost,
   type PostDoAutor,
@@ -45,9 +51,10 @@ import { projecaoPublicaDaViagem } from "@/lib/trips/publico"
  * - **Só publica quem tem username**, porque o post vive em `/u/<username>`:
  *   403 com `codigo: "sem_username"`, como no seguir (S05-M-listas). A policy de
  *   INSERT de `trip_posts` recusa o mesmo no banco.
- * - **O post é uma cópia montada no servidor.** O corpo escolhe a legenda, se o
- *   roteiro e os lugares entram (e como), e quem é marcado; título, destino,
- *   datas, itens e lugares saem da projeção pública da viagem
+ * - **O post é uma cópia montada no servidor.** O corpo escolhe o título, a
+ *   legenda, se o roteiro e os lugares entram (e como), e quem é marcado;
+ *   destino, datas, itens, lugares e o título padrão saem da projeção pública
+ *   da viagem
  *   (`projecaoPublicaDaViagem`, lib/trips/publico.ts, domínio da Audrey). Esta
  *   rota não lê `trips`, `itinerary_items`, `places` nem `trip_members`: a
  *   projeção e a função `social_membros_marcaveis` são as únicas janelas.
@@ -56,6 +63,20 @@ import { projecaoPublicaDaViagem } from "@/lib/trips/publico"
  *   `codigo: "marcado_invalido"`, **antes de gravar** o post. Ao atualizar,
  *   quem já estava marcado e saiu da viagem continua aceito: a marca é dele
  *   para remover (decisão de 16/11). A policy de `post_tags` é a segunda linha.
+ * - **Quem removeu a própria marca não volta a ser marcado** por este autor
+ *   nesta viagem (decisões de 18/11): a recusa vale para a viagem e o autor, e
+ *   sobrevive a despublicar e publicar de novo. No GET, com ou sem post, a
+ *   pessoa vem em `marcaveis` com `recusou: true`; marcá-la no POST ou no PATCH
+ *   é 400 com `codigo: "marcado_recusou"`, antes de gravar o post.
+ *   `social_pode_marcar` recusa o mesmo no banco.
+ * - **O título** é o escolhido no corpo ou, sem ele, o da viagem. A prévia
+ *   (`previa.title`) leva sempre o da viagem, para a tela preencher o campo.
+ * - **Campo da viagem que o post não aceita** (título da viagem acima de 120
+ *   sem um título escolhido, destino acima de 160, datas fora do formato ou
+ *   invertidas): 400 com `codigo` (`titulo_da_viagem_longo`,
+ *   `destino_da_viagem_longo`, `datas_da_viagem_invertidas`...) e uma mensagem
+ *   que diz o que corrigir, antes de gravar. Data, hora ou categoria de um item
+ *   fora do formato do CHECK não param nada: o campo sai do item.
  * - **Quem saiu da viagem** não vê a prévia nem atualiza (o `exigirMembro`
  *   recusa, e a policy de UPDATE também), mas **despublica**: o post é dele, e
  *   a policy de DELETE só exige ser o autor. Por isso o DELETE não chama
@@ -100,7 +121,7 @@ import { projecaoPublicaDaViagem } from "@/lib/trips/publico"
  * de `papelNaViagem`, que carrega a mensagem do Postgres.
  *
  * @RF09.7 publicar viagem expondo só título, destino, datas, legenda, capa, roteiro e lugares
- * @RF09.13 marcar quem viajou junto
+ * @RF09.13 marcar quem viajou junto, menos quem removeu a própria marca
  * @RNF02.11 erro do banco não vaza
  */
 
@@ -138,6 +159,18 @@ function respostaDaFalha(erro: unknown): NextResponse {
   if (erro instanceof ErroHttp && erro.status === 400 && erro.message === MARCADO_INVALIDO) {
     return NextResponse.json(
       { error: "Só dá para marcar quem viajou com você e tem nome de usuário", codigo: MARCADO_INVALIDO },
+      { status: 400 },
+    )
+  }
+  // Título da viagem (sem o do autor), destino ou datas fora dos CHECKs de
+  // `trip_posts`: 400 com a mensagem e o código de `montarPost`, e não o 500 do
+  // CHECK. A tela mostra a mensagem (o que corrigir).
+  if (erro instanceof ViagemForaDoPost) {
+    return NextResponse.json({ error: erro.message, codigo: erro.codigo }, { status: 400 })
+  }
+  if (erro instanceof ErroHttp && erro.status === 400 && erro.message === MARCADO_RECUSOU) {
+    return NextResponse.json(
+      { error: "Quem removeu a própria marcação numa publicação sua desta viagem não pode ser marcado de novo", codigo: MARCADO_RECUSOU },
       { status: 400 },
     )
   }
@@ -189,6 +222,11 @@ function previaDaResposta(projecao: ProjecaoComLugares) {
 /** Uma pessoa marcável ou marcada, campo a campo. */
 function pessoaDaResposta(pessoa: PessoaMarcada): PessoaMarcada {
   return { id: pessoa.id, username: pessoa.username, full_name: pessoa.full_name, avatar_url: pessoa.avatar_url }
+}
+
+/** Uma pessoa marcável, campo a campo, com `recusou`. */
+function marcavelDaResposta(pessoa: PessoaMarcavel): PessoaMarcavel {
+  return { ...pessoaDaResposta(pessoa), recusou: pessoa.recusou }
 }
 
 /** Um item gravado, campo a campo. Campo ausente fica ausente (o JSON omite `undefined`). */
@@ -247,16 +285,18 @@ export async function GET(_request: Request, contexto: Contexto): Promise<NextRe
     if (!tripId) return viagemInvalida()
     await exigirMembro(supabase, tripId, user.id)
 
-    const [projecao, marcaveis, post] = await Promise.all([
+    // As recusas valem para a viagem: são lidas com ou sem post.
+    const [projecao, marcaveis, recusas, post] = await Promise.all([
       projecaoOu404(supabase, tripId),
       membrosMarcaveis(supabase, tripId, criarClienteAdmin),
+      recusasDaViagem(supabase, tripId),
       postDaViagem(supabase, tripId),
     ])
     const marcados = post ? await marcadosDoPost(supabase, post.id, criarClienteAdmin) : []
 
     return NextResponse.json({
       previa: previaDaResposta(projecao),
-      marcaveis: marcaveis.map(pessoaDaResposta),
+      marcaveis: comRecusas(marcaveis, recusas).map(marcavelDaResposta),
       post: post ? await postDaResposta(post, marcados) : null,
     })
   })
@@ -277,22 +317,25 @@ export async function POST(request: Request, contexto: Contexto): Promise<NextRe
 
     const analise = await lerPedido(request)
     if (!analise.success) return respostaInvalida(analise.error.flatten())
-    const { legenda, roteiro, lugares, marcados } = analise.data
+    const { titulo, legenda, roteiro, lugares, marcados } = analise.data
 
-    const [projecao, marcaveis] = await Promise.all([
+    const [projecao, marcaveis, recusas] = await Promise.all([
       projecaoOu404(supabase, tripId),
       membrosMarcaveis(supabase, tripId, criarClienteAdmin),
+      recusasDaViagem(supabase, tripId),
     ])
-    // Antes de gravar: um marcado inválido não deixa post publicado pela metade.
+    // Antes de gravar: quem recusou (inclusive num post despublicado desta
+    // viagem) ou um marcado inválido não deixa post publicado pela metade.
+    conferirRecusas(marcados, recusas)
     const permitidos = idsDe(marcaveis)
     conferirMarcados(marcados, permitidos)
 
-    // A cópia sai só da projeção: o corpo escolhe, e só escreve a legenda e o endereço digitado.
-    const copia = montarPost(projecao, { legenda, roteiro, lugares })
+    // A cópia sai só da projeção: o corpo escolhe, e só escreve o título, a legenda e o endereço digitado.
+    const copia = montarPost(projecao, { titulo, legenda, roteiro, lugares })
     const post = await publicar(supabase, { tripId, autorId: user.id, copia })
 
     try {
-      await sincronizarMarcacoes(supabase, post.id, user.id, marcados, permitidos)
+      await sincronizarMarcacoes(supabase, post.id, user.id, marcados, permitidos, recusas)
     } catch (erro) {
       // Sem as marcas, desfaz a publicação: tentar de novo não pode esbarrar no 409.
       await despublicar(supabase, post.id).catch((falha: unknown) =>
@@ -315,26 +358,41 @@ export async function PATCH(request: Request, contexto: Contexto): Promise<NextR
 
     const analise = await lerPedido(request)
     if (!analise.success) return respostaInvalida(analise.error.flatten())
-    const { legenda, roteiro, lugares, marcados } = analise.data
+    const { titulo, legenda, roteiro, lugares, marcados } = analise.data
 
     const atual = await postDaViagem(supabase, tripId)
     if (!atual) throw new ErroHttp(404, "Publicação não encontrada")
 
-    const [projecao, marcaveis, jaMarcados] = await Promise.all([
+    const [projecao, marcaveis, jaMarcados, recusas] = await Promise.all([
       projecaoOu404(supabase, tripId),
       membrosMarcaveis(supabase, tripId, criarClienteAdmin),
       marcadosDoPost(supabase, atual.id, criarClienteAdmin),
+      recusasDaViagem(supabase, tripId),
     ])
+    // Antes de gravar o conteúdo: quem removeu a própria marca não volta, e nada muda no post.
+    conferirRecusas(marcados, recusas)
     // Quem já estava marcado e saiu da viagem pode continuar marcado; ninguém novo de fora entra.
     const permitidos = [...idsDe(marcaveis), ...idsDe(jaMarcados)]
     conferirMarcados(marcados, permitidos)
 
-    const copia = montarPost(projecao, { legenda, roteiro, lugares })
+    const copia = montarPost(projecao, { titulo, legenda, roteiro, lugares })
     const post = await atualizar(supabase, atual.id, copia)
     // Sumiu entre a leitura e a escrita (despublicado em outra aba).
     if (!post) throw new ErroHttp(404, "Publicação não encontrada")
 
-    await sincronizarMarcacoes(supabase, post.id, user.id, marcados, permitidos)
+    // Limite aceito (revisão de 18/11, S1): se o marcado remover a própria
+    // marca entre `recusasDaViagem` (acima) e o INSERT da marca, o banco recusa
+    // e a resposta é 400 `marcado_recusou` — mas o conteúdo novo já foi gravado.
+    // As recusas já são conferidas antes de `atualizar`; o que sobra é a janela
+    // entre as duas escritas. Sincronizar as marcas ANTES do conteúdo não fecha
+    // o problema, só o troca de lugar: o post despublicado em outra aba viraria
+    // um "marcado_recusou" em vez de 404, e um conteúdo recusado depois (o autor
+    // saiu da viagem) deixaria as marcas trocadas com o conteúdo antigo. Fechar
+    // de vez pede as duas escritas numa transação, uma função no banco
+    // (migration, Fernando). O estado que sobra é coerente: o conteúdo é o que o
+    // autor pediu, as marcas são as de antes, e repetir o PATCH sem a pessoa
+    // completa. No POST não há meio-termo: o post recém-criado é desfeito.
+    await sincronizarMarcacoes(supabase, post.id, user.id, marcados, permitidos, recusas)
 
     const marcadosGravados = await marcadosDoPost(supabase, post.id, criarClienteAdmin)
     return NextResponse.json({ post: await postDaResposta(post, marcadosGravados) })

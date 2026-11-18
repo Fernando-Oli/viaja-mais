@@ -1,6 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { ErroHttp } from "@/lib/http"
-import type { EnderecoDoLugar, EscolhaDoRoteiro, PedidoPost } from "@/lib/schemas/post"
+import {
+  MAXIMO_TITULO,
+  caracteres,
+  limparTextoLivre,
+  type EnderecoDoLugar,
+  type EscolhaDoRoteiro,
+  type PedidoPost,
+} from "@/lib/schemas/post"
 import type { ViagemPublica } from "@/lib/trips/publico"
 
 /**
@@ -8,8 +15,8 @@ import type { ViagemPublica } from "@/lib/trips/publico"
  * perfil, e ler, gravar, atualizar e apagar o post da sessão.
  *
  * **O post é uma cópia, não uma janela ao vivo.** Ao publicar, ele guarda
- * título, destino, datas, a legenda, o roteiro e os lugares escolhidos, tirados
- * da projeção pública da viagem (`projecaoPublicaDaViagem`, lib/trips/publico.ts,
+ * o título (o que o autor escolheu, ou o da viagem), destino, datas, a legenda,
+ * o roteiro e os lugares escolhidos, tirados da projeção pública da viagem (`projecaoPublicaDaViagem`, lib/trips/publico.ts,
  * domínio da Audrey). Editar a viagem depois não muda o post; "Atualizar
  * publicação" copia de novo. Assim o que sai do grupo é só o que o autor viu na
  * prévia e confirmou, e o feed não precisa ler `trips`, `itinerary_items` nem
@@ -25,6 +32,17 @@ import type { ViagemPublica } from "@/lib/trips/publico"
  * - **lugares salvos**: nome e categoria, e o endereço que o autor escolheu por
  *   lugar (nenhum, o do Google ou um digitado);
  * - **notas, coordenadas, preço, status, rating e ids nunca**;
+ * - **o título é editável** (decisão de 18/11): sem título escolhido, vale o da
+ *   viagem. O sistema não revela nem prova quem viajou junto; que dois posts
+ *   com o mesmo conteúdo deixem deduzir isso é risco aceito;
+ * - **texto do grupo acima dos tetos do CHECK não derruba a publicação**: item
+ *   com título longo demais fica fora da cópia, e local ou descrição longos
+ *   demais são omitidos do item (os mesmos tetos de
+ *   `social_itens_do_post_validos`, migration 20261116195039), e data, hora ou
+ *   categoria fora do formato do CHECK saem do item (`FORMATO_DO_CAMPO`);
+ * - **campo da viagem fora dos CHECKs de `trip_posts`** (título usado sem o do
+ *   autor, destino, datas) é 400 com `codigo` (`ViagemForaDoPost`), e não 500;
+ * - **título e legenda só com caracteres invisíveis** valem como vazios;
  * - se o autor sai da viagem, o post continua dele: ele não atualiza mais (a
  *   policy de UPDATE exige ser membro), mas despublica.
  *
@@ -122,6 +140,135 @@ const COLUNAS_POST =
 const CHAVE_REPETIDA = "23505"
 const SEM_PRIVILEGIO = "42501"
 
+/**
+ * Tetos de `social_itens_do_post_validos` (migration 20261116195039), em
+ * caracteres. A projeção traz o texto do grupo como ele está na viagem, e o
+ * itinerário não tem esses limites: sem eles aqui, um item longo dava 500.
+ */
+export const MAXIMO_TITULO_ITEM = 120
+export const MAXIMO_LOCAL_ITEM = 200
+export const MAXIMO_DESCRICAO_ITEM = 2000
+/** Teto de itens de `social_itens_do_post_validos` (20261116195039). */
+export const MAXIMO_ITENS_POST = 200
+
+/** Teto de cada campo opcional de um item; os sem teto no CHECK têm formato próprio. */
+const TETO_DO_CAMPO: Partial<Record<Exclude<keyof ItemDoPost, "title">, number>> = {
+  location: MAXIMO_LOCAL_ITEM,
+  description: MAXIMO_DESCRICAO_ITEM,
+}
+
+/**
+ * Os formatos de `social_itens_do_post_validos` (migration 20261116195039),
+ * com as **mesmas regex** do CHECK. A projeção entrega o que o Postgres devolve
+ * das colunas `date` e `time` do itinerário, e elas aceitam mais do que o CHECK
+ * do post: `time` aceita `24:00:00` e frações de segundo (`08:00:00.5`), e
+ * `date` escreve o ano 10000 como `10000-01-01` e o antes de Cristo como
+ * `0044-03-15 BC`. Sem a conferência aqui, um item assim dava 500 ao publicar.
+ * Fora do formato, o campo é omitido e o item fica.
+ */
+export const FORMATO_DATA_ITEM = /^\d{4}-\d{2}-\d{2}$/
+export const FORMATO_HORA_ITEM = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
+/** As categorias do CHECK do item; outra (ou uma nova do itinerário que o CHECK não conhece) é omitida. */
+export const CATEGORIAS_DO_ITEM: ReadonlySet<string> = new Set([
+  "accommodation",
+  "transport",
+  "activity",
+  "restaurant",
+  "attraction",
+  "other",
+])
+
+/** Conferência de formato de cada campo opcional, além do teto. */
+const FORMATO_DO_CAMPO: Partial<Record<Exclude<keyof ItemDoPost, "title">, (valor: string) => boolean>> = {
+  date: (valor) => FORMATO_DATA_ITEM.test(valor),
+  start_time: (valor) => FORMATO_HORA_ITEM.test(valor),
+  end_time: (valor) => FORMATO_HORA_ITEM.test(valor),
+  category: (valor) => CATEGORIAS_DO_ITEM.has(valor),
+}
+
+/**
+ * Tetos dos CHECKs de `trip_posts` (migration 20261116195039): `title` e
+ * `destination` não vazios e até 120 e 160 caracteres, e `end_date >=
+ * start_date`. O título tem o do autor como saída; destino e datas vêm só da
+ * viagem.
+ */
+export const MAXIMO_TITULO_VIAGEM = MAXIMO_TITULO
+export const MAXIMO_DESTINO_VIAGEM = 160
+
+/**
+ * A viagem tem um campo que o post não aceita. A rota responde 400 com o
+ * `codigo` e a mensagem, em vez do 500 do CHECK: a pessoa sabe o que corrigir
+ * (escrever um título para a publicação, ou editar a viagem).
+ */
+export class ViagemForaDoPost extends ErroHttp {
+  constructor(
+    readonly codigo:
+      | "titulo_da_viagem_longo"
+      | "titulo_da_viagem_vazio"
+      | "destino_da_viagem_longo"
+      | "destino_da_viagem_vazio"
+      | "datas_da_viagem_invalidas"
+      | "datas_da_viagem_invertidas",
+    mensagem: string,
+  ) {
+    super(400, mensagem)
+    this.name = "ViagemForaDoPost"
+  }
+}
+
+/** Título do post: o escolhido, ou o da viagem dentro do CHECK; senão, 400. */
+function tituloDoPost(escolhido: unknown, daViagem: string): string {
+  const titulo = textoVisivel(escolhido, MAXIMO_TITULO)
+  if (titulo !== undefined) return titulo
+  const limpo = daViagem.trim()
+  if (limpo === "") {
+    throw new ViagemForaDoPost("titulo_da_viagem_vazio", "A viagem está sem título: escreva um título para a publicação")
+  }
+  if (caracteres(limpo) > MAXIMO_TITULO_VIAGEM) {
+    throw new ViagemForaDoPost(
+      "titulo_da_viagem_longo",
+      `O título da viagem passa de ${MAXIMO_TITULO_VIAGEM} caracteres: escreva um título para a publicação`,
+    )
+  }
+  return limpo
+}
+
+/** Destino da viagem dentro do CHECK; senão, 400. Não há destino do autor. */
+function destinoDoPost(daViagem: string): string {
+  const limpo = daViagem.trim()
+  if (limpo === "") {
+    throw new ViagemForaDoPost("destino_da_viagem_vazio", "A viagem está sem destino: informe o destino na viagem para publicar")
+  }
+  if (caracteres(limpo) > MAXIMO_DESTINO_VIAGEM) {
+    throw new ViagemForaDoPost(
+      "destino_da_viagem_longo",
+      `O destino da viagem passa de ${MAXIMO_DESTINO_VIAGEM} caracteres: encurte o destino na viagem para publicar`,
+    )
+  }
+  return limpo
+}
+
+/**
+ * Datas da viagem no formato AAAA-MM-DD (o mesmo do item, que é o que a tela
+ * sabe mostrar) e com a volta no dia da ida ou depois (o CHECK
+ * `trip_posts_datas_check`). Com ano de 4 dígitos, a ordem do texto é a das datas.
+ */
+function datasDoPost(inicio: string, fim: string): { start_date: string; end_date: string } {
+  if (!FORMATO_DATA_ITEM.test(inicio) || !FORMATO_DATA_ITEM.test(fim)) {
+    throw new ViagemForaDoPost(
+      "datas_da_viagem_invalidas",
+      "As datas da viagem estão fora do formato: corrija a ida e a volta na viagem para publicar",
+    )
+  }
+  if (fim < inicio) {
+    throw new ViagemForaDoPost(
+      "datas_da_viagem_invertidas",
+      "A volta da viagem está antes da ida: corrija as datas na viagem para publicar",
+    )
+  }
+  return { start_date: inicio, end_date: fim }
+}
+
 /** Tetos de `social_lugares_do_post_validos`, em caracteres. */
 const MAXIMO_NOME_LUGAR = 200
 const MAXIMO_CATEGORIA_LUGAR = 60
@@ -145,20 +292,38 @@ function texto(valor: unknown, maximo = Infinity): string | undefined {
 }
 
 /**
+ * Como `texto`, para o que o **autor** escreve (título e legenda), com a mesma
+ * regra do schema (`limparTextoLivre`, lib/schemas/post.ts): os caracteres de
+ * formatação invisíveis saem das pontas, e só invisíveis vale como vazio. É a
+ * defesa para quando `montarPost` recebe o texto sem passar pelo zod.
+ */
+function textoVisivel(valor: unknown, maximo = Infinity): string | undefined {
+  if (typeof valor !== "string") return undefined
+  const limpo = limparTextoLivre(valor)
+  if (limpo === null || caracteres(limpo) > maximo) return undefined
+  return limpo
+}
+
+/**
  * Copia um item campo a campo, nunca com spread: chave que não está nomeada
  * aqui (`id`, `notes`, `latitude`, `status`, preço...) não tem como chegar ao
  * post, mesmo que o objeto de origem a traga em tempo de execução. Sem título
- * (vazio ou só espaços) o item não tem o que mostrar, e o CHECK do banco o
- * recusaria: devolve `null`.
+ * (vazio, só espaços ou acima de `MAXIMO_TITULO_ITEM`) o item não tem o que
+ * mostrar, e o CHECK do banco o recusaria: devolve `null`. Local e descrição
+ * acima do teto são omitidos, e o item sai sem eles; data, horários e
+ * categoria fora do formato do CHECK (`FORMATO_DO_CAMPO`) também.
  */
 function copiarItem(campos: CamposDoItem, roteiro: EscolhaDoRoteiro): ItemDoPost | null {
-  const title = texto(campos.title)
+  const title = texto(campos.title, MAXIMO_TITULO_ITEM)
   if (title === undefined) return null
   const copia: ItemDoPost = { title }
 
   const atribuir = (chave: Exclude<keyof ItemDoPost, "title">) => {
-    const valor = texto(campos[chave])
-    if (valor !== undefined) copia[chave] = valor
+    const valor = texto(campos[chave], TETO_DO_CAMPO[chave])
+    if (valor === undefined) return
+    const formato = FORMATO_DO_CAMPO[chave]
+    if (formato && !formato(valor)) return
+    copia[chave] = valor
   }
 
   // Data, horários e categoria saem sempre que existem: são o "dia a dia".
@@ -193,9 +358,9 @@ function copiarLugar(campos: CamposDoLugar, endereco: EnderecoDoLugar): LugarDoP
   return copia
 }
 
-/** A legenda limpa, ou `null`. */
+/** A legenda limpa, ou `null` (vazia, só espaços ou só caracteres invisíveis). */
 function legenda(valor: unknown): string | null {
-  return texto(valor) ?? null
+  return textoVisivel(valor) ?? null
 }
 
 /**
@@ -208,27 +373,42 @@ function legenda(valor: unknown): string | null {
  *   projeção. Id escolhido que não está na projeção (lugar de outra viagem,
  *   apagado ou inventado) é ignorado em silêncio: o corpo só escolhe, não
  *   acrescenta. Ids são comparados em minúsculas.
+ * - `titulo` escolhido (já limpo pelo schema) vira o título do post; ausente,
+ *   nulo, vazio ou só com caracteres invisíveis, vale o da projeção.
+ * - Título da viagem (quando é ele que vale), destino e datas fora dos CHECKs
+ *   de `trip_posts` lançam `ViagemForaDoPost` (400 com `codigo`): esses não
+ *   têm como ser omitidos, e o CHECK daria 500.
  * - O endereço `"google"` copia o `address` da projeção; vazio ou nulo, o
  *   lugar sai sem endereço.
+ * - Item com título acima de `MAXIMO_TITULO_ITEM` fica fora; local e descrição
+ *   acima dos tetos ficam fora do item.
+ * - Saem no máximo `MAXIMO_ITENS_POST` itens (os primeiros, na ordem da
+ *   projeção): o CHECK de `items` recusa mais que isso, e a publicação daria 500.
  * - Todo texto sai sem os espaços das pontas, e campo vazio é omitido.
  * - `marcados` não entra na cópia: as marcações moram em `post_tags`.
  */
 export function montarPost(
   projecao: ProjecaoComLugares,
-  pedido: Pick<PedidoPost, "legenda" | "roteiro" | "lugares">,
+  pedido: Pick<PedidoPost, "legenda" | "roteiro" | "lugares"> & { titulo?: PedidoPost["titulo"] },
 ): CopiaDoPost {
   const { roteiro, lugares } = pedido
 
   const escolhidos = new Map<string, EnderecoDoLugar>()
   for (const lugar of lugares ?? []) escolhidos.set(lugar.id.toLowerCase(), lugar.endereco)
 
+  const title = tituloDoPost(pedido.titulo, projecao.title)
+  const destination = destinoDoPost(projecao.destination)
+  const { start_date, end_date } = datasDoPost(projecao.start_date, projecao.end_date)
+
   return {
-    title: projecao.title,
-    destination: projecao.destination,
-    start_date: projecao.start_date,
-    end_date: projecao.end_date,
+    title,
+    destination,
+    start_date,
+    end_date,
     caption: legenda(pedido.legenda),
-    items: roteiro ? projecao.itens.flatMap((item) => copiarItem(item, roteiro) ?? []) : [],
+    items: roteiro
+      ? projecao.itens.flatMap((item) => copiarItem(item, roteiro) ?? []).slice(0, MAXIMO_ITENS_POST)
+      : [],
     places: lugaresDaProjecao(projecao).flatMap((lugar) => {
       const endereco = escolhidos.get(lugar.id.toLowerCase())
       return endereco === undefined ? [] : (copiarLugar(lugar, endereco) ?? [])

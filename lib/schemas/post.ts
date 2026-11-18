@@ -5,16 +5,22 @@ import { z } from "zod"
  * o autor escolheu no diálogo "Publicar viagem" (readequação de 18/11, que
  * segue a prévia do Fernando em components/prototipo/botao-publicar.tsx).
  *
- * O corpo carrega escolhas e só dois textos do autor: a legenda e o endereço
- * digitado de um lugar. Título, destino, datas, itens do roteiro e nome dos
+ * O corpo carrega escolhas e só três textos do autor: o título, a legenda e o
+ * endereço digitado de um lugar. Destino, datas, itens do roteiro e nome dos
  * lugares saem da projeção pública da viagem (`lib/trips/publico.ts`), montada
  * no servidor. Por isso todo objeto é estrito, em todos os níveis: `trip_id`,
  * `author_id`, `title`, `notes`, `items`, `cover_path` ou qualquer outra chave
  * é 400, e não descarte silencioso — quem manda isso está tentando escrever o
  * post por fora, e a resposta deve dizer que não dá.
  *
- * - `legenda`: opcional, até 280 caracteres depois do trim. Vazia ou só com
- *   espaços vira `null`, que é o que o CHECK de `trip_posts.caption` aceita.
+ * - `titulo`: opcional, até 120 caracteres depois do trim (o CHECK de
+ *   `trip_posts.title`). Ausente, nulo, vazio, só com espaços ou só com
+ *   caracteres invisíveis (`limparTextoLivre`) vira `null`, e o post usa o
+ *   título da viagem. Ele é editável (decisão de 18/11) para que dois posts da
+ *   mesma viagem não precisem sair com o mesmo título.
+ * - `legenda`: opcional, até 280 caracteres depois do trim. Vazia, só com
+ *   espaços ou só com invisíveis vira `null`, que é o que o CHECK de
+ *   `trip_posts.caption` aceita.
  * - `roteiro`: `null` com a chave desligada; ligada, publica todos os itens não
  *   cancelados da projeção, e `local`/`descricao` ligam `location` e
  *   `description` para o post inteiro. Notas, coordenadas e preço não têm
@@ -35,6 +41,8 @@ import { z } from "zod"
  * @RF09.13 marcar quem viajou junto
  */
 
+/** Teto do título: o mesmo do CHECK de `trip_posts.title`. */
+export const MAXIMO_TITULO = 120
 /** Teto da legenda: o mesmo do CHECK de `trip_posts.caption`. */
 export const MAXIMO_LEGENDA = 280
 /** Teto de lugares no post: o mesmo de `social_lugares_do_post_validos`. */
@@ -68,14 +76,56 @@ function semRepetidos<T>(idDe: (valor: T) => string, caminho: (i: number) => (st
   }
 }
 
-const legendaSchema = z
-  .string({ invalid_type_error: "a legenda deve ser texto" })
-  .transform((texto) => texto.trim())
-  .refine((texto) => caracteres(texto) <= MAXIMO_LEGENDA, `a legenda pode ter até ${MAXIMO_LEGENDA} caracteres`)
-  .transform((texto) => (texto === "" ? null : texto))
-  .nullable()
-  .optional()
-  .transform((legenda) => legenda ?? null)
+/**
+ * Espaços e caracteres de formatação invisíveis (`\p{Cf}`: U+200B espaço de
+ * largura zero, U+FEFF, U+2060 word joiner, U+200E/U+200F de direção...) nas
+ * pontas. As "tags" de emoji (U+E0020 a U+E007F) também são `\p{Cf}`, mas são o
+ * fim da bandeira da Inglaterra, da Escócia e de Gales: ficam, para uma
+ * legenda que termina com 🏴󠁧󠁢󠁥󠁮󠁧󠁿 não perder a bandeira.
+ */
+const INVISIVEL = /^[\s\p{Cf}]$/u
+const TAG_DE_EMOJI = /^[\u{E0020}-\u{E007F}]$/u
+const invisivel = (caractere: string) => INVISIVEL.test(caractere) && !TAG_DE_EMOJI.test(caractere)
+
+/** Pelo menos um caractere que se vê: letra, número, pontuação ou símbolo (emoji é símbolo). */
+const VISIVEL = /[\p{L}\p{N}\p{P}\p{S}]/u
+
+/**
+ * O texto livre do autor (título e legenda) limpo, ou `null` se não sobra nada
+ * que se veja. Sem isto, um título só com U+200B passava pelo trim (que não o
+ * conhece como espaço), virava o título do post e aparecia em branco no feed.
+ * `montarPost` (lib/social/posts.ts) usa a mesma função, como defesa.
+ *
+ * As pontas saem num laço, caractere a caractere, e não com uma regex
+ * `(...)+$`: esta roda antes do teto de tamanho, e uma regex ancorada no fim
+ * custa tempo quadrático num texto longo de espaços com uma letra no fim.
+ */
+export function limparTextoLivre(texto: string): string | null {
+  const caracteresDoTexto = Array.from(texto)
+  let inicio = 0
+  let fim = caracteresDoTexto.length
+  while (inicio < fim && invisivel(caracteresDoTexto[inicio])) inicio++
+  while (fim > inicio && invisivel(caracteresDoTexto[fim - 1])) fim--
+  const limpo = caracteresDoTexto.slice(inicio, fim).join("")
+  return VISIVEL.test(limpo) ? limpo : null
+}
+
+/**
+ * Texto livre opcional do autor: pontas limpas (espaços e invisíveis), teto em
+ * caracteres, e vazio, só invisível, ausente ou nulo viram `null`.
+ */
+const textoOpcional = (nome: string, maximo: number) =>
+  z
+    .string({ invalid_type_error: `${nome} deve ser texto` })
+    .transform((texto) => limparTextoLivre(texto))
+    .refine((texto) => texto === null || caracteres(texto) <= maximo, `${nome} pode ter até ${maximo} caracteres`)
+    .nullable()
+    .optional()
+    .transform((valor) => valor ?? null)
+
+const tituloSchema = textoOpcional("o título", MAXIMO_TITULO)
+
+const legendaSchema = textoOpcional("a legenda", MAXIMO_LEGENDA)
 
 export const roteiroSchema = z
   .object(
@@ -136,6 +186,7 @@ export const marcadosSchema = z
 export const pedidoPostSchema = z
   .object(
     {
+      titulo: tituloSchema,
       legenda: legendaSchema,
       roteiro: roteiroSchema,
       lugares: lugaresSchema,
@@ -145,7 +196,7 @@ export const pedidoPostSchema = z
   )
   .strict("campo não permitido: o post é montado a partir da viagem")
 
-/** O corpo já validado: legenda limpa ou nula, uuids em minúsculas e sem repetição. */
+/** O corpo já validado: título e legenda limpos ou nulos, uuids em minúsculas e sem repetição. */
 export type PedidoPost = z.infer<typeof pedidoPostSchema>
 /** O que a tela envia. */
 export type PedidoPostEntrada = z.input<typeof pedidoPostSchema>

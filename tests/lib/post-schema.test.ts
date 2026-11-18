@@ -4,17 +4,19 @@ import {
   MAXIMO_LEGENDA,
   MAXIMO_LUGARES_NO_POST,
   MAXIMO_MARCADOS,
+  MAXIMO_TITULO,
   caracteres,
   enderecoSchema,
+  limparTextoLivre,
   pedidoPostSchema,
 } from "@/lib/schemas/post"
 
 /**
  * O corpo de POST e PATCH /api/social/viagens/[tripId]/post (contrato de
- * 18/11): legenda, roteiro, lugares e marcados. Todo objeto é estrito; uuid vai
- * para minúsculas, e repetido é 400.
+ * 18/11): título, legenda, roteiro, lugares e marcados. Todo objeto é estrito;
+ * uuid vai para minúsculas, e repetido é 400.
  *
- * @RF09.7 legenda, roteiro e lugares · @RF09.13 marcados
+ * @RF09.7 título, legenda, roteiro e lugares · @RF09.13 marcados
  */
 
 const erroDe = (resultado: { success: boolean; error?: { issues: { message: string }[] } }) =>
@@ -27,12 +29,19 @@ const MINIMO = { roteiro: null, lugares: null }
 const comLugar = (endereco: unknown, id = uuid(1)) => ({ ...MINIMO, lugares: [{ id, endereco }] })
 
 describe("pedidoPostSchema — o mínimo", () => {
-  it("roteiro e lugares desligados, sem legenda nem marcados: legenda null e marcados []", () => {
-    expect(pedidoPostSchema.parse(MINIMO)).toEqual({ legenda: null, roteiro: null, lugares: null, marcados: [] })
+  it("roteiro e lugares desligados, sem título, legenda nem marcados: título e legenda null e marcados []", () => {
+    expect(pedidoPostSchema.parse(MINIMO)).toEqual({
+      titulo: null,
+      legenda: null,
+      roteiro: null,
+      lugares: null,
+      marcados: [],
+    })
   })
 
   it("aceita tudo ligado", () => {
     const corpo = {
+      titulo: "Réveillon em Lisboa",
       legenda: "Que viagem!",
       roteiro: { local: true, descricao: false },
       lugares: [
@@ -47,6 +56,51 @@ describe("pedidoPostSchema — o mínimo", () => {
 
   it("lista de lugares vazia é diferente de null: chave ligada sem nenhum lugar", () => {
     expect(pedidoPostSchema.parse({ ...MINIMO, lugares: [] }).lugares).toEqual([])
+  })
+})
+
+describe("pedidoPostSchema — título", () => {
+  it.each([
+    ["ausente", undefined],
+    ["null", null],
+    ["vazio", ""],
+    ["só espaços", "   \n\t "],
+  ])("%s vira null (o post usa o título da viagem)", (_caso, titulo) => {
+    expect(pedidoPostSchema.parse({ ...MINIMO, titulo }).titulo).toBeNull()
+  })
+
+  it("tira os espaços das pontas", () => {
+    expect(pedidoPostSchema.parse({ ...MINIMO, titulo: "  Fim de ano  " }).titulo).toBe("Fim de ano")
+  })
+
+  it(`aceita exatamente ${MAXIMO_TITULO} caracteres, e o teto vale depois do trim`, () => {
+    const cheio = "t".repeat(MAXIMO_TITULO)
+    expect(pedidoPostSchema.parse({ ...MINIMO, titulo: `  ${cheio}  ` }).titulo).toBe(cheio)
+  })
+
+  it(`recusa ${MAXIMO_TITULO + 1} caracteres`, () => {
+    expect(MAXIMO_TITULO).toBe(120)
+    expect(erroDe(pedidoPostSchema.safeParse({ ...MINIMO, titulo: "t".repeat(MAXIMO_TITULO + 1) }))).toContain(
+      `o título pode ter até ${MAXIMO_TITULO}`,
+    )
+  })
+
+  it("conta caracteres como o char_length do banco: 120 emojis cabem, 121 não", () => {
+    const emojis = "🌍".repeat(MAXIMO_TITULO)
+    expect(pedidoPostSchema.parse({ ...MINIMO, titulo: emojis }).titulo).toBe(emojis)
+    expect(pedidoPostSchema.safeParse({ ...MINIMO, titulo: emojis + "🌍" }).success).toBe(false)
+  })
+
+  it.each([
+    ["número", 42],
+    ["objeto", { texto: "x" }],
+    ["booleano", true],
+  ])("recusa título que não é texto (%s)", (_caso, titulo) => {
+    expect(erroDe(pedidoPostSchema.safeParse({ ...MINIMO, titulo }))).toContain("o título deve ser texto")
+  })
+
+  it("`title` continua chave proibida: o título entra só como `titulo`", () => {
+    expect(pedidoPostSchema.safeParse({ ...MINIMO, title: "x" }).success).toBe(false)
   })
 })
 
@@ -89,6 +143,81 @@ describe("pedidoPostSchema — legenda", () => {
     ["lista", ["x"]],
   ])("recusa legenda que não é texto (%s)", (_caso, legenda) => {
     expect(erroDe(pedidoPostSchema.safeParse({ ...MINIMO, legenda }))).toContain("a legenda deve ser texto")
+  })
+})
+
+/** Os invisíveis da revisão de segurança de 18/11 (R3). */
+const ZWSP = "​"
+const BOM = "﻿"
+const WJ = "⁠"
+
+describe("título e legenda só com caracteres invisíveis (R3) — @RF09.7", () => {
+  it.each([
+    ["U+200B", ZWSP],
+    ["U+FEFF", BOM],
+    ["U+2060", WJ],
+    ["os três, repetidos", `${ZWSP}${BOM}${WJ}`.repeat(10)],
+    ["invisíveis misturados com espaços", ` ${ZWSP} \n${WJ}\t${BOM} `],
+    ["marcas de direção (U+200E, U+200F)", "‎‏"],
+  ])("%s: título vira null (vale o da viagem) e legenda vira null", (_caso, texto) => {
+    const corpo = pedidoPostSchema.parse({ ...MINIMO, titulo: texto, legenda: texto })
+    expect(corpo.titulo).toBeNull()
+    expect(corpo.legenda).toBeNull()
+  })
+
+  it.each([
+    ["só marcas combinantes (U+0301, U+034F)", "́͏"],
+    ["só seletor de variação (U+FE0F)", "️️"],
+    ["só caractere de controle (U+0007)", "\u0007"],
+    ["invisíveis cercando uma marca combinante", `${ZWSP}́${WJ}`],
+  ])("%s: nada visível sobra depois das pontas, então vale como vazio", (_caso, texto) => {
+    const corpo = pedidoPostSchema.parse({ ...MINIMO, titulo: texto, legenda: texto })
+    expect(corpo.titulo).toBeNull()
+    expect(corpo.legenda).toBeNull()
+  })
+
+  it("os invisíveis saem das pontas; os do meio ficam", () => {
+    const corpo = pedidoPostSchema.parse({ ...MINIMO, titulo: `${ZWSP}${BOM} Lisboa ${WJ}`, legenda: `${WJ}a${ZWSP}b${BOM}` })
+    expect(corpo.titulo).toBe("Lisboa")
+    expect(corpo.legenda).toBe(`a${ZWSP}b`)
+  })
+
+  it.each([
+    ["letra", "a"],
+    ["número", "7"],
+    ["pontuação", "!"],
+    ["símbolo (emoji)", "🌄"],
+  ])("um único caractere visível (%s) basta", (_caso, visivel) => {
+    expect(pedidoPostSchema.parse({ ...MINIMO, titulo: `${ZWSP}${visivel}${ZWSP}` }).titulo).toBe(visivel)
+  })
+
+  it("emoji com ZWJ no meio e bandeira com tags no fim não perdem nada", () => {
+    const familia = "👨‍👩‍👧"
+    const inglaterra = "🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}"
+    expect(pedidoPostSchema.parse({ ...MINIMO, legenda: `Fomos ${familia}` }).legenda).toBe(`Fomos ${familia}`)
+    expect(pedidoPostSchema.parse({ ...MINIMO, legenda: `Fomos à ${inglaterra}` }).legenda).toBe(`Fomos à ${inglaterra}`)
+  })
+
+  it("o teto conta depois de limpar as pontas: 120 visíveis cercados de invisíveis cabem", () => {
+    const cheio = "t".repeat(MAXIMO_TITULO)
+    expect(pedidoPostSchema.parse({ ...MINIMO, titulo: `${ZWSP.repeat(50)}${cheio}${BOM.repeat(50)}` }).titulo).toBe(cheio)
+  })
+
+  it("só invisíveis acima do teto não é erro de tamanho: é vazio", () => {
+    expect(pedidoPostSchema.parse({ ...MINIMO, legenda: ZWSP.repeat(MAXIMO_LEGENDA + 50) }).legenda).toBeNull()
+  })
+
+  it("texto enorme de espaços com uma letra no fim é limpo em tempo linear", () => {
+    const enorme = " ".repeat(200_000) + "a" + " ".repeat(200_000) + "b"
+    const inicio = Date.now()
+    expect(pedidoPostSchema.safeParse({ ...MINIMO, legenda: enorme }).success).toBe(false)
+    expect(Date.now() - inicio).toBeLessThan(1000)
+  })
+
+  it("limparTextoLivre devolve o texto limpo ou null", () => {
+    expect(limparTextoLivre(`${ZWSP} oi ${WJ}`)).toBe("oi")
+    expect(limparTextoLivre(`${ZWSP}${BOM}${WJ}`)).toBeNull()
+    expect(limparTextoLivre("")).toBeNull()
   })
 })
 

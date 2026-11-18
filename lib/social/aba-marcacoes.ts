@@ -13,7 +13,11 @@ import { podeVerRede } from "./rede"
  * Decisões do Micael (16/11 e 18/11, docs/plans/S06-M-publicar-viagem.md):
  * - a aba segue a visibilidade do perfil da pessoa MARCADA: perfil privado, só
  *   ela e os seguidores aceitos a veem. Quem decide é a função `pode_ver_rede`
- *   do banco, a mesma das listas da rede; fora dela, 403 sem listar nada;
+ *   do banco, a mesma das listas da rede; fora dela, 403 sem listar nada.
+ *   **Essa regra vale só nesta rota, e não na RLS** (decisão de 18/11, "igual
+ *   ao Instagram"): a marca é visível a quem vê o post, e a policy de SELECT de
+ *   `post_tags` deixa quem enxerga o post ler as marcas dele pela Data API,
+ *   inclusive a de uma pessoa com perfil privado que essa sessão não segue;
  * - **ser marcado não abre o post** (opção 2, como no Instagram). Cada post
  *   segue a RLS de `trip_posts` (`pode_ver_rede(author_id)`): se quem vê
  *   enxerga o post, o cartão leva o resumo; se não enxerga e é a própria pessoa
@@ -23,9 +27,10 @@ import { podeVerRede } from "./rede"
  * (`profiles`, pela FK `author_id`) e o post (`trip_posts`, pela FK `post_id`)
  * embutidos. O embed do post passa pela RLS dele: post que a sessão não
  * enxerga volta `null`, e é isso que separa os dois cartões. A RLS de
- * `post_tags` (migration 20261116234030) já esconde de terceiros a marca de
- * post que eles não enxergam; o filtro daqui repete a regra, e é ele que a
- * resposta segue. A chave de serviço só assina fotos e capas.
+ * `post_tags` (migration 20261116234030) esconde de terceiros só a marca de
+ * post que eles não enxergam, e o filtro daqui repete essa regra. Ela não é a
+ * segunda linha do "perfil privado só abre a seguidores": essa fica só no
+ * `podeVerRede` desta lib. A chave de serviço só assina fotos e capas.
  *
  * O que sai, campo a campo: o id do post (para remover a marca), quando a
  * pessoa foi marcada, o autor pelo username (nunca o `author_id`), e do post só

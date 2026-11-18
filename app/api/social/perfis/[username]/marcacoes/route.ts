@@ -15,7 +15,14 @@ import { marcacoesDoPerfil } from "@/lib/social/aba-marcacoes"
  * `pode_ver_rede` do banco decide se a sessão vê a aba (o próprio dono, quem
  * segue com vínculo aceito, ou perfil público); fora disso, 403 sem listar
  * nada. Cada post segue a RLS de `trip_posts`; ser marcado não abre o post
- * (lib/social/aba-marcacoes.ts). A RLS de `post_tags` é a segunda linha.
+ * (lib/social/aba-marcacoes.ts).
+ *
+ * Esta regra (a aba de um perfil privado só abre a quem o segue) vale só
+ * aqui, na rota. A RLS de `post_tags` não a repete, por decisão do Micael em
+ * 18/11 ("igual ao Instagram"): a marca é visível a quem vê o post, mesmo que a
+ * pessoa marcada seja privada, então a lista agregada por pessoa pode ser
+ * montada pela Data API por quem já vê aqueles posts. Limite aceito, registrado
+ * no plano da S06 e na seção 25.
  *
  * O username da URL passa pelo formato da leitura: fora dele, 400 sem
  * consultar o banco. Ninguém com o username: 404.

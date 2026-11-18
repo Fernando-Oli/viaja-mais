@@ -272,8 +272,13 @@ página dela.
 - [ ] A resposta de `GET /api/social/viagens/[tripId]/post` e o post gravado não têm `budget`,
   `currency`, `notes`, coordenadas, `status`, a descrição da viagem, e-mail nem a lista de membros; o
   teste confere as chaves exatas, e não só a ausência de algumas.
-- [ ] Um autenticado que lê os posts de dois membros da mesma viagem pela Data API não consegue saber
-  que são da mesma viagem: o `trip_id` não é legível.
+- [ ] Um autenticado que lê os posts de dois membros da mesma viagem pela Data API não consegue
+  **provar** que são da mesma viagem: o `trip_id` não é legível e o post nunca lista membros. A
+  dedução pelo conteúdo igual (título, destino, datas) é risco aceito em 18/11 (bloco 7), atenuado
+  pelo título editável.
+- [ ] Nenhuma imagem publicada (capa ou foto de perfil) leva EXIF, GPS ou XMP: o servidor reprocessa
+  com `sharp`, e um teste envia um JPEG com GPS e confere os bytes gravados.
+- [ ] Quem removeu a própria marca não é marcado de novo naquele post, nem pela rota nem pela Data API.
 - [ ] Post de perfil privado não é lido por quem não segue com vínculo aceito, nem pela Data API.
 - [ ] `POST` com sessão de quem não está em `trip_members` responde 403 e não grava; a cópia vem
   da projeção do servidor, e item escolhido fora dela é ignorado.
@@ -316,3 +321,48 @@ página dela.
   sem helper de outro domínio.
 - 18/11: execução em quatro instâncias paralelas, com arquivos exclusivos para cada uma: banco, lib e
   rotas do post, aba Marcações e tela.
+- 18/11: a aba Marcações foi testada e aprovada pelo Micael no app local. Regra nova: toda tela é
+  testada e aprovada por ele antes do push.
+- 18/11, revisão independente do `seguranca`, com 6 achados reproduzidos. Decisões do Micael:
+  1. **A capa e a foto de perfil publicavam o EXIF (GPS)** (alta). Correção: reprocessar no servidor
+     com `sharp` (WebP sem metadados, girado pelo EXIF, com teto de pixels). O `sharp` entra no
+     `package.json`, com o aval do Fernando. Isso fecha também a ação 2 da S04.
+  2. **Posts da mesma viagem são ligáveis pelo conteúdo** (alta): título, destino e datas iguais.
+     - O título passa a ser editável.
+     - A promessa do bloco 5 muda: o sistema **não revela nem prova** quem viajou junto (o `trip_id` é
+       ilegível e o post nunca lista membros).
+     - Deduzir pelo conteúdo igual fica como **risco aceito pelo Micael** (seção 25), o mesmo limite do
+       Instagram.
+  3. **A lista de marcações de um perfil privado pode ser montada pela Data API** (média). Decisão:
+     **igual ao Instagram**.
+     - A marca é visível a quem vê o post, mesmo que a pessoa marcada seja privada.
+     - A aba de um perfil privado só abre para seguidores, e só na rota.
+     - A lista agregada é limite aceito e documentado.
+  4. **O autor grava `cover_path` da própria pasta pelo UPDATE** (baixa): limite documentado.
+  5. **Remarcação depois da remoção** (baixa): bloqueada. A tabela `post_tag_recusas` guarda quem
+     removeu a própria marca, e a `social_pode_marcar` recusa a pessoa.
+  6. **O 401 do `proxy.ts` sai sem `no-store`** (baixa): achado para o Fernando.
+  - Também: item do roteiro acima dos limites do `CHECK` dava 500 (agora sai da cópia); o teste do
+    bucket ficou mais forte; o botão "Remover marcação" ganhou nome acessível com o texto visível.
+- 18/11: a recusa passou a valer para a **viagem e o autor** (chave `(trip_id, author_id,
+  tagged_id)`) e sobrevive a despublicar e publicar de novo. O autor consulta as recusas pela
+  `social_recusas_da_viagem`, e o `trip_id` da recusa é ilegível.
+- 18/11, segunda revisão independente (das correções): a recusa, o título editável, o
+  "igual ao Instagram" e a limpeza de metadados ficaram fechados. Ajustes:
+  - a imagem é recusada pelo custo de memória decodificada, e a capa usa o limite de envios da foto
+    (`LIMITES.fotoPerfil`, contados juntos) até o Fernando criar o `capaPost`;
+  - hora ou data fora do formato do `CHECK` ficam fora do item; campos da viagem fora do limite dão 400
+    com mensagem, e não 500;
+  - título e legenda só com caracteres invisíveis valem como vazios.
+- Limites registrados para a seção 25:
+  - **arquivos anteriores a 18/11** (fotos de perfil) não foram reprocessados, e os buckets ainda aceitam
+    JPEG e PNG. As fotos enviadas pela tela já passavam pelo recorte em canvas, que descarta os
+    metadados. Restringir os buckets a WebP pede migration nova (Fernando);
+  - **apagar e recriar a viagem zera as recusas**, e a pessoa que recusou só volta a ser marcável se
+    aceitar o convite da viagem nova;
+  - **uma marca prova que a pessoa marcada foi membro da viagem daquele post**, porque só membros são
+    marcáveis. A promessa "não revela nem prova quem viajou junto" vale para quem não foi marcado;
+  - **corrida entre remover a marca e salvar o post:** o banco recusa a marca, e a rota responde
+    `marcado_recusou`.
+- Requisitos futuros, fora do congelamento (o Instagram tem): ocultar a marca do próprio perfil sem
+  removê-la, escolher quem pode marcar, aprovar marcações manualmente e aviso de marcação.
