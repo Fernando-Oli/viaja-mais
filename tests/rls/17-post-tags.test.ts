@@ -27,6 +27,20 @@ import { CONEXAO, logar, novoCliente } from "./apoio"
  *     outros membros com username, nunca a si mesmo; quem não é membro recebe
  *     vazio; anon não executa.
  *
+ * E as decisões de 18/11 (revisão de segurança):
+ *   - a recusa (post_tag_recusas), por VIAGEM e autor: quem remove a própria
+ *     marca não é marcado de novo por aquele autor naquela viagem, nem por
+ *     INSERT direto, nem depois de ele despublicar e publicar de novo; outra
+ *     viagem e outro autor da mesma viagem não são bloqueados; o autor que
+ *     desmarca, sim, marca de novo; a remoção sem sessão não grava; só o
+ *     trigger escreve; o trip_id é ilegível; a pessoa lê as próprias recusas
+ *     e o autor as da viagem só pela social_recusas_da_viagem, que responde
+ *     só sobre a sessão; as cascatas da viagem e das contas levam a recusa e
+ *     NÃO falham por causa do trigger; despublicar não a leva;
+ *   - o limite "igual ao Instagram": quem vê o post vê a marca de uma pessoa
+ *     privada, também na lista por pessoa pela Data API (a aba Marcações de
+ *     privado fecha só na rota).
+ *
  * @RF09.13 @RF09.14 @RNF02.4
  */
 
@@ -146,6 +160,65 @@ async function marcasNoBanco(post: string) {
     [post],
   )
   return rows.map((r) => r.tagged_id)
+}
+
+/** Quem recusou as marcas do autor na viagem, visto pelo banco. */
+async function recusasNoBanco(viagem: string, autor: string) {
+  const { rows } = await db.query<{ tagged_id: string }>(
+    "select tagged_id from public.post_tag_recusas where trip_id = $1 and author_id = $2 order by tagged_id",
+    [viagem, autor],
+  )
+  return rows.map((r) => r.tagged_id)
+}
+
+/** Quantas recusas há com a coluna igual ao id — para conferir as cascatas. */
+async function contarRecusas(coluna: "trip_id" | "author_id" | "tagged_id", id: string) {
+  const { rows } = await db.query<{ n: number }>(
+    `select count(*)::int as n from public.post_tag_recusas where ${coluna} = $1`,
+    [id],
+  )
+  return rows[0].n
+}
+
+/** O que a tela de publicar lê: social_recusas_da_viagem, com a sessão do ator. */
+async function recusasPelaFuncao(ator: Ator, viagem: string) {
+  const { data, error } = await ator.cliente.rpc("social_recusas_da_viagem", { viagem })
+  return { ids: ((data as string[] | null) ?? []).slice().sort(), error }
+}
+
+/** Publica pela Data API, como o navegador: para despublicar e publicar de novo. */
+function publicarPelaSessao(ator: Ator, viagem: string) {
+  return ator.cliente
+    .from("trip_posts")
+    .insert({
+      trip_id: viagem,
+      author_id: ator.id,
+      title: "Férias em Portugal, de novo",
+      destination: "Lisboa",
+      start_date: "2026-12-10",
+      end_date: "2026-12-20",
+      items: [],
+    })
+    .select("id")
+    .single()
+}
+
+/** Apaga a conta pela conexão direta, com auth.uid() valendo `sessao` — o pior caso para o trigger. */
+async function apagarContaNaSessaoDe(conta: string, sessao: string) {
+  await db.query("begin")
+  try {
+    await db.query("select set_config('request.jwt.claim.sub', $1, true)", [sessao])
+    await db.query("delete from auth.users where id = $1", [conta])
+    await db.query("commit")
+  } catch (erro) {
+    await db.query("rollback")
+    throw erro
+  }
+}
+
+/** A remoção da própria marca, como a aba Marcações faz (lib/social/aba-marcacoes.ts). */
+function removerMinhaMarca(ator: Ator, post: string) {
+  return ator.cliente.from("post_tags").delete().eq("post_id", post).eq("tagged_id", ator.id).select("tagged_id")
 }
 
 /** A escrita como o navegador faria: o autor declarado é a própria sessão, salvo quando o teste forja. */
@@ -330,9 +403,11 @@ describe("remoção: a pessoa marcada remove a própria marca", () => {
     await marcarDireto(post, davi.id, privado.id)
   })
 
-  // Um post por membro e viagem: o próximo bloco publica de novo.
+  // Um post por membro e viagem: o próximo bloco publica de novo. A recusa é
+  // da viagem e sobrevive ao post: sai à parte, para não bloquear os próximos.
   afterAll(async () => {
     await db.query("delete from public.trip_posts where id = any($1::uuid[])", [[post]])
+    await db.query("delete from public.post_tag_recusas where trip_id = $1", [viagemB])
   })
 
   it("um terceiro, mesmo vendo o post, não apaga a marca de outra pessoa", async () => {
@@ -351,6 +426,12 @@ describe("remoção: a pessoa marcada remove a própria marca", () => {
     expect(error).toBeNull()
     expect(data).toEqual([{ tagged_id: davi.id }])
     expect(await marcasNoBanco(post)).toEqual([])
+  })
+
+  it("…e a recusa é gravada, mesmo ele não enxergando o post (o trigger é SECURITY DEFINER)", async () => {
+    expect(await recusasNoBanco(viagemB, privado.id)).toEqual([davi.id])
+    const { data } = await davi.cliente.from("post_tag_recusas").select("author_id, tagged_id").eq("tagged_id", davi.id)
+    expect(data).toEqual([{ author_id: privado.id, tagged_id: davi.id }])
   })
 
   it("a autora desmarca quem marcou", async () => {
@@ -408,6 +489,394 @@ describe("cascatas e a função", () => {
   it("o visitante sem sessão não executa a função", async () => {
     const { error } = await visitante.rpc("social_pode_marcar", { post: viagemA, marcado: membro.id })
     expect(error).not.toBeNull()
+  })
+})
+
+/**
+ * A recusa (decisão do Micael em 18/11): quem removeu a própria marca não é
+ * marcado de novo por aquele autor naquela VIAGEM — nem depois de ele
+ * despublicar e publicar de novo. A tabela post_tag_recusas, o trigger AFTER
+ * DELETE de post_tags, a checagem em social_pode_marcar e a função
+ * social_recusas_da_viagem.
+ *
+ * @RF09.13 @RF09.14
+ */
+describe("recusa: quem removeu a própria marca não volta a ser marcado por aquele autor na viagem", () => {
+  let post: string
+
+  beforeAll(async () => {
+    post = await postDireto(autora.id, viagemA)
+    await marcarDireto(post, membro.id, autora.id)
+  })
+
+  // Um post por membro e viagem: o próximo bloco publica de novo. A recusa
+  // sobrevive ao post (é da viagem): sai à parte, para não bloquear os próximos.
+  afterAll(async () => {
+    await db.query("delete from public.trip_posts where trip_id = $1 and author_id = $2", [viagemA, autora.id])
+    await db.query("delete from public.post_tag_recusas where trip_id = $1", [viagemA])
+  })
+
+  it("a pessoa remove a própria marca, e a recusa é gravada para a viagem e a autora", async () => {
+    const { data, error } = await removerMinhaMarca(membro, post)
+    expect(error).toBeNull()
+    expect(data).toEqual([{ tagged_id: membro.id }])
+    expect(await marcasNoBanco(post)).toEqual([])
+    expect(await recusasNoBanco(viagemA, autora.id)).toEqual([membro.id])
+  })
+
+  it("a autora não a marca de novo, nem por INSERT direto: 42501", async () => {
+    const { error } = await marcar(autora, post, membro.id)
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect(await marcasNoBanco(post)).toEqual([])
+    // A função que a policy usa diz o mesmo à autora.
+    const pode = await autora.cliente.rpc("social_pode_marcar", { post, marcado: membro.id })
+    expect(pode.data).toBe(false)
+  })
+
+  it("a autora despublica e publica de novo, e continua sem conseguir marcá-la", async () => {
+    const despublicado = await autora.cliente.from("trip_posts").delete().eq("id", post).select("id")
+    expect(despublicado.error).toBeNull()
+    expect(despublicado.data).toEqual([{ id: post }])
+    // Sem post, a recusa continua — e a tela já a enxerga antes do novo POST.
+    expect(await recusasNoBanco(viagemA, autora.id)).toEqual([membro.id])
+    expect((await recusasPelaFuncao(autora, viagemA)).ids).toEqual([membro.id])
+
+    const novo = await publicarPelaSessao(autora, viagemA)
+    expect(novo.error).toBeNull()
+    post = novo.data!.id
+
+    const { error } = await marcar(autora, post, membro.id)
+    expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect(await marcasNoBanco(post)).toEqual([])
+  })
+
+  it("social_recusas_da_viagem responde só sobre a sessão autora", async () => {
+    const daAutora = await recusasPelaFuncao(autora, viagemA)
+    expect(daAutora.error).toBeNull()
+    expect(daAutora.ids).toEqual([membro.id])
+    // A própria pessoa que recusou, outro membro e um estranho: vazio.
+    for (const ator of [membro, semNome, estranho]) {
+      const { ids, error } = await recusasPelaFuncao(ator, viagemA)
+      expect(error).toBeNull()
+      expect(ids).toEqual([])
+    }
+    // A autora, sobre outra viagem: vazio.
+    expect((await recusasPelaFuncao(autora, viagemB)).ids).toEqual([])
+  })
+
+  it("a pessoa lê a própria recusa; a autora e um terceiro não leem a tabela", async () => {
+    const propria = await membro.cliente
+      .from("post_tag_recusas")
+      .select("author_id, tagged_id")
+      .eq("tagged_id", membro.id)
+    expect(propria.error).toBeNull()
+    expect(propria.data).toEqual([{ author_id: autora.id, tagged_id: membro.id }])
+
+    // O estranho e o membro sem username enxergam o post (a autora é pública), e nem assim a recusa.
+    for (const ator of [autora, estranho, semNome]) {
+      const { data, error } = await ator.cliente
+        .from("post_tag_recusas")
+        .select("author_id, tagged_id")
+        .eq("tagged_id", membro.id)
+      expect(error).toBeNull()
+      expect(data).toEqual([])
+    }
+  })
+
+  it("o trip_id não é legível, nem pela pessoa marcada nem por terceiros, nem por filtro", async () => {
+    for (const ator of [membro, autora, estranho]) {
+      const coluna = await ator.cliente.from("post_tag_recusas").select("trip_id, tagged_id")
+      expect(coluna.data).toBeNull()
+      expect(coluna.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+      const tudo = await ator.cliente.from("post_tag_recusas").select("*")
+      expect(tudo.data).toBeNull()
+      expect(tudo.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+      const filtro = await ator.cliente.from("post_tag_recusas").select("tagged_id").eq("trip_id", viagemA)
+      expect(filtro.data).toBeNull()
+      expect(filtro.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    }
+  })
+
+  it("ninguém insere, altera ou apaga recusa direto: só o trigger escreve", async () => {
+    // Forjar a recusa de outra pessoa (impediria a marca sem ela ter removido nada), ou a própria.
+    for (const [ator, autor, tagged] of [
+      [autora, autora.id, semNome.id],
+      [estranho, autora.id, membro.id],
+      [semNome, autora.id, semNome.id],
+    ] as const) {
+      const { error } = await ator.cliente
+        .from("post_tag_recusas")
+        .insert({ trip_id: viagemA, author_id: autor, tagged_id: tagged })
+      expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    }
+    // Desfazer a recusa (voltaria a abrir a remarcação), por quem a lê e pela autora.
+    for (const ator of [membro, autora]) {
+      const alterada = await ator.cliente
+        .from("post_tag_recusas")
+        .update({ tagged_id: semNome.id })
+        .eq("tagged_id", membro.id)
+        .select("tagged_id")
+      expect(alterada.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+      const apagada = await ator.cliente.from("post_tag_recusas").delete().eq("tagged_id", membro.id).select("tagged_id")
+      expect(apagada.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    }
+    expect(await recusasNoBanco(viagemA, autora.id)).toEqual([membro.id])
+  })
+
+  it("os privilégios, as policies e a função são só os de leitura", async () => {
+    // Pega o que o comportamento acima não separa: um grant de escrita a mais
+    // ainda esbarraria na falta de policy (e vice-versa), e o erro seria o mesmo.
+    const { rows: privilegios } = await db.query(
+      `select r.papel,
+              has_table_privilege(r.papel, 'public.post_tag_recusas', 'SELECT') as select_tabela,
+              has_table_privilege(r.papel, 'public.post_tag_recusas', 'INSERT') as insert,
+              has_table_privilege(r.papel, 'public.post_tag_recusas', 'UPDATE') as update,
+              has_table_privilege(r.papel, 'public.post_tag_recusas', 'DELETE') as delete,
+              has_any_column_privilege(r.papel, 'public.post_tag_recusas', 'INSERT') as insert_coluna,
+              has_any_column_privilege(r.papel, 'public.post_tag_recusas', 'UPDATE') as update_coluna,
+              has_column_privilege(r.papel, 'public.post_tag_recusas', 'trip_id', 'SELECT') as le_trip_id,
+              has_column_privilege(r.papel, 'public.post_tag_recusas', 'author_id', 'SELECT')
+                and has_column_privilege(r.papel, 'public.post_tag_recusas', 'tagged_id', 'SELECT')
+                and has_column_privilege(r.papel, 'public.post_tag_recusas', 'created_at', 'SELECT') as le_o_resto,
+              has_function_privilege(r.papel, 'public.social_recusas_da_viagem(uuid)', 'EXECUTE') as executa
+         from (values ('anon'), ('authenticated')) as r(papel)
+        order by r.papel`,
+    )
+    const semEscrita = {
+      select_tabela: false,
+      insert: false,
+      update: false,
+      delete: false,
+      insert_coluna: false,
+      update_coluna: false,
+      le_trip_id: false,
+    }
+    expect(privilegios).toEqual([
+      { papel: "anon", ...semEscrita, le_o_resto: false, executa: false },
+      { papel: "authenticated", ...semEscrita, le_o_resto: true, executa: true },
+    ])
+
+    const { rows: policies } = await db.query(
+      `select policyname, cmd, roles::text as roles from pg_policies
+        where schemaname = 'public' and tablename = 'post_tag_recusas'`,
+    )
+    expect(policies).toEqual([{ policyname: "post_tag_recusas_select", cmd: "SELECT", roles: "{authenticated}" }])
+
+    const { rows: funcao } = await db.query(
+      `select p.prosecdef, p.provolatile, p.proconfig
+         from pg_proc p where p.oid = 'public.social_recusas_da_viagem(uuid)'::regprocedure`,
+    )
+    expect(funcao).toEqual([{ prosecdef: true, provolatile: "s", proconfig: ['search_path=""'] }])
+  })
+
+  it("a remoção de uma marca recolocada por fora não falha: a recusa já existe (on conflict)", async () => {
+    // A chave de serviço (ou a conexão direta) não passa pela policy de INSERT.
+    await marcarDireto(post, membro.id, autora.id)
+    const { data, error } = await removerMinhaMarca(membro, post)
+    expect(error).toBeNull()
+    expect(data).toEqual([{ tagged_id: membro.id }])
+    expect(await recusasNoBanco(viagemA, autora.id)).toEqual([membro.id])
+  })
+
+  it("remover de novo, sem marca, não apaga nada e não falha", async () => {
+    const { data, error } = await removerMinhaMarca(membro, post)
+    expect(error).toBeNull()
+    expect(data).toEqual([])
+    expect(await recusasNoBanco(viagemA, autora.id)).toEqual([membro.id])
+  })
+
+  it("o visitante sem sessão não lê, não escreve recusas nem chama a função", async () => {
+    const leitura = await visitante.from("post_tag_recusas").select("tagged_id").eq("tagged_id", membro.id)
+    expect(leitura.data).toBeNull()
+    expect(leitura.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    const escrita = await visitante
+      .from("post_tag_recusas")
+      .insert({ trip_id: viagemA, author_id: autora.id, tagged_id: semNome.id })
+    expect(escrita.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    const funcao = await visitante.rpc("social_recusas_da_viagem", { viagem: viagemA })
+    expect(funcao.data).toBeNull()
+    expect(funcao.error?.code).toBe(VIOLA_RLS_OU_GRANT)
+  })
+})
+
+describe("recusa: vale para aquele autor naquela viagem, e só", () => {
+  let colega: Ator
+  let viagemC: string
+  let postC: string
+
+  beforeAll(async () => {
+    colega = await criarAtor("colega")
+    viagemC = await criarViagem(autora.id, [membro.id, colega.id])
+    postC = await postDireto(autora.id, viagemC)
+    await marcarDireto(postC, membro.id, autora.id)
+    const { error } = await removerMinhaMarca(membro, postC)
+    if (error) throw new Error(`não removeu a marca: ${error.message}`)
+  })
+
+  it("a recusa de uma viagem não bloqueia outra viagem da mesma autora", async () => {
+    expect(await recusasNoBanco(viagemC, autora.id)).toEqual([membro.id])
+    const outra = await criarViagem(autora.id, [membro.id])
+    const postOutra = await postDireto(autora.id, outra)
+    const { error } = await marcar(autora, postOutra, membro.id)
+    expect(error).toBeNull()
+    expect(await marcasNoBanco(postOutra)).toEqual([membro.id])
+    expect((await recusasPelaFuncao(autora, outra)).ids).toEqual([])
+  })
+
+  it("a recusa de uma autora não bloqueia outro autor da mesma viagem", async () => {
+    const postDoColega = await postDireto(colega.id, viagemC)
+    const { error } = await marcar(colega, postDoColega, membro.id)
+    expect(error).toBeNull()
+    expect(await marcasNoBanco(postDoColega)).toEqual([membro.id])
+    expect((await recusasPelaFuncao(colega, viagemC)).ids).toEqual([])
+    // E a autora continua bloqueada na mesma viagem.
+    expect((await marcar(autora, postC, membro.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+  })
+})
+
+describe("recusa: quando NÃO se grava", () => {
+  let post: string
+
+  beforeAll(async () => {
+    post = await postDireto(privado.id, viagemB)
+  })
+
+  afterAll(async () => {
+    await db.query("delete from public.trip_posts where id = any($1::uuid[])", [[post]])
+  })
+
+  it("o autor desmarca: não há recusa, e ele marca a pessoa de novo", async () => {
+    await marcarDireto(post, davi.id, privado.id)
+    const desmarcado = await privado.cliente
+      .from("post_tags")
+      .delete()
+      .eq("post_id", post)
+      .eq("tagged_id", davi.id)
+      .select("tagged_id")
+    expect(desmarcado.error).toBeNull()
+    expect(desmarcado.data).toEqual([{ tagged_id: davi.id }])
+    expect(await recusasNoBanco(viagemB, privado.id)).toEqual([])
+
+    const remarcado = await marcar(privado, post, davi.id)
+    expect(remarcado.error).toBeNull()
+    expect(await marcasNoBanco(post)).toEqual([davi.id])
+  })
+
+  it("a remoção sem sessão (chave de serviço, conexão direta) não grava recusa", async () => {
+    await db.query("delete from public.post_tags where post_id = $1 and tagged_id = $2", [post, davi.id])
+    expect(await marcasNoBanco(post)).toEqual([])
+    expect(await recusasNoBanco(viagemB, privado.id)).toEqual([])
+  })
+})
+
+describe("recusa: as cascatas levam a recusa e não falham por causa do trigger", () => {
+  it("despublicar não apaga a recusa; apagar a viagem, sim", async () => {
+    const viagem = await criarViagem(autora.id, [membro.id])
+    const post = await postDireto(autora.id, viagem)
+    await marcarDireto(post, membro.id, autora.id)
+    await removerMinhaMarca(membro, post)
+    expect(await recusasNoBanco(viagem, autora.id)).toEqual([membro.id])
+
+    await db.query("delete from public.trip_posts where id = $1", [post])
+    expect(await recusasNoBanco(viagem, autora.id)).toEqual([membro.id])
+
+    await db.query("delete from public.trips where id = $1", [viagem])
+    expect(await contarRecusas("trip_id", viagem)).toBe(0)
+  })
+
+  it("a marcada, dona da viagem, apaga a viagem pela própria sessão: a cascata não falha nem grava recusa", async () => {
+    // A sessão é a pessoa marcada (auth.uid() = tagged_id) quando a cascata
+    // apaga a marca; gravar a recusa de um post que já não existe violaria a
+    // FK e derrubaria a exclusão da viagem inteira.
+    const viagem = await criarViagem(membro.id, [autora.id])
+    const post = await postDireto(autora.id, viagem)
+    await marcarDireto(post, membro.id, autora.id)
+    await removerMinhaMarca(membro, post)
+    // A marca recolocada por fora: a viagem sai com marca E recusa.
+    await marcarDireto(post, membro.id, autora.id)
+    expect(await contarRecusas("trip_id", viagem)).toBe(1)
+
+    const { data, error } = await membro.cliente.from("trips").delete().eq("id", viagem).select("id")
+    expect(error).toBeNull()
+    expect(data).toEqual([{ id: viagem }])
+
+    const { rows } = await db.query(
+      `select (select count(*) from public.trip_posts where id = $1)::int as posts,
+              (select count(*) from public.post_tags where post_id = $1)::int as marcas`,
+      [post],
+    )
+    expect(rows[0]).toEqual({ posts: 0, marcas: 0 })
+    expect(await contarRecusas("trip_id", viagem)).toBe(0)
+  })
+
+  it("apagar a conta da marcada, mesmo na sessão dela, não falha e leva marcas e recusas", async () => {
+    const conta = await criarAtor("conta")
+    const viagem = await criarViagem(autora.id, [conta.id])
+    const post = await postDireto(autora.id, viagem)
+    await marcarDireto(post, conta.id, autora.id)
+    await removerMinhaMarca(conta, post)
+    // A marca recolocada por fora: a conta sai com marca E recusa.
+    await marcarDireto(post, conta.id, autora.id)
+    expect(await recusasNoBanco(viagem, autora.id)).toEqual([conta.id])
+
+    await apagarContaNaSessaoDe(conta.id, conta.id)
+
+    expect(await marcasNoBanco(post)).toEqual([])
+    expect(await contarRecusas("tagged_id", conta.id)).toBe(0)
+    // O post da autora continua: só a conta saiu.
+    const { rows } = await db.query("select count(*)::int as n from public.trip_posts where id = $1", [post])
+    expect(rows[0].n).toBe(1)
+  })
+
+  it("apagar a conta do autor, mesmo na sessão da marcada, não falha e leva as recusas dele", async () => {
+    const autorX = await criarAtor("autorx")
+    // A viagem é da marcada, e não do autor: assim a conta dele não leva a
+    // viagem (que levaria o post antes de tudo), e o post sai pela própria FK
+    // de author_id — o caminho mais curto até a marca.
+    const viagem = await criarViagem(membro.id, [autorX.id])
+    const post = await postDireto(autorX.id, viagem)
+    await marcarDireto(post, membro.id, autorX.id)
+    await removerMinhaMarca(membro, post)
+    await marcarDireto(post, membro.id, autorX.id)
+    expect(await recusasNoBanco(viagem, autorX.id)).toEqual([membro.id])
+
+    // O pior caso: a cascata apaga a marca com auth.uid() = a pessoa marcada.
+    await apagarContaNaSessaoDe(autorX.id, membro.id)
+
+    expect(await marcasNoBanco(post)).toEqual([])
+    expect(await contarRecusas("author_id", autorX.id)).toBe(0)
+  })
+})
+
+/**
+ * O limite aceito (decisão do Micael em 18/11, achado 3): "igual ao Instagram",
+ * a marca é visível a quem vê o post, mesmo que a pessoa marcada seja privada.
+ * A policy de post_tags não a esconde; a aba Marcações de um perfil privado
+ * só abre a seguidores na ROTA. Este teste documenta o limite: se um dia ele
+ * falhar, a regra mudou e a documentação precisa mudar junto.
+ *
+ * @RF09.14
+ */
+describe("limite aceito: a marca de pessoa privada é visível a quem vê o post", () => {
+  let reservada: Ator
+  let post: string
+
+  beforeAll(async () => {
+    reservada = await criarAtor("reservada", { privado: true })
+    const viagem = await criarViagem(autora.id, [reservada.id])
+    post = await postDireto(autora.id, viagem)
+    await marcarDireto(post, reservada.id, autora.id)
+  })
+
+  it("quem não segue a pessoa privada vê a marca dela no post público, também pela lista por pessoa", async () => {
+    const noPost = await estranho.cliente.from("post_tags").select("tagged_id").eq("post_id", post)
+    expect(noPost.error).toBeNull()
+    expect(noPost.data).toEqual([{ tagged_id: reservada.id }])
+
+    // A lista agregada por pessoa, pela Data API: é o que a rota fecha para privado.
+    const porPessoa = await estranho.cliente.from("post_tags").select("post_id").eq("tagged_id", reservada.id)
+    expect(porPessoa.error).toBeNull()
+    expect(porPessoa.data).toEqual([{ post_id: post }])
   })
 })
 

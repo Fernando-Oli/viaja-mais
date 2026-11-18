@@ -389,6 +389,49 @@ export type Database = {
           },
         ]
       }
+      post_tag_recusas: {
+        Row: {
+          author_id: string
+          created_at: string
+          tagged_id: string
+          trip_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          tagged_id: string
+          trip_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          tagged_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_tag_recusas_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tag_recusas_tagged_id_fkey"
+            columns: ["tagged_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tag_recusas_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_tags: {
         Row: {
           author_id: string
@@ -806,6 +849,7 @@ export type Database = {
         Args: { marcado: string; post: string }
         Returns: boolean
       }
+      social_recusas_da_viagem: { Args: { viagem: string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never

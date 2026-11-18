@@ -135,10 +135,13 @@ grant update (caption, places) on public.trip_posts to authenticated;
 -- 4. Quem a sessão pode marcar numa viagem
 -- ---------------------------------------------------------------------------
 -- A tela "Quem viajou com você" precisa dos outros membros da viagem com
--- username — os mesmos que social_pode_marcar aceita. A RLS da plataforma não
--- deixa o domínio Social ler trip_members de outra pessoa, e o CLAUDE.md não
--- deixa a rota consultar a tabela de outro domínio: a função responde só
--- isso, e nada além dos ids.
+-- username — os mesmos que social_pode_marcar aceita, salvo quem recusou as
+-- marcas da sessão nesta viagem (post_tag_recusas, 20261116234030): esses, a
+-- rota lê pela social_recusas_da_viagem e os mostra como "recusou", e o banco
+-- recusa a marca na policy de INSERT de post_tags. O CLAUDE.md não deixa a
+-- rota do domínio Social consultar trip_members, tabela de outro domínio (a
+-- RLS da plataforma até deixaria: can_access_trip mostra ao membro os colegas
+-- de viagem): a função responde só isso, e nada além dos ids.
 --
 -- Só responde a quem participa da viagem: para quem não é membro (ou para uma
 -- chamada sem sessão), volta vazio, e por ela não se descobre quem foi na

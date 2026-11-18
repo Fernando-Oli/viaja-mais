@@ -1,8 +1,10 @@
+import fs from "node:fs"
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest"
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { Client } from "pg"
 import { SENHA_TESTE } from "../fixtures/usuarios"
 import { CONEXAO, logar, novoCliente } from "./apoio"
+import { variavelObrigatoria } from "./guarda-ambiente"
 
 /**
  * Publicar viagem (S06-M-publicar-viagem): a tabela `trip_posts` e o bucket
@@ -26,7 +28,11 @@ import { CONEXAO, logar, novoCliente } from "./apoio"
  *     do item, nem capa fora da pasta do autor;
  *   - a cascata: excluir a viagem apaga os posts;
  *   - ler o post não abre a viagem, os membros nem as despesas;
- *   - nenhuma policy em storage.objects, e o bucket nasce privado;
+ *   - o autor grava cover_path na própria pasta pelo UPDATE, sem a rota
+ *     (limite aceito, achado 4 de 18/11): só o INSERT recusa a capa;
+ *   - nenhuma policy em storage.objects, de bucket nenhum, e o bucket nasce
+ *     privado: com um objeto que existe na pasta dela, a autora não assina,
+ *     não baixa, não lista, não sobrescreve nem envia com o próprio JWT;
  *   - a legenda e os lugares salvos (migration 20261118092400): legenda até
  *     280 e nunca em branco; dos lugares, só nome, categoria e endereço — nem
  *     notas, coordenadas ou nota do Google; só o autor os atualiza.
@@ -160,6 +166,21 @@ async function postDireto(autor: string, viagem: string) {
     [viagem, autor],
   )
   return rows[0].id
+}
+
+/**
+ * Chave de serviço, só para criar e apagar o objeto de teste do bucket, como a
+ * rota da capa faz; nunca é o ator que se testa. Mesma origem de 05-avatares:
+ * SERVICE_ROLE_KEY no CI, SUPABASE_SERVICE_ROLE_KEY do `.env.local` na máquina.
+ * A API_URL já passou por `exigirLocal`.
+ */
+function chaveDeServico(): string {
+  const doAmbiente = process.env.SERVICE_ROLE_KEY
+  if (doAmbiente) return doAmbiente
+  const linha = fs.existsSync(".env.local")
+    ? fs.readFileSync(".env.local", "utf8").match(/^\s*SUPABASE_SERVICE_ROLE_KEY\s*=\s*"?([^"#\s]+)/m)
+    : null
+  return linha?.[1] ?? variavelObrigatoria("SERVICE_ROLE_KEY")
 }
 
 async function apagarPostsDe(viagem: string) {
@@ -346,7 +367,8 @@ describe("escrita pela Data API", () => {
     expect(error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 
-  it("a capa não entra no INSERT: só pela rota, depois de conferir os bytes", async () => {
+  // Só o INSERT: o UPDATE do cover_path é limite aceito (achado 4, logo abaixo).
+  it("a capa não entra no INSERT", async () => {
     const { error } = await autora.cliente
       .from("trip_posts")
       .insert({ ...postDe(autora.id, viagemA), cover_path: `${autora.id}/${autora.id}.webp` })
@@ -390,6 +412,28 @@ describe("escrita pela Data API", () => {
     }
     const { rows } = await db.query("select trip_id, author_id from public.trip_posts where id = $1", [id])
     expect(rows[0]).toEqual({ trip_id: viagemA, author_id: autora.id })
+  })
+
+  /**
+   * Limite aceito (achado 4 da revisão de 18/11): o grant de UPDATE inclui
+   * cover_path, então o autor grava pela Data API um caminho na PRÓPRIA pasta
+   * sem a rota da capa conferir nada. O CHECK segura o formato e a pasta (o
+   * teste "a capa só aceita caminho na pasta do autor" abaixo); o bucket não
+   * tem policy, então ele não sobe arquivo nenhum para essa pasta — o caminho
+   * aponta para uma capa que a rota já conferiu, ou para nada. Se este teste
+   * falhar, o grant mudou e a documentação precisa mudar junto.
+   */
+  it("limite aceito: pelo UPDATE, o autor grava cover_path na própria pasta sem passar pela rota", async () => {
+    const id = (await autora.cliente.rpc("social_meu_post_da_viagem", { viagem: viagemA })).data as string
+    const caminho = `${autora.id}/${membro.id}.webp`
+    try {
+      const { error } = await autora.cliente.from("trip_posts").update({ cover_path: caminho }).eq("id", id)
+      expect(error).toBeNull()
+      const { rows } = await db.query("select cover_path from public.trip_posts where id = $1", [id])
+      expect(rows[0].cover_path).toBe(caminho)
+    } finally {
+      await db.query("update public.trip_posts set cover_path = null where id = $1", [id])
+    }
   })
 
   it("outra pessoa, mesmo membro da viagem, não altera nem apaga o post da autora", async () => {
@@ -528,20 +572,86 @@ describe("o bucket da capa", () => {
     })
   })
 
-  it("nenhuma policy de storage.objects menciona o bucket: ninguém assina nem envia com o próprio JWT", async () => {
+  it("storage.objects não tem policy nenhuma, de bucket nenhum", async () => {
+    // Qualquer policy, e não só as que citam 'capas-posts': uma policy genérica
+    // ("o dono lê o que é dele", sem bucket_id) abriria este bucket também.
     const { rows } = await db.query(
-      `select policyname from pg_policies
-        where schemaname = 'storage' and tablename = 'objects'
-          and (coalesce(qual, '') || coalesce(with_check, '')) like '%capas-posts%'`,
+      "select policyname from pg_policies where schemaname = 'storage' and tablename = 'objects'",
     )
     expect(rows).toEqual([])
+  })
 
-    const assinado = await autora.cliente.storage.from("capas-posts").createSignedUrl(`${autora.id}/x.webp`, 60)
-    expect(assinado.data).toBeNull()
-    const enviado = await autora.cliente.storage
-      .from("capas-posts")
-      .upload(`${autora.id}/${autora.id}.webp`, new Blob(["x"], { type: "image/webp" }))
-    expect(enviado.data).toBeNull()
+  /**
+   * Com um objeto que EXISTE de verdade, criado pela API do Storage com a chave
+   * de serviço (como a rota faz) e com a autora como dona — o pior caso, para
+   * uma policy por owner_id também aparecer. Sem ele, "não assinou" passaria
+   * pelo motivo errado: o arquivo não existiria. Cada tentativa confere o
+   * estado depois, pelo banco e pelos bytes.
+   */
+  describe("com um objeto que existe na pasta da autora", () => {
+    const BUCKET = "capas-posts"
+    const WEBP = Buffer.from("RIFF\x1a\x00\x00\x00WEBPVP8 capa-original", "latin1")
+    let servico: SupabaseClient
+    let existente: string
+    let novo: string
+
+    async function nomesNoBucket() {
+      const { rows } = await db.query(
+        "select name from storage.objects where bucket_id = $1 and name = any($2) order by name",
+        [BUCKET, [existente, novo]],
+      )
+      return rows.map((r) => r.name as string)
+    }
+
+    beforeAll(async () => {
+      servico = novoCliente(chaveDeServico())
+      existente = `${autora.id}/${membro.id}.webp`
+      novo = `${autora.id}/${estranho.id}.webp`
+      const { error } = await servico.storage.from(BUCKET).upload(existente, WEBP, { contentType: "image/webp" })
+      if (error) throw new Error(`não criou a capa de teste: ${error.message}`)
+      await db.query("update storage.objects set owner_id = $1 where bucket_id = $2 and name = $3", [
+        autora.id,
+        BUCKET,
+        existente,
+      ])
+    })
+
+    afterAll(async () => {
+      const { error } = await servico.storage.from(BUCKET).remove([existente, novo])
+      if (error) throw new Error(`limpeza do bucket falhou: ${error.message}`)
+      const sobra = await nomesNoBucket()
+      if (sobra.length) throw new Error(`limpeza do bucket deixou: ${sobra.join(", ")}`)
+    })
+
+    it("o objeto existe: linha no banco e bytes no Storage", async () => {
+      expect(await nomesNoBucket()).toEqual([existente])
+      const { data } = await servico.storage.from(BUCKET).download(existente)
+      expect(Buffer.from(await data!.arrayBuffer())).toEqual(WEBP)
+    })
+
+    it("a autora, dona do objeto, não assina, não baixa e não lista com o próprio JWT", async () => {
+      const assinado = await autora.cliente.storage.from(BUCKET).createSignedUrl(existente, 60)
+      expect(assinado.data).toBeNull()
+      expect(assinado.error).not.toBeNull()
+      const baixado = await autora.cliente.storage.from(BUCKET).download(existente)
+      expect(baixado.data).toBeNull()
+      const listado = await autora.cliente.storage.from(BUCKET).list(autora.id)
+      expect(listado.data ?? []).toEqual([])
+    })
+
+    it("a autora não sobrescreve o objeto nem envia outro na própria pasta", async () => {
+      const outro = Buffer.from("RIFF\x1a\x00\x00\x00WEBPVP8 capa-trocada", "latin1")
+      const sobrescrito = await autora.cliente.storage
+        .from(BUCKET)
+        .upload(existente, outro, { contentType: "image/webp", upsert: true })
+      expect(sobrescrito.data).toBeNull()
+      const enviado = await autora.cliente.storage.from(BUCKET).upload(novo, outro, { contentType: "image/webp" })
+      expect(enviado.data).toBeNull()
+
+      expect(await nomesNoBucket()).toEqual([existente])
+      const { data } = await servico.storage.from(BUCKET).download(existente)
+      expect(Buffer.from(await data!.arrayBuffer())).toEqual(WEBP)
+    })
   })
 })
 
