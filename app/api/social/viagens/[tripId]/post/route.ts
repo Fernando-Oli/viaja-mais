@@ -7,78 +7,100 @@ import { ErroHttp, naoAutenticado, respostaDeErro, respostaInvalida } from "@/li
 import { pedidoPostSchema } from "@/lib/schemas/post"
 import { SEM_CACHE_COMPARTILHADO } from "@/lib/social/avatar"
 import { assinarCapa, removerCapa } from "@/lib/social/capa"
+import {
+  MARCADO_INVALIDO,
+  conferirMarcados,
+  marcadosDoPost,
+  membrosMarcaveis,
+  sincronizarMarcacoes,
+  type PessoaMarcada,
+} from "@/lib/social/marcacoes"
 import { temUsername } from "@/lib/social/perfil-visto"
 import {
   atualizar,
   despublicar,
+  lugaresDaProjecao,
   montarPost,
   postDaViagem,
   publicar,
   type ItemDoPost,
+  type LugarDoPost,
   type PostDoAutor,
+  type ProjecaoComLugares,
 } from "@/lib/social/posts"
-import { projecaoPublicaDaViagem, type ItemPublico, type ViagemPublica } from "@/lib/trips/publico"
+import { projecaoPublicaDaViagem } from "@/lib/trips/publico"
 
 /**
- * O post da sessão numa viagem (S06-M-publicar-viagem): ver a prévia e o
- * estado (GET), publicar (POST), atualizar a publicação (PATCH) e despublicar
- * (DELETE).
+ * O post da sessão numa viagem (S06-M-publicar-viagem): ver a prévia, os
+ * marcáveis e o estado (GET), publicar (POST), atualizar a publicação (PATCH) e
+ * despublicar (DELETE).
  *
  * Segue o molde de app/api/trips/[tripId]/route.ts: `await params`,
  * `getUser()`, autorização explícita, zod e `respostaDeErro`. As decisões do
- * Micael em 11/11 (docs/plans/S06-M-publicar-viagem.md) definem o resto:
+ * Micael (docs/plans/S06-M-publicar-viagem.md; as de 18/11 seguem a prévia do
+ * Fernando) definem o resto:
  *
  * - **Qualquer membro publica** (`exigirMembro`), e cada um tem o próprio post
  *   da mesma viagem. Publicar de novo é 409 (`unique (trip_id, author_id)`).
  * - **Só publica quem tem username**, porque o post vive em `/u/<username>`:
  *   403 com `codigo: "sem_username"`, como no seguir (S05-M-listas). A policy de
  *   INSERT de `trip_posts` recusa o mesmo no banco.
- * - **O post é uma cópia montada no servidor.** O corpo só escolhe quais itens
- *   entram e quais campos opcionais ficam visíveis; título, destino, datas e o
- *   texto dos itens saem da projeção pública da viagem
+ * - **O post é uma cópia montada no servidor.** O corpo escolhe a legenda, se o
+ *   roteiro e os lugares entram (e como), e quem é marcado; título, destino,
+ *   datas, itens e lugares saem da projeção pública da viagem
  *   (`projecaoPublicaDaViagem`, lib/trips/publico.ts, domínio da Audrey). Esta
- *   rota não lê `trips` nem `itinerary_items`: a projeção é a única janela.
+ *   rota não lê `trips`, `itinerary_items`, `places` nem `trip_members`: a
+ *   projeção e a função `social_membros_marcaveis` são as únicas janelas.
+ * - **Marcar** (RF09.13): só membros da viagem com username, menos a sessão
+ *   (`membrosMarcaveis`). Um marcado fora dessa lista é 400 com
+ *   `codigo: "marcado_invalido"`, **antes de gravar** o post. Ao atualizar,
+ *   quem já estava marcado e saiu da viagem continua aceito: a marca é dele
+ *   para remover (decisão de 16/11). A policy de `post_tags` é a segunda linha.
  * - **Quem saiu da viagem** não vê a prévia nem atualiza (o `exigirMembro`
  *   recusa, e a policy de UPDATE também), mas **despublica**: o post é dele, e
  *   a policy de DELETE só exige ser o autor. Por isso o DELETE não chama
  *   `exigirMembro`; ele acha o post pelo `postDaViagem`, que só responde sobre a
- *   sessão.
+ *   sessão. As marcas saem junto, em cascata.
  *
  * **Ordem das checagens.** A do molde: sessão, autorização, corpo. A
- * autorização aqui é o `exigirMembro` e, no POST, o username (o plano agrupa os
- * dois: "quem pode publicar"). Ela vem antes do zod para que quem não pode
- * publicar receba 403 venha o corpo que vier, sem aprender nada do formato
- * esperado. O zod vem logo depois e antes de qualquer outra leitura: corpo
- * inválido é 400 sem ler a projeção nem o post. JSON malformado também é 400,
- * e não o 500 de um `SyntaxError`.
+ * autorização aqui é o `exigirMembro` e, no POST, o username. Ela vem antes do
+ * zod para que quem não pode publicar receba 403 venha o corpo que vier, sem
+ * aprender nada do formato esperado. O zod vem logo depois e antes de qualquer
+ * outra leitura: corpo inválido é 400 sem ler a projeção nem o post. JSON
+ * malformado também é 400, e não o 500 de um `SyntaxError`.
  *
  * O `tripId` da URL é conferido como uuid antes da autorização: um id fora do
- * formato faria a consulta de `trip_members` falhar no Postgres (22P02), e o
- * erro dela sai como 500 com a mensagem do banco (`papelNaViagem`).
+ * formato faria a consulta de `trip_members` falhar no Postgres (22P02).
+ *
+ * **Publicar e marcar não são uma transação.** O post é gravado e depois as
+ * marcas. Se as marcas falharem no POST, o post recém-criado é apagado (sem
+ * capa ainda, não há arquivo a limpar) e o erro segue: a pessoa tenta de novo
+ * sem esbarrar no 409. No PATCH o conteúdo novo fica e o erro segue; repetir o
+ * PATCH completa as marcas.
  *
  * **O que nunca sai.** A resposta é montada campo a campo, aqui também, e não
  * repassa o objeto da lib: nenhuma traz `trip_id`, `author_id`, `cover_path`,
- * `budget`, `currency`, `notes`, coordenadas, `status`, e-mail nem membros. Dois
- * posts com o mesmo `trip_id` revelariam quem viajou junto. A prévia leva o `id`
- * de cada item, só para a tela marcar o que entra; ele não vai para o post. A
- * capa vai como URL assinada em `cover_url` (lib/social/capa.ts), e por isso
- * toda resposta, inclusive as de erro, sai com `Cache-Control: private,
- * no-store`.
+ * `budget`, `currency`, `notes`, coordenadas, `status`, e-mail nem a lista de
+ * membros (só os marcáveis, com username). A prévia não leva o `id` dos itens
+ * (o roteiro entra inteiro) e leva o dos lugares, para a tela escolher o
+ * endereço de cada um; nenhum id vai para o post. A capa e as fotos vão como
+ * URL assinada, e por isso toda resposta, inclusive as de erro, sai com
+ * `Cache-Control: private, no-store`.
  *
- * **A chave de serviço** só assina a capa (GET e as respostas com post) e só a
- * apaga ao despublicar, sempre na pasta do autor (`removerCapa` confere). Não lê
- * dado da aplicação; post e prévia vêm com a sessão, sob a RLS.
+ * **A chave de serviço** só assina capa e fotos, e só apaga a capa ao
+ * despublicar, sempre na pasta do autor (`removerCapa` confere). Não lê dado da
+ * aplicação; post, prévia e marcas vêm com a sessão, sob a RLS.
  *
  * **Despublicar com o arquivo da capa preso.** O post sai primeiro, e a capa
  * depois. Se o Storage falhar ao apagar, o post já não existe e não volta: a
- * resposta é 200 (a pessoa despublicou) e a falha vai para o log. Sobra um
- * arquivo inalcançável no bucket, porque só se assina caminho que está num post;
- * é a mesma pendência registrada para a capa de viagem excluída (plano, bloco 1).
+ * resposta é 200 (a pessoa despublicou) e a falha vai para o log.
  *
- * Erro do banco nunca sai cru: 23505 vira 409 e 42501 vira 403 em
- * lib/social/posts.ts, e o resto cai no 500 genérico de `respostaDeErro`.
+ * Erro do banco nunca sai cru: 23505 vira 409 e 42501 vira 403 nas libs, e o
+ * resto cai no 500 genérico de `respostaDeErro` — inclusive o `ErroHttp` 500
+ * de `papelNaViagem`, que carrega a mensagem do Postgres.
  *
- * @RF09.7 publicar viagem expondo só título, destino, datas, capa e itinerário
+ * @RF09.7 publicar viagem expondo só título, destino, datas, legenda, capa, roteiro e lugares
+ * @RF09.13 marcar quem viajou junto
  * @RNF02.11 erro do banco não vaza
  */
 
@@ -105,15 +127,33 @@ async function prepararPedido(contexto: Contexto) {
 }
 
 /**
+ * Erro em resposta. `ErroHttp` 5xx (o de `papelNaViagem` leva a mensagem do
+ * banco) vira o 500 genérico; o `marcado_invalido` ganha a mensagem legível e o
+ * código, no formato do `sem_username`.
+ */
+function respostaDaFalha(erro: unknown): NextResponse {
+  if (erro instanceof ErroHttp && erro.status >= 500) {
+    return respostaDeErro(new Error("[post da viagem] erro interno", { cause: erro }))
+  }
+  if (erro instanceof ErroHttp && erro.status === 400 && erro.message === MARCADO_INVALIDO) {
+    return NextResponse.json(
+      { error: "Só dá para marcar quem viajou com você e tem nome de usuário", codigo: MARCADO_INVALIDO },
+      { status: 400 },
+    )
+  }
+  return respostaDeErro(erro)
+}
+
+/**
  * Executa o método e aplica o cabeçalho sem cache a qualquer resposta, inclusive
- * à de erro de `respostaDeErro`, que não o põe.
+ * à de erro.
  */
 async function responder(executar: () => Promise<NextResponse>): Promise<NextResponse> {
   let resposta: NextResponse
   try {
     resposta = await executar()
   } catch (erro) {
-    resposta = respostaDeErro(erro)
+    resposta = respostaDaFalha(erro)
   }
   for (const [nome, valor] of Object.entries(SEM_CACHE_COMPARTILHADO)) resposta.headers.set(nome, valor)
   return resposta
@@ -121,15 +161,14 @@ async function responder(executar: () => Promise<NextResponse>): Promise<NextRes
 
 const viagemInvalida = () => respostaInvalida({ formErrors: ["viagem inválida"], fieldErrors: {} })
 
-/** A prévia campo a campo: o que a tela mostra e marca. */
-function previaDaResposta(projecao: ViagemPublica) {
+/** A prévia campo a campo: o que o diálogo mostra. Itens sem id; lugares com id, para escolher o endereço. */
+function previaDaResposta(projecao: ProjecaoComLugares) {
   return {
     title: projecao.title,
     destination: projecao.destination,
     start_date: projecao.start_date,
     end_date: projecao.end_date,
-    itens: projecao.itens.map((item: ItemPublico) => ({
-      id: item.id,
+    itens: projecao.itens.map((item) => ({
       title: item.title,
       date: item.date,
       start_time: item.start_time,
@@ -138,7 +177,18 @@ function previaDaResposta(projecao: ViagemPublica) {
       location: item.location,
       description: item.description,
     })),
+    lugares: lugaresDaProjecao(projecao).map((lugar) => ({
+      id: lugar.id,
+      name: lugar.name,
+      category: lugar.category,
+      address: lugar.address,
+    })),
   }
+}
+
+/** Uma pessoa marcável ou marcada, campo a campo. */
+function pessoaDaResposta(pessoa: PessoaMarcada): PessoaMarcada {
+  return { id: pessoa.id, username: pessoa.username, full_name: pessoa.full_name, avatar_url: pessoa.avatar_url }
 }
 
 /** Um item gravado, campo a campo. Campo ausente fica ausente (o JSON omite `undefined`). */
@@ -154,23 +204,31 @@ function itemDaResposta(item: ItemDoPost): ItemDoPost {
   }
 }
 
-/** O post como a tela o recebe: sem `cover_path`, com a capa em URL assinada (ou nula). */
-async function postDaResposta(post: PostDoAutor) {
+/** Um lugar gravado, campo a campo. */
+function lugarDaResposta(lugar: LugarDoPost): LugarDoPost {
+  return { name: lugar.name, category: lugar.category, address: lugar.address }
+}
+
+/** O post como a tela o recebe: sem `cover_path`, com a capa em URL assinada (ou nula) e os marcados. */
+async function postDaResposta(post: PostDoAutor, marcados: PessoaMarcada[]) {
   return {
     id: post.id,
     title: post.title,
     destination: post.destination,
     start_date: post.start_date,
     end_date: post.end_date,
+    caption: post.caption,
     items: post.items.map(itemDaResposta),
+    places: post.places.map(lugarDaResposta),
     cover_url: post.cover_path ? await assinarCapa(criarClienteAdmin, post.cover_path) : null,
     created_at: post.created_at,
     updated_at: post.updated_at,
+    marcados: marcados.map(pessoaDaResposta),
   }
 }
 
 /** A projeção da viagem, ou 404 quando ela não existe para a sessão. */
-async function projecaoOu404(supabase: Supabase, tripId: string) {
+async function projecaoOu404(supabase: Supabase, tripId: string): Promise<ProjecaoComLugares> {
   const projecao = await projecaoPublicaDaViagem(supabase, tripId)
   if (!projecao) throw new ErroHttp(404, "Viagem não encontrada")
   return projecao
@@ -181,17 +239,25 @@ async function lerPedido(request: Request) {
   return pedidoPostSchema.safeParse(await request.json().catch(() => null))
 }
 
+const idsDe = (pessoas: PessoaMarcada[]) => pessoas.map((pessoa) => pessoa.id)
+
 export async function GET(_request: Request, contexto: Contexto): Promise<NextResponse> {
   return responder(async () => {
     const { supabase, user, tripId } = await prepararPedido(contexto)
     if (!tripId) return viagemInvalida()
     await exigirMembro(supabase, tripId, user.id)
 
-    const [projecao, post] = await Promise.all([projecaoOu404(supabase, tripId), postDaViagem(supabase, tripId)])
+    const [projecao, marcaveis, post] = await Promise.all([
+      projecaoOu404(supabase, tripId),
+      membrosMarcaveis(supabase, tripId, criarClienteAdmin),
+      postDaViagem(supabase, tripId),
+    ])
+    const marcados = post ? await marcadosDoPost(supabase, post.id, criarClienteAdmin) : []
 
     return NextResponse.json({
       previa: previaDaResposta(projecao),
-      post: post ? await postDaResposta(post) : null,
+      marcaveis: marcaveis.map(pessoaDaResposta),
+      post: post ? await postDaResposta(post, marcados) : null,
     })
   })
 }
@@ -211,13 +277,32 @@ export async function POST(request: Request, contexto: Contexto): Promise<NextRe
 
     const analise = await lerPedido(request)
     if (!analise.success) return respostaInvalida(analise.error.flatten())
-    const { itens, mostrar } = analise.data
+    const { legenda, roteiro, lugares, marcados } = analise.data
 
-    // A cópia sai só da projeção: o corpo escolhe ids e campos, não escreve texto.
-    const copia = montarPost(await projecaoOu404(supabase, tripId), itens, mostrar)
+    const [projecao, marcaveis] = await Promise.all([
+      projecaoOu404(supabase, tripId),
+      membrosMarcaveis(supabase, tripId, criarClienteAdmin),
+    ])
+    // Antes de gravar: um marcado inválido não deixa post publicado pela metade.
+    const permitidos = idsDe(marcaveis)
+    conferirMarcados(marcados, permitidos)
+
+    // A cópia sai só da projeção: o corpo escolhe, e só escreve a legenda e o endereço digitado.
+    const copia = montarPost(projecao, { legenda, roteiro, lugares })
     const post = await publicar(supabase, { tripId, autorId: user.id, copia })
 
-    return NextResponse.json({ post: await postDaResposta(post) }, { status: 201 })
+    try {
+      await sincronizarMarcacoes(supabase, post.id, user.id, marcados, permitidos)
+    } catch (erro) {
+      // Sem as marcas, desfaz a publicação: tentar de novo não pode esbarrar no 409.
+      await despublicar(supabase, post.id).catch((falha: unknown) =>
+        console.error("[post da viagem] post sem marcas não foi desfeito", post.id, falha),
+      )
+      throw erro
+    }
+
+    const marcadosGravados = await marcadosDoPost(supabase, post.id, criarClienteAdmin)
+    return NextResponse.json({ post: await postDaResposta(post, marcadosGravados) }, { status: 201 })
   })
 }
 
@@ -230,17 +315,29 @@ export async function PATCH(request: Request, contexto: Contexto): Promise<NextR
 
     const analise = await lerPedido(request)
     if (!analise.success) return respostaInvalida(analise.error.flatten())
-    const { itens, mostrar } = analise.data
+    const { legenda, roteiro, lugares, marcados } = analise.data
 
     const atual = await postDaViagem(supabase, tripId)
     if (!atual) throw new ErroHttp(404, "Publicação não encontrada")
 
-    const copia = montarPost(await projecaoOu404(supabase, tripId), itens, mostrar)
+    const [projecao, marcaveis, jaMarcados] = await Promise.all([
+      projecaoOu404(supabase, tripId),
+      membrosMarcaveis(supabase, tripId, criarClienteAdmin),
+      marcadosDoPost(supabase, atual.id, criarClienteAdmin),
+    ])
+    // Quem já estava marcado e saiu da viagem pode continuar marcado; ninguém novo de fora entra.
+    const permitidos = [...idsDe(marcaveis), ...idsDe(jaMarcados)]
+    conferirMarcados(marcados, permitidos)
+
+    const copia = montarPost(projecao, { legenda, roteiro, lugares })
     const post = await atualizar(supabase, atual.id, copia)
     // Sumiu entre a leitura e a escrita (despublicado em outra aba).
     if (!post) throw new ErroHttp(404, "Publicação não encontrada")
 
-    return NextResponse.json({ post: await postDaResposta(post) })
+    await sincronizarMarcacoes(supabase, post.id, user.id, marcados, permitidos)
+
+    const marcadosGravados = await marcadosDoPost(supabase, post.id, criarClienteAdmin)
+    return NextResponse.json({ post: await postDaResposta(post, marcadosGravados) })
   })
 }
 
@@ -267,6 +364,6 @@ export async function DELETE(_request: Request, contexto: Contexto): Promise<Nex
       }
     }
 
-    return NextResponse.json({ post: null })
+    return NextResponse.json({ ok: true })
   })
 }

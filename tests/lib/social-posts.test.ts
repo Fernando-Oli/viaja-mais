@@ -1,19 +1,23 @@
 /**
- * @RF09.7 o post é uma cópia da projeção pública: só os itens e os campos escolhidos, nunca notas,
- * coordenadas, status, preço nem o id do item; e as escritas usam só as colunas do grant, sem trip_id
+ * @RF09.7 o post é uma cópia da projeção pública: legenda limpa, o roteiro inteiro com local e descrição
+ * só se ligados, os lugares escolhidos com o endereço escolhido, e nunca notas, coordenadas, status, preço
+ * nem ids; as escritas usam só as colunas do grant, sem trip_id
  */
 import { describe, it, expect } from "vitest"
-import type { ItemPublico, ViagemPublica } from "@/lib/trips/publico"
-import type { CamposVisiveis } from "@/lib/schemas/post"
+import type { ItemPublico } from "@/lib/trips/publico"
+import type { PedidoPost } from "@/lib/schemas/post"
 import { ErroHttp } from "@/lib/http"
 import {
   atualizar,
   definirCapa,
   despublicar,
+  lugaresDaProjecao,
   montarPost,
   postDaViagem,
   publicar,
   type CopiaDoPost,
+  type LugarPublico,
+  type ProjecaoComLugares,
 } from "@/lib/social/posts"
 
 // ---------------------------------------------------------------------------
@@ -24,19 +28,15 @@ const ITEM_1 = "aaaaaaaa-1111-4111-8111-111111111111"
 const ITEM_2 = "bbbbbbbb-2222-4222-8222-222222222222"
 const ITEM_3 = "cccccccc-3333-4333-8333-333333333333"
 
-const DESLIGADOS: CamposVisiveis = { local: false, descricao: false, horario: false, categoria: false }
-const LIGADOS: CamposVisiveis = { local: true, descricao: true, horario: true, categoria: true }
+const LUGAR_1 = "dddddddd-1111-4111-8111-111111111111"
+const LUGAR_2 = "eeeeeeee-2222-4222-8222-222222222222"
+const LUGAR_3 = "ffffffff-3333-4333-8333-333333333333"
 
-const trilha: ItemPublico = {
-  id: ITEM_1,
-  title: "Trilha",
-  date: "2026-12-02",
-  start_time: "08:00",
-  end_time: "12:00",
-  category: "activity",
-  location: "Vale da Lua",
-  description: "Levar água",
-}
+type Escolhas = Pick<PedidoPost, "legenda" | "roteiro" | "lugares">
+
+const DESLIGADO: Escolhas = { legenda: null, roteiro: null, lugares: null }
+const SO_ROTEIRO: Escolhas = { ...DESLIGADO, roteiro: { local: false, descricao: false } }
+const ROTEIRO_TODO: Escolhas = { ...DESLIGADO, roteiro: { local: true, descricao: true } }
 
 const pousada: ItemPublico = {
   id: ITEM_2,
@@ -47,6 +47,17 @@ const pousada: ItemPublico = {
   category: "accommodation",
   location: null,
   description: null,
+}
+
+const trilha: ItemPublico = {
+  id: ITEM_1,
+  title: "Trilha",
+  date: "2026-12-02",
+  start_time: "08:00",
+  end_time: "12:00",
+  category: "activity",
+  location: "Vale da Lua",
+  description: "Levar água",
 }
 
 const jantar: ItemPublico = {
@@ -60,84 +71,124 @@ const jantar: ItemPublico = {
   description: "Reservado",
 }
 
-function projecao(itens: ItemPublico[] = [pousada, trilha, jantar]): ViagemPublica {
+const cachoeira: LugarPublico = {
+  id: LUGAR_1,
+  name: "Cachoeira Santa Bárbara",
+  category: "attraction",
+  address: "Cavalcante - GO",
+}
+const restaurante: LugarPublico = { id: LUGAR_2, name: "Restaurante Rancho", category: null, address: null }
+const mirante: LugarPublico = { id: LUGAR_3, name: "Mirante", category: "viewpoint", address: "   " }
+
+function projecao(
+  itens: ItemPublico[] = [pousada, trilha, jantar],
+  lugares: LugarPublico[] | null = [cachoeira, restaurante, mirante],
+): ProjecaoComLugares {
   return {
     title: "Chapada",
     destination: "Alto Paraíso",
     start_date: "2026-12-01",
     end_date: "2026-12-05",
     itens,
+    ...(lugares ? { lugares } : {}),
   }
 }
 
-const CHAVES_PERMITIDAS = ["title", "date", "start_time", "end_time", "category", "location", "description"]
+const CHAVES_DO_ITEM = ["title", "date", "start_time", "end_time", "category", "location", "description"]
+const CHAVES_DO_LUGAR = ["name", "category", "address"]
 
-describe("montarPost — os campos de cada item", () => {
-  it("com todos os opcionais desligados, cada item tem só o título", () => {
-    const post = montarPost(projecao(), [ITEM_1, ITEM_2, ITEM_3], DESLIGADOS)
-    expect(post.items).toEqual([{ title: "Pousada" }, { title: "Trilha" }, { title: "Jantar" }])
-    for (const item of post.items) expect(Object.keys(item)).toEqual(["title"])
-  })
-
+describe("montarPost — a viagem e a legenda", () => {
   it("copia título, destino e datas da projeção, e nada mais da viagem", () => {
-    const post = montarPost(projecao(), [], DESLIGADOS)
-    expect(Object.keys(post).sort()).toEqual(["destination", "end_date", "items", "start_date", "title"])
-    expect(post).toMatchObject({
+    const post = montarPost({ ...projecao(), budget: 3000, currency: "BRL" } as ProjecaoComLugares, DESLIGADO)
+    expect(Object.keys(post).sort()).toEqual([
+      "caption",
+      "destination",
+      "end_date",
+      "items",
+      "places",
+      "start_date",
+      "title",
+    ])
+    expect(post).toEqual({
       title: "Chapada",
       destination: "Alto Paraíso",
       start_date: "2026-12-01",
       end_date: "2026-12-05",
+      caption: null,
+      items: [],
+      places: [],
     })
   })
 
   it.each([
-    ["local", { location: "Vale da Lua" }],
-    ["descricao", { description: "Levar água" }],
-    ["categoria", { category: "activity" }],
-    ["horario", { date: "2026-12-02", start_time: "08:00", end_time: "12:00" }],
-  ] as const)("só %s ligado: aparece, e os desligados não aparecem nem como null", (grupo, esperado) => {
-    const mostrar = { ...DESLIGADOS, [grupo]: true }
-    const [item] = montarPost(projecao([trilha]), [ITEM_1], mostrar).items
-    expect(item).toStrictEqual({ title: "Trilha", ...esperado })
+    ["null", null, null],
+    ["vazia", "", null],
+    ["só espaços", "  \n ", null],
+    ["com espaços nas pontas", "  Que viagem!  ", "Que viagem!"],
+  ])("legenda %s", (_caso, legenda, esperada) => {
+    expect(montarPost(projecao(), { ...DESLIGADO, legenda }).caption).toBe(esperada)
+  })
+})
+
+describe("montarPost — roteiro dia a dia", () => {
+  it("desligado (null): nenhum item", () => {
+    expect(montarPost(projecao(), DESLIGADO).items).toEqual([])
   })
 
-  it("com tudo ligado, traz as sete chaves", () => {
-    const [item] = montarPost(projecao([trilha]), [ITEM_1], LIGADOS).items
+  it("ligado: todos os itens, na ordem da projeção, com data, horários e categoria quando existem", () => {
+    expect(montarPost(projecao(), SO_ROTEIRO).items).toStrictEqual([
+      { title: "Pousada", date: "2026-12-01", category: "accommodation" },
+      { title: "Trilha", date: "2026-12-02", start_time: "08:00", end_time: "12:00", category: "activity" },
+      { title: "Jantar", date: "2026-12-03", start_time: "20:00", category: "restaurant" },
+    ])
+  })
+
+  it.each([
+    ["local", { local: true, descricao: false }, { location: "Vale da Lua" }],
+    ["descricao", { local: false, descricao: true }, { description: "Levar água" }],
+    ["os dois", { local: true, descricao: true }, { location: "Vale da Lua", description: "Levar água" }],
+  ] as const)("subchave %s: liga só o campo dela", (_caso, roteiro, extra) => {
+    const [item] = montarPost(projecao([trilha]), { ...DESLIGADO, roteiro }).items
     expect(item).toStrictEqual({
       title: "Trilha",
       date: "2026-12-02",
       start_time: "08:00",
       end_time: "12:00",
       category: "activity",
-      location: "Vale da Lua",
-      description: "Levar água",
+      ...extra,
     })
   })
 
-  it("horario traz data e horários juntos, e omite os horários nulos", () => {
-    const post = montarPost(projecao(), [ITEM_2, ITEM_3], { ...DESLIGADOS, horario: true })
-    expect(post.items).toStrictEqual([
-      { title: "Pousada", date: "2026-12-01" },
-      { title: "Jantar", date: "2026-12-03", start_time: "20:00" },
-    ])
-  })
-
   it("campo ligado mas nulo é omitido, não vira null", () => {
-    const [item] = montarPost(projecao([pousada]), [ITEM_2], LIGADOS).items
+    const [item] = montarPost(projecao([pousada]), ROTEIRO_TODO).items
     expect(item).toStrictEqual({ title: "Pousada", date: "2026-12-01", category: "accommodation" })
     expect(Object.values(item)).not.toContain(null)
   })
 
-  it("valor vazio ou só com espaços é omitido; o que tem texto sai como veio", () => {
-    const vazios: ItemPublico = { ...trilha, location: "   ", description: "", category: "\t" }
-    const [item] = montarPost(projecao([vazios]), [ITEM_1], LIGADOS).items
-    expect(item).toStrictEqual({ title: "Trilha", date: "2026-12-02", start_time: "08:00", end_time: "12:00" })
-
-    const comEspacos: ItemPublico = { ...trilha, location: "  Vale da Lua " }
-    expect(montarPost(projecao([comEspacos]), [ITEM_1], LIGADOS).items[0].location).toBe("  Vale da Lua ")
+  it("o texto é limpo: espaços das pontas saem, e vazio ou só espaços é omitido", () => {
+    const sujo: ItemPublico = {
+      ...trilha,
+      title: "  Trilha  ",
+      location: "  Vale da Lua ",
+      description: "",
+      category: "\t",
+    }
+    const [item] = montarPost(projecao([sujo]), ROTEIRO_TODO).items
+    expect(item).toStrictEqual({
+      title: "Trilha",
+      date: "2026-12-02",
+      start_time: "08:00",
+      end_time: "12:00",
+      location: "Vale da Lua",
+    })
   })
 
-  it("notes, coordenadas, status, id e preço da projeção nunca saem, mesmo com tudo ligado", () => {
+  it("item sem título (vazio ou só espaços) fica de fora: o CHECK do banco o recusaria", () => {
+    const semTitulo: ItemPublico = { ...trilha, title: "   " }
+    expect(montarPost(projecao([semTitulo, jantar]), SO_ROTEIRO).items.map((i) => i.title)).toEqual(["Jantar"])
+  })
+
+  it("notes, coordenadas, status, id e preço nunca saem, mesmo com tudo ligado", () => {
     // Como se alguém trocasse o select da projeção por `*`: as chaves chegam em runtime.
     const vazado = {
       ...trilha,
@@ -148,58 +199,158 @@ describe("montarPost — os campos de cada item", () => {
       price: 120,
       trip_id: "dddddddd-4444-4444-8444-444444444444",
     } as ItemPublico
-    const post = montarPost({ ...projecao([vazado]), budget: 3000 } as ViagemPublica, [ITEM_1], LIGADOS)
+    const [item] = montarPost(projecao([vazado]), ROTEIRO_TODO).items
 
-    const [item] = post.items
-    for (const chave of Object.keys(item)) expect(CHAVES_PERMITIDAS).toContain(chave)
-    expect(item).not.toHaveProperty("notes")
-    expect(item).not.toHaveProperty("latitude")
-    expect(item).not.toHaveProperty("longitude")
-    expect(item).not.toHaveProperty("status")
-    expect(item).not.toHaveProperty("id")
-    expect(item).not.toHaveProperty("price")
-    expect(post).not.toHaveProperty("budget")
-    expect(JSON.stringify(post)).not.toContain("senha do wifi")
+    for (const chave of Object.keys(item)) expect(CHAVES_DO_ITEM).toContain(chave)
+    for (const chave of ["notes", "latitude", "longitude", "status", "id", "price", "trip_id"]) {
+      expect(item).not.toHaveProperty(chave)
+    }
+    expect(JSON.stringify(item)).not.toContain("senha do wifi")
   })
 })
 
-describe("montarPost — quais itens e em que ordem", () => {
-  it("id escolhido que não está na projeção (cancelado, de outra viagem, inventado) é ignorado", () => {
-    const inventado = "eeeeeeee-5555-4555-8555-555555555555"
-    const post = montarPost(projecao([trilha]), [inventado, ITEM_1, ITEM_3], DESLIGADOS)
-    expect(post.items).toEqual([{ title: "Trilha" }])
+describe("montarPost — lugares salvos", () => {
+  it("desligado (null): nenhum lugar", () => {
+    expect(montarPost(projecao(), DESLIGADO).places).toEqual([])
   })
 
-  it("só os escolhidos entram", () => {
-    const post = montarPost(projecao(), [ITEM_3], DESLIGADOS)
-    expect(post.items).toEqual([{ title: "Jantar" }])
+  it("ligado com lista vazia: nenhum lugar", () => {
+    expect(montarPost(projecao(), { ...DESLIGADO, lugares: [] }).places).toEqual([])
   })
 
-  it("a ordem é a da projeção, não a dos ids escolhidos", () => {
-    const post = montarPost(projecao(), [ITEM_3, ITEM_1, ITEM_2], DESLIGADOS)
-    expect(post.items.map((i) => i.title)).toEqual(["Pousada", "Trilha", "Jantar"])
+  it("só os escolhidos, na ordem da projeção e não na do pedido", () => {
+    const post = montarPost(projecao(), {
+      ...DESLIGADO,
+      lugares: [
+        { id: LUGAR_3, endereco: "nenhum" },
+        { id: LUGAR_1, endereco: "nenhum" },
+      ],
+    })
+    expect(post.places.map((l) => l.name)).toEqual(["Cachoeira Santa Bárbara", "Mirante"])
+  })
+
+  it("id fora da projeção (de outra viagem, apagado, inventado) é ignorado", () => {
+    const post = montarPost(projecao(), {
+      ...DESLIGADO,
+      lugares: [
+        { id: "99999999-9999-4999-8999-999999999999", endereco: "google" },
+        { id: LUGAR_2, endereco: "nenhum" },
+      ],
+    })
+    expect(post.places).toStrictEqual([{ name: "Restaurante Rancho" }])
   })
 
   it("compara ids sem diferenciar maiúsculas, dos dois lados", () => {
-    const maiusculo: ItemPublico = { ...trilha, id: ITEM_1.toUpperCase() }
-    expect(montarPost(projecao([maiusculo]), [ITEM_1], DESLIGADOS).items).toEqual([{ title: "Trilha" }])
-    expect(montarPost(projecao([trilha]), [ITEM_1.toUpperCase()], DESLIGADOS).items).toEqual([{ title: "Trilha" }])
+    const maiusculo = { ...cachoeira, id: LUGAR_1.toUpperCase() }
+    const pedido = { ...DESLIGADO, lugares: [{ id: LUGAR_1, endereco: "nenhum" as const }] }
+    expect(montarPost(projecao([], [maiusculo]), pedido).places).toHaveLength(1)
+    const pedidoMaiusculo = { ...DESLIGADO, lugares: [{ id: LUGAR_1.toUpperCase(), endereco: "nenhum" as const }] }
+    expect(montarPost(projecao([], [cachoeira]), pedidoMaiusculo).places).toHaveLength(1)
   })
 
-  it("lista vazia publica a viagem sem itinerário", () => {
-    expect(montarPost(projecao(), [], LIGADOS).items).toEqual([])
+  it('endereço "nenhum": nome e categoria, sem address mesmo havendo um', () => {
+    const [lugar] = montarPost(projecao(), { ...DESLIGADO, lugares: [{ id: LUGAR_1, endereco: "nenhum" }] }).places
+    expect(lugar).toStrictEqual({ name: "Cachoeira Santa Bárbara", category: "attraction" })
   })
 
-  it("é pura: não altera a projeção nem a lista recebidas", () => {
-    const original = projecao()
-    const copiaDaOriginal = structuredClone(original)
-    const escolhidos = [ITEM_3, ITEM_1]
-    montarPost(original, escolhidos, LIGADOS)
-    expect(original).toEqual(copiaDaOriginal)
-    expect(escolhidos).toEqual([ITEM_3, ITEM_1])
+  it('endereço "google": copia o address da projeção', () => {
+    const [lugar] = montarPost(projecao(), { ...DESLIGADO, lugares: [{ id: LUGAR_1, endereco: "google" }] }).places
+    expect(lugar).toStrictEqual({ name: "Cachoeira Santa Bárbara", category: "attraction", address: "Cavalcante - GO" })
+  })
+
+  it('endereço "google" com address nulo ou só espaços: o lugar sai sem address', () => {
+    const post = montarPost(projecao(), {
+      ...DESLIGADO,
+      lugares: [
+        { id: LUGAR_2, endereco: "google" },
+        { id: LUGAR_3, endereco: "google" },
+      ],
+    })
+    expect(post.places).toStrictEqual([{ name: "Restaurante Rancho" }, { name: "Mirante", category: "viewpoint" }])
+  })
+
+  it("endereço digitado: sai limpo, no lugar do da projeção", () => {
+    const [lugar] = montarPost(projecao(), {
+      ...DESLIGADO,
+      lugares: [{ id: LUGAR_1, endereco: { texto: "  Estrada da cachoeira, km 3 " } }],
+    }).places
+    expect(lugar.address).toBe("Estrada da cachoeira, km 3")
+  })
+
+  it("endereço digitado só com espaços (por fora do schema) é omitido", () => {
+    const [lugar] = montarPost(projecao(), { ...DESLIGADO, lugares: [{ id: LUGAR_1, endereco: { texto: "  " } }] })
+      .places
+    expect(lugar).not.toHaveProperty("address")
+  })
+
+  it("acima do teto do banco: categoria e endereço longos ficam de fora; lugar sem nome válido não entra", () => {
+    const longo: LugarPublico = {
+      id: LUGAR_1,
+      name: "  Cachoeira  ",
+      category: "c".repeat(61),
+      address: "a".repeat(301),
+    }
+    const semNome: LugarPublico = { id: LUGAR_2, name: "   ", category: "x", address: "y" }
+    const nomeLongo: LugarPublico = { id: LUGAR_3, name: "n".repeat(201), category: null, address: null }
+    const post = montarPost(projecao([], [longo, semNome, nomeLongo]), {
+      ...DESLIGADO,
+      lugares: [
+        { id: LUGAR_1, endereco: "google" },
+        { id: LUGAR_2, endereco: "google" },
+        { id: LUGAR_3, endereco: "nenhum" },
+      ],
+    })
+    expect(post.places).toStrictEqual([{ name: "Cachoeira" }])
+  })
+
+  it("no teto exato, categoria (60) e endereço (300) entram", () => {
+    const noTeto: LugarPublico = { id: LUGAR_1, name: "N", category: "c".repeat(60), address: "a".repeat(300) }
+    const [lugar] = montarPost(projecao([], [noTeto]), { ...DESLIGADO, lugares: [{ id: LUGAR_1, endereco: "google" }] })
+      .places
+    expect(lugar).toStrictEqual({ name: "N", category: "c".repeat(60), address: "a".repeat(300) })
+  })
+
+  it("notes, coordenadas, rating, visited, place_id e id nunca saem", () => {
+    const vazado = {
+      ...cachoeira,
+      notes: "chave do portão 1234",
+      latitude: -13.9,
+      longitude: -47.4,
+      rating: 4.8,
+      visited: true,
+      place_id: "ChIJ-segredo",
+      trip_id: "dddddddd-4444-4444-8444-444444444444",
+    } as LugarPublico
+    const [lugar] = montarPost(projecao([], [vazado]), {
+      ...DESLIGADO,
+      lugares: [{ id: LUGAR_1, endereco: "google" }],
+    }).places
+    for (const chave of Object.keys(lugar)) expect(CHAVES_DO_LUGAR).toContain(chave)
+    expect(JSON.stringify(lugar)).not.toMatch(/1234|ChIJ|4\.8|-13\.9|dddddddd/)
+  })
+
+  it("projeção ainda sem lugares (antes da entrega da Audrey): lista vazia, sem erro", () => {
+    const semLugares = projecao([], null)
+    expect(lugaresDaProjecao(semLugares)).toEqual([])
+    expect(montarPost(semLugares, { ...DESLIGADO, lugares: [{ id: LUGAR_1, endereco: "google" }] }).places).toEqual([])
   })
 })
 
+describe("montarPost — pureza", () => {
+  it("não altera a projeção nem o pedido", () => {
+    const original = projecao()
+    const copiaDaOriginal = structuredClone(original)
+    const pedido: Escolhas = {
+      legenda: " oi ",
+      roteiro: { local: true, descricao: true },
+      lugares: [{ id: LUGAR_1, endereco: { texto: " x " } }],
+    }
+    const copiaDoPedido = structuredClone(pedido)
+    montarPost(original, pedido)
+    expect(original).toEqual(copiaDaOriginal)
+    expect(pedido).toEqual(copiaDoPedido)
+  })
+})
 // ---------------------------------------------------------------------------
 // Funções de banco, com um cliente dublado
 // ---------------------------------------------------------------------------
@@ -263,14 +414,17 @@ const POST = "77777777-7777-4777-8777-777777777777"
 const CAPA_VELHA = `${AUTOR}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
 const CAPA_NOVA = `${AUTOR}/1c7a3d5f-6e8b-4b9f-8c2d-3a4f5e6b7c8d.png`
 
-const COLUNAS_ESPERADAS = "id, title, destination, start_date, end_date, items, cover_path, created_at, updated_at"
+const COLUNAS_ESPERADAS =
+  "id, title, destination, start_date, end_date, caption, items, places, cover_path, created_at, updated_at"
 
 const COPIA: CopiaDoPost = {
   title: "Chapada",
   destination: "Alto Paraíso",
   start_date: "2026-12-01",
   end_date: "2026-12-05",
+  caption: "Que viagem!",
   items: [{ title: "Trilha", location: "Vale da Lua" }],
+  places: [{ name: "Mirante", address: "Estrada, km 3" }],
 }
 
 /** Linha "do banco", com `trip_id` e `author_id` de propósito: não podem chegar à rota. */
@@ -282,19 +436,23 @@ const LINHA = {
   destination: "Alto Paraíso",
   start_date: "2026-12-01",
   end_date: "2026-12-05",
+  caption: "Que viagem!",
   items: [{ title: "Trilha", location: "Vale da Lua" }],
+  places: [{ name: "Mirante", address: "Estrada, km 3" }],
   cover_path: null,
   created_at: "2026-11-16T10:00:00Z",
   updated_at: "2026-11-16T10:00:00Z",
 }
 
 const CHAVES_DO_POST = [
+  "caption",
   "cover_path",
   "created_at",
   "destination",
   "end_date",
   "id",
   "items",
+  "places",
   "start_date",
   "title",
   "updated_at",
@@ -343,7 +501,13 @@ describe("postDaViagem", () => {
     ])
     expect(COLUNAS_ESPERADAS).not.toMatch(/trip_id|author_id|\*/)
     expect(Object.keys(post!).sort()).toEqual(CHAVES_DO_POST)
-    expect(post).toMatchObject({ id: POST, title: "Chapada", items: [{ title: "Trilha", location: "Vale da Lua" }] })
+    expect(post).toMatchObject({
+      id: POST,
+      title: "Chapada",
+      caption: "Que viagem!",
+      items: [{ title: "Trilha", location: "Vale da Lua" }],
+      places: [{ name: "Mirante", address: "Estrada, km 3" }],
+    })
   })
 
   it("sem post da sessão nessa viagem, devolve null e não consulta a tabela", async () => {
@@ -382,12 +546,42 @@ describe("postDaViagem", () => {
     expect(post!.items).toStrictEqual([{ title: "Trilha", date: "2026-12-02" }])
   })
 
-  it("items que não é lista vira lista vazia", async () => {
+  it("items e places que não são lista viram lista vazia", async () => {
     const { cliente } = clienteFalso({
       rpc: { data: POST, error: null },
-      respostas: [{ data: { ...LINHA, items: { title: "x" } }, error: null }],
+      respostas: [{ data: { ...LINHA, items: { title: "x" }, places: "Mirante" }, error: null }],
     })
-    expect((await postDaViagem(cliente, VIAGEM))!.items).toEqual([])
+    const post = await postDaViagem(cliente, VIAGEM)
+    expect(post!.items).toEqual([])
+    expect(post!.places).toEqual([])
+  })
+
+  it("o places gravado volta pela lista branca: notas, coordenadas e lugar sem nome não chegam à rota", async () => {
+    const gravado = {
+      ...LINHA,
+      places: [
+        { name: "Mirante", notes: "senha", latitude: -14, rating: 5, place_id: "ChIJ", category: "viewpoint" },
+        { name: "Bar", address: "Rua B", visited: true },
+        ["lista"],
+        null,
+        { address: "sem nome" },
+      ],
+    }
+    const { cliente } = clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: gravado, error: null }] })
+    const post = await postDaViagem(cliente, VIAGEM)
+    expect(post!.places).toStrictEqual([{ name: "Mirante", category: "viewpoint" }, { name: "Bar", address: "Rua B" }])
+  })
+
+  it.each([
+    ["nula", null],
+    ["vazia", ""],
+    ["que não é texto", 42],
+  ])("caption gravada %s volta null", async (_caso, caption) => {
+    const { cliente } = clienteFalso({
+      rpc: { data: POST, error: null },
+      respostas: [{ data: { ...LINHA, caption }, error: null }],
+    })
+    expect((await postDaViagem(cliente, VIAGEM))!.caption).toBeNull()
   })
 })
 
@@ -412,7 +606,9 @@ describe("publicar", () => {
           destination: "Alto Paraíso",
           start_date: "2026-12-01",
           end_date: "2026-12-05",
+          caption: "Que viagem!",
           items: [{ title: "Trilha", location: "Vale da Lua" }],
+          places: [{ name: "Mirante", address: "Estrada, km 3" }],
         },
       ],
       ["select", COLUNAS_ESPERADAS],
@@ -456,7 +652,9 @@ describe("atualizar", () => {
           destination: "Alto Paraíso",
           start_date: "2026-12-01",
           end_date: "2026-12-05",
+          caption: "Que viagem!",
           items: [{ title: "Trilha", location: "Vale da Lua" }],
+          places: [{ name: "Mirante", address: "Estrada, km 3" }],
         },
       ],
       ["eq", "id", POST],

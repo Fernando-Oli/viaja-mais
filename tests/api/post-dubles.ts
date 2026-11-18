@@ -1,28 +1,32 @@
-import { semPermissao } from "@/lib/http"
-import type { CopiaDoPost, PostDoAutor } from "@/lib/social/posts"
-import type { ViagemPublica } from "@/lib/trips/publico"
+import { ErroHttp, semPermissao } from "@/lib/http"
+import type { PessoaMarcada } from "@/lib/social/marcacoes"
+import type { CopiaDoPost, PostDoAutor, ProjecaoComLugares } from "@/lib/social/posts"
 
 /**
  * Dublês da rota do post de uma viagem (S06-M-publicar-viagem,
  * app/api/social/viagens/[tripId]/post): o cliente da sessão, o de serviço, a
  * autorização (`exigirMembro`), o username (`temUsername`), a projeção pública
- * da viagem e as funções de banco de lib/social/posts.ts e de Storage de
- * lib/social/capa.ts.
+ * da viagem, as funções de banco de lib/social/posts.ts e de
+ * lib/social/marcacoes.ts, e as de Storage de lib/social/capa.ts.
  *
- * O `montarPost` NÃO é dublado: o teste usa o real, para provar que a cópia
- * passada ao `publicar` sai da projeção, e não do corpo. As funções de banco já
- * têm unit próprio (tests/lib/social-posts.test.ts, tests/lib/capa.test.ts) e o
- * banco real é provado em tests/rls/12-trip-posts.test.ts; aqui interessa a
- * ordem, os argumentos e o que a rota faz com cada resposta.
+ * O `montarPost` e o `conferirMarcados` NÃO são dublados: o teste usa os
+ * reais, para provar que a cópia passada ao `publicar` sai da projeção, e não
+ * do corpo, e que o marcado inválido é barrado antes de gravar. As funções de
+ * banco já têm unit próprio (tests/lib/social-posts.test.ts,
+ * tests/lib/marcacoes.test.ts, tests/lib/capa.test.ts) e o banco real é
+ * provado em tests/rls/12-trip-posts.test.ts e 17-post-tags.test.ts; aqui
+ * interessa a ordem, os argumentos e o que a rota faz com cada resposta.
  *
  * Toda chamada fica em `estado.chamadas`, em ordem, com os argumentos. O
  * cliente da sessão registra qualquer `from()` em `estado.consultasDiretas`:
  * a rota não pode ler tabela nenhuma direto (nem `trips`, nem
- * `itinerary_items`, nem `trip_posts`), e o teste confere que a lista fica vazia.
+ * `itinerary_items`, nem `places`, nem `trip_posts`), e o teste confere que a
+ * lista fica vazia.
  *
- * A projeção e o post do estado inicial trazem de propósito chaves que nunca
- * podem sair (`budget`, `notes`, `trip_id`, `author_id`, membros...): a lib real
- * não as devolve, e a rota precisa montar a resposta campo a campo mesmo assim.
+ * A projeção, o post e as pessoas do estado inicial trazem de propósito chaves
+ * que nunca podem sair (`budget`, `notes`, `trip_id`, `author_id`, coordenadas,
+ * e-mail...): a lib real não as devolve, e a rota precisa montar a resposta
+ * campo a campo mesmo assim.
  *
  * Os arquivos de teste ligam os dublês pelo `vi.mock`, com `await import` deste
  * módulo dentro da fábrica; cada teste reinicia o estado com `reiniciar()`.
@@ -32,17 +36,21 @@ type Chamada = { funcao: string; argumentos: unknown[] }
 
 export const TRIP = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 export const ANA = "11111111-1111-4111-8111-111111111111"
+export const BIA = "22222222-2222-4222-8222-222222222222"
+export const CAIO = "33333333-3333-4333-8333-333333333333"
+/** Membro que saiu da viagem: continua marcado, mas não é mais marcável. */
+export const DORA = "44444444-4444-4444-8444-444444444444"
 export const POST_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
 
-export const ITEM_HOTEL = "c0000000-0000-4000-8000-000000000001"
-export const ITEM_MUSEU = "c0000000-0000-4000-8000-000000000002"
-export const ITEM_JANTAR = "c0000000-0000-4000-8000-000000000003"
+export const LUGAR_PRAIA = "e0000000-0000-4000-8000-000000000001"
+export const LUGAR_BAR = "e0000000-0000-4000-8000-000000000002"
 
 export const CAPA = `${ANA}/dddddddd-dddd-4ddd-8ddd-dddddddddddd.webp`
 export const URL_CAPA = `https://storage.teste/storage/v1/object/sign/capas-posts/${CAPA}?token=tk`
+export const URL_FOTO_BIA = "https://storage.teste/storage/v1/object/sign/avatars/bia.webp?token=tk"
 
 /** A projeção como a rota a recebe, com o que a lib real jamais traria (para provar a cópia campo a campo). */
-export function projecaoPadrao(): ViagemPublica {
+export function projecaoPadrao(): ProjecaoComLugares {
   return {
     title: "Lisboa em família",
     destination: "Lisboa, Portugal",
@@ -56,7 +64,7 @@ export function projecaoPadrao(): ViagemPublica {
     members: [{ email: "b@x.local" }],
     itens: [
       {
-        id: ITEM_HOTEL,
+        id: "c0000000-0000-4000-8000-000000000001",
         title: "Check-in no hotel",
         date: "2026-12-10",
         start_time: "14:00:00",
@@ -70,7 +78,7 @@ export function projecaoPadrao(): ViagemPublica {
         status: "confirmed",
       },
       {
-        id: ITEM_MUSEU,
+        id: "c0000000-0000-4000-8000-000000000002",
         title: "Museu dos Coches",
         date: "2026-12-11",
         start_time: "10:00:00",
@@ -80,18 +88,24 @@ export function projecaoPadrao(): ViagemPublica {
         description: "ingresso na bilheteria",
         notes: "levar o cartão do Abner",
       },
-      {
-        id: ITEM_JANTAR,
-        title: "Jantar",
-        date: "2026-12-11",
-        start_time: null,
-        end_time: null,
-        category: "restaurant",
-        location: null,
-        description: null,
-      },
     ],
-  } as ViagemPublica
+    lugares: [
+      {
+        id: LUGAR_PRAIA,
+        name: "Praia da Ursa",
+        category: "beach",
+        address: "Sintra, Portugal",
+        notes: "estacionar no km 2",
+        latitude: 38.79,
+        longitude: -9.49,
+        rating: 4.9,
+        visited: false,
+        place_id: "ChIJ-segredo",
+        user_id: ANA,
+      },
+      { id: LUGAR_BAR, name: "Bar do Largo", category: null, address: null, notes: "fiado" },
+    ],
+  } as unknown as ProjecaoComLugares
 }
 
 /** O post da sessão como a rota o recebe, também com chaves que não podem sair. */
@@ -102,7 +116,9 @@ export function postPadrao(sobre: Partial<PostDoAutor> = {}): PostDoAutor {
     destination: "Lisboa, Portugal",
     start_date: "2026-12-10",
     end_date: "2026-12-17",
+    caption: "Que viagem!",
     items: [{ title: "Museu dos Coches", location: "Belém", notes: "x" } as never],
+    places: [{ name: "Praia da Ursa", address: "Sintra", latitude: 38.79, place_id: "ChIJ" } as never],
     cover_path: null,
     created_at: "2026-11-16T12:00:00.000Z",
     updated_at: "2026-11-16T12:00:00.000Z",
@@ -112,15 +128,28 @@ export function postPadrao(sobre: Partial<PostDoAutor> = {}): PostDoAutor {
   } as PostDoAutor
 }
 
+/** Uma pessoa como a lib a devolve, com o e-mail que a rota não pode repassar. */
+export function pessoa(id: string, username: string, avatar_url: string | null = null): PessoaMarcada {
+  return { id, username, full_name: username.toUpperCase(), avatar_url, email: `${username}@x.local` } as PessoaMarcada
+}
+
 export const estado = {
   usuario: null as { id: string } | null,
   /** `false` = não participa (ou saiu) da viagem: o `exigirMembro` lança 403. */
   membro: true,
+  /** O que o `exigirMembro` lança no lugar do 403 (ex.: o ErroHttp 500 com a mensagem do banco). */
+  erroMembro: null as unknown,
   username: true,
-  projecao: null as ViagemPublica | null,
+  projecao: null as ProjecaoComLugares | null,
   erroProjecao: null as unknown,
   post: null as PostDoAutor | null,
   erroPost: null as unknown,
+  /** O que `membrosMarcaveis` devolve. */
+  marcaveis: [] as PessoaMarcada[],
+  erroMarcaveis: null as unknown,
+  /** As marcas gravadas do post: o que `marcadosDoPost` devolve, e o que `sincronizarMarcacoes` troca. */
+  marcados: [] as PessoaMarcada[],
+  erroSincronizar: null as unknown,
   /** O que `publicar` devolve; nulo = devolve o post montado da cópia recebida. */
   publicado: null as PostDoAutor | null,
   erroPublicar: null as unknown,
@@ -143,11 +172,16 @@ export const estado = {
 export function reiniciar() {
   estado.usuario = { id: ANA }
   estado.membro = true
+  estado.erroMembro = null
   estado.username = true
   estado.projecao = projecaoPadrao()
   estado.erroProjecao = null
   estado.post = null
   estado.erroPost = null
+  estado.marcaveis = [pessoa(BIA, "bia", URL_FOTO_BIA), pessoa(CAIO, "caio")]
+  estado.erroMarcaveis = null
+  estado.marcados = []
+  estado.erroSincronizar = null
   estado.publicado = null
   estado.erroPublicar = null
   estado.atualizado = undefined
@@ -208,6 +242,7 @@ export function clienteDeServico() {
 /** `exigirMembro` de lib/authz/trip.ts. */
 export async function exigirMembro(supabase: unknown, tripId: string, userId: string | undefined) {
   registrar("exigirMembro", supabase, tripId, userId)
+  falharSe(estado.erroMembro)
   if (!estado.membro) throw semPermissao("esta viagem")
   return "member" as const
 }
@@ -251,6 +286,39 @@ export async function despublicar(supabase: unknown, postId: string) {
   registrar("despublicar", supabase, postId)
   falharSe(estado.erroDespublicar)
   return estado.despublicado
+}
+
+/** `membrosMarcaveis` de lib/social/marcacoes.ts. */
+export async function membrosMarcaveis(supabase: unknown, tripId: string, criarAdmin: unknown) {
+  registrar("membrosMarcaveis", supabase, tripId, criarAdmin)
+  falharSe(estado.erroMarcaveis)
+  return estado.marcaveis
+}
+
+/** `marcadosDoPost` de lib/social/marcacoes.ts. */
+export async function marcadosDoPost(supabase: unknown, postId: string, criarAdmin: unknown) {
+  registrar("marcadosDoPost", supabase, postId, criarAdmin)
+  return estado.marcados
+}
+
+/**
+ * `sincronizarMarcacoes` de lib/social/marcacoes.ts: troca as marcas pelas
+ * pessoas pedidas (das marcáveis ou das já marcadas). Repete a conferência da
+ * lib real: marcado fora dos permitidos lança o 400 sem trocar nada.
+ */
+export async function sincronizarMarcacoes(
+  supabase: unknown,
+  postId: string,
+  autorId: string,
+  marcados: readonly string[],
+  permitidos: Iterable<string>,
+) {
+  const lista = [...permitidos]
+  registrar("sincronizarMarcacoes", supabase, postId, autorId, [...marcados], lista)
+  falharSe(estado.erroSincronizar)
+  if (marcados.some((id) => !lista.includes(id))) throw new ErroHttp(400, "marcado_invalido")
+  const conhecidas = new Map([...estado.marcados, ...estado.marcaveis].map((p) => [p.id, p]))
+  estado.marcados = marcados.flatMap((id) => conhecidas.get(id) ?? [])
 }
 
 /** `assinarCapa` de lib/social/capa.ts: nunca lança. */

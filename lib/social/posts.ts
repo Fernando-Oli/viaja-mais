@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { ErroHttp } from "@/lib/http"
-import type { CamposVisiveis } from "@/lib/schemas/post"
+import type { EnderecoDoLugar, EscolhaDoRoteiro, PedidoPost } from "@/lib/schemas/post"
 import type { ViagemPublica } from "@/lib/trips/publico"
 
 /**
@@ -8,24 +8,30 @@ import type { ViagemPublica } from "@/lib/trips/publico"
  * perfil, e ler, gravar, atualizar e apagar o post da sessão.
  *
  * **O post é uma cópia, não uma janela ao vivo.** Ao publicar, ele guarda
- * título, destino, datas e os itens escolhidos, tirados da projeção pública da
- * viagem (`projecaoPublicaDaViagem`, lib/trips/publico.ts, domínio da Audrey).
- * Editar a viagem depois não muda o post; "Atualizar publicação" copia de novo.
- * Assim o que sai do grupo é só o que o autor viu na prévia e confirmou, e o
- * feed não precisa ler `trips` nem `itinerary_items`. Este módulo também não
- * lê: recebe a projeção já pronta.
+ * título, destino, datas, a legenda, o roteiro e os lugares escolhidos, tirados
+ * da projeção pública da viagem (`projecaoPublicaDaViagem`, lib/trips/publico.ts,
+ * domínio da Audrey). Editar a viagem depois não muda o post; "Atualizar
+ * publicação" copia de novo. Assim o que sai do grupo é só o que o autor viu na
+ * prévia e confirmou, e o feed não precisa ler `trips`, `itinerary_items` nem
+ * `places`. Este módulo também não lê: recebe a projeção já pronta.
  *
- * Decisões do Micael em 11/11 (docs/plans/S06-M-publicar-viagem.md):
+ * Decisões do Micael (docs/plans/S06-M-publicar-viagem.md; as de 18/11 seguem a
+ * prévia do Fernando e substituem as de 11/11 onde conflitam):
  * - qualquer membro publica, e cada membro tem o próprio post da mesma viagem
  *   (`unique (trip_id, author_id)`): publicar de novo é 409, e não um segundo post;
- * - do item entra sempre o título; local, descrição, data e hora e categoria só
- *   se o autor os ligou, para o post inteiro; **notas, coordenadas e preço nunca**;
+ * - **roteiro dia a dia** ligado publica todos os itens da projeção, com título e,
+ *   quando existem, data, horários e categoria; local e descrição só se o autor
+ *   os ligou, para o post inteiro;
+ * - **lugares salvos**: nome e categoria, e o endereço que o autor escolheu por
+ *   lugar (nenhum, o do Google ou um digitado);
+ * - **notas, coordenadas, preço, status, rating e ids nunca**;
  * - se o autor sai da viagem, o post continua dele: ele não atualiza mais (a
  *   policy de UPDATE exige ser membro), mas despublica.
  *
- * Tudo com o cliente da sessão: a RLS de `trip_posts` vale (migration
- * 20261116195039). A autorização explícita (`exigirMembro` e o username) é da
- * rota, antes de chamar daqui; a policy é a segunda linha.
+ * Tudo com o cliente da sessão: a RLS de `trip_posts` vale (migrations
+ * 20261116195039 e a de legenda e lugares). A autorização explícita
+ * (`exigirMembro` e o username) é da rota, antes de chamar daqui; a policy é a
+ * segunda linha.
  *
  * `authenticated` não lê a coluna `trip_id` (dois posts com o mesmo `trip_id`
  * revelariam quem viajou junto), então `select("*")` responde 42501 e as
@@ -37,13 +43,34 @@ import type { ViagemPublica } from "@/lib/trips/publico"
  * 403, e o resto lança um `Error` comum com o original em `cause`, que
  * `respostaDeErro` (lib/http.ts) transforma no 500 genérico.
  *
- * @RF09.7 publicar viagem expondo só título, destino, datas, capa e itinerário
+ * @RF09.7 publicar viagem expondo só título, destino, datas, legenda, capa, roteiro e lugares
  */
 
 type ClienteDaSessao = Pick<SupabaseClient, "from" | "rpc">
 
 /**
- * Um item na cópia. Campo desligado ou vazio é **omitido**, nunca `null`: é o
+ * Um lugar salvo como a projeção o entrega. A Audrey vai acrescentar `lugares`
+ * à `ViagemPublica` (pedido de 18/11); até lá, o tipo mora aqui e a lista é
+ * lida como opcional.
+ */
+export type LugarPublico = {
+  /** Só para a tela escolher o lugar e o endereço; não vai para o post. */
+  id: string
+  name: string
+  category: string | null
+  address: string | null
+}
+
+/** A projeção com os lugares: compila hoje, e funciona quando `lugares` chegar à `ViagemPublica`. */
+export type ProjecaoComLugares = ViagemPublica & { lugares?: LugarPublico[] }
+
+/** Os lugares da projeção, ou a lista vazia enquanto ela ainda não os traz. */
+export function lugaresDaProjecao(projecao: ProjecaoComLugares): LugarPublico[] {
+  return projecao.lugares ?? []
+}
+
+/**
+ * Um item na cópia. Campo vazio ou desligado é **omitido**, nunca `null`: é o
  * formato que `social_itens_do_post_validos` aceita (todo campo presente é texto).
  */
 export type ItemDoPost = {
@@ -57,13 +84,23 @@ export type ItemDoPost = {
   description?: string
 }
 
+/** Um lugar na cópia, no formato de `social_lugares_do_post_validos`: campo vazio é omitido. */
+export type LugarDoPost = {
+  name: string
+  category?: string
+  address?: string
+}
+
 /** O conteúdo do post, montado no servidor: o que vai para o INSERT e o UPDATE. */
 export type CopiaDoPost = {
   title: string
   destination: string
   start_date: string
   end_date: string
+  /** Já limpa: `null` quando o autor não escreveu nada. */
+  caption: string | null
   items: ItemDoPost[]
+  places: LugarDoPost[]
 }
 
 /**
@@ -79,84 +116,150 @@ export type PostDoAutor = CopiaDoPost & {
 }
 
 /** Do grant de SELECT (que não tem `trip_id`), sem `author_id`: a rota não devolve nenhum dos dois. */
-const COLUNAS_POST = "id, title, destination, start_date, end_date, items, cover_path, created_at, updated_at"
+const COLUNAS_POST =
+  "id, title, destination, start_date, end_date, caption, items, places, cover_path, created_at, updated_at"
 
 const CHAVE_REPETIDA = "23505"
 const SEM_PRIVILEGIO = "42501"
 
-/** Os campos opcionais de um item, como chegam (da projeção ou do jsonb gravado). */
-type CamposDoItem = Partial<Record<Exclude<keyof ItemDoPost, "title">, unknown>>
+/** Tetos de `social_lugares_do_post_validos`, em caracteres. */
+const MAXIMO_NOME_LUGAR = 200
+const MAXIMO_CATEGORIA_LUGAR = 60
+const MAXIMO_ENDERECO_LUGAR = 300
 
-/** Texto que vale publicar: string com algo além de espaços. O valor sai como veio. */
-function texto(valor: unknown): string | undefined {
-  return typeof valor === "string" && valor.trim() !== "" ? valor : undefined
+/** Os campos opcionais de um item, como chegam (da projeção ou do jsonb gravado). */
+type CamposDoItem = Partial<Record<Exclude<keyof ItemDoPost, "title">, unknown>> & { title?: unknown }
+/** Os campos de um lugar, como chegam (da projeção ou do jsonb gravado). */
+type CamposDoLugar = { name?: unknown; category?: unknown; address?: unknown }
+
+/**
+ * Texto que vale publicar: string com algo além de espaços, sem os espaços das
+ * pontas e, com `maximo`, dentro do teto em caracteres. Qualquer outra coisa
+ * (nulo, número, vazio, longo demais) é `undefined`, e o campo fica de fora.
+ */
+function texto(valor: unknown, maximo = Infinity): string | undefined {
+  if (typeof valor !== "string") return undefined
+  const limpo = valor.trim()
+  if (limpo === "" || [...limpo].length > maximo) return undefined
+  return limpo
 }
 
 /**
  * Copia um item campo a campo, nunca com spread: chave que não está nomeada
  * aqui (`id`, `notes`, `latitude`, `status`, preço...) não tem como chegar ao
- * post, mesmo que o objeto de origem a traga em tempo de execução.
+ * post, mesmo que o objeto de origem a traga em tempo de execução. Sem título
+ * (vazio ou só espaços) o item não tem o que mostrar, e o CHECK do banco o
+ * recusaria: devolve `null`.
  */
-function copiarItem(titulo: string, campos: CamposDoItem, mostrar: CamposVisiveis): ItemDoPost {
-  const copia: ItemDoPost = { title: titulo }
+function copiarItem(campos: CamposDoItem, roteiro: EscolhaDoRoteiro): ItemDoPost | null {
+  const title = texto(campos.title)
+  if (title === undefined) return null
+  const copia: ItemDoPost = { title }
 
-  const atribuir = (chave: keyof CamposDoItem) => {
+  const atribuir = (chave: Exclude<keyof ItemDoPost, "title">) => {
     const valor = texto(campos[chave])
     if (valor !== undefined) copia[chave] = valor
   }
 
-  // `horario` liga data e horários juntos: hora sem o dia não diz nada.
-  if (mostrar.horario) {
-    atribuir("date")
-    atribuir("start_time")
-    atribuir("end_time")
-  }
-  if (mostrar.categoria) atribuir("category")
-  if (mostrar.local) atribuir("location")
-  if (mostrar.descricao) atribuir("description")
+  // Data, horários e categoria saem sempre que existem: são o "dia a dia".
+  atribuir("date")
+  atribuir("start_time")
+  atribuir("end_time")
+  atribuir("category")
+  if (roteiro.local) atribuir("location")
+  if (roteiro.descricao) atribuir("description")
   return copia
+}
+
+/**
+ * Copia um lugar campo a campo: nome, categoria e o endereço escolhido. Nunca
+ * `notes`, coordenadas, `rating`, `visited` nem `place_id`. Categoria e
+ * endereço acima do teto do banco ficam de fora, para um texto longo vindo do
+ * Google não derrubar a publicação; sem nome válido, o lugar não entra.
+ */
+function copiarLugar(campos: CamposDoLugar, endereco: EnderecoDoLugar): LugarDoPost | null {
+  const name = texto(campos.name, MAXIMO_NOME_LUGAR)
+  if (name === undefined) return null
+  const copia: LugarDoPost = { name }
+
+  const category = texto(campos.category, MAXIMO_CATEGORIA_LUGAR)
+  if (category !== undefined) copia.category = category
+
+  const address =
+    endereco === "nenhum"
+      ? undefined
+      : texto(endereco === "google" ? campos.address : endereco.texto, MAXIMO_ENDERECO_LUGAR)
+  if (address !== undefined) copia.address = address
+  return copia
+}
+
+/** A legenda limpa, ou `null`. */
+function legenda(valor: unknown): string | null {
+  return texto(valor) ?? null
 }
 
 /**
  * Monta a cópia do post a partir da projeção pública e das escolhas do autor.
  * Pura: não lê nem grava nada.
  *
- * - Os itens seguem a ordem da projeção (data e hora), não a de `itens`.
- * - Só entra item cuja `id` está em `itens`, comparada em minúsculas. Id
- *   escolhido que não está na projeção (item cancelado, de outra viagem ou
- *   inventado) é ignorado em silêncio: o corpo só escolhe, não acrescenta.
- * - `itens` vazio publica a viagem sem itinerário.
+ * - `roteiro` nulo publica sem itinerário; ligado, todos os itens da projeção
+ *   (ela já tira os cancelados), na ordem dela.
+ * - `lugares` nulo publica sem lugares; ligado, só os escolhidos, na ordem da
+ *   projeção. Id escolhido que não está na projeção (lugar de outra viagem,
+ *   apagado ou inventado) é ignorado em silêncio: o corpo só escolhe, não
+ *   acrescenta. Ids são comparados em minúsculas.
+ * - O endereço `"google"` copia o `address` da projeção; vazio ou nulo, o
+ *   lugar sai sem endereço.
+ * - Todo texto sai sem os espaços das pontas, e campo vazio é omitido.
+ * - `marcados` não entra na cópia: as marcações moram em `post_tags`.
  */
-export function montarPost(projecao: ViagemPublica, itens: string[], mostrar: CamposVisiveis): CopiaDoPost {
-  const escolhidos = new Set(itens.map((id) => id.toLowerCase()))
+export function montarPost(
+  projecao: ProjecaoComLugares,
+  pedido: Pick<PedidoPost, "legenda" | "roteiro" | "lugares">,
+): CopiaDoPost {
+  const { roteiro, lugares } = pedido
+
+  const escolhidos = new Map<string, EnderecoDoLugar>()
+  for (const lugar of lugares ?? []) escolhidos.set(lugar.id.toLowerCase(), lugar.endereco)
+
   return {
     title: projecao.title,
     destination: projecao.destination,
     start_date: projecao.start_date,
     end_date: projecao.end_date,
-    items: projecao.itens
-      .filter((item) => escolhidos.has(item.id.toLowerCase()))
-      .map((item) => copiarItem(item.title, item, mostrar)),
+    caption: legenda(pedido.legenda),
+    items: roteiro ? projecao.itens.flatMap((item) => copiarItem(item, roteiro) ?? []) : [],
+    places: lugaresDaProjecao(projecao).flatMap((lugar) => {
+      const endereco = escolhidos.get(lugar.id.toLowerCase())
+      return endereco === undefined ? [] : (copiarLugar(lugar, endereco) ?? [])
+    }),
   }
 }
 
-const TODOS_OS_CAMPOS: CamposVisiveis = { local: true, descricao: true, horario: true, categoria: true }
+const TODO_O_ROTEIRO: EscolhaDoRoteiro = { local: true, descricao: true }
 
 /**
- * O `items` gravado, de volta ao tipo. O CHECK do banco já garante o formato;
- * copiar de novo pela mesma lista branca faz a resposta da rota depender só
- * deste arquivo, e não de o CHECK continuar igual.
+ * Uma lista gravada (`items` ou `places`), de volta ao tipo. O CHECK do banco
+ * já garante o formato; copiar de novo pela mesma lista branca faz a resposta
+ * da rota depender só deste arquivo, e não de o CHECK continuar igual.
  */
-function itensGravados(items: unknown): ItemDoPost[] {
-  if (!Array.isArray(items)) return []
-  return items.flatMap((item: unknown) => {
-    if (typeof item !== "object" || item === null) return []
-    const campos = item as CamposDoItem & { title?: unknown }
-    return typeof campos.title === "string" ? [copiarItem(campos.title, campos, TODOS_OS_CAMPOS)] : []
+function gravados<T>(lista: unknown, copiar: (campos: Record<string, unknown>) => T | null): T[] {
+  if (!Array.isArray(lista)) return []
+  return lista.flatMap((valor: unknown) => {
+    if (typeof valor !== "object" || valor === null || Array.isArray(valor)) return []
+    return copiar(valor as Record<string, unknown>) ?? []
   })
 }
 
-type LinhaDoPost = Omit<PostDoAutor, "items"> & { items: unknown }
+/** O endereço gravado é o que o autor escolheu: volta como texto digitado. */
+const lugarGravado = (campos: CamposDoLugar) =>
+  copiarLugar(campos, typeof campos.address === "string" ? { texto: campos.address } : "nenhum")
+
+type LinhaDoPost = Omit<PostDoAutor, "items" | "places" | "caption"> & {
+  caption: unknown
+  items: unknown
+  places: unknown
+}
 
 /** A linha do banco, campo a campo, no formato da rota. */
 function paraPost(linha: LinhaDoPost): PostDoAutor {
@@ -166,7 +269,9 @@ function paraPost(linha: LinhaDoPost): PostDoAutor {
     destination: linha.destination,
     start_date: linha.start_date,
     end_date: linha.end_date,
-    items: itensGravados(linha.items),
+    caption: legenda(linha.caption),
+    items: gravados(linha.items, (campos) => copiarItem(campos, TODO_O_ROTEIRO)),
+    places: gravados(linha.places, lugarGravado),
     cover_path: linha.cover_path,
     created_at: linha.created_at,
     updated_at: linha.updated_at,
@@ -215,7 +320,9 @@ export async function publicar(
       destination: copia.destination,
       start_date: copia.start_date,
       end_date: copia.end_date,
+      caption: copia.caption,
       items: copia.items,
+      places: copia.places,
     })
     .select(COLUNAS_POST)
     .single()
@@ -244,7 +351,9 @@ export async function atualizar(
       destination: copia.destination,
       start_date: copia.start_date,
       end_date: copia.end_date,
+      caption: copia.caption,
       items: copia.items,
+      places: copia.places,
     })
     .eq("id", postId)
     .select(COLUNAS_POST)
