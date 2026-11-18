@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MarcacoesDoPerfil } from "@/components/social/marcacoes-do-perfil";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,9 @@ import { useToast } from "@/hooks/use-toast";
  * para ninguém deixar de seguir com um clique sem querer); no próprio perfil,
  * Editar perfil. As viagens publicadas chegam na S06.
  *
+ * Abaixo do cabeçalho, as abas Viagens e Marcações (S06, RF09.14), visíveis a
+ * quem pode ver a rede do perfil. A aba Marcações é components/social/marcacoes-do-perfil.tsx.
+ *
  * Seguir ou desfazer troca o botão por outro elemento; o foco vai para o botão
  * novo (ou volta ao mesmo, se o pedido falhou), e o resultado é anunciado numa
  * região de status, para quem usa teclado ou leitor de tela não ficar perdido. Com a sessão vencida (401), a tela
@@ -40,7 +45,7 @@ import { useToast } from "@/hooks/use-toast";
  * Os contadores levam às listas de seguidores e de seguindo (S05-M-listas)
  * quando a rede do perfil é visível a quem vê.
  *
- * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir · @RF09.6 listas
+ * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir · @RF09.6 listas · @RF09.14 aba Marcações
  */
 
 type Vinculo = "proprio" | "nenhum" | "solicitado" | "seguindo";
@@ -255,26 +260,39 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
         </CardContent>
       </Card>
 
-      <Card role="region" aria-label="Viagens publicadas">
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          {podeVerViagens ? (
-            <>
-              <IconeMapa className="h-10 w-10 text-muted-foreground" aria-hidden />
-              <p className="text-sm text-muted-foreground">Nenhuma viagem publicada ainda.</p>
-            </>
-          ) : (
-            <>
-              <Lock className="h-10 w-10 text-muted-foreground" aria-hidden />
-              <p className="font-semibold text-foreground">Esta conta é privada</p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                {perfil.vinculo === "solicitado"
-                  ? `Sua solicitação está pendente. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`
-                  : `Solicite para seguir. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`}
-              </p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {podeVerViagens ? (
+        // A aba Marcações (RF09.14) segue a mesma visibilidade das viagens:
+        // fora dela, só o cartão "Esta conta é privada", abaixo.
+        <Tabs defaultValue="viagens" className="gap-4">
+          <TabsList className="w-full sm:w-fit">
+            <TabsTrigger value="viagens">Viagens</TabsTrigger>
+            <TabsTrigger value="marcacoes">Marcações</TabsTrigger>
+          </TabsList>
+          <TabsContent value="viagens">
+            <Card role="region" aria-label="Viagens publicadas">
+              <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+                <IconeMapa className="h-10 w-10 text-muted-foreground" aria-hidden />
+                <p className="text-sm text-muted-foreground">Nenhuma viagem publicada ainda.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="marcacoes">
+            <MarcacoesDoPerfil username={perfil.username} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <Card role="region" aria-label="Viagens publicadas">
+          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <Lock className="h-10 w-10 text-muted-foreground" aria-hidden />
+            <p className="font-semibold text-foreground">Esta conta é privada</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              {perfil.vinculo === "solicitado"
+                ? `Sua solicitação está pendente. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`
+                : `Solicite para seguir. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
