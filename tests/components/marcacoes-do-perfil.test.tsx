@@ -67,7 +67,7 @@ describe("MarcacoesDoPerfil", () => {
 
     const oculta = screen.getByRole("article", { name: "Marcação de @bruno" })
     expect(oculta).toHaveTextContent("Bruno Teste marcou você numa publicação que só os seguidores veem.")
-    expect(screen.getAllByRole("button", { name: /Remover minha marcação/ })).toHaveLength(2)
+    expect(screen.getAllByRole("button", { name: /^Remover marcação/ })).toHaveLength(2)
   })
 
   it("na aba de outra pessoa, nenhum botão de remover", async () => {
@@ -120,7 +120,7 @@ describe("MarcacoesDoPerfil", () => {
     render(<MarcacoesDoPerfil username="carla" />)
 
     const oculta = await screen.findByRole("article", { name: "Marcação de @bruno" })
-    await userEvent.click(within(oculta).getByRole("button", { name: /Remover minha marcação/ }))
+    await userEvent.click(within(oculta).getByRole("button", { name: /^Remover marcação/ }))
     const dialogo = await screen.findByRole("alertdialog")
     expect(dialogo).toHaveTextContent("Remover sua marcação?")
     await userEvent.click(within(dialogo).getByRole("button", { name: "Remover" }))
@@ -137,7 +137,7 @@ describe("MarcacoesDoPerfil", () => {
     const fetch = servidor({ status: 200, corpo: { marcacoes: [VISIVEL], proprio: true } })
     render(<MarcacoesDoPerfil username="carla" />)
 
-    await userEvent.click(await screen.findByRole("button", { name: /Remover minha marcação/ }))
+    await userEvent.click(await screen.findByRole("button", { name: /^Remover marcação/ }))
     await userEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancelar" }))
 
     expect(fetch).toHaveBeenCalledTimes(1)
@@ -148,7 +148,7 @@ describe("MarcacoesDoPerfil", () => {
     servidor({ status: 200, corpo: { marcacoes: [VISIVEL], proprio: true } }, { status: 404 })
     render(<MarcacoesDoPerfil username="carla" />)
 
-    await userEvent.click(await screen.findByRole("button", { name: /Remover minha marcação/ }))
+    await userEvent.click(await screen.findByRole("button", { name: /^Remover marcação/ }))
     await userEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remover" }))
 
     await waitFor(() => expect(screen.queryByRole("article", { name: "Férias em Lisboa" })).not.toBeInTheDocument())
@@ -159,7 +159,7 @@ describe("MarcacoesDoPerfil", () => {
     servidor({ status: 200, corpo: { marcacoes: [VISIVEL], proprio: true } }, { status: 500 })
     render(<MarcacoesDoPerfil username="carla" />)
 
-    await userEvent.click(await screen.findByRole("button", { name: /Remover minha marcação/ }))
+    await userEvent.click(await screen.findByRole("button", { name: /^Remover marcação/ }))
     await userEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remover" }))
 
     await waitFor(() => expect(h.toast).toHaveBeenCalledWith(expect.objectContaining({ variant: "destructive" })))

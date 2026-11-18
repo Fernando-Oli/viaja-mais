@@ -69,7 +69,7 @@ export function MarcacaoCartao({
       variant="outline"
       className="h-9 shrink-0 self-start rounded-xl sm:self-center"
       disabled={ocupado}
-      aria-label={`Remover minha marcação na publicação de @${autor.username}`}
+      aria-label={`Remover marcação na publicação de @${autor.username}`}
       onClick={() => aoRemover(marcacao)}
     >
       {ocupado ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
