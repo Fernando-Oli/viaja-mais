@@ -5,7 +5,7 @@ import { montarCsp } from "@/lib/seguranca/csp"
  * A Content-Security-Policy montada para cada ambiente.
  *
  * O que ISTO prova: as diretivas que fecham as saídas de um XSS e as origens
- * que precisam ficar abertas para o mapa e o Supabase funcionarem. O que NÃO
+ * que precisam ficar abertas para o mapa e as fotos funcionarem. O que NÃO
  * prova: que nenhuma tela quebra com ela — isso é a suíte E2E inteira rodando
  * com a CSP ativa, e o autocomplete do Maps no roteiro manual do plano (o CI
  * não tem chave real do Google).
@@ -22,9 +22,13 @@ function diretivas(csp: string): Map<string, string[]> {
   )
 }
 
-const PRODUCAO = diretivas(montarCsp({ supabaseUrl: "https://abcxyz.supabase.co", desenvolvimento: false }))
-const LOCAL = diretivas(montarCsp({ supabaseUrl: "http://127.0.0.1:54321", desenvolvimento: true }))
-const E2E = diretivas(montarCsp({ supabaseUrl: "http://127.0.0.1:54321", desenvolvimento: false }))
+const PRODUCAO = diretivas(montarCsp({ appUrl: "https://avori.app", desenvolvimento: false }))
+const LOCAL = diretivas(
+  montarCsp({ appUrl: "http://localhost:3000", armazenamentoUrl: "http://localhost:58333", desenvolvimento: true }),
+)
+const E2E = diretivas(
+  montarCsp({ appUrl: "http://localhost:3000", armazenamentoUrl: "http://localhost:58333", desenvolvimento: false }),
+)
 
 describe("montarCsp — o que fecha", () => {
   it.each([
@@ -51,10 +55,14 @@ describe("montarCsp — o que fecha", () => {
     const connect = PRODUCAO.get("connect-src")!
     expect(connect).not.toContain("https:")
     expect(connect).not.toContain("*")
-    expect(connect.filter((o) => o.includes("supabase"))).toEqual([
-      "https://abcxyz.supabase.co",
-      "wss://abcxyz.supabase.co",
-    ])
+    expect(connect).not.toContain("wss:")
+    expect(connect.every((o) => o === "'self'" || o.includes("google") || o.includes("gstatic") || o.includes("ggpht"))).toBe(true)
+  })
+
+  it("nada de Supabase em diretiva nenhuma", () => {
+    for (const csp of [PRODUCAO, LOCAL, E2E]) {
+      expect([...csp.values()].flat().filter((o) => o.includes("supabase") || o.includes(":54321"))).toEqual([])
+    }
   })
 
   it("'unsafe-eval' só em desenvolvimento", () => {
@@ -63,7 +71,7 @@ describe("montarCsp — o que fecha", () => {
     expect(LOCAL.get("script-src")).toContain("'unsafe-eval'")
   })
 
-  it("upgrade-insecure-requests só quando o Supabase é https", () => {
+  it("upgrade-insecure-requests só quando a aplicação é https e fora do next dev", () => {
     expect(PRODUCAO.has("upgrade-insecure-requests")).toBe(true)
     expect(E2E.has("upgrade-insecure-requests")).toBe(false)
     expect(LOCAL.has("upgrade-insecure-requests")).toBe(false)
@@ -71,11 +79,8 @@ describe("montarCsp — o que fecha", () => {
 })
 
 describe("montarCsp — o que precisa ficar aberto", () => {
-  it("Supabase do ambiente em connect-src, por https e por WebSocket", () => {
-    expect(PRODUCAO.get("connect-src")).toEqual(
-      expect.arrayContaining(["https://abcxyz.supabase.co", "wss://abcxyz.supabase.co"]),
-    )
-    expect(LOCAL.get("connect-src")).toEqual(expect.arrayContaining(["http://127.0.0.1:54321", "ws://127.0.0.1:54321"]))
+  it("a própria origem em connect-src: a API responde atrás dela", () => {
+    expect(PRODUCAO.get("connect-src")).toContain("'self'")
   })
 
   it("Google Maps e Places em connect-src", () => {
@@ -88,15 +93,12 @@ describe("montarCsp — o que precisa ficar aberto", () => {
     expect(PRODUCAO.get("img-src")).toEqual(expect.arrayContaining(["'self'", "data:", "blob:", "https:"]))
   })
 
-  it("imagem do Storage local (http) carrega no ambiente de teste", () => {
-    expect(E2E.get("img-src")).toContain("http://127.0.0.1:54321")
-  })
-
   // @RF02.2 a foto de perfil vem por link assinado do armazenamento S3.
   it("foto de perfil do armazenamento local (http) carrega; o https da AWS já está coberto", () => {
     const comArmazenamento = (url: string) =>
-      diretivas(montarCsp({ supabaseUrl: "http://127.0.0.1:54321", armazenamentoUrl: url, desenvolvimento: true }))
+      diretivas(montarCsp({ appUrl: "http://localhost:3000", armazenamentoUrl: url, desenvolvimento: true }))
     expect(comArmazenamento("http://localhost:58333/avatars").get("img-src")).toContain("http://localhost:58333")
+    expect(E2E.get("img-src")).toContain("http://localhost:58333")
     const aws = comArmazenamento("https://avori-fotos.s3.us-east-1.amazonaws.com").get("img-src")!
     expect(aws.filter((o) => o.includes("amazonaws"))).toEqual([])
     expect(aws).toContain("https:")

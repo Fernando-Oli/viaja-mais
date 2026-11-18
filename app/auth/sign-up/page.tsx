@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { createClient } from "@/lib/supabase/client";
+import { authCliente } from "@/lib/auth-cliente";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,9 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { env } from "@/lib/env";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { problemaDeSenha } from "@/lib/seguranca/senha";
 
 /**
@@ -26,8 +25,32 @@ import { problemaDeSenha } from "@/lib/seguranca/senha";
  * @RF01.2 a confirmação por e-mail, quando habilitada, decide o destino
  */
 export default function SignUpPage() {
+  // useSearchParams pede um Suspense em volta (o Next pré-renderiza a página).
+  return (
+    <Suspense>
+      <Cadastro />
+    </Suspense>
+  );
+}
+
+/**
+ * O Better Auth responde em inglês. A política de senha já vem em português,
+ * com a mesma frase da tela (o gancho de `api/auth/auth.ts`).
+ */
+function mensagemDoCadastro(erro: { status: number; code?: string; message?: string }): string {
+  if (erro.status === 429) return "Muitas tentativas. Aguarde um minuto e tente de novo.";
+  if (erro.code === "SENHA_FRACA" && erro.message) return erro.message;
+  if (erro.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL") return "Já existe uma conta com este e-mail. Entre ou recupere a senha.";
+  if (erro.code === "INVALID_EMAIL") return "E-mail inválido";
+  return "Não foi possível criar a conta. Tente de novo.";
+}
+
+function Cadastro() {
+  // O e-mail do convite chega como `?email=` e vem preenchido: a conta precisa
+  // ser criada com ele para o convite ser encontrado.
+  const emailDoConvite = useSearchParams().get("email") ?? "";
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailDoConvite);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +59,6 @@ export default function SignUpPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
@@ -54,25 +76,18 @@ export default function SignUpPage() {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await authCliente.signUp.email({
+        name: fullName.trim(),
         email,
         password,
-        options: {
-          emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/dashboard`,
-          data: {
-            full_name: fullName,
-          },
-        },
       });
-      if (error) throw error;
+      if (error) throw new Error(mensagemDoCadastro(error));
 
-      // O destino depende do que o GoTrue respondeu, não de suposição. Com
-      // `enable_confirmations = false` (padrão de `supabase/config.toml`) a
-      // conta já nasce confirmada e com sessão: mandar essa pessoa para a tela
-      // de "confirme seu e-mail" é pedir que ela espere uma mensagem que nunca
-      // será enviada — e ela já está logada. Sem sessão, a confirmação está
-      // ligada e o e-mail é real.
-      router.push(data.session ? "/dashboard" : "/auth/sign-up-success");
+      // Sem confirmação por e-mail (`requireEmailVerification: false` em
+      // api/auth/auth.ts) a conta nasce com sessão e vai direto ao painel. Se a
+      // confirmação for ligada, não há sessão e a pessoa vê o aviso.
+      router.push(data?.token ? "/dashboard" : "/auth/sign-up-success");
+      router.refresh();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Erro ao criar conta");
     } finally {

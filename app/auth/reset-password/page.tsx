@@ -2,91 +2,92 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { authCliente } from "@/lib/auth-cliente"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { DICA_SENHA, problemaDeSenha, TAMANHO_MINIMO_SENHA } from "@/lib/seguranca/senha"
 
+const LINK_INVALIDO = "Este link expirou ou já foi usado. Peça um novo abaixo."
+
+/**
+ * Recuperação de senha, em dois modos: pedir o e-mail com o link e escolher a
+ * senha nova.
+ *
+ * O link do e-mail passa pela API (`/api/auth/reset-password/:token`), que
+ * confere o token e devolve para cá com `?token=` — ou com
+ * `?error=INVALID_TOKEN` se ele expirou ou já foi usado.
+ *
+ * @RF01.7 redefinir por e-mail a senha esquecida
+ */
 export default function ResetPasswordPage() {
+  // useSearchParams pede um Suspense em volta (o Next pré-renderiza a página).
+  return (
+    <Suspense fallback={<Carregando />}>
+      <Recuperacao />
+    </Suspense>
+  )
+}
+
+function Carregando() {
+  return (
+    <div className="flex w-full items-center justify-center py-12">
+      <div className="text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+        <p className="mt-4 text-muted-foreground">Carregando...</p>
+      </div>
+    </div>
+  )
+}
+
+function Recuperacao() {
+  const params = useSearchParams()
+  // Lidos uma vez, na montagem: o efeito abaixo limpa a URL logo em seguida.
+  const [token, setToken] = useState<string | null>(() => params.get("token"))
+  const [error, setError] = useState<string | null>(() =>
+    !params.get("token") && params.get("error") === "INVALID_TOKEN" ? LINK_INVALIDO : null,
+  )
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [hasToken, setHasToken] = useState(false)
-  const [checkingToken, setCheckingToken] = useState(true)
+  const hasToken = token !== null
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
-    // A tela tem dois modos: pedir o e-mail de recuperação e definir a nova
-    // senha. Antes `hasToken` era fixo em `true` e o efeito ignorava a URL, então
-    // qualquer visita caía direto no formulário de nova senha — que falha porque
-    // não há sessão de recuperação.
-    //
-    // O link do e-mail volta como `?code=` (fluxo PKCE do @supabase/ssr) ou com
-    // `type=recovery` no hash (fluxo implícito). Nos dois casos o cliente do
-    // navegador processa a URL e dispara o evento PASSWORD_RECOVERY.
-    const supabase = createClient()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setHasToken(true)
-        setCheckingToken(false)
-      }
-    })
-
-    const params = new URLSearchParams(window.location.search)
-    const veioDeLinkDeRecuperacao =
-      params.has("code") ||
-      params.get("type") === "recovery" ||
-      window.location.hash.includes("type=recovery")
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (veioDeLinkDeRecuperacao && session) {
-        // Código já trocado por sessão antes de o efeito rodar.
-        setHasToken(true)
-        setCheckingToken(false)
-      } else if (!veioDeLinkDeRecuperacao) {
-        setCheckingToken(false)
-      }
-      // veio de link mas ainda sem sessão: aguarda o PASSWORD_RECOVERY acima.
-    })
-
-    // Link expirado nunca dispara o evento — não deixa a tela presa no spinner.
-    const timeout = setTimeout(() => setCheckingToken(false), 4000)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
-    }
+    // O token sai da barra de endereço assim que é lido: não fica no histórico
+    // do navegador nem segue em cabeçalho Referer.
+    const atual = new URLSearchParams(window.location.search)
+    if (atual.has("token") || atual.has("error")) window.history.replaceState(null, "", window.location.pathname)
   }, [])
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await authCliente.requestPasswordReset({
+        email,
         redirectTo: `${window.location.origin}/auth/reset-password`,
       })
+      if (error) {
+        throw new Error(
+          error.status === 429 ? "Muitos pedidos. Aguarde um minuto e tente de novo." : "Erro ao enviar email de recuperação",
+        )
+      }
 
-      if (error) throw error
-
+      // A mesma mensagem com e sem conta: a tela não diz quais e-mails existem.
       toast({
-        title: "Email enviado!",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+        title: "Pedido recebido",
+        description: "Se houver uma conta com este e-mail, o link para redefinir a senha chega em instantes.",
       })
       setEmail("")
     } catch (error: unknown) {
@@ -111,19 +112,22 @@ export default function ResetPasswordPage() {
       return
     }
 
-    const supabase = createClient()
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      })
+      const { error } = await authCliente.resetPassword({ newPassword: password, token: token! })
+      if (error) {
+        if (error.code === "INVALID_TOKEN") {
+          setToken(null)
+          throw new Error(LINK_INVALIDO)
+        }
+        throw new Error(error.code === "SENHA_FRACA" && error.message ? error.message : "Erro ao redefinir senha")
+      }
 
-      if (error) throw error
-
+      // A troca encerra todas as sessões abertas: entra de novo com a senha nova.
       toast({
         title: "Senha redefinida!",
-        description: "Sua senha foi alterada com sucesso.",
+        description: "Entre com a senha nova.",
       })
 
       setTimeout(() => {
@@ -134,17 +138,6 @@ export default function ResetPasswordPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  if (checkingToken) {
-    return (
-      <div className="flex w-full items-center justify-center py-12">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-          <p className="mt-4 text-muted-foreground">Carregando...</p>
-        </div>
-      </div>
-    )
   }
 
   return (

@@ -11,7 +11,8 @@
  *
  *   - script só carrega da própria origem e do Google Maps;
  *   - `connect-src` fecha a saída: fetch, XHR e WebSocket só vão para a própria
- *     origem, para o Supabase do ambiente e para o Google Maps, então um dado
+ *     origem (a API está atrás dela, pelo rewrite do Next) e para o Google
+ *     Maps, então um dado
  *     roubado não sai para o domínio de quem atacou;
  *   - nada de plugin (`object-src 'none'`), troca da base dos links relativos
  *     (`base-uri 'self'`), formulário enviado para fora (`form-action 'self'`)
@@ -28,8 +29,8 @@
  */
 
 export type OpcoesCsp = {
-  /** `NEXT_PUBLIC_SUPABASE_URL` do ambiente — local, preview ou produção. */
-  supabaseUrl: string
+  /** `NEXT_PUBLIC_APP_URL` do ambiente: decide se `http://` embutido sobe para `https://`. */
+  appUrl: string
   /** Endereço público do armazenamento S3 das fotos de perfil, se houver um próprio. */
   armazenamentoUrl?: string
   /** `next dev`: libera `'unsafe-eval'`, que o React usa para montar a pilha de erro. */
@@ -40,11 +41,8 @@ export type OpcoesCsp = {
 const GOOGLE_MAPS = ["https://maps.googleapis.com", "https://places.googleapis.com"]
 const GOOGLE_ESTATICOS = ["https://maps.gstatic.com", "https://*.googleapis.com", "https://*.ggpht.com"]
 
-export function montarCsp({ supabaseUrl, armazenamentoUrl, desenvolvimento }: OpcoesCsp): string {
-  const supabase = new URL(supabaseUrl)
-  const supabaseHttp = supabase.origin
-  // Realtime do Supabase: mesma origem, por WebSocket.
-  const supabaseWs = `${supabase.protocol === "https:" ? "wss:" : "ws:"}//${supabase.host}`
+export function montarCsp({ appUrl, armazenamentoUrl, desenvolvimento }: OpcoesCsp): string {
+  const app = new URL(appUrl)
   const armazenamento = armazenamentoUrl ? new URL(armazenamentoUrl) : null
 
   const diretivas: Record<string, string[]> = {
@@ -57,14 +55,11 @@ export function montarCsp({ supabaseUrl, armazenamentoUrl, desenvolvimento }: Op
       "data:",
       "blob:",
       "https:",
-      ...(supabase.protocol === "http:" ? [supabaseHttp] : []),
       ...(armazenamento?.protocol === "http:" ? [armazenamento.origin] : []),
     ],
     "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
     "connect-src": [
       "'self'",
-      supabaseHttp,
-      supabaseWs,
       ...GOOGLE_MAPS,
       ...GOOGLE_ESTATICOS,
       // HMR do `next dev`.
@@ -79,9 +74,9 @@ export function montarCsp({ supabaseUrl, armazenamentoUrl, desenvolvimento }: Op
   }
 
   const politica = Object.entries(diretivas).map(([nome, valores]) => `${nome} ${valores.join(" ")}`)
-  // Qualquer `http://` embutido sobe para `https://`. Só quando o Supabase é
-  // https: o E2E do CI roda o build de produção contra o Supabase local em
-  // http://127.0.0.1, e a promoção quebraria toda chamada a ele.
-  if (!desenvolvimento && supabase.protocol === "https:") politica.push("upgrade-insecure-requests")
+  // Qualquer `http://` embutido sobe para `https://`. Só quando a própria
+  // aplicação é https: o E2E roda o build de produção em http://localhost, com
+  // as fotos no armazenamento local em http, e a promoção quebraria as duas.
+  if (!desenvolvimento && app.protocol === "https:") politica.push("upgrade-insecure-requests")
   return politica.join("; ")
 }

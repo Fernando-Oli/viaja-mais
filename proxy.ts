@@ -13,14 +13,14 @@ import type { NextRequest } from "next/server"
  * autorização — quem decide de fato quem pode ver o quê é a API, com os
  * `exigir*` de `lib/authz/` e as políticas de RLS.
  *
- * A CSP mora aqui, e não em `next.config.mjs`, porque depende da URL do
- * Supabase do ambiente, que só se lê por `lib/env.ts`. Ela não muda durante a
+ * A CSP mora aqui, e não em `next.config.mjs`, porque depende de endereços do
+ * ambiente (aplicação e armazenamento), que só se leem por `lib/env.ts`. Ela não muda durante a
  * vida do processo, então é montada uma vez.
  *
  * @RNF02.12 política de segurança de conteúdo
  */
 const CSP = montarCsp({
-  supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+  appUrl: env.NEXT_PUBLIC_APP_URL,
   armazenamentoUrl: envServidor().ARMAZENAMENTO_URL_PUBLICA,
   desenvolvimento: emDesenvolvimento,
 })

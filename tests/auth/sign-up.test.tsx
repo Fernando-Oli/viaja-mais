@@ -5,13 +5,16 @@ import userEvent from "@testing-library/user-event"
 
 /**
  * Regressão: a tela mandava sempre para `/auth/sign-up-success`, que pede para
- * confirmar o e-mail. Com `enable_confirmations = false` — o padrão do
- * `supabase/config.toml` — o GoTrue já devolve sessão e não envia e-mail
- * nenhum, então a pessoa ficava esperando uma mensagem que nunca chegaria,
- * já logada.
+ * confirmar o e-mail. Sem confirmação (`requireEmailVerification: false` em
+ * `api/auth/auth.ts`) a conta já nasce com sessão e nenhum e-mail sai, então a
+ * pessoa ficava esperando uma mensagem que nunca chegaria, já logada.
  *
- * O destino tem de sair do que o `signUp` respondeu, não de suposição: assim o
+ * O destino tem de sair do que o cadastro respondeu, não de suposição: assim o
  * mesmo código serve para os dois modos de confirmação.
+ *
+ * O cliente do Better Auth é simulado; o cadastro de verdade é provado nos
+ * testes de integração (`tests/integracao/foto.test.ts` e outros criam a conta
+ * por ele).
  *
  * @RF01.1 registro com e-mail e senha
  * @RF01.2 confirmação por e-mail quando estiver habilitada
@@ -20,13 +23,15 @@ import userEvent from "@testing-library/user-event"
 const h = vi.hoisted(() => ({
   signUp: vi.fn(),
   push: vi.fn(),
+  busca: new URLSearchParams(),
 }))
 
-vi.mock("@/lib/supabase/client", () => ({
-  createClient: () => ({ auth: { signUp: h.signUp } }),
-}))
+vi.mock("@/lib/auth-cliente", () => ({ authCliente: { signUp: { email: h.signUp } } }))
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: h.push }) }))
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: h.push, refresh: vi.fn() }),
+  useSearchParams: () => h.busca,
+}))
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }))
 
 import SignUpPage from "@/app/auth/sign-up/page"
@@ -49,6 +54,7 @@ async function cadastrar() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  h.busca = new URLSearchParams()
 })
 
 describe("SignUpPage", () => {
@@ -63,40 +69,47 @@ describe("SignUpPage", () => {
     expect(nome.value).toHaveLength(120)
   })
 
-  it("sem confirmação de e-mail, leva direto ao painel", async () => {
-    // O GoTrue devolveu sessão: a conta já está criada e confirmada.
-    h.signUp.mockResolvedValue({
-      data: { user: { id: "u1" }, session: { access_token: "t" } },
-      error: null,
-    })
+  it("envia nome, e-mail e senha ao Better Auth e, com sessão, leva direto ao painel", async () => {
+    h.signUp.mockResolvedValue({ data: { token: "t", user: { id: "u1" } }, error: null })
 
     await cadastrar()
 
     await waitFor(() => expect(h.push).toHaveBeenCalledWith("/dashboard"))
+    expect(h.signUp).toHaveBeenCalledWith({
+      name: "Fulano de Tal",
+      email: "novo@viajamais.local",
+      password: SENHA_TESTE,
+    })
     expect(h.push).not.toHaveBeenCalledWith("/auth/sign-up-success")
   })
 
-  it("com confirmação de e-mail, manda aguardar a mensagem", async () => {
-    // Sem sessão: o e-mail de confirmação é real e precisa ser aberto.
-    h.signUp.mockResolvedValue({
-      data: { user: { id: "u1" }, session: null },
-      error: null,
-    })
+  it("com confirmação de e-mail (sem sessão), manda aguardar a mensagem", async () => {
+    h.signUp.mockResolvedValue({ data: { token: null, user: { id: "u1" } }, error: null })
 
     await cadastrar()
 
     await waitFor(() => expect(h.push).toHaveBeenCalledWith("/auth/sign-up-success"))
   })
 
-  it("erro do GoTrue não redireciona e aparece na tela", async () => {
-    h.signUp.mockResolvedValue({
-      data: { user: null, session: null },
-      error: new Error("User already registered"),
-    })
+  it.each([
+    [{ status: 422, code: "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL", message: "User already exists" }, /Já existe uma conta com este e-mail/],
+    [{ status: 400, code: "SENHA_FRACA", message: "A senha precisa de um símbolo" }, /A senha precisa de um símbolo/],
+    [{ status: 429 }, /Muitas tentativas/],
+    [{ status: 500, code: "FAILED_TO_CREATE_USER", message: "Failed to create user" }, /Não foi possível criar a conta/],
+  ])("erro %o não redireciona e aparece em português", async (erro, texto) => {
+    h.signUp.mockResolvedValue({ data: null, error: erro })
 
     await cadastrar()
 
-    await waitFor(() => expect(screen.getByText(/User already registered/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(texto)).toBeInTheDocument())
+    expect(screen.queryByText(/User already exists|Failed to create/)).not.toBeInTheDocument()
     expect(h.push).not.toHaveBeenCalled()
+  })
+
+  // @RF04.2 o link do e-mail de convite traz o endereço convidado.
+  it("o e-mail do convite (?email=) chega preenchido", () => {
+    h.busca = new URLSearchParams({ email: "convidado@exemplo.local" })
+    render(<SignUpPage />)
+    expect((screen.getAllByRole("textbox")[1] as HTMLInputElement).value).toBe("convidado@exemplo.local")
   })
 })

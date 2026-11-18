@@ -20,9 +20,9 @@ const PUBLICAS = ["/auth"]
 
 /**
  * Rotas de autenticação que um usuário logado ainda precisa acessar: trocar a
- * senha pelo link do e-mail e sair.
+ * senha pelo link do e-mail (sair é `POST /api/auth/sign-out`, que o proxy não toca).
  */
-const AUTH_PERMITIDAS_LOGADO = ["/auth/reset-password", "/auth/signout"]
+const AUTH_PERMITIDAS_LOGADO = ["/auth/reset-password"]
 
 export const PREFIXO_COOKIE = "avori"
 

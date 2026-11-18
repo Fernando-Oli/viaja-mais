@@ -3,6 +3,7 @@ import { APIError, createAuthMiddleware } from "better-auth/api"
 import { problemaDeSenha } from "../../lib/seguranca/senha"
 import { envApi } from "../env"
 import { poolAuth } from "../db/conexao"
+import { enviarEmail, escaparHtml } from "../email/enviar"
 import { esquemaAuth } from "./esquema"
 
 /**
@@ -20,6 +21,7 @@ import { esquemaAuth } from "./esquema"
  * @RF01.1 cadastro com e-mail e senha · @RF01.3 autenticação com e-mail e senha
  * @RF01.4 encerrar a sessão · @RNF02.2 hash de senha resistente (scrypt)
  * @RNF02.3 sessão por token assinado, validada no servidor a cada requisição
+ * @RF01.7 redefinir por e-mail a senha esquecida
  */
 
 /** Rotas do Better Auth que recebem uma senha nova. */
@@ -50,6 +52,26 @@ export const auth = betterAuth({
     // Trocar a senha por recuperação derruba as sessões abertas: quem roubou a
     // sessão perde o acesso junto com a senha antiga.
     revokeSessionsOnPasswordReset: true,
+    // Link de uso único, válido por 1 hora. Ele aponta para a API
+    // (/api/auth/reset-password/:token), que confere o token e devolve para a
+    // tela com `?token=`. O Better Auth responde igual para e-mail sem conta e
+    // só chama esta função quando a conta existe; por isso o envio não é
+    // esperado: o tempo da resposta denunciaria quais e-mails têm conta.
+    resetPasswordTokenExpiresIn: 60 * 60,
+    sendResetPassword: async ({ user, url }) => {
+      void enviarEmail({
+        para: user.email,
+        assunto: "Redefinir sua senha na Avori",
+        texto: `Recebemos um pedido para redefinir a senha da sua conta na Avori.
+
+Para escolher uma senha nova, abra este link em até 1 hora: ${url}
+
+Se não foi você, ignore este e-mail: sua senha continua a mesma.`,
+        html: `<p>Recebemos um pedido para redefinir a senha da sua conta na Avori.</p>
+<p><a href="${escaparHtml(url)}">Escolher uma senha nova</a> (o link vale por 1 hora).</p>
+<p>Se não foi você, ignore este e-mail: sua senha continua a mesma.</p>`,
+      }).catch((erro) => console.warn("[senha] e-mail de recuperação falhou:", erro instanceof Error ? erro.message : erro))
+    },
   },
 
   session: {
@@ -66,6 +88,11 @@ export const auth = betterAuth({
     // Atrás do Next (rewrite) e do load balancer, o IP do cliente chega no
     // X-Forwarded-For. É a chave do limite de tentativas.
     ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+    // Explícito de propósito: sem isto, o Better Auth desliga sozinho a
+    // checagem de origem (CSRF e endereços de volta, como o do link de
+    // recuperação) quando NODE_ENV=test, e os testes não provariam o que vale
+    // em produção.
+    disableOriginCheck: false,
   },
 
   rateLimit: {
