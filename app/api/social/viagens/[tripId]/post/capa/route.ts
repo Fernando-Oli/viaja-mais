@@ -4,9 +4,11 @@ import { createClient } from "@/lib/supabase/server"
 import { criarClienteAdmin } from "@/lib/supabase/admin"
 import { exigirMembro } from "@/lib/authz/trip"
 import { ErroHttp, naoAutenticado, respostaDeErro, respostaInvalida } from "@/lib/http"
+import { exigirLimite, LIMITES } from "@/lib/seguranca/limite"
 import { SEM_CACHE_COMPARTILHADO } from "@/lib/social/avatar"
 import { tipoDaImagem } from "@/lib/social/foto"
 import { LIMITE_CAPA_BYTES, assinarCapa, caminhoDaNovaCapa, enviarCapa, removerCapa } from "@/lib/social/capa"
+import { LADO_CAPA, reprocessarImagem } from "@/lib/social/imagem"
 import { definirCapa, postDaViagem } from "@/lib/social/posts"
 
 /**
@@ -16,7 +18,8 @@ import { definirCapa, postDaViagem } from "@/lib/social/posts"
  * Segue o molde de app/api/trips/[tripId]/route.ts — `await params`,
  * `getUser()`, `exigirMembro`, validação, `respostaDeErro` — e a rota irmã da
  * foto de perfil (app/api/social/perfil/foto), de onde vêm a recusa pelo
- * `Content-Length`, o tipo pelos bytes e a troca condicionada.
+ * `Content-Length`, o tipo pelos bytes, o reprocessamento e a troca
+ * condicionada.
  *
  * **Quem pode.** Qualquer membro da viagem (`exigirMembro`), sobre o próprio
  * post: o post é achado por `postDaViagem`, que só responde sobre a sessão.
@@ -35,6 +38,24 @@ import { definirCapa, postDaViagem } from "@/lib/social/posts"
  * no tipo declarado. A chave fica restrita ao Storage, sempre na pasta da
  * sessão (`caminhoDaNovaCapa`, `removerCapa`); o post em si é gravado com o
  * cliente da sessão, e a RLS e o CHECK de `cover_path` continuam valendo.
+ *
+ * **Limite aceito: esta rota não é o único caminho para `cover_path`.** O autor
+ * também consegue gravar a coluna pelo UPDATE da Data API, mas só com um
+ * caminho da própria pasta (CHECK do banco): aponta o post para outro arquivo
+ * dele, nunca de outra pessoa, e nada entra no bucket sem passar por aqui.
+ * Impacto baixo; o detalhe está em lib/social/capa.ts e no plano da S06
+ * (bloco 7, item 4 da revisão de 18/11).
+ *
+ * **Limite de envios.** O PUT conta na regra da foto de perfil
+ * (`LIMITES.fotoPerfil`, mesma chave, mesmo contador) até existir uma regra
+ * própria; ver o comentário no PUT.
+ *
+ * **O que vai ao bucket é uma imagem nova, nunca o arquivo recebido.** A
+ * assinatura só recusa o óbvio, barato; depois de achar o post, a capa é
+ * decodificada e regerada com o sharp (`reprocessarImagem`, lib/social/imagem.ts):
+ * WebP de até `LADO_CAPA` px, girada pelo EXIF e sem metadado nenhum. O GPS da
+ * foto não chega ao bucket, e um arquivo que só começa como imagem é 400 sem
+ * gravar nada. Por isso o caminho termina sempre em `.webp`.
  *
  * **A ordem: enviar → trocar → apagar.** O arquivo sobe primeiro, num caminho
  * novo, para que o post nunca aponte para um arquivo que não existe. A troca
@@ -116,8 +137,11 @@ async function apagarSemFalhar(admin: Admin, caminho: string | null, autorId: st
   }
 }
 
-/** A imagem do campo `capa`, conferida: tamanho real e tipo pelos bytes. */
-async function lerCapa(request: Request) {
+/**
+ * Os bytes do campo `capa`, conferidos: tamanho real e tipo pelos bytes. É só a
+ * conferência barata; quem decodifica de verdade é `reprocessarImagem`.
+ */
+async function lerCapa(request: Request): Promise<Uint8Array> {
   // Recusa pelo cabeçalho, antes de processar o multipart. Como na foto, não
   // evita a leitura do corpo (o Next já o leu, até o limite do proxy): poupa
   // montar o formulário e copiar o arquivo só para descobrir que era grande.
@@ -131,9 +155,8 @@ async function lerCapa(request: Request) {
 
   // O tipo vem dos bytes, não do nome nem do content-type que o cliente mandou.
   const bytes = new Uint8Array(await arquivo.arrayBuffer())
-  const tipo = tipoDaImagem(bytes)
-  if (!tipo) throw new ErroHttp(400, "Envie uma imagem JPEG, PNG ou WebP")
-  return { bytes, tipo }
+  if (!tipoDaImagem(bytes)) throw new ErroHttp(400, "Envie uma imagem JPEG, PNG ou WebP")
+  return bytes
 }
 
 export async function PUT(request: Request, { params }: Contexto) {
@@ -144,12 +167,32 @@ export async function PUT(request: Request, { params }: Contexto) {
     if (!tripIdSchema.safeParse(tripId).success) return viagemInvalida()
     await exigirMembro(supabase, tripId, user.id)
 
-    const { bytes, tipo } = await lerCapa(request)
+    // Cada envio decodifica uma imagem e grava no Storage com a chave de
+    // serviço (RNF02.8). Contado antes de ler o corpo e de qualquer efeito: o
+    // 429 não monta o formulário, não decodifica e não grava nada.
+    //
+    // Decisão do Micael (18/11): a capa usa a MESMA regra da foto de perfil,
+    // `LIMITES.fotoPerfil`. A contagem do `consumir_limite()` é por usuário e
+    // por `chave`, e a chave é a da regra ("foto-perfil"): foto e capa somam
+    // no mesmo contador — 10 envios de imagem, de qualquer das duas, a cada
+    // 10 minutos. É de propósito, e não um esquecimento: o custo que se limita
+    // (decodificar e gravar) é o mesmo nas duas rotas.
+    // TODO(Fernando): criar a regra própria `LIMITES.capaPost` em
+    // lib/seguranca/limite.ts (pedido registrado em
+    // docs/plans/S06-M-publicar-viagem.md, bloco 7, segunda revisão de 18/11)
+    // e trocar aqui.
+    await exigirLimite(supabase, LIMITES.fotoPerfil)
+
+    const recebidos = await lerCapa(request)
     const post = await meuPost(supabase, tripId)
 
+    // Decodifica só depois de achar o post: um 404 não gasta CPU. O que sobe é
+    // o WebP regerado, sem EXIF/GPS; o arquivo recebido não vai ao bucket.
+    const capa = await reprocessarImagem(recebidos, { lado: LADO_CAPA, limiteBytes: LIMITE_CAPA_BYTES })
+
     const admin = criarClienteAdmin()
-    const caminho = caminhoDaNovaCapa(user.id, tipo)
-    await enviarCapa(admin, caminho, bytes, tipo)
+    const caminho = caminhoDaNovaCapa(user.id, capa.tipo)
+    await enviarCapa(admin, caminho, capa.bytes, capa.tipo)
 
     let capaAnterior: string | null
     try {

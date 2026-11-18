@@ -67,7 +67,8 @@ export const estado = {
   removeVazio: false,
   erroAssinatura: null as Erro,
   buckets: [] as string[],
-  envios: [] as { caminho: string; tipo: string; upsert: unknown; tamanho: number }[],
+  /** Cada envio ao Storage, com os bytes entregues (para conferir o que foi gravado). */
+  envios: [] as { caminho: string; tipo: string; upsert: unknown; tamanho: number; bytes: Uint8Array }[],
   remocoes: [] as string[][],
   assinaturas: [] as { caminhos: string[]; validade: number }[],
   clientesDeServico: 0,
@@ -222,7 +223,13 @@ export function clienteDeServico() {
         estado.buckets.push(bucket)
         return {
           async upload(caminho: string, corpo: Uint8Array, opcoes: { contentType: string; upsert?: boolean }) {
-            estado.envios.push({ caminho, tipo: opcoes.contentType, upsert: opcoes.upsert, tamanho: corpo.byteLength })
+            estado.envios.push({
+              caminho,
+              tipo: opcoes.contentType,
+              upsert: opcoes.upsert,
+              tamanho: corpo.byteLength,
+              bytes: new Uint8Array(corpo),
+            })
             return estado.erroEnvio ? { data: null, error: estado.erroEnvio } : { data: { path: caminho }, error: null }
           },
           async remove(caminhos: string[]) {

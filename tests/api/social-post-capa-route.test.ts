@@ -1,8 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
+import sharp from "sharp"
 import { DAVI, POST_ID, URL_ASSINADA, VIAGEM, estado, reiniciar, trocas } from "./post-capa-dubles"
 import { esquecerLinksEmitidos } from "@/lib/social/avatar"
 import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
 import { BUCKET_CAPAS, LIMITE_CAPA_BYTES } from "@/lib/social/capa"
+import { LADO_CAPA } from "@/lib/social/imagem"
+import {
+  MARCAS,
+  POLIGLOTA_JPEG,
+  chunksDoWebp,
+  contemTexto,
+  jpegComGps,
+  pngComTamanho,
+  pngLiso,
+  webpLiso,
+} from "../fixtures/imagens"
 
 /**
  * @RF09.7 — a capa do post de uma viagem: PUT (multipart, campo `capa`) e
@@ -11,6 +23,11 @@ import { BUCKET_CAPAS, LIMITE_CAPA_BYTES } from "@/lib/social/capa"
  * Os helpers reais (lib/social/posts.ts, lib/social/capa.ts) rodam sobre os
  * dublês de ./post-capa-dubles.ts: o 409 da troca concorrente sai de
  * `definirCapa` comparando a condição com o valor "no banco", não de uma flag.
+ *
+ * O reprocessamento (lib/social/imagem.ts) roda com o sharp de verdade: as
+ * imagens são geradas no teste (tests/fixtures/imagens.ts), e o dublê do
+ * Storage guarda os bytes entregues, para provar que o gravado é o WebP
+ * regerado, sem o GPS da foto, e nunca o arquivo recebido.
  *
  * Toda resposta passa por `conferir`: `Cache-Control: private, no-store` e
  * nenhuma chave `cover_path`, `trip_id` ou `author_id`, em qualquer nível.
@@ -25,15 +42,34 @@ vi.mock("@/lib/supabase/admin", async () => {
   return { criarClienteAdmin: clienteDeServico }
 })
 
+/**
+ * O limite real é provado em tests/lib/limite.test.ts e na RLS do rate limit;
+ * aqui só a ligação da rota com ele — e com a regra da foto de perfil, que a
+ * capa compartilha por decisão do Micael (18/11).
+ */
+const limite = vi.hoisted(() => ({ exigir: vi.fn() }))
+vi.mock("@/lib/seguranca/limite", async (original) => ({
+  ...(await original<typeof import("@/lib/seguranca/limite")>()),
+  exigirLimite: limite.exigir,
+}))
+
 import { DELETE, PUT } from "@/app/api/social/viagens/[tripId]/post/capa/route"
+import { LIMITES, limiteExcedido } from "@/lib/seguranca/limite"
 
 const ANTERIOR = `${DAVI}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
 const DE_OUTRA_ABA = `${DAVI}/3c3c3c3c-3333-4333-8333-333333333333.jpg`
 const ROTA = `http://localhost/api/social/viagens/${VIAGEM}/post/capa`
 
-const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])
-const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 0])
-const WEBP = new TextEncoder().encode("RIFF\u0000\u0000\u0000\u0000WEBPVP8 ")
+/** Imagens de verdade, geradas uma vez: o sharp da rota decodifica de fato. */
+const IMAGENS = {} as Record<"PNG" | "JPEG" | "WebP", Uint8Array>
+let PNG: Uint8Array
+
+beforeAll(async () => {
+  IMAGENS.PNG = await pngLiso(48, 32)
+  IMAGENS.JPEG = await jpegComGps({ largura: 48, altura: 32 })
+  IMAGENS.WebP = await webpLiso(48, 32)
+  PNG = IMAGENS.PNG
+})
 
 const CHAVES_PROIBIDAS = ["cover_path", "trip_id", "author_id"]
 
@@ -63,9 +99,10 @@ function formulario(conteudo: Uint8Array | null, tipoDeclarado = "image/png") {
   return new Request(ROTA, { method: "PUT", body: dados })
 }
 
+/** Só a assinatura do PNG seguida de zeros: para o limite de tamanho, que recusa antes de decodificar. */
 function comTamanho(tamanho: number) {
   const arquivo = new Uint8Array(tamanho)
-  arquivo.set(PNG)
+  arquivo.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
   return arquivo
 }
 
@@ -78,6 +115,8 @@ const capaNova = () => estado.envios[0].caminho
 beforeEach(() => {
   reiniciar()
   esquecerLinksEmitidos()
+  limite.exigir.mockReset()
+  limite.exigir.mockResolvedValue(undefined)
   estado.usuario = { id: DAVI }
   return () => {
     vi.restoreAllMocks()
@@ -91,8 +130,10 @@ describe("PUT /api/social/viagens/[tripId]/post/capa (@RF09.7)", () => {
     expect(status).toBe(200)
     expect(estado.buckets.every((b) => b === BUCKET_CAPAS)).toBe(true)
     expect(estado.envios).toHaveLength(1)
-    expect(capaNova()).toMatch(new RegExp(`^${DAVI}/[0-9a-f-]{36}\\.png$`))
-    expect(estado.envios[0]).toMatchObject({ tipo: "image/png", upsert: false, tamanho: PNG.byteLength })
+    // Sempre WebP, qualquer que seja o formato recebido: é a imagem regerada.
+    expect(capaNova()).toMatch(new RegExp(`^${DAVI}/[0-9a-f-]{36}\\.webp$`))
+    expect(estado.envios[0]).toMatchObject({ tipo: "image/webp", upsert: false })
+    expect(chunksDoWebp(estado.envios[0].bytes).chunks).toContain("VP8 ")
     // Troca condicionada à capa lida (nenhuma), no post da sessão.
     expect(trocas()).toEqual([
       { tipo: "troca", valores: { cover_path: capaNova() }, filtros: [["id", POST_ID], ["cover_path is", null]], retorno: "id" },
@@ -104,16 +145,43 @@ describe("PUT /api/social/viagens/[tripId]/post/capa (@RF09.7)", () => {
     expect(estado.assinaturas).toEqual([{ caminhos: [capaNova()], validade: VALIDADE_URL_AVATAR_S }])
   })
 
-  it.each([
-    ["JPEG", JPEG, "image/jpeg", "jpg"],
-    ["WebP", WEBP, "image/webp", "webp"],
-    ["PNG", PNG, "image/png", "png"],
-  ])("200: %s é reconhecido pelos bytes, não pelo tipo declarado", async (_nome, bytes, tipo, extensao) => {
-    const { status } = await enviar(formulario(bytes, "application/octet-stream"))
+  it.each(["JPEG", "WebP", "PNG"] as const)(
+    "200: %s é reconhecido pelos bytes, não pelo tipo declarado, e gravado como WebP",
+    async (nome) => {
+      const { status } = await enviar(formulario(IMAGENS[nome], "application/octet-stream"))
+
+      expect(status).toBe(200)
+      expect(estado.envios[0].tipo).toBe("image/webp")
+      expect(capaNova()).toMatch(/\.webp$/)
+      expect((await sharp(estado.envios[0].bytes).metadata()).format).toBe("webp")
+    },
+  )
+
+  it("200: foto com GPS — o Storage recebe o WebP regerado, sem EXIF, GPS nem XMP, dentro do lado da capa", async () => {
+    const foto = await jpegComGps({ largura: 2400, altura: 1800 })
+    expect(contemTexto(foto, MARCAS.gps)).toBe(true)
+
+    const { status } = await enviar(formulario(foto, "image/jpeg"))
 
     expect(status).toBe(200)
-    expect(estado.envios[0].tipo).toBe(tipo)
-    expect(capaNova()).toMatch(new RegExp(`\\.${extensao}$`))
+    const gravado = estado.envios[0].bytes
+    expect(gravado).not.toEqual(foto)
+    for (const marca of [MARCAS.exif, MARCAS.gps, MARCAS.xmp, "Exif"]) expect(contemTexto(gravado, marca)).toBe(false)
+    expect(chunksDoWebp(gravado).chunks.filter((c) => !["VP8 ", "VP8L", "VP8X", "ALPH"].includes(c))).toEqual([])
+    const meta = await sharp(gravado).metadata()
+    expect(meta).toMatchObject({ format: "webp", width: LADO_CAPA, height: 1200 })
+    expect(meta.exif).toBeUndefined()
+    expect(estado.envios[0].tamanho).toBe(gravado.byteLength)
+  })
+
+  it("400: poliglota que só começa como JPEG — nada vai ao Storage nem ao post", async () => {
+    const { status, corpo } = await enviar(formulario(POLIGLOTA_JPEG, "image/jpeg"))
+
+    expect(status).toBe(400)
+    expect(corpo.error).toBe("Não foi possível ler a imagem. Envie uma foto JPEG, PNG ou WebP válida.")
+    expect(estado.envios).toEqual([])
+    expect(trocas()).toEqual([])
+    expect(estado.clientesDeServico).toBe(0)
   })
 
   it("200: a capa anterior é apagada do bucket depois da troca", async () => {
@@ -127,8 +195,11 @@ describe("PUT /api/social/viagens/[tripId]/post/capa (@RF09.7)", () => {
     expect(estado.remocoes).toEqual([[ANTERIOR]])
   })
 
-  it("aceita exatamente 2 MB", async () => {
-    expect((await enviar(formulario(comTamanho(LIMITE_CAPA_BYTES)))).status).toBe(200)
+  it("aceita exatamente 2 MB de imagem válida, e o chunk extra dela não chega ao Storage", async () => {
+    const png = await pngComTamanho(LIMITE_CAPA_BYTES)
+
+    expect((await enviar(formulario(png))).status).toBe(200)
+    expect(contemTexto(estado.envios[0].bytes, MARCAS.png)).toBe(false)
   })
 
   it("autoriza e acha o post pela viagem da URL e pela sessão", async () => {
@@ -348,6 +419,56 @@ describe("PUT /api/social/viagens/[tripId]/post/capa (@RF09.7)", () => {
     expect(status).toBe(200)
     expect(corpo).toEqual({ capa: null })
     expect(estado.capaNoBanco).toBe(capaNova())
+  })
+})
+
+describe("PUT /api/social/viagens/[tripId]/post/capa — limite de envios (@RF09.7, RNF02.8)", () => {
+  it("200: cada envio conta na regra da foto de perfil, a mesma chave e o mesmo contador", async () => {
+    const { status } = await enviar(formulario(PNG))
+
+    expect(status).toBe(200)
+    expect(limite.exigir).toHaveBeenCalledTimes(1)
+    expect(limite.exigir).toHaveBeenCalledWith(expect.anything(), LIMITES.fotoPerfil)
+    expect(limite.exigir.mock.calls[0][1].chave).toBe("foto-perfil")
+  })
+
+  it("429: com o limite estourado, não procura o post, não decodifica e não grava nada", async () => {
+    limite.exigir.mockRejectedValueOnce(limiteExcedido(300))
+
+    const { status, corpo, headers } = await enviar(formulario(PNG))
+
+    expect(status).toBe(429)
+    expect(headers.get("Retry-After")).toBe("300")
+    expect(corpo.error).toBe("Muitas tentativas. Aguarde um pouco e tente de novo.")
+    // Só a autorização veio antes: nem o post, nem o Storage, nem a troca.
+    expect(estado.pedidos.map((p) => p.tipo)).toEqual(["papel"])
+    expect(estado.envios).toEqual([])
+    expect(estado.remocoes).toEqual([])
+    expect(trocas()).toEqual([])
+    expect(estado.clientesDeServico).toBe(0)
+  })
+
+  it("401 e 403 vêm antes do limite: sem sessão ou sem ser membro, o contador não anda", async () => {
+    estado.usuario = null
+    expect((await enviar(formulario(PNG))).status).toBe(401)
+
+    estado.usuario = { id: DAVI }
+    estado.papel = null
+    expect((await enviar(formulario(PNG))).status).toBe(403)
+
+    expect(limite.exigir).not.toHaveBeenCalled()
+  })
+
+  it("400 de tripId inválido vem antes do limite", async () => {
+    expect((await enviar(formulario(PNG), "nao-e-uuid")).status).toBe(400)
+    expect(limite.exigir).not.toHaveBeenCalled()
+  })
+
+  it("DELETE não conta no limite: tirar a capa não decodifica nem envia", async () => {
+    estado.capaNoBanco = ANTERIOR
+
+    expect((await tirar()).status).toBe(200)
+    expect(limite.exigir).not.toHaveBeenCalled()
   })
 })
 

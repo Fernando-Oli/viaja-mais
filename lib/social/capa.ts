@@ -18,7 +18,9 @@ import { FORMATO_CAMINHO, LIMITE_FOTO_BYTES, TIPOS_FOTO, caminhoApagavel, caminh
  * de uma cópia: `trip_posts.cover_path` guarda `<author_id>/<uuid>.(webp|jpg|png)`,
  * nunca uma URL, e um CHECK no banco exige o formato e a pasta do autor. Os
  * limites (2 MB, JPEG/PNG/WebP pelos bytes) são os mesmos, e o bucket repete os
- * dois atrás da rota.
+ * dois atrás da rota. Como na foto, o que a rota envia é a imagem regerada por
+ * `reprocessarImagem` (lib/social/imagem.ts) — sempre WebP, sem EXIF/GPS —, e
+ * não o arquivo recebido; as funções daqui só cuidam do caminho e do Storage.
  *
  * A tela recebe a capa como URL assinada, que vale o mesmo que a da foto (10
  * min, reaproveitada por 5) e é emitida pelo mesmo assinador
@@ -29,6 +31,21 @@ import { FORMATO_CAMINHO, LIMITE_FOTO_BYTES, TIPOS_FOTO, caminhoApagavel, caminh
  * Erro do Storage no envio e na remoção lança um `Error` comum, com o original
  * em `cause`: `respostaDeErro` (lib/http.ts) o transforma no 500 genérico, e a
  * mensagem crua só vai ao log.
+ *
+ * **Limite aceito: o autor grava `cover_path` sem passar por aqui.** O grant de
+ * UPDATE da coluna e a policy de `trip_posts` deixam o autor (membro da viagem)
+ * trocar o `cover_path` do próprio post direto pela Data API, sem a rota. O
+ * CHECK do banco só aceita um caminho no formato e na **pasta do próprio
+ * autor**, então o máximo que ele consegue é apontar o post para outro arquivo
+ * dele no bucket (uma capa de outro post seu, ou um nome que não existe, que
+ * vira capa quebrada e cai no fundo com o destino). Não alcança arquivo de
+ * outra pessoa e não envia nada (o bucket não tem policy): todo arquivo do
+ * bucket entrou pela rota e, desde 18/11, foi reprocessado. Se dois posts dele
+ * apontarem para o mesmo arquivo, trocar a capa de um apaga a do outro — o
+ * prejuízo é só dele. Impacto baixo, registrado como limite no plano da S06
+ * (docs/plans/S06-M-publicar-viagem.md, bloco 7, item 4 da revisão de 18/11);
+ * fechar pede tirar o grant de UPDATE de `cover_path` e gravar por função no
+ * banco, o que é migration (Fernando).
  *
  * @RF09.7 publicar viagem — capa do post
  */
@@ -71,7 +88,7 @@ export function capaApagavel(coverPath: string | null | undefined, authorId: str
 }
 
 /**
- * Envia os bytes já conferidos para `caminho` (de `caminhoDaNovaCapa`). Sem
+ * Envia os bytes já reprocessados para `caminho` (de `caminhoDaNovaCapa`). Sem
  * `upsert`: o nome é novo a cada envio, e um caminho que já existe é erro, não
  * sobrescrita de capa alheia. Recusa caminho fora do formato: com a chave de
  * serviço, o Storage gravaria em qualquer pasta.

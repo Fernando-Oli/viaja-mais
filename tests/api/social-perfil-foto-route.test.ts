@@ -1,5 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
+import sharp from "sharp"
 import { limiteExcedido, LIMITES } from "@/lib/seguranca/limite"
+import { LADO_FOTO } from "@/lib/social/imagem"
+import { MARCAS, POLIGLOTA_JPEG, chunksDoWebp, contemTexto, jpegComGps, pngComTamanho, pngLiso } from "../fixtures/imagens"
 
 /**
  * @RF02.2 @RNF02.11 — enviar e remover a foto do próprio perfil.
@@ -12,6 +15,11 @@ import { limiteExcedido, LIMITES } from "@/lib/seguranca/limite"
  * No lugar dele, o teste de que o caminho é sempre a pasta da sessão — a RLS não
  * pegaria um erro aqui, porque o Storage é escrito com a chave de serviço — e de
  * que só a foto da própria pessoa é apagada.
+ *
+ * O reprocessamento (lib/social/imagem.ts) roda com o sharp de verdade, sobre
+ * imagens geradas no teste (tests/fixtures/imagens.ts): o Storage falso guarda
+ * os bytes entregues, para provar que o gravado é o WebP regerado, sem o GPS da
+ * foto, e nunca o arquivo recebido.
  */
 
 type Resposta = { data: Record<string, unknown> | null; error: { message: string; code?: string } | null }
@@ -28,7 +36,8 @@ const h = vi.hoisted(() => ({
   erroEnvio: null as { message: string } | null,
   /** O Storage do supabase-js real responde sem erro e com lista vazia quando não apaga nada. */
   removeVazio: false,
-  envios: [] as { caminho: string; tipo: string; upsert: unknown; tamanho: number }[],
+  /** Cada envio ao Storage, com os bytes entregues (para conferir o que foi gravado). */
+  envios: [] as { caminho: string; tipo: string; upsert: unknown; tamanho: number; bytes: Uint8Array }[],
   /** Cada chamada de assinatura: os caminhos e a validade pedida. */
   assinaturas: [] as { caminhos: string[]; validade: number }[],
   remocoes: [] as string[][],
@@ -94,7 +103,13 @@ vi.mock("@/lib/supabase/admin", () => ({
         h.buckets.push(bucket)
         return {
           async upload(caminho: string, corpo: Uint8Array, opcoes: { contentType: string; upsert?: boolean }) {
-            h.envios.push({ caminho, tipo: opcoes.contentType, upsert: opcoes.upsert, tamanho: corpo.byteLength })
+            h.envios.push({
+              caminho,
+              tipo: opcoes.contentType,
+              upsert: opcoes.upsert,
+              tamanho: corpo.byteLength,
+              bytes: new Uint8Array(corpo),
+            })
             return { data: h.erroEnvio ? null : { path: caminho }, error: h.erroEnvio }
           },
           async remove(caminhos: string[]) {
@@ -152,7 +167,11 @@ import { esquecerLinksEmitidos } from "@/lib/social/avatar"
 const DAVI = "44444444-4444-4444-8444-444444444444"
 const OUTRO = "22222222-2222-4222-8222-222222222222"
 const ANTERIOR = `${DAVI}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
-const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])
+/** Um PNG de verdade, gerado uma vez: o sharp da rota decodifica de fato. */
+let PNG: Uint8Array
+beforeAll(async () => {
+  PNG = await pngLiso(48, 32)
+})
 
 function envio(conteudo: Uint8Array | null, tipoDeclarado = "image/png") {
   const formulario = new FormData()
@@ -161,9 +180,10 @@ function envio(conteudo: Uint8Array | null, tipoDeclarado = "image/png") {
   return new Request("http://localhost/api/social/perfil/foto", { method: "POST", body: formulario })
 }
 
+/** Só a assinatura do PNG seguida de zeros: para o limite de tamanho, que recusa antes de decodificar. */
 function comTamanho(tamanho: number) {
   const arquivo = new Uint8Array(tamanho)
-  arquivo.set(PNG)
+  arquivo.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
   return arquivo
 }
 
@@ -199,7 +219,9 @@ describe("POST /api/social/perfil/foto", () => {
     expect(h.buckets.every((b) => b === "avatars")).toBe(true)
     expect(h.envios).toHaveLength(1)
     const { caminho } = h.envios[0]
-    expect(caminho).toMatch(new RegExp(`^${DAVI}/[0-9a-f-]{36}\\.png$`))
+    // Sempre WebP, qualquer que seja o formato recebido: é a imagem regerada.
+    expect(caminho).toMatch(new RegExp(`^${DAVI}/[0-9a-f-]{36}\\.webp$`))
+    expect(h.envios[0].tipo).toBe("image/webp")
     expect(h.envios[0].upsert).toBe(false)
     expect(h.updates).toEqual([{ avatar_url: caminho }])
     // Condicional à foto lida no começo: id da sessão e avatar_url anterior.
@@ -220,12 +242,41 @@ describe("POST /api/social/perfil/foto", () => {
     expect((await DELETE()).headers.get("cache-control")).toBe("private, no-store")
   })
 
-  it("o tipo e a extensão vêm dos bytes, não do que o cliente declarou", async () => {
+  it("o tipo gravado não vem do que o cliente declarou: é sempre o WebP regerado", async () => {
     logado()
 
     expect((await POST(envio(PNG, "image/jpeg"))).status).toBe(200)
-    expect(h.envios[0].tipo).toBe("image/png")
-    expect(h.envios[0].caminho).toMatch(/\.png$/)
+    expect(h.envios[0].tipo).toBe("image/webp")
+    expect(h.envios[0].caminho).toMatch(/\.webp$/)
+    expect((await sharp(h.envios[0].bytes).metadata()).format).toBe("webp")
+  })
+
+  it("foto com GPS: o Storage recebe o WebP regerado, sem EXIF, GPS nem XMP, dentro de 512×512 (@RF02.2)", async () => {
+    logado()
+    const foto = await jpegComGps({ largura: 1600, altura: 1200 })
+    expect(contemTexto(foto, MARCAS.gps)).toBe(true)
+
+    expect((await POST(envio(foto, "image/jpeg"))).status).toBe(200)
+
+    const gravado = h.envios[0].bytes
+    for (const marca of [MARCAS.exif, MARCAS.gps, MARCAS.xmp, "Exif"]) expect(contemTexto(gravado, marca)).toBe(false)
+    expect(chunksDoWebp(gravado).chunks.filter((c) => !["VP8 ", "VP8L", "VP8X", "ALPH"].includes(c))).toEqual([])
+    const meta = await sharp(gravado).metadata()
+    expect(meta).toMatchObject({ format: "webp", width: LADO_FOTO, height: 384 })
+    expect(meta.exif).toBeUndefined()
+    expect(h.envios[0].tamanho).toBe(gravado.byteLength)
+  })
+
+  it("400: poliglota que só começa como JPEG — nada vai ao Storage nem ao perfil (@RF02.2)", async () => {
+    logado()
+
+    const resposta = await POST(envio(POLIGLOTA_JPEG, "image/jpeg"))
+
+    expect(resposta.status).toBe(400)
+    expect((await resposta.json()).error).toBe("Não foi possível ler a imagem. Envie uma foto JPEG, PNG ou WebP válida.")
+    expect(h.envios).toEqual([])
+    expect(h.updates).toEqual([])
+    expect(h.remocoes).toEqual([])
   })
 
   it("sem foto anterior, o update exige avatar_url nulo", async () => {
@@ -237,10 +288,11 @@ describe("POST /api/social/perfil/foto", () => {
     expect(h.remocoes).toEqual([])
   })
 
-  it("aceita exatamente 2 MB", async () => {
+  it("aceita exatamente 2 MB de imagem válida, e o chunk extra dela não chega ao Storage", async () => {
     logado()
 
-    expect((await POST(envio(comTamanho(2 * 1024 * 1024)))).status).toBe(200)
+    expect((await POST(envio(await pngComTamanho(2 * 1024 * 1024)))).status).toBe(200)
+    expect(contemTexto(h.envios[0].bytes, MARCAS.png)).toBe(false)
   })
 
   it("401: sem sessão não envia nada", async () => {

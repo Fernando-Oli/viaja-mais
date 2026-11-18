@@ -51,7 +51,12 @@ const ASSINATURA_PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
-/** `<uuid do usuário>/<uuid>.(webp|jpg|png)` — o mesmo formato que o trigger do banco exige. */
+/**
+ * `<uuid do usuário>/<uuid>.(webp|jpg|png)` — o mesmo formato que o trigger do
+ * banco exige. As rotas só gravam `.webp` desde o reprocessamento (18/11); `jpg`
+ * e `png` continuam aceitos porque arquivos antigos podem estar no bucket e
+ * precisam continuar apagáveis e assináveis.
+ */
 export const FORMATO_CAMINHO = new RegExp(`^(${UUID})/${UUID}\\.(webp|jpg|png)$`)
 
 function ascii(bytes: Uint8Array, inicio: number, fim: number) {
@@ -65,7 +70,10 @@ function ascii(bytes: Uint8Array, inicio: number, fim: number) {
  * tipo declarado.
  *
  * Confere só a assinatura, não decodifica a imagem: um arquivo que comece com o
- * cabeçalho certo e traga qualquer coisa depois passa por aqui.
+ * cabeçalho certo e traga qualquer coisa depois passa por aqui. É a recusa
+ * barata, antes do decodificador: as rotas de foto e de capa depois regeram a
+ * imagem com `reprocessarImagem` (lib/social/imagem.ts), e é isso que pega o
+ * arquivo que só parece imagem e tira o EXIF/GPS.
  */
 export function tipoDaImagem(bytes: Uint8Array): TipoFoto | null {
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg"
