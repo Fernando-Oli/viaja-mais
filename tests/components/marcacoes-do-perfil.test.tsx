@@ -4,7 +4,8 @@ import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
 /**
- * @RF09.14 — a aba Marcações na tela: os dois cartões, os estados e remover a
+ * @RF09.14 — a aba Marcações na tela: os dois cartões (o visível com a 1ª foto
+ * ou o grafismo, e o link ao detalhe /feed/<post_id>), os estados e remover a
  * própria marca com `ConfirmModal` e `toast()`. Nada de `confirm()`/`alert()`,
  * e só as rotas de /api/social (nenhum cliente Supabase).
  */
@@ -29,7 +30,22 @@ const VISIVEL = {
     start_date: "2026-06-12",
     end_date: "2026-06-18",
     caption: "Sete dias entre Alfama e Belém",
-    cover_url: null,
+    foto: null,
+  },
+}
+const POST_3 = "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+/** Post sem viagem: os quatro campos da viagem nulos e a 1ª foto assinada. */
+const SEM_VIAGEM = {
+  post_id: POST_3,
+  marcado_em: "2026-11-19T12:00:00Z",
+  autor: bruno,
+  post: {
+    title: null,
+    destination: null,
+    start_date: null,
+    end_date: null,
+    caption: "Pôr do sol no Tejo",
+    foto: "https://storage.local/assinada/foto-1.webp",
   },
 }
 const OCULTA = { post_id: POST_2, marcado_em: "2026-11-17T12:00:00Z", autor: bruno, post: null }
@@ -68,6 +84,23 @@ describe("MarcacoesDoPerfil", () => {
     const oculta = screen.getByRole("article", { name: "Marcação de @bruno" })
     expect(oculta).toHaveTextContent("Bruno Teste marcou você numa publicação que só os seguidores veem.")
     expect(screen.getAllByRole("button", { name: /^Remover marcação/ })).toHaveLength(2)
+    // O cartão visível leva ao detalhe; o oculto, não (o detalhe responderia 404).
+    expect(within(cartao).getByRole("link", { name: /^Abrir a publicação de @bruno: Lisboa, Portugal, 12 de jun/ })).toHaveAttribute(
+      "href",
+      `/feed/${POST_1}`,
+    )
+    expect(within(oculta).queryByRole("link", { name: /Abrir a publicação/ })).not.toBeInTheDocument()
+  })
+
+  it("post sem viagem: a 1ª foto, a legenda, sem faixa de destino, e o link ao detalhe", async () => {
+    servidor({ status: 200, corpo: { marcacoes: [SEM_VIAGEM], proprio: false } })
+    const { container } = render(<MarcacoesDoPerfil username="carla" />)
+
+    const cartao = await screen.findByRole("article", { name: "Publicação de @bruno" })
+    expect(within(cartao).getByText("Pôr do sol no Tejo")).toBeInTheDocument()
+    expect(within(cartao).queryByRole("heading", { level: 3 })).not.toBeInTheDocument()
+    expect(within(cartao).getByRole("link", { name: "Abrir a publicação de @bruno" })).toHaveAttribute("href", `/feed/${POST_3}`)
+    expect(container.querySelector('img[src="https://storage.local/assinada/foto-1.webp"]')).not.toBeNull()
   })
 
   it("na aba de outra pessoa, nenhum botão de remover", async () => {

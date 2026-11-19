@@ -376,7 +376,7 @@ test.describe("removendo a marca", () => {
     await expect(page.getByText("Marcação removida", { exact: true }).first()).toBeVisible()
     await expect(cartao(page, REMOCAO)).toHaveCount(0)
     await expect(page.getByText("Nenhuma marcação ainda")).toBeVisible()
-    await expect(page.getByText("Quando alguém marcar você numa viagem publicada, ela aparece aqui.")).toBeVisible()
+    await expect(page.getByText("Quando alguém marcar você numa publicação, ela aparece aqui.")).toBeVisible()
     await evidencia(page, "04-marcacao-removida")
     const depois = await (await page.request.get("/api/social/perfis/davi/marcacoes")).json()
     expect(depois.marcacoes, "a marca saiu do banco, não só da tela").toEqual([])

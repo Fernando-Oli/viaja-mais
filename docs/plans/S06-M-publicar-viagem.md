@@ -21,6 +21,23 @@ status: em-desenvolvimento
 
 ## 1. Contexto
 
+**Redesenho de 18/11, à noite: o POST no modelo do Instagram (decisões do Micael; substituem as
+anteriores onde conflitam).**
+- Só existe **post**: de 1 a 3 fotos em carrossel, na ordem em que foram escolhidas, legenda opcional e
+  pessoas marcadas. **Uma viagem é um post**, que além disso leva a cópia da viagem, e é o único que
+  pode não ter foto (mostra o grafismo).
+- **Marcação como no Instagram:** qualquer perfil com username, menos o próprio, inclusive no post de
+  viagem. Os membros da viagem aparecem como sugestão. Isso substitui "só membros", de 16/11.
+- **Recusa de remarcação:** por viagem e autor no post de viagem; por post no post sem viagem.
+- **Criar segue o padrão do Instagram:** "Criar" → fotos → legenda e "Marcar pessoas" → "Compartilhar".
+  Depois de publicar, dá para excluir e, se der tempo, editar a legenda e as marcações.
+- **Perfil:** aba **"Publicações"**, uma grade única. Detalhe em `/feed/<id>`.
+- **Botão "Criar":** no menu da rede social (`app/dashboard/layout.tsx`, pedido ao Fernando).
+  Provisoriamente, fica no próprio perfil e no feed.
+- **Banco:** migration nova que renomeia `trip_posts` para `posts`, deixa a viagem opcional, guarda as
+  fotos em `photos text[]` (até 3) e generaliza recusas e marcação. RF09.15, RF09.16 e RF09.17 no
+  catálogo; o RF09.13 foi reescrito.
+
 **Readequação de 18/11 (decisões do Micael; substituem as de 11/11 onde conflitam).** A tela segue a
 prévia visual do Fernando (`components/prototipo/botao-publicar.tsx`): um diálogo aberto da tela da
 viagem, e não mais a subpágina `/publicar`.

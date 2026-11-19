@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import ConfirmModal from "@/components/ui/confirm-modal";
 import { useToast } from "@/hooks/use-toast";
-import type { Marcacao } from "@/lib/social/aba-marcacoes";
-import { MarcacaoCartao } from "./marcacoes-cartao";
+import { MarcacaoCartao, type Marcacao } from "./marcacoes-cartao";
 
 /**
  * A aba "Marcações" do perfil /u/<username> (S06-M-publicar-viagem, RF09.14):
@@ -24,6 +23,7 @@ import { MarcacaoCartao } from "./marcacoes-cartao";
  *   mesmo jeito. O autor não é avisado.
  * - Estados: carregando, vazio, erro (com "Tentar de novo"), sessão vencida e
  *   conta privada.
+ * - Cada cartão de post visível leva ao detalhe do post, /feed/<post_id>.
  *
  * @RF09.14 aba Marcações e remover a própria marca
  */
@@ -38,7 +38,7 @@ type Estado =
 
 function vazio(username: string, proprio: boolean) {
   return proprio
-    ? "Quando alguém marcar você numa viagem publicada, ela aparece aqui."
+    ? "Quando alguém marcar você numa publicação, ela aparece aqui."
     : `@${username} ainda não foi marcado em nenhuma publicação que você pode ver.`;
 }
 

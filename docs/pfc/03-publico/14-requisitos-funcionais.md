@@ -97,8 +97,11 @@ plataforma, a tabela `profiles` recebe as colunas `username` (única), `bio` e
 | RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | Alta |
 | RF09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | Média |
 | RF09.12 | O usuário deve poder ver, reabrir e apagar o histórico dos perfis que abriu pela pesquisa | Não iniciado | Média |
-| RF09.13 | O autor de uma publicação deve poder marcar nela membros da viagem publicada | Não iniciado | Média |
+| RF09.13 | O autor de uma publicação deve poder marcar nela outros usuários que tenham nome de usuário | Não iniciado | Média |
 | RF09.14 | O usuário marcado deve poder ver, na aba Marcações do próprio perfil, as publicações em que foi marcado e remover a própria marcação | Não iniciado | Média |
+| RF09.15 | O usuário deve poder criar uma publicação com uma a três fotos, legenda opcional e pessoas marcadas | Não iniciado | Alta |
+| RF09.16 | O usuário deve ver, na aba Publicações de um perfil que pode ver, a grade das publicações desse perfil | Não iniciado | Alta |
+| RF09.17 | O usuário deve poder abrir uma publicação que pode ver e, se for o autor, excluí-la | Não iniciado | Alta |
 
 **Detalhamento:** seguir um perfil público cria o vínculo já no estado aceito;
 seguir um perfil privado cria um vínculo pendente, que só se torna aceito após a
@@ -136,11 +139,20 @@ trinta dias; é visível somente ao próprio usuário, acompanha a conta em qual
 dispositivo, não notifica a pessoa pesquisada e pode ser apagado entrada a
 entrada ou por inteiro. Nas sugestões do feed (RF09.11),
 somente publicações de perfis públicos podem ser sugeridas; uma publicação de
-perfil privado nunca é sugerida a quem não é seguidor aprovado. A marcação
+perfil privado nunca é sugerida a quem não é seguidor aprovado. Toda
+publicação (RF09.15) tem de uma a três fotos, exibidas em carrossel na ordem
+em que foram escolhidas, e legenda opcional; publicar uma viagem (RF09.7) cria
+uma publicação que, além disso, leva a cópia da viagem, e é a única que pode não
+ter foto. As fotos são reprocessadas no servidor e publicadas sem metadados. A
+aba Publicações (RF09.16) mostra a grade das publicações do perfil, sem
+distinguir as de viagem, e segue a visibilidade do perfil; o detalhe (RF09.17)
+só abre a publicação a quem pode vê-la. A marcação
 (RF09.13) é a única forma de uma publicação indicar outros participantes da
-viagem: o autor escolhe, entre os membros da viagem que têm nome de usuário,
-quem marcar, e nunca marca a si mesmo; quem não foi na viagem não pode ser
-marcado. As marcações são visíveis a quem enxerga a publicação. Ser marcado não
+viagem: como no Instagram, o autor pode marcar qualquer usuário que tenha nome
+de usuário, mesmo quem não foi na viagem, e nunca marca a si mesmo; os membros
+da viagem aparecem como sugestão. Quem remove a própria marcação não pode ser
+marcado de novo pelo mesmo autor naquela viagem, ou naquela publicação quando
+ela não é de viagem. As marcações são visíveis a quem enxerga a publicação. Ser marcado não
 concede acesso à publicação: quando o autor tem perfil privado e a pessoa
 marcada não o segue com vínculo aceito, ela vê apenas quem a marcou e pode
 remover a marcação, sem ver o conteúdo, como ocorre no Instagram. A aba
@@ -150,7 +162,8 @@ qualquer momento, e o autor pode desmarcar quem marcou. A marcação permanece s
 a pessoa marcada sair da viagem e é apagada junto com a publicação. Como decisão de
 dado a cargo da plataforma,
 criam-se a tabela `follows`, com estado pendente ou aceito, a tabela
-`trip_posts`, a tabela `post_tags`, das marcações, e a tabela `search_history`,
+`posts` (originalmente `trip_posts`), a tabela `post_tags`, das marcações, com
+as recusas de remarcação, e a tabela `search_history`,
 do histórico de pesquisa.
 
 ## RF10 — Interação Social
