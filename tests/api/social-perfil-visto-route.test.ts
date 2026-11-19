@@ -5,6 +5,7 @@ import { VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
 
 /**
  * @RF02.8 @RNF02.11 — o perfil de outra pessoa (GET /api/social/perfis/[username]).
+ * @RF09.16 — o contador de publicações (S06-M-perfil-instagram).
  *
  * Os dublês (perfil-visto-dubles.ts) registram cada consulta: em que tabela,
  * com quais filtros, que função foi chamada e o que o cliente de serviço
@@ -50,6 +51,7 @@ beforeEach(() => {
   estado.usuario = { id: DAVI }
   estado.perfil = carla
   estado.contagem = { seguidores: 3, seguindo: 1 }
+  estado.publicacoes = 5
 })
 
 describe("GET /api/social/perfis/[username]", () => {
@@ -68,6 +70,7 @@ describe("GET /api/social/perfis/[username]", () => {
         vinculo: "nenhum",
         seguidores: 3,
         seguindo: 1,
+        publicacoes: 5,
         sem_username: false,
       },
     })
@@ -80,6 +83,7 @@ describe("GET /api/social/perfis/[username]", () => {
       { tabela: "profiles", colunas: "id, username, full_name, avatar_url, bio, is_public", filtros: [["username", "carla"]] },
       { tabela: "follows", colunas: "status", filtros: [["follower_id", DAVI], ["followee_id", CARLA]] },
       { tabela: "profiles", colunas: "username", filtros: [["id", DAVI]] },
+      { tabela: "posts", colunas: "id", opcoes: { count: "exact", head: true }, filtros: [["author_id", CARLA]] },
     ])
   })
 
@@ -107,7 +111,7 @@ describe("GET /api/social/perfis/[username]", () => {
     expect(perfil.vinculo).toBe("proprio")
     // Nem o username de quem vê é lido de novo: é o da própria página.
     expect(perfil.sem_username).toBe(false)
-    expect(estado.consultas.map((c) => c.tabela)).toEqual(["profiles"])
+    expect(estado.consultas.map((c) => c.tabela)).toEqual(["profiles", "posts"])
   })
 
   it("perfil privado também traz os contadores (decisão do Micael), mas nenhuma lista", async () => {
@@ -144,7 +148,7 @@ describe("GET /api/social/perfis/[username]", () => {
     const { perfil } = await (await ver("carla")).json()
 
     expect(Object.keys(perfil).sort()).toEqual(
-      ["avatar_url", "bio", "full_name", "is_public", "seguidores", "seguindo", "sem_username", "username", "vinculo"].sort(),
+      ["avatar_url", "bio", "full_name", "is_public", "publicacoes", "seguidores", "seguindo", "sem_username", "username", "vinculo"].sort(),
     )
   })
 
@@ -170,6 +174,45 @@ describe("GET /api/social/perfis/[username]", () => {
     expect([perfil.seguidores, perfil.seguindo]).toEqual([null, null])
     expect(JSON.stringify(perfil)).not.toContain("contar_rede")
     expect(log).toHaveBeenCalledWith("[perfil visto] não foi possível contar a rede", estado.erroContagem)
+    log.mockRestore()
+  })
+
+  it.each([
+    [{ is_public: true }, null, 5],
+    [{ is_public: false }, { status: "accepted" as const }, 5],
+    [{ is_public: false }, { status: "pending" as const }, null],
+    [{ is_public: false }, null, null],
+  ])("@RF09.16 publicações: %j com o vínculo %j vem %j", async (visibilidade, vinculo, esperado) => {
+    estado.perfil = { ...carla, ...visibilidade }
+    estado.vinculo = vinculo
+
+    expect((await (await ver("carla")).json()).perfil.publicacoes).toBe(esperado)
+  })
+
+  it("@RF09.16 no próprio perfil privado, as publicações vêm contadas", async () => {
+    estado.usuario = { id: CARLA }
+    estado.perfil = { ...carla, is_public: false }
+
+    expect((await (await ver("carla")).json()).perfil.publicacoes).toBe(5)
+  })
+
+  it("@RF09.16 perfil sem posts conta 0, e não nulo", async () => {
+    estado.publicacoes = 0
+
+    expect((await (await ver("carla")).json()).perfil.publicacoes).toBe(0)
+  })
+
+  it("@RF09.16 se a contagem de publicações falha, ela vem nula e o resto do perfil responde 200", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
+    estado.erroPublicacoes = { code: "42501", message: "permission denied for table posts" }
+
+    const resposta = await ver("carla")
+
+    expect(resposta.status).toBe(200)
+    const { perfil } = await resposta.json()
+    expect(perfil).toMatchObject({ publicacoes: null, seguidores: 3, seguindo: 1 })
+    expect(JSON.stringify(perfil)).not.toContain("permission denied")
+    expect(log).toHaveBeenCalledWith("[perfil visto] não foi possível contar as publicações", estado.erroPublicacoes)
     log.mockRestore()
   })
 
