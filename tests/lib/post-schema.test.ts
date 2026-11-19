@@ -7,8 +7,11 @@ import {
   MAXIMO_TITULO,
   caracteres,
   enderecoSchema,
+  editarPostSchema,
   limparTextoLivre,
+  novoPostSchema,
   pedidoPostSchema,
+  postIdSchema,
 } from "@/lib/schemas/post"
 
 /**
@@ -424,5 +427,58 @@ describe("pedidoPostSchema — chaves extras e corpo", () => {
     ["número", 0],
   ])("recusa corpo %s", (_caso, corpo) => {
     expect(pedidoPostSchema.safeParse(corpo).success).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// @RF09.15 @RF09.17 o post com fotos: campos do multipart, edição e id na URL
+// ---------------------------------------------------------------------------
+
+describe("novoPostSchema, editarPostSchema e postIdSchema (@RF09.15 @RF09.13)", () => {
+  const U1 = "11111111-1111-4111-8111-111111111111"
+
+  it("novoPostSchema: legenda limpa, marcados de uma lista JSON em minúsculas, ausentes viram null e []", () => {
+    expect(novoPostSchema.parse({})).toEqual({ legenda: null, marcados: [] })
+    expect(novoPostSchema.parse({ legenda: "  oi ", marcados: JSON.stringify([U1.toUpperCase()]) })).toEqual({
+      legenda: "oi",
+      marcados: [U1],
+    })
+  })
+
+  it.each([
+    ["marcados que não é JSON", { marcados: "[x" }],
+    ["marcados objeto", { marcados: '{"a":1}' }],
+    ["marcado repetido", { marcados: JSON.stringify([U1, U1]) }],
+    ["21 marcados", { marcados: JSON.stringify(Array.from({ length: 21 }, (_, i) => `${String(i).padStart(8, "0")}-0000-4000-8000-000000000000`)) }],
+    ["legenda longa", { legenda: "a".repeat(281) }],
+    ["campo a mais", { photos: "x" }],
+    ["arquivo na legenda", { legenda: new File(["x"], "x") }],
+  ])("novoPostSchema recusa %s", (_caso, entrada) => {
+    expect(novoPostSchema.safeParse(entrada).success).toBe(false)
+  })
+
+  it("MAXIMO_MARCADOS é 20 (decisão de 18/11, noite)", () => {
+    expect(MAXIMO_MARCADOS).toBe(20)
+  })
+
+  it("editarPostSchema: ausente é não mexer; null e vazio tiram a legenda; [] desmarca", () => {
+    expect(editarPostSchema.parse({ legenda: null })).toEqual({ legenda: null })
+    expect(editarPostSchema.parse({ legenda: "  " })).toEqual({ legenda: null })
+    expect(editarPostSchema.parse({ marcados: [] })).toEqual({ marcados: [] })
+  })
+
+  it.each([
+    ["vazio", {}],
+    ["fotos", { fotos: [] }],
+    ["legenda número", { legenda: 1 }],
+    ["legenda longa", { legenda: "a".repeat(281) }],
+    ["não objeto", "x"],
+  ])("editarPostSchema recusa %s", (_caso, entrada) => {
+    expect(editarPostSchema.safeParse(entrada).success).toBe(false)
+  })
+
+  it("postIdSchema: uuid em minúsculas; outra coisa é inválida", () => {
+    expect(postIdSchema.parse("AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA")).toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+    expect(postIdSchema.safeParse("1 or 1=1").success).toBe(false)
   })
 })

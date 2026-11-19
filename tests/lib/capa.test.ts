@@ -1,334 +1,180 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
+import { ANA, BIA, banco, fotoDe } from "../api/banco-falso"
+import { esquecerLinksEmitidos } from "@/lib/social/avatar"
+import { ErroHttp } from "@/lib/http"
 import {
   BUCKET_CAPAS,
-  LIMITE_CAPA_BYTES,
-  TIPOS_CAPA,
-  assinarCapa,
-  assinarCapas,
-  caminhoDaNovaCapa,
-  capaApagavel,
-  enviarCapa,
-  removerCapa,
+  LIMITE_FOTO_POST_BYTES,
+  assinarFotos,
+  caminhoDaNovaFotoDoPost,
+  conferirTamanhoDeclarado,
+  enviarFotoDoPost,
+  enviarFotos,
+  fotoApagavel,
+  fotosDoFormulario,
+  removerFotosDoPost,
+  removerFotosSemFalhar,
+  reprocessarFotos,
 } from "@/lib/social/capa"
-import { assinarAvatar, esquecerLinksEmitidos, type ClienteDeServico } from "@/lib/social/avatar"
-import { REUSO_URL_AVATAR_S, VALIDADE_URL_AVATAR_S } from "@/lib/social/foto"
+import { pngLiso } from "../fixtures/imagens"
 
 /**
- * @RF09.7 — capa do post de viagem: caminho na pasta do autor, envio e remoção
- * com a chave de serviço, link assinado em lote (bucket privado `capas-posts`).
- *
- * O cliente de serviço é falso e registra cada chamada ao Storage (bucket,
- * operação e argumentos); cada assinatura sai com um token diferente, como no
- * Storage de verdade, para o reaproveitamento aparecer.
+ * @RF09.15 @RF09.7 As fotos de um post (lib/social/capa.ts): caminho na pasta
+ * da autora, conferência do multipart (quantidade, arquivo, 2 MB = 413, tipo
+ * pelos bytes), envio com rollback, remoção só na pasta da autora, e
+ * assinatura em lote que nunca lança.
  */
 
-const ANA = "11111111-1111-4111-8111-111111111111"
-const BRUNO = "22222222-2222-4222-8222-222222222222"
-const CAPA_ANA = `${ANA}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
-const CAPA_BRUNO = `${BRUNO}/1c7a3d5f-6e8b-4b9f-8c2d-3a4f5e6b7c8d.jpg`
-
-/** O mesmo regex do CHECK trip_posts_cover_path_check, copiado da migration. */
-const CHECK_DO_BANCO =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(webp|jpg|png)$/
-
-type Item = { path: string | null; signedUrl: string | null; error: string | null }
-type Resultado<T> = { data: T; error: { message: string } | null }
-
-let emissao = 0
-const assinada = (bucket: string, caminho: string, token: number) =>
-  `https://storage.teste/storage/v1/object/sign/${bucket}/${caminho}?token=t${token}`
-
-const chamadas: { bucket: string; op: string; args: unknown[] }[] = []
-let clientesCriados = 0
-let semChave = false
-let respostaUpload: () => Resultado<{ path: string } | null>
-let respostaRemove: (caminhos: string[]) => Resultado<{ name: string }[] | null>
-let respostaAssinar: (bucket: string, caminhos: string[]) => Resultado<Item[] | null>
-
-const cliente = {
-  storage: {
-    from: (bucket: string) => ({
-      async upload(...args: unknown[]) {
-        chamadas.push({ bucket, op: "upload", args })
-        return respostaUpload()
-      },
-      async remove(caminhos: string[]) {
-        chamadas.push({ bucket, op: "remove", args: [caminhos] })
-        return respostaRemove(caminhos)
-      },
-      async createSignedUrls(caminhos: string[], validade: number) {
-        chamadas.push({ bucket, op: "createSignedUrls", args: [caminhos, validade] })
-        return respostaAssinar(bucket, caminhos)
-      },
-    }),
-  },
-} as unknown as ClienteDeServico
-
-const criarAdmin = () => {
-  if (semChave) throw new Error("SUPABASE_SERVICE_ROLE_KEY não configurada")
-  clientesCriados++
-  return cliente
-}
-
-const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00])
+let PNG: Uint8Array
+beforeAll(async () => {
+  PNG = await pngLiso(20, 20)
+})
 
 beforeEach(() => {
+  banco.reiniciar()
   esquecerLinksEmitidos()
-  chamadas.length = 0
-  clientesCriados = 0
-  semChave = false
-  respostaUpload = () => ({ data: { path: "ok" }, error: null })
-  respostaRemove = (caminhos) => ({ data: caminhos.map((name) => ({ name })), error: null })
-  respostaAssinar = (bucket, caminhos) => {
-    emissao++
-    return {
-      data: caminhos.map((path) => ({ path, signedUrl: assinada(bucket, path, emissao), error: null })),
-      error: null,
-    }
-  }
+  return () => vi.restoreAllMocks()
 })
 
-afterEach(() => {
-  vi.useRealTimers()
-  vi.restoreAllMocks()
-})
+const admin = () => banco.clienteDeServico()
 
-describe("contrato com o bucket", () => {
-  it("é o bucket privado da migration, com os limites da foto", () => {
-    expect(BUCKET_CAPAS).toBe("capas-posts")
-    expect(LIMITE_CAPA_BYTES).toBe(2 * 1024 * 1024)
-    expect([...TIPOS_CAPA]).toEqual(["image/jpeg", "image/png", "image/webp"])
-  })
-})
+async function erroDe(promessa: Promise<unknown>) {
+  return promessa.then(
+    () => null,
+    (e: unknown) => e,
+  )
+}
 
-describe("caminhoDaNovaCapa — casa com o CHECK do banco", () => {
-  it.each([
-    ["image/webp", "webp"],
-    ["image/jpeg", "jpg"],
-    ["image/png", "png"],
-  ] as const)("%s vai para a pasta do autor com .%s", (tipo, extensao) => {
-    const caminho = caminhoDaNovaCapa(ANA, tipo)
+function formulario(entradas: (Uint8Array | string)[]) {
+  const dados = new FormData()
+  for (const e of entradas) dados.append("fotos", typeof e === "string" ? e : new File([new Uint8Array(e)], "f"))
+  return dados
+}
 
-    expect(caminho).toMatch(CHECK_DO_BANCO)
-    expect(caminho.split("/")[0]).toBe(ANA)
-    expect(caminho.endsWith(`.${extensao}`)).toBe(true)
+describe("caminho e pasta da autora", () => {
+  it("caminho novo é <autora>/<uuid>.webp, um diferente a cada vez", () => {
+    const a = caminhoDaNovaFotoDoPost(ANA)
+    expect(a).toMatch(new RegExp(`^${ANA}/[0-9a-f-]{36}\\.webp$`))
+    expect(caminhoDaNovaFotoDoPost(ANA)).not.toBe(a)
   })
 
-  it("cada envio tem um nome novo", () => {
-    expect(caminhoDaNovaCapa(ANA, "image/webp")).not.toBe(caminhoDaNovaCapa(ANA, "image/webp"))
+  it.each(["", "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA", "../x", "nao-uuid"])("autora fora do formato (%s) lança", (autor) => {
+    expect(() => caminhoDaNovaFotoDoPost(autor)).toThrow()
   })
 
   it.each([
-    ["vazio", ""],
-    ["maiúsculas", "ABCDEF01-2345-4678-89AB-CDEF01234567"],
-    ["subida de pasta", "../.."],
-    ["não é uuid", "ana"],
-  ])("autor fora do formato (%s) lança antes de qualquer envio", (_caso, autor) => {
-    expect(() => caminhoDaNovaCapa(autor, "image/png")).toThrow("autor fora do formato")
+    [fotoDe(ANA), fotoDe(ANA)],
+    [fotoDe(BIA), null],
+    [`${ANA}/../${BIA}/x.webp`, null],
+    ["https://x/y.webp", null],
+    [null, null],
+    [undefined, null],
+  ])("fotoApagavel(%s) → %s", (caminho, esperado) => {
+    expect(fotoApagavel(caminho as string | null | undefined, ANA)).toBe(esperado)
   })
 })
 
-describe("capaApagavel — nunca o caminho de outra pessoa", () => {
-  it("aceita a capa do autor, no formato da rota", () => {
-    expect(capaApagavel(CAPA_ANA, ANA)).toBe(CAPA_ANA)
+describe("conferência do multipart", () => {
+  it("Content-Length acima de 3 × 2 MB + folga é 413; ausente ou dentro passa", () => {
+    const pedido = (n: number | null) => new Request("http://x", { method: "POST", headers: n === null ? {} : { "content-length": String(n) }, body: "x" })
+    expect(() => conferirTamanhoDeclarado(pedido(3 * LIMITE_FOTO_POST_BYTES + 65 * 1024))).toThrow(ErroHttp)
+    expect(() => conferirTamanhoDeclarado(pedido(3 * LIMITE_FOTO_POST_BYTES))).not.toThrow()
+    expect(() => conferirTamanhoDeclarado(pedido(null))).not.toThrow()
+  })
+
+  it("devolve os bytes na ordem do formulário", async () => {
+    const outro = await pngLiso(10, 10)
+    const fotos = await fotosDoFormulario(formulario([PNG, outro]), { minimo: 1 })
+    expect(fotos.map((f) => f.byteLength)).toEqual([PNG.byteLength, outro.byteLength])
   })
 
   it.each([
-    ["nulo", null],
-    ["indefinido", undefined],
-    ["vazio", ""],
-    ["pasta de outro autor", CAPA_BRUNO],
-    ["subida de pasta", `${ANA}/../${CAPA_BRUNO}`],
-    ["subida no nome", `${ANA}/../../avatars/x.webp`],
-    ["subpasta", `${ANA}/sub/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`],
-    ["nome que não é uuid", `${ANA}/capa.webp`],
-    ["extensão fora da lista", `${ANA}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.svg`],
-    ["URL", `https://x.supabase.co/storage/v1/object/public/capas-posts/${CAPA_ANA}`],
-    ["prefixo parecido", `${ANA}x/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`],
-  ])("recusa %s", (_caso, valor) => {
-    expect(capaApagavel(valor, ANA)).toBeNull()
+    ["nenhuma com mínimo 1", [] as (Uint8Array | string)[], 1, 400],
+    ["4 fotos", ["a", "b", "c", "d"].map(() => new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])), 1, 400],
+    ["texto no lugar do arquivo", ["oi"], 1, 400],
+    ["arquivo vazio", [new Uint8Array(0)], 1, 400],
+    ["bytes que não são imagem", [new TextEncoder().encode("GIF89a....")], 1, 400],
+    ["acima de 2 MB", [new Uint8Array(LIMITE_FOTO_POST_BYTES + 1)], 1, 413],
+  ])("%s → %s", async (_caso, entradas, minimo, status) => {
+    const erro = await erroDe(fotosDoFormulario(formulario(entradas), { minimo }))
+    expect(erro).toBeInstanceOf(ErroHttp)
+    expect((erro as ErroHttp).status).toBe(status)
+  })
+
+  it("0 fotos é aceito quando o mínimo é 0 (post de viagem)", async () => {
+    expect(await fotosDoFormulario(formulario([]), { minimo: 0 })).toEqual([])
+  })
+
+  it("reprocessarFotos devolve WebP de cada foto, na ordem", async () => {
+    const regeradas = await reprocessarFotos([PNG, PNG])
+    expect(regeradas.map((r) => r.tipo)).toEqual(["image/webp", "image/webp"])
   })
 })
 
-describe("enviarCapa", () => {
-  it("grava no bucket das capas, com o contentType do tipo detectado e sem upsert", async () => {
-    await enviarCapa(cliente, CAPA_ANA, png, "image/png")
-
-    expect(chamadas).toEqual([
-      { bucket: "capas-posts", op: "upload", args: [CAPA_ANA, png, { contentType: "image/png", upsert: false }] },
+describe("envio e remoção com a chave de serviço", () => {
+  it("enviarFotoDoPost grava no bucket, como WebP e sem upsert; caminho fora do formato lança sem ir ao Storage", async () => {
+    await enviarFotoDoPost(admin(), fotoDe(ANA), new Uint8Array([1]))
+    expect(banco.storage.envios).toEqual([
+      { bucket: BUCKET_CAPAS, caminho: fotoDe(ANA), bytes: new Uint8Array([1]), contentType: "image/webp", upsert: false },
     ])
+    await expect(enviarFotoDoPost(admin(), "../x.webp", new Uint8Array([1]))).rejects.toThrow()
+    expect(banco.storage.envios).toHaveLength(1)
   })
 
-  it("erro do Storage lança um erro genérico, com o original só em cause", async () => {
-    const original = { message: "The resource already exists" }
-    respostaUpload = () => ({ data: null, error: original })
-
-    const erro = await enviarCapa(cliente, CAPA_ANA, png, "image/png").catch((e: unknown) => e)
-
-    expect(erro).toBeInstanceOf(Error)
-    expect((erro as Error).message).not.toContain("already exists")
-    expect((erro as Error).cause).toBe(original)
+  it("erro do Storage no envio lança genérico, com o original em cause", async () => {
+    banco.storage.falharEnvioNo = 0
+    const erro = (await erroDe(enviarFotoDoPost(admin(), fotoDe(ANA), new Uint8Array([1])))) as Error
+    expect(erro.message).not.toContain("storage fora do ar")
+    expect(erro.cause).toEqual({ message: "storage fora do ar" })
   })
 
-  it.each([
-    ["subida de pasta", `${ANA}/../${CAPA_BRUNO}`],
-    ["URL", "https://exemplo.com/a.png"],
-    ["nome que não é uuid", `${ANA}/capa.png`],
-  ])("caminho fora do formato (%s) lança sem ir ao Storage", async (_caso, caminho) => {
-    await expect(enviarCapa(cliente, caminho, png, "image/png")).rejects.toThrow("fora do formato")
-    expect(chamadas).toEqual([])
-  })
-})
+  it("enviarFotos devolve os caminhos na ordem; falha no meio apaga os já enviados", async () => {
+    const [a, b] = await reprocessarFotos([PNG, PNG])
+    const caminhos = await enviarFotos(admin(), ANA, [a, b])
+    expect(caminhos).toEqual(banco.storage.envios.map((e) => e.caminho))
 
-describe("removerCapa", () => {
-  it("apaga a capa do autor no bucket das capas", async () => {
-    expect(await removerCapa(cliente, CAPA_ANA, ANA)).toBe(true)
-    expect(chamadas).toEqual([{ bucket: "capas-posts", op: "remove", args: [[CAPA_ANA]] }])
-  })
-
-  it("arquivo que já não existe não é erro", async () => {
-    // O Storage responde à remoção de um caminho ausente com a lista vazia.
-    respostaRemove = () => ({ data: [], error: null })
-    expect(await removerCapa(cliente, CAPA_ANA, ANA)).toBe(false)
-  })
-
-  it("resposta sem lista também não é erro", async () => {
-    respostaRemove = () => ({ data: null, error: null })
-    expect(await removerCapa(cliente, CAPA_ANA, ANA)).toBe(false)
-  })
-
-  it.each([
-    ["nulo", null],
-    ["pasta de outro autor", CAPA_BRUNO],
-    ["subida de pasta", `${ANA}/../${CAPA_BRUNO}`],
-  ])("%s não vai ao Storage", async (_caso, valor) => {
-    expect(await removerCapa(cliente, valor, ANA)).toBe(false)
-    expect(chamadas).toEqual([])
-  })
-
-  it("erro do Storage lança um erro genérico, com o original só em cause", async () => {
-    const original = { message: "relation storage.objects: permission denied" }
-    respostaRemove = () => ({ data: null, error: original })
-
-    const erro = await removerCapa(cliente, CAPA_ANA, ANA).catch((e: unknown) => e)
-
-    expect(erro).toBeInstanceOf(Error)
-    expect((erro as Error).message).not.toContain("permission denied")
-    expect((erro as Error).cause).toBe(original)
-  })
-})
-
-describe("assinarCapas — em lote", () => {
-  it("assina no bucket das capas, com a validade do avatar, numa chamada só", async () => {
-    const links = await assinarCapas(criarAdmin, [CAPA_ANA, null, CAPA_BRUNO, undefined, CAPA_ANA])
-
-    expect(chamadas).toEqual([
-      {
-        bucket: "capas-posts",
-        op: "createSignedUrls",
-        args: [[CAPA_ANA, CAPA_BRUNO], VALIDADE_URL_AVATAR_S],
-      },
-    ])
-    expect([...links.entries()]).toEqual([
-      [CAPA_ANA, assinada("capas-posts", CAPA_ANA, emissao)],
-      [CAPA_BRUNO, assinada("capas-posts", CAPA_BRUNO, emissao)],
-    ])
-  })
-
-  it.each([
-    ["URL", "https://exemplo.com/a.png"],
-    ["javascript:", "javascript:alert(1)"],
-    ["subida de pasta", `${ANA}/../../../rest/v1/trip_posts`],
-    ["nome que não é uuid", `${ANA}/capa.webp`],
-    ["quebra de linha no fim", `${CAPA_ANA}\n`],
-    ["vazio", ""],
-  ])("caminho fora do formato (%s) fica de fora sem ir ao Storage", async (_caso, valor) => {
-    const links = await assinarCapas(criarAdmin, [valor])
-
-    expect(links.size).toBe(0)
-    expect(chamadas).toEqual([])
-    expect(clientesCriados).toBe(0)
-  })
-
-  it("sem nenhuma capa, não cria o cliente de serviço", async () => {
-    expect((await assinarCapas(criarAdmin, [])).size).toBe(0)
-    expect((await assinarCapas(criarAdmin, [null, null])).size).toBe(0)
-    expect(clientesCriados).toBe(0)
-  })
-
-  it("reaproveita o link dentro do prazo de reuso e assina de novo depois", async () => {
-    vi.useFakeTimers()
-    const primeira = await assinarCapa(criarAdmin, CAPA_ANA)
-
-    vi.advanceTimersByTime(REUSO_URL_AVATAR_S * 1000 - 1)
-    expect(await assinarCapa(criarAdmin, CAPA_ANA)).toBe(primeira)
-    expect(chamadas).toHaveLength(1)
-
-    vi.advanceTimersByTime(1)
-    expect(await assinarCapa(criarAdmin, CAPA_ANA)).not.toBe(primeira)
-    expect(chamadas).toHaveLength(2)
-  })
-
-  it("só as capas que ainda não têm link vão ao Storage", async () => {
-    await assinarCapa(criarAdmin, CAPA_ANA)
-    await assinarCapas(criarAdmin, [CAPA_ANA, CAPA_BRUNO])
-
-    expect(chamadas[1].args[0]).toEqual([CAPA_BRUNO])
-  })
-
-  it("o link de um caminho no bucket das fotos nunca é devolvido como capa", async () => {
-    // Mesmo caminho nos dois buckets: o cache é separado por bucket.
-    const daFoto = await assinarAvatar(criarAdmin, { id: ANA, avatar_url: CAPA_ANA })
-    const daCapa = await assinarCapa(criarAdmin, CAPA_ANA)
-
-    expect(daFoto).toContain("/avatars/")
-    expect(daCapa).toContain("/capas-posts/")
-    expect(chamadas.map((c) => c.bucket)).toEqual(["avatars", "capas-posts"])
-  })
-
-  it("item que o Storage não assina (arquivo ausente) fica de fora, com log", async () => {
-    const log = vi.spyOn(console, "error").mockImplementation(() => {})
-    respostaAssinar = () => ({
-      data: [
-        { path: CAPA_ANA, signedUrl: assinada("capas-posts", CAPA_ANA, 1), error: null },
-        { path: CAPA_BRUNO, signedUrl: null, error: "Either the object does not exist or you do not have access to it" },
-      ],
-      error: null,
-    })
-
-    const links = await assinarCapas(criarAdmin, [CAPA_ANA, CAPA_BRUNO])
-
-    expect([...links.keys()]).toEqual([CAPA_ANA])
-    expect(log).toHaveBeenCalledWith("[capa do post] capa não assinada", CAPA_BRUNO, expect.any(String))
-  })
-
-  it("Storage fora do ar não lança: o mapa vem vazio e o erro vai ao log", async () => {
-    const log = vi.spyOn(console, "error").mockImplementation(() => {})
-    respostaAssinar = () => ({ data: null, error: { message: "storage fora do ar" } })
-
-    expect((await assinarCapas(criarAdmin, [CAPA_ANA])).size).toBe(0)
-    expect(await assinarCapa(criarAdmin, CAPA_ANA)).toBeNull()
-    expect(log).toHaveBeenCalledWith("[capa do post] não foi possível assinar as capas", {
-      message: "storage fora do ar",
-    })
-  })
-
-  it("sem a chave de serviço, não lança: a capa vem nula", async () => {
+    banco.reiniciar()
     vi.spyOn(console, "error").mockImplementation(() => {})
-    semChave = true
+    banco.storage.falharEnvioNo = 1
+    await expect(enviarFotos(admin(), ANA, [a, b])).rejects.toThrow()
+    expect(banco.storage.remocoes).toEqual([{ bucket: BUCKET_CAPAS, caminhos: [banco.storage.envios[0].caminho] }])
+  })
 
-    expect(await assinarCapa(criarAdmin, CAPA_ANA)).toBeNull()
+  it("removerFotosDoPost só apaga na pasta da autora, sem repetir; nada apagável não vai ao Storage", async () => {
+    banco.storage.arquivos.set(`${BUCKET_CAPAS}/${fotoDe(ANA)}`, new Uint8Array([1]))
+    expect(await removerFotosDoPost(admin(), [fotoDe(ANA), fotoDe(ANA), fotoDe(BIA), null], ANA)).toBe(1)
+    expect(banco.storage.remocoes).toEqual([{ bucket: BUCKET_CAPAS, caminhos: [fotoDe(ANA)] }])
+    expect(await removerFotosDoPost(admin(), [fotoDe(BIA)], ANA)).toBe(0)
+    expect(banco.storage.remocoes).toHaveLength(1)
+  })
+
+  it("erro do Storage na remoção: removerFotosDoPost lança; removerFotosSemFalhar só registra", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
+    banco.storage.falharRemocao = true
+    await expect(removerFotosDoPost(admin(), [fotoDe(ANA)], ANA)).rejects.toThrow()
+    await expect(removerFotosSemFalhar(admin(), [fotoDe(ANA)], ANA)).resolves.toBeUndefined()
+    expect(log).toHaveBeenCalled()
+    await removerFotosSemFalhar(admin(), [], ANA)
   })
 })
 
-describe("assinarCapa — atalho", () => {
-  it("sem capa devolve nulo, sem ir ao Storage (a tela mostra o fundo com o destino)", async () => {
-    expect(await assinarCapa(criarAdmin, null)).toBeNull()
-    expect(await assinarCapa(criarAdmin, undefined)).toBeNull()
-    expect(clientesCriados).toBe(0)
+describe("assinarFotos", () => {
+  it("assina em lote só os caminhos no formato; sem nenhum, não cria o cliente", async () => {
+    const criar = vi.fn(admin)
+    const links = await assinarFotos(criar, [fotoDe(ANA), "javascript:x", null, fotoDe(ANA, 2)])
+    expect([...links.keys()]).toEqual([fotoDe(ANA), fotoDe(ANA, 2)])
+    expect(banco.storage.assinaturas).toEqual([{ bucket: BUCKET_CAPAS, caminhos: [fotoDe(ANA), fotoDe(ANA, 2)], validade: 600 }])
+
+    const nenhum = vi.fn(admin)
+    expect((await assinarFotos(nenhum, [null, "x"])).size).toBe(0)
+    expect(nenhum).not.toHaveBeenCalled()
   })
 
-  it("com capa devolve a URL assinada dela", async () => {
-    expect(await assinarCapa(criarAdmin, CAPA_ANA)).toBe(assinada("capas-posts", CAPA_ANA, emissao))
+  it("sem a chave de serviço, não lança: o mapa vem vazio", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const links = await assinarFotos(() => {
+      throw new Error("sem chave")
+    }, [fotoDe(ANA, 3)])
+    expect(links.size).toBe(0)
   })
 })

@@ -9,10 +9,19 @@ import {
   type PedidoPost,
 } from "@/lib/schemas/post"
 import type { ViagemPublica } from "@/lib/trips/publico"
+import { FORMATO_CAMINHO } from "./foto"
+import { ErroComCodigo } from "./post-http"
 
 /**
  * O post de uma viagem (S06-M-publicar-viagem): montar a cópia que vai para o
  * perfil, e ler, gravar, atualizar e apagar o post da sessão.
+ *
+ * Desde 18/11 (noite) **uma viagem é um post**: a tabela é `public.posts`
+ * (migration 20261118174100, que renomeou a do post de viagem), e o post de
+ * viagem é o post que, além das fotos (0 a 3), da legenda e das marcações,
+ * leva a cópia da viagem. O formato de resposta é o `PostVisto` de
+ * lib/social/post.ts, o mesmo do post sem viagem; daqui saem a linha e a
+ * cópia (`viagemDaLinha`).
  *
  * **O post é uma cópia, não uma janela ao vivo.** Ao publicar, ele guarda
  * o título (o que o autor escolheu, ou o da viagem), destino, datas, a legenda,
@@ -40,13 +49,13 @@ import type { ViagemPublica } from "@/lib/trips/publico"
  *   demais são omitidos do item (os mesmos tetos de
  *   `social_itens_do_post_validos`, migration 20261116195039), e data, hora ou
  *   categoria fora do formato do CHECK saem do item (`FORMATO_DO_CAMPO`);
- * - **campo da viagem fora dos CHECKs de `trip_posts`** (título usado sem o do
+ * - **campo da viagem fora dos CHECKs de `posts`** (título usado sem o do
  *   autor, destino, datas) é 400 com `codigo` (`ViagemForaDoPost`), e não 500;
  * - **título e legenda só com caracteres invisíveis** valem como vazios;
  * - se o autor sai da viagem, o post continua dele: ele não atualiza mais (a
  *   policy de UPDATE exige ser membro), mas despublica.
  *
- * Tudo com o cliente da sessão: a RLS de `trip_posts` vale (migrations
+ * Tudo com o cliente da sessão: a RLS de `posts` vale (migrations
  * 20261116195039 e a de legenda e lugares). A autorização explícita
  * (`exigirMembro` e o username) é da rota, antes de chamar daqui; a policy é a
  * segunda linha.
@@ -61,7 +70,7 @@ import type { ViagemPublica } from "@/lib/trips/publico"
  * 403, e o resto lança um `Error` comum com o original em `cause`, que
  * `respostaDeErro` (lib/http.ts) transforma no 500 genérico.
  *
- * @RF09.7 publicar viagem expondo só título, destino, datas, legenda, capa, roteiro e lugares
+ * @RF09.7 publicar viagem expondo só título, destino, datas, legenda, fotos, roteiro e lugares
  */
 
 type ClienteDaSessao = Pick<SupabaseClient, "from" | "rpc">
@@ -123,19 +132,19 @@ export type CopiaDoPost = {
 
 /**
  * O post da sessão, como a rota o recebe. Sem `trip_id` e sem `author_id`.
- * `cover_path` é o caminho no bucket: a rota o troca pela URL assinada
- * (lib/social/capa.ts) antes de responder.
+ * `photos` são os caminhos no bucket, na ordem do carrossel: a rota nunca os
+ * devolve (a resposta é o `PostVisto`, com as URLs assinadas).
  */
 export type PostDoAutor = CopiaDoPost & {
   id: string
-  cover_path: string | null
+  photos: string[]
   created_at: string
   updated_at: string
 }
 
 /** Do grant de SELECT (que não tem `trip_id`), sem `author_id`: a rota não devolve nenhum dos dois. */
 const COLUNAS_POST =
-  "id, title, destination, start_date, end_date, caption, items, places, cover_path, created_at, updated_at"
+  "id, title, destination, start_date, end_date, caption, items, places, photos, created_at, updated_at"
 
 const CHAVE_REPETIDA = "23505"
 const SEM_PRIVILEGIO = "42501"
@@ -187,7 +196,7 @@ const FORMATO_DO_CAMPO: Partial<Record<Exclude<keyof ItemDoPost, "title">, (valo
 }
 
 /**
- * Tetos dos CHECKs de `trip_posts` (migration 20261116195039): `title` e
+ * Tetos dos CHECKs de `posts` (migration 20261116195039): `title` e
  * `destination` não vazios e até 120 e 160 caracteres, e `end_date >=
  * start_date`. O título tem o do autor como saída; destino e datas vêm só da
  * viagem.
@@ -200,9 +209,9 @@ export const MAXIMO_DESTINO_VIAGEM = 160
  * `codigo` e a mensagem, em vez do 500 do CHECK: a pessoa sabe o que corrigir
  * (escrever um título para a publicação, ou editar a viagem).
  */
-export class ViagemForaDoPost extends ErroHttp {
+export class ViagemForaDoPost extends ErroComCodigo {
   constructor(
-    readonly codigo:
+    codigo:
       | "titulo_da_viagem_longo"
       | "titulo_da_viagem_vazio"
       | "destino_da_viagem_longo"
@@ -211,7 +220,7 @@ export class ViagemForaDoPost extends ErroHttp {
       | "datas_da_viagem_invertidas",
     mensagem: string,
   ) {
-    super(400, mensagem)
+    super(400, mensagem, codigo)
     this.name = "ViagemForaDoPost"
   }
 }
@@ -251,7 +260,7 @@ function destinoDoPost(daViagem: string): string {
 /**
  * Datas da viagem no formato AAAA-MM-DD (o mesmo do item, que é o que a tela
  * sabe mostrar) e com a volta no dia da ida ou depois (o CHECK
- * `trip_posts_datas_check`). Com ano de 4 dígitos, a ordem do texto é a das datas.
+ * `posts_datas_check`). Com ano de 4 dígitos, a ordem do texto é a das datas.
  */
 function datasDoPost(inicio: string, fim: string): { start_date: string; end_date: string } {
   if (!FORMATO_DATA_ITEM.test(inicio) || !FORMATO_DATA_ITEM.test(fim)) {
@@ -376,7 +385,7 @@ function legenda(valor: unknown): string | null {
  * - `titulo` escolhido (já limpo pelo schema) vira o título do post; ausente,
  *   nulo, vazio ou só com caracteres invisíveis, vale o da projeção.
  * - Título da viagem (quando é ele que vale), destino e datas fora dos CHECKs
- *   de `trip_posts` lançam `ViagemForaDoPost` (400 com `codigo`): esses não
+ *   de `posts` lançam `ViagemForaDoPost` (400 com `codigo`): esses não
  *   têm como ser omitidos, e o CHECK daria 500.
  * - O endereço `"google"` copia o `address` da projeção; vazio ou nulo, o
  *   lugar sai sem endereço.
@@ -435,10 +444,59 @@ function gravados<T>(lista: unknown, copiar: (campos: Record<string, unknown>) =
 const lugarGravado = (campos: CamposDoLugar) =>
   copiarLugar(campos, typeof campos.address === "string" ? { texto: campos.address } : "nenhum")
 
-type LinhaDoPost = Omit<PostDoAutor, "items" | "places" | "caption"> & {
+type LinhaDoPost = Omit<PostDoAutor, "items" | "places" | "caption" | "photos"> & {
   caption: unknown
   items: unknown
   places: unknown
+  photos: unknown
+}
+
+/** Os caminhos gravados, só os que são texto não vazio, na ordem. */
+export function fotosGravadas(valor: unknown): string[] {
+  return Array.isArray(valor) ? valor.filter((c): c is string => typeof c === "string" && c !== "") : []
+}
+
+/** A cópia da viagem como o `PostVisto` a leva. */
+export type ViagemDoPost = {
+  title: string
+  destination: string
+  start_date: string
+  end_date: string
+  items: ItemDoPost[]
+  places: LugarDoPost[]
+}
+
+/**
+ * A cópia da viagem de uma linha de `posts`, pela mesma lista branca da
+ * gravação, ou `null` no post sem viagem. O CHECK `posts_viagem_coerente`
+ * garante que os quatro campos vêm juntos; faltando um (linha fora do CHECK),
+ * também é `null`, e o post aparece como post de fotos.
+ */
+export function viagemDaLinha(linha: {
+  title?: unknown
+  destination?: unknown
+  start_date?: unknown
+  end_date?: unknown
+  items?: unknown
+  places?: unknown
+}): ViagemDoPost | null {
+  const { title, destination, start_date, end_date } = linha
+  if (
+    typeof title !== "string" ||
+    typeof destination !== "string" ||
+    typeof start_date !== "string" ||
+    typeof end_date !== "string"
+  ) {
+    return null
+  }
+  return {
+    title,
+    destination,
+    start_date,
+    end_date,
+    items: gravados(linha.items, (campos) => copiarItem(campos, TODO_O_ROTEIRO)),
+    places: gravados(linha.places, lugarGravado),
+  }
 }
 
 /** A linha do banco, campo a campo, no formato da rota. */
@@ -452,7 +510,7 @@ function paraPost(linha: LinhaDoPost): PostDoAutor {
     caption: legenda(linha.caption),
     items: gravados(linha.items, (campos) => copiarItem(campos, TODO_O_ROTEIRO)),
     places: gravados(linha.places, lugarGravado),
-    cover_path: linha.cover_path,
+    photos: fotosGravadas(linha.photos),
     created_at: linha.created_at,
     updated_at: linha.updated_at,
   }
@@ -477,22 +535,23 @@ export async function postDaViagem(supabase: ClienteDaSessao, tripId: string): P
   if (erroId) throw erroDoBanco(erroId, "ler a publicação")
   if (!postId) return null
 
-  const { data, error } = await supabase.from("trip_posts").select(COLUNAS_POST).eq("id", postId).maybeSingle()
+  const { data, error } = await supabase.from("posts").select(COLUNAS_POST).eq("id", postId).maybeSingle()
   if (error) throw erroDoBanco(error, "ler a publicação")
   return data ? paraPost(data as LinhaDoPost) : null
 }
 
 /**
  * Grava o post. Campo a campo, e só nas colunas do grant de INSERT: sem
- * `cover_path` (a capa só entra pela rota dela, depois de conferir os bytes),
- * sem `id` e sem datas de criação (defaults do banco).
+ * `photos` (o post de viagem nasce sem foto, e as fotos só entram pela rota
+ * delas, depois de regeradas), sem `id` e sem datas de criação (defaults do
+ * banco).
  */
 export async function publicar(
   supabase: ClienteDaSessao,
   { tripId, autorId, copia }: { tripId: string; autorId: string; copia: CopiaDoPost },
 ): Promise<PostDoAutor> {
   const { data, error } = await supabase
-    .from("trip_posts")
+    .from("posts")
     .insert({
       trip_id: tripId,
       author_id: autorId,
@@ -514,7 +573,7 @@ export async function publicar(
 }
 
 /**
- * "Atualizar publicação": copia a viagem de novo. Só o conteúdo muda; capa,
+ * "Atualizar publicação": copia a viagem de novo. Só o conteúdo muda; fotos,
  * autor e viagem não. Devolve `null` se nenhuma linha mudou (o post não existe
  * ou não é da sessão): a rota responde 404. O autor que saiu da viagem esbarra
  * no WITH CHECK da policy (42501) e recebe 403.
@@ -525,7 +584,7 @@ export async function atualizar(
   copia: CopiaDoPost,
 ): Promise<PostDoAutor | null> {
   const { data, error } = await supabase
-    .from("trip_posts")
+    .from("posts")
     .update({
       title: copia.title,
       destination: copia.destination,
@@ -543,55 +602,64 @@ export async function atualizar(
   return data ? paraPost(data as LinhaDoPost) : null
 }
 
-/**
- * Troca a capa (ou a tira, com `null`) e devolve a anterior, para a rota apagar
- * o arquivo velho do bucket. `null` quando o post não existe ou não é da sessão.
- *
- * Como `trocarAvatar` (app/api/social/perfil/foto): lê a capa atual e só troca
- * se ela ainda for a lida. Duas abas trocando ao mesmo tempo não apagam as duas
- * a mesma capa anterior deixando a nova de uma delas órfã: a segunda não acha a
- * linha e recebe 409. Nesse 409 a rota apaga o arquivo que acabou de enviar.
- *
- * O caminho não é conferido aqui: quem o monta é `caminhoDaNovaCapa`
- * (lib/social/capa.ts), e o CHECK do banco exige o formato e a pasta do autor.
- */
-export async function definirCapa(
-  supabase: ClienteDaSessao,
-  postId: string,
-  coverPath: string | null,
-): Promise<{ capaAnterior: string | null } | null> {
-  const atual = await supabase.from("trip_posts").select("cover_path").eq("id", postId).maybeSingle()
-  if (atual.error) throw erroDoBanco(atual.error, "trocar a capa")
-  if (!atual.data) return null
-  const capaAnterior = (atual.data as { cover_path: string | null }).cover_path
-
-  const troca = supabase.from("trip_posts").update({ cover_path: coverPath }).eq("id", postId)
-  const condicionada = capaAnterior === null ? troca.is("cover_path", null) : troca.eq("cover_path", capaAnterior)
-  const { data, error } = await condicionada.select("id").maybeSingle()
-
-  if (error) throw erroDoBanco(error, "trocar a capa")
-  if (!data) throw new ErroHttp(409, "A capa foi alterada em outra aba. Recarregue a página e tente de novo.")
-  return { capaAnterior }
+/** O literal de array do Postgres para a condição da troca; só caminhos no formato do bucket. */
+function literalDeFotos(fotos: readonly string[]): string {
+  if (fotos.some((caminho) => !FORMATO_CAMINHO.test(caminho))) {
+    throw new Error("[post da viagem] caminho de foto fora do formato")
+  }
+  return `{${fotos.join(",")}}`
 }
 
 /**
- * Despublica: apaga o post e devolve a capa que ele tinha, para a rota apagar o
- * arquivo do bucket. `null` quando nada foi apagado (o post não existe ou não é
- * da sessão). Funciona para quem já saiu da viagem: a policy de DELETE só
- * exige ser o autor.
+ * Troca as fotos do post (todas, na ordem; `[]` tira todas) e devolve as
+ * anteriores, para a rota apagar do bucket as que saíram. `null` quando o post
+ * não existe ou não é da sessão.
+ *
+ * Como `trocarAvatar` (app/api/social/perfil/foto): lê as fotos atuais e só
+ * troca se elas ainda forem as lidas. Duas abas trocando ao mesmo tempo não
+ * apagam as mesmas fotos deixando as novas de uma delas órfãs: a segunda não
+ * acha a linha e recebe 409. Nesse 409 a rota apaga o que acabou de enviar.
+ *
+ * Os caminhos não são conferidos aqui além do formato: quem os monta é
+ * `enviarFotos` (lib/social/capa.ts), e o CHECK `posts_photos_check` exige a
+ * pasta do autor.
+ */
+export async function definirFotos(
+  supabase: ClienteDaSessao,
+  postId: string,
+  fotos: readonly string[],
+): Promise<{ fotosAnteriores: string[] } | null> {
+  const atual = await supabase.from("posts").select("photos").eq("id", postId).maybeSingle()
+  if (atual.error) throw erroDoBanco(atual.error, "trocar as fotos")
+  if (!atual.data) return null
+  const fotosAnteriores = fotosGravadas((atual.data as { photos: unknown }).photos)
+
+  const { data, error } = await supabase
+    .from("posts")
+    .update({ photos: [...fotos] })
+    .eq("id", postId)
+    .eq("photos", literalDeFotos(fotosAnteriores))
+    .select("id")
+    .maybeSingle()
+
+  if (error) throw erroDoBanco(error, "trocar as fotos")
+  if (!data) throw new ErroHttp(409, "As fotos foram alteradas em outra aba. Recarregue a página e tente de novo.")
+  return { fotosAnteriores }
+}
+
+/**
+ * Despublica: apaga o post e devolve as fotos que ele tinha, para a rota
+ * apagar os arquivos do bucket. `null` quando nada foi apagado (o post não
+ * existe ou não é da sessão). Funciona para quem já saiu da viagem: a policy
+ * de DELETE só exige ser o autor. As marcas saem junto, em cascata.
  */
 export async function despublicar(
   supabase: ClienteDaSessao,
   postId: string,
-): Promise<{ capaAnterior: string | null } | null> {
-  const { data, error } = await supabase
-    .from("trip_posts")
-    .delete()
-    .eq("id", postId)
-    .select("cover_path")
-    .maybeSingle()
+): Promise<{ fotosAnteriores: string[] } | null> {
+  const { data, error } = await supabase.from("posts").delete().eq("id", postId).select("photos").maybeSingle()
 
   if (error) throw erroDoBanco(error, "despublicar")
   if (!data) return null
-  return { capaAnterior: (data as { cover_path: string | null }).cover_path }
+  return { fotosAnteriores: fotosGravadas((data as { photos: unknown }).photos) }
 }

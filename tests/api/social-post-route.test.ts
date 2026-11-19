@@ -1,1131 +1,321 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { ErroHttp } from "@/lib/http"
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
+import sharp from "sharp"
 import {
   ANA,
   BIA,
   CAIO,
-  CAPA,
+  CHAVES_PESSOA,
+  CHAVES_POST_VISTO,
+  CHAVES_VIAGEM,
   DORA,
-  LUGAR_BAR,
-  LUGAR_PRAIA,
-  POST_ID,
-  TRIP,
-  URL_CAPA,
-  URL_FOTO_BIA,
-  argumentosDe,
-  estado,
-  funcoesChamadas,
-  pessoa,
-  postPadrao,
-  reiniciar,
-} from "./post-dubles"
+  VIAGEM,
+  banco,
+  conferirResposta,
+  fotoDe,
+  semearMarca,
+  semearPerfis,
+  semearPost,
+  urlDe,
+} from "./banco-falso"
+import { esquecerLinksEmitidos } from "@/lib/social/avatar"
+import type { ProjecaoComLugares } from "@/lib/social/posts"
+import { MARCAS, contemTexto, jpegComGps, pngLiso } from "../fixtures/imagens"
 
 /**
- * @RF09.7 @RF09.13 @RNF02.11 — o post da sessão numa viagem
- * (GET/POST/PATCH/DELETE /api/social/viagens/[tripId]/post), no contrato de 18/11.
+ * @RF09.7 O post de uma viagem: /api/social/viagens/[tripId]/post (GET, POST,
+ * PATCH, DELETE) e /post/fotos (PUT, 0 a 3 fotos, substitui todas).
+ * @RF09.13 marcar qualquer perfil com username (membros só como sugestão),
+ * menos quem recusou (`recusados`).
  *
- * O que prova a autorização: só membro vê a prévia, publica e atualiza
- * (`exigirMembro`, chamado com o id de getUser()); só quem tem username publica;
- * o DELETE vale para quem saiu da viagem, porque acha o post pela sessão e não
- * pelo vínculo com a viagem. A RLS de `trip_posts` e `post_tags` (segunda
- * linha) é provada em tests/rls/12-trip-posts.test.ts e 17-post-tags.test.ts.
- *
- * O que prova a cópia: o `montarPost` é o real, e o argumento passado ao
- * `publicar` é conferido inteiro. O corpo só escolhe e escreve a legenda e o
- * endereço digitado; chave extra em qualquer nível é 400 sem ler nada além da
- * autorização.
- *
- * O que prova a marcação: o `conferirMarcados` e o `conferirRecusas` são os
- * reais; marcado fora dos marcáveis é 400 `marcado_invalido`, e quem removeu a
- * própria marca é 400 `marcado_recusou`, os dois antes de gravar o post. O
- * `comRecusas` também é o real: os marcáveis saem com `recusou`. A recusa vale
- * para a viagem e o autor (`recusasDaViagem`), e não para o post: é lida com ou
- * sem post, e o POST de quem republica também a confere.
- *
- * O que prova o título (decisão de 18/11): o escolhido vai para a cópia, sem os
- * espaços das pontas; ausente, nulo ou só espaços, vale o da viagem; acima de
- * 120 caracteres é 400. `previa.title` continua o da viagem.
- *
- * O que prova os tetos do CHECK (S1): item da projeção com título acima de 120
- * fica fora da cópia, e local acima de 200 e descrição acima de 2000 saem do
- * item; publicar dá 201, e não o 500 do CHECK.
- *
- * Em todo caminho, `ler()` confere o `Cache-Control: private, no-store` e que
- * nenhuma chave proibida aparece em nível nenhum do corpo; os 200 conferem
- * ainda as chaves exatas da prévia, dos lugares, dos marcáveis e do post.
+ * As libs reais rodam sobre o banco falso (./banco-falso.ts). A autorização
+ * da viagem (`exigirMembro`, Plataforma) e a projeção pública (Audrey) são
+ * dubladas: são de outros domínios e têm testes próprios.
  */
+
+const estado = vi.hoisted(() => ({ membro: true, projecao: null as unknown }))
 
 vi.mock("@/lib/supabase/server", async () => {
-  const { clienteDaSessao } = await import("./post-dubles")
-  return { createClient: async () => clienteDaSessao() }
+  const { banco } = await import("./banco-falso")
+  return { createClient: async () => banco.clienteDaSessao() }
 })
 vi.mock("@/lib/supabase/admin", async () => {
-  const { clienteDeServico } = await import("./post-dubles")
-  return { criarClienteAdmin: clienteDeServico }
+  const { banco } = await import("./banco-falso")
+  return { criarClienteAdmin: () => banco.clienteDeServico() }
 })
 vi.mock("@/lib/authz/trip", async () => {
-  const { exigirMembro } = await import("./post-dubles")
-  return { exigirMembro }
-})
-vi.mock("@/lib/social/perfil-visto", async () => {
-  const { temUsername } = await import("./post-dubles")
-  return { temUsername }
-})
-vi.mock("@/lib/trips/publico", async (original) => {
-  const { projecaoPublicaDaViagem } = await import("./post-dubles")
-  return { ...(await original<typeof import("@/lib/trips/publico")>()), projecaoPublicaDaViagem }
-})
-vi.mock("@/lib/social/posts", async (original) => {
-  const dubles = await import("./post-dubles")
-  // `montarPost` fica o real: a cópia gravada tem de sair da projeção.
+  const { semPermissao } = await import("@/lib/http")
   return {
-    ...(await original<typeof import("@/lib/social/posts")>()),
-    postDaViagem: dubles.postDaViagem,
-    publicar: dubles.publicar,
-    atualizar: dubles.atualizar,
-    despublicar: dubles.despublicar,
+    exigirMembro: async () => {
+      if (!estado.membro) throw semPermissao("esta viagem")
+      return "member"
+    },
   }
 })
-vi.mock("@/lib/social/marcacoes", async (original) => {
-  const dubles = await import("./post-dubles")
-  // `conferirMarcados` fica o real: é ele que barra o marcado inválido antes de gravar.
-  return {
-    ...(await original<typeof import("@/lib/social/marcacoes")>()),
-    membrosMarcaveis: dubles.membrosMarcaveis,
-    marcadosDoPost: dubles.marcadosDoPost,
-    recusasDaViagem: dubles.recusasDaViagem,
-    sincronizarMarcacoes: dubles.sincronizarMarcacoes,
-  }
-})
-vi.mock("@/lib/social/capa", async () => {
-  const { assinarCapa, removerCapa } = await import("./post-dubles")
-  return { assinarCapa, removerCapa }
-})
+vi.mock("@/lib/trips/publico", async (original) => ({
+  ...(await original<typeof import("@/lib/trips/publico")>()),
+  projecaoPublicaDaViagem: async () => estado.projecao,
+}))
 
 import { DELETE, GET, PATCH, POST } from "@/app/api/social/viagens/[tripId]/post/route"
-import { criarClienteAdmin } from "@/lib/supabase/admin"
+import { PUT } from "@/app/api/social/viagens/[tripId]/post/fotos/route"
 
-type Metodo = "GET" | "POST" | "PATCH" | "DELETE"
+const ROTA = `http://localhost/api/social/viagens/${VIAGEM}/post`
+const contexto = (tripId = VIAGEM) => ({ params: Promise.resolve({ tripId }) })
 
-/** Chaves que não saem em resposta nenhuma, em nível nenhum. */
-const PROIBIDAS = new Set([
-  "trip_id",
-  "author_id",
-  "cover_path",
-  "budget",
-  "currency",
-  "notes",
-  "email",
-  "members",
-  "membros",
-  "trip_members",
-  "latitude",
-  "longitude",
-  "status",
-  "user_id",
-  "rating",
-  "visited",
-  "place_id",
-])
-
-const CHAVES_RESPOSTA_GET = ["marcaveis", "post", "previa"]
-const CHAVES_PREVIA = ["destination", "end_date", "itens", "lugares", "start_date", "title"]
-const CHAVES_ITEM_PREVIA = ["category", "date", "description", "end_time", "location", "start_time", "title"]
-const CHAVES_LUGAR_PREVIA = ["address", "category", "id", "name"]
-const CHAVES_PESSOA = ["avatar_url", "full_name", "id", "username"]
-const CHAVES_MARCAVEL = ["avatar_url", "full_name", "id", "recusou", "username"]
-const CHAVES_POST = [
-  "caption",
-  "cover_url",
-  "created_at",
-  "destination",
-  "end_date",
-  "id",
-  "items",
-  "marcados",
-  "places",
-  "start_date",
-  "title",
-  "updated_at",
-]
-
-function chavesProibidas(valor: unknown, caminho = "corpo"): string[] {
-  if (Array.isArray(valor)) return valor.flatMap((v, i) => chavesProibidas(v, `${caminho}[${i}]`))
-  if (typeof valor !== "object" || valor === null) return []
-  return Object.entries(valor).flatMap(([chave, v]) => [
-    ...(PROIBIDAS.has(chave) ? [`${caminho}.${chave}`] : []),
-    ...chavesProibidas(v, `${caminho}.${chave}`),
-  ])
+function projecao(): ProjecaoComLugares {
+  return {
+    title: "Chapada",
+    destination: "Alto Paraíso",
+    start_date: "2026-12-01",
+    end_date: "2026-12-05",
+    budget: 9000,
+    currency: "BRL",
+    itens: [
+      { id: "c0000000-0000-4000-8000-000000000001", title: "Trilha", date: "2026-12-02", start_time: "08:00", end_time: null, category: "activity", location: "Vale da Lua", description: "água", notes: "senha", latitude: -14 },
+    ],
+    lugares: [{ id: "e0000000-0000-4000-8000-000000000001", name: "Mirante", category: null, address: "km 3", notes: "x" }],
+  } as unknown as ProjecaoComLugares
 }
 
-/** Confere o cabeçalho, as chaves proibidas e que nada da viagem privada vazou como valor; devolve o corpo. */
-async function ler(resposta: Response) {
-  expect(resposta.headers.get("cache-control")).toBe("private, no-store")
-  const corpo = await resposta.json()
-  expect(chavesProibidas(corpo)).toEqual([])
-  expect(JSON.stringify(corpo)).not.toMatch(/4321|cartão do Abner|estacionar|fiado|ChIJ|@x\.local|descrição privada/)
-  return corpo
+const CORPO = { legenda: "Que viagem", roteiro: { local: false, descricao: false }, lugares: null, marcados: [] as string[] }
+
+async function conferir(resposta: Response) {
+  const r = await conferirResposta(resposta)
+  expect(r.cache).toBe("private, no-store")
+  expect(r.proibidas).toEqual([])
+  expect(r.crus).toEqual([])
+  return r
 }
 
-function pedido(metodo: Metodo, corpo?: unknown, { tripId = TRIP, cru }: { tripId?: string; cru?: string } = {}) {
-  // GET e DELETE não têm corpo (e o Request recusa corpo em GET).
-  const temCorpo = (metodo === "POST" || metodo === "PATCH") && (corpo !== undefined || cru !== undefined)
-  const request = new Request(`http://localhost/api/social/viagens/${tripId}/post`, {
-    method: metodo,
-    ...(temCorpo
-      ? { body: cru ?? JSON.stringify(corpo), headers: { "content-type": "application/json" } }
-      : {}),
+const json = (metodo: string, corpo: unknown) =>
+  new Request(ROTA, { method: metodo, headers: { "content-type": "application/json" }, body: JSON.stringify(corpo) })
+const ver = async (tripId?: string) => conferir(await GET(new Request(ROTA), contexto(tripId)))
+const publicar = async (corpo: unknown = CORPO, tripId?: string) => conferir(await POST(json("POST", corpo), contexto(tripId)))
+const atualizar = async (corpo: unknown = CORPO, tripId?: string) => conferir(await PATCH(json("PATCH", corpo), contexto(tripId)))
+const despublicar = async (tripId?: string) => conferir(await DELETE(new Request(ROTA, { method: "DELETE" }), contexto(tripId)))
+
+let PNG: Uint8Array
+let JPEG: Uint8Array
+beforeAll(async () => {
+  PNG = await pngLiso(30, 20)
+  JPEG = await jpegComGps({ largura: 40, altura: 30 })
+})
+
+function formulario(fotos: Uint8Array[], extra?: [string, string]) {
+  const dados = new FormData()
+  for (const f of fotos) dados.append("fotos", new File([new Uint8Array(f)], "f.png", { type: "image/png" }))
+  if (extra) dados.append(extra[0], extra[1])
+  return new Request(`${ROTA}/fotos`, { method: "PUT", body: dados })
+}
+const trocarFotos = async (fotos: Uint8Array[], tripId?: string, extra?: [string, string]) =>
+  conferir(await PUT(formulario(fotos, extra), contexto(tripId)))
+
+/** O post de viagem da sessão (ANA), gravado direto. */
+const postDaAna = (campos: Record<string, unknown> = {}) =>
+  semearPost({
+    author_id: ANA,
+    trip_id: VIAGEM,
+    title: "Chapada",
+    destination: "Alto Paraíso",
+    start_date: "2026-12-01",
+    end_date: "2026-12-05",
+    ...campos,
   })
-  const contexto = { params: Promise.resolve({ tripId }) }
-  return { GET, POST, PATCH, DELETE }[metodo](request, contexto)
-}
-
-const INVENTADO = "99999999-9999-4999-8999-999999999999"
-
-const CORPO_VALIDO = {
-  legenda: "  Que viagem!  ",
-  roteiro: { local: true, descricao: false },
-  // Fora da ordem da projeção, um id em maiúsculas e um que não está na projeção.
-  lugares: [
-    { id: LUGAR_BAR, endereco: { texto: " Largo do Carmo " } },
-    { id: LUGAR_PRAIA.toUpperCase(), endereco: "google" },
-    { id: INVENTADO, endereco: "google" },
-  ],
-  marcados: [BIA],
-}
-
-/** A cópia que o `montarPost` real monta da projeção do dublê para o CORPO_VALIDO. */
-const COPIA_ESPERADA = {
-  title: "Lisboa em família",
-  destination: "Lisboa, Portugal",
-  start_date: "2026-12-10",
-  end_date: "2026-12-17",
-  caption: "Que viagem!",
-  items: [
-    {
-      title: "Check-in no hotel",
-      date: "2026-12-10",
-      start_time: "14:00:00",
-      category: "accommodation",
-      location: "Av. da Liberdade",
-    },
-    {
-      title: "Museu dos Coches",
-      date: "2026-12-11",
-      start_time: "10:00:00",
-      end_time: "12:00:00",
-      category: "activity",
-      location: "Belém",
-    },
-  ],
-  places: [
-    { name: "Praia da Ursa", category: "beach", address: "Sintra, Portugal" },
-    { name: "Bar do Largo", address: "Largo do Carmo" },
-  ],
-}
-
-const BIA_NA_RESPOSTA = { id: BIA, username: "bia", full_name: "BIA", avatar_url: URL_FOTO_BIA }
-const CAIO_NA_RESPOSTA = { id: CAIO, username: "caio", full_name: "CAIO", avatar_url: null }
-const BIA_MARCAVEL = { ...BIA_NA_RESPOSTA, recusou: false }
-const CAIO_MARCAVEL = { ...CAIO_NA_RESPOSTA, recusou: false }
-
-let log: ReturnType<typeof vi.spyOn>
 
 beforeEach(() => {
-  reiniciar()
-  log = vi.spyOn(console, "error").mockImplementation(() => {})
+  banco.reiniciar()
+  semearPerfis()
+  esquecerLinksEmitidos()
+  banco.sessao = ANA
+  banco.membros.set(VIAGEM, [ANA, BIA, DORA])
+  estado.membro = true
+  estado.projecao = projecao()
+  return () => vi.restoreAllMocks()
 })
 
-afterEach(() => {
-  // A rota nunca lê tabela direto: nem trips, nem itinerary_items, nem places, nem trip_posts.
-  expect(estado.consultasDiretas).toEqual([])
-  log.mockRestore()
-})
-
-/** O cliente da sessão criado nesta requisição. */
-const sessao = () => estado.clientesDaSessao[0]
-
-/** Casos de corpo inválido comuns a POST e PATCH: chave extra em todo nível, tetos, repetidos. */
-const CORPOS_INVALIDOS: [string, unknown][] = [
-  ["title e notes na raiz (escrever o post por fora)", { ...CORPO_VALIDO, title: "Inventado", notes: "x" }],
-  ["trip_id e author_id na raiz", { ...CORPO_VALIDO, trip_id: TRIP, author_id: ANA }],
-  ["caption, items e places já montados", { ...CORPO_VALIDO, caption: "x", items: [], places: [] }],
-  ["chave extra no roteiro", { ...CORPO_VALIDO, roteiro: { local: true, descricao: true, notas: true } }],
-  ["chave extra no lugar", { ...CORPO_VALIDO, lugares: [{ id: LUGAR_BAR, endereco: "nenhum", name: "X" }] }],
-  [
-    "chave extra no endereço digitado",
-    { ...CORPO_VALIDO, lugares: [{ id: LUGAR_BAR, endereco: { texto: "Rua", latitude: 1 } }] },
-  ],
-  ["legenda acima de 280", { ...CORPO_VALIDO, legenda: "a".repeat(281) }],
-  ["título acima de 120", { ...CORPO_VALIDO, titulo: "a".repeat(121) }],
-  ["título que não é texto", { ...CORPO_VALIDO, titulo: 42 }],
-  [
-    "mais de 200 lugares",
-    {
-      ...CORPO_VALIDO,
-      lugares: Array.from({ length: 201 }, (_, i) => ({
-        id: `00000000-0000-4000-8000-${i.toString(16).padStart(12, "0")}`,
-        endereco: "nenhum",
-      })),
-    },
-  ],
-  [
-    "lugar repetido",
-    {
-      ...CORPO_VALIDO,
-      lugares: [
-        { id: LUGAR_BAR, endereco: "nenhum" },
-        { id: LUGAR_BAR.toUpperCase(), endereco: "google" },
-      ],
-    },
-  ],
-  ["marcado repetido", { ...CORPO_VALIDO, marcados: [BIA, BIA] }],
-  ["endereço digitado vazio", { ...CORPO_VALIDO, lugares: [{ id: LUGAR_BAR, endereco: { texto: "   " } }] }],
-  ["endereço fora das opções", { ...CORPO_VALIDO, lugares: [{ id: LUGAR_BAR, endereco: "rua" }] }],
-  ["lugar fora do formato de uuid", { ...CORPO_VALIDO, lugares: [{ id: "abc", endereco: "nenhum" }] }],
-  ["marcado fora do formato de uuid", { ...CORPO_VALIDO, marcados: ["bia"] }],
-  ["mais de 50 marcados", { ...CORPO_VALIDO, marcados: Array.from({ length: 51 }, () => BIA) }],
-  ["sem roteiro", { lugares: null }],
-  ["corpo do contrato antigo", { itens: [], mostrar: {} }],
-  ["corpo que não é objeto", ["roteiro"]],
-]
-
-describe.each<Metodo>(["GET", "POST", "PATCH", "DELETE"])("%s /api/social/viagens/[tripId]/post — comum", (metodo) => {
-  it("401 sem sessão, sem consultar nada", async () => {
-    estado.usuario = null
-
-    const resposta = await pedido(metodo, CORPO_VALIDO)
-
-    expect(resposta.status).toBe(401)
-    expect(await ler(resposta)).toEqual({ error: "Não autenticado" })
-    expect(estado.chamadas).toEqual([])
-  })
-
-  it("400 com tripId fora do formato de uuid, antes da autorização", async () => {
-    const resposta = await pedido(metodo, CORPO_VALIDO, { tripId: "nao-e-uuid" })
-
-    expect(resposta.status).toBe(400)
-    expect((await ler(resposta)).error).toBe("Dados inválidos")
-    expect(estado.chamadas).toEqual([])
-  })
-})
-
-describe("GET /api/social/viagens/[tripId]/post", () => {
-  it("200 sem post: prévia campo a campo (itens sem id, lugares com id), marcáveis e post nulo", async () => {
-    const resposta = await pedido("GET")
-
-    expect(resposta.status).toBe(200)
-    const corpo = await ler(resposta)
-    expect(Object.keys(corpo).sort()).toEqual(CHAVES_RESPOSTA_GET)
+describe("GET /api/social/viagens/[tripId]/post (@RF09.7 @RF09.13)", () => {
+  it("200 sem post: prévia, sugestões (membros com username, com recusou) e recusados de todos, membros ou não", async () => {
+    banco.tabelas.post_tag_recusas.push(
+      { trip_id: VIAGEM, post_id: null, author_id: ANA, tagged_id: BIA },
+      { trip_id: VIAGEM, post_id: null, author_id: ANA, tagged_id: CAIO },
+    )
+    const { status, corpo } = await ver()
+    expect(status).toBe(200)
+    expect(Object.keys(corpo).sort()).toEqual(["marcaveis", "post", "previa", "recusados"])
     expect(corpo.post).toBeNull()
-
-    expect(Object.keys(corpo.previa).sort()).toEqual(CHAVES_PREVIA)
-    expect(corpo.previa).toMatchObject({
-      title: "Lisboa em família",
-      destination: "Lisboa, Portugal",
-      start_date: "2026-12-10",
-      end_date: "2026-12-17",
-    })
-    expect(corpo.previa.itens).toHaveLength(2)
-    for (const item of corpo.previa.itens) expect(Object.keys(item).sort()).toEqual(CHAVES_ITEM_PREVIA)
-    expect(corpo.previa.itens[0]).toEqual({
-      title: "Check-in no hotel",
-      date: "2026-12-10",
-      start_time: "14:00:00",
-      end_time: null,
-      category: "accommodation",
-      location: "Av. da Liberdade",
-      description: "quarto 12",
-    })
-
-    for (const lugar of corpo.previa.lugares) expect(Object.keys(lugar).sort()).toEqual(CHAVES_LUGAR_PREVIA)
-    expect(corpo.previa.lugares).toEqual([
-      { id: LUGAR_PRAIA, name: "Praia da Ursa", category: "beach", address: "Sintra, Portugal" },
-      { id: LUGAR_BAR, name: "Bar do Largo", category: null, address: null },
+    expect(corpo.marcaveis).toEqual([
+      { id: BIA, username: "bia", full_name: "Bia Lima", avatar_url: expect.stringContaining("avatars"), recusou: true },
     ])
-
-    // Sem recusas na viagem: todos com `recusou: false`; as recusas são lidas mesmo sem post.
-    for (const p of corpo.marcaveis) expect(Object.keys(p).sort()).toEqual(CHAVES_MARCAVEL)
-    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, CAIO_MARCAVEL])
-    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
-
-    // Autorização com o cliente e o id da sessão, antes de ler qualquer coisa.
-    expect(funcoesChamadas()[0]).toBe("exigirMembro")
-    expect(argumentosDe("exigirMembro")).toEqual([sessao(), TRIP, ANA])
-    expect(argumentosDe("membrosMarcaveis")).toEqual([sessao(), TRIP, criarClienteAdmin])
-    expect(funcoesChamadas()).not.toContain("marcadosDoPost")
-    expect(funcoesChamadas()).not.toContain("assinarCapa")
+    expect(corpo.recusados).toEqual([BIA, CAIO].sort())
+    expect(corpo.previa.itens[0]).not.toHaveProperty("id")
+    expect(JSON.stringify(corpo)).not.toContain("senha")
   })
 
-  it("200 com a projeção ainda sem lugares: lista vazia", async () => {
-    delete (estado.projecao as { lugares?: unknown }).lugares
-
-    const corpo = await ler(await pedido("GET"))
-
-    expect(corpo.previa.lugares).toEqual([])
+  it("200 com post: o post é o PostVisto (chaves exatas, viagem pela lista branca)", async () => {
+    const meu = postDaAna({ photos: [fotoDe(ANA)], items: [{ title: "Trilha", notes: "x" }] })
+    semearMarca(meu.id, ANA, CAIO)
+    const { corpo } = await ver()
+    expect(Object.keys(corpo.post).sort()).toEqual(CHAVES_POST_VISTO)
+    expect(Object.keys(corpo.post.viagem).sort()).toEqual(CHAVES_VIAGEM)
+    expect(corpo.post).toMatchObject({ id: meu.id, fotos: [urlDe(fotoDe(ANA))], proprio: true, marcados: [{ id: CAIO }] })
+    expect(corpo.post.viagem.items).toStrictEqual([{ title: "Trilha" }])
   })
 
-  it("200 com post: chaves exatas, capa em URL assinada, e os marcados campo a campo", async () => {
-    estado.post = postPadrao({ cover_path: CAPA })
-    estado.marcados = [pessoa(BIA, "bia", URL_FOTO_BIA)]
+  it("403 não-membro; 400 tripId inválido; 401 sem sessão", async () => {
+    estado.membro = false
+    expect((await ver()).status).toBe(403)
+    estado.membro = true
+    expect((await ver("x")).status).toBe(400)
+    banco.sessao = null
+    expect((await ver()).status).toBe(401)
+  })
+})
 
-    const resposta = await pedido("GET")
-
-    expect(resposta.status).toBe(200)
-    const corpo = await ler(resposta)
-    expect(Object.keys(corpo.post).sort()).toEqual(CHAVES_POST)
-    expect(corpo.post).toEqual({
-      id: POST_ID,
-      title: "Lisboa em família",
-      destination: "Lisboa, Portugal",
-      start_date: "2026-12-10",
-      end_date: "2026-12-17",
-      caption: "Que viagem!",
-      items: [{ title: "Museu dos Coches", location: "Belém" }],
-      places: [{ name: "Praia da Ursa", address: "Sintra" }],
-      cover_url: URL_CAPA,
-      created_at: "2026-11-16T12:00:00.000Z",
-      updated_at: "2026-11-16T12:00:00.000Z",
-      marcados: [BIA_NA_RESPOSTA],
-    })
+describe("POST /api/social/viagens/[tripId]/post (@RF09.7 @RF09.13)", () => {
+  it("201: publica a cópia, sem fotos, marcando quem não é membro (marcação aberta)", async () => {
+    const { status, corpo } = await publicar({ ...CORPO, marcados: [CAIO, BIA] })
+    expect(status).toBe(201)
+    expect(Object.keys(corpo.post).sort()).toEqual(CHAVES_POST_VISTO)
     for (const p of corpo.post.marcados) expect(Object.keys(p).sort()).toEqual(CHAVES_PESSOA)
-    expect(argumentosDe("assinarCapa")).toEqual([criarClienteAdmin, CAPA])
-    expect(argumentosDe("marcadosDoPost")).toEqual([sessao(), POST_ID, criarClienteAdmin])
-    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
-    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, CAIO_MARCAVEL])
+    expect(corpo.post).toMatchObject({ caption: "Que viagem", fotos: [], proprio: true, viagem: { title: "Chapada" } })
+    const [gravado] = banco.tabelas.posts
+    expect(gravado).toMatchObject({ trip_id: VIAGEM, author_id: ANA, photos: [] })
+    expect(banco.tabelas.post_tags.map((t) => t.tagged_id).sort()).toEqual([BIA, CAIO].sort())
   })
 
-  it("200 sem post (despublicado ou ainda não publicado): quem recusou na viagem já vem com recusou true", async () => {
-    estado.recusas = [CAIO]
-
-    const corpo = await ler(await pedido("GET"))
-
-    expect(corpo.post).toBeNull()
-    for (const p of corpo.marcaveis) expect(Object.keys(p).sort()).toEqual(CHAVES_MARCAVEL)
-    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, { ...CAIO_NA_RESPOSTA, recusou: true }])
+  it("400 marcado_invalido (sem username), antes de gravar", async () => {
+    const { status, corpo } = await publicar({ ...CORPO, marcados: [DORA] })
+    expect(status).toBe(400)
+    expect(corpo.codigo).toBe("marcado_invalido")
+    expect(banco.tabelas.posts).toEqual([])
   })
 
-  it("200 com post: quem removeu a própria marca vem em marcaveis com recusou true, nas chaves exatas", async () => {
-    estado.post = postPadrao()
-    // Em maiúsculas: a comparação é em minúsculas, como os uuids do Postgres.
-    estado.recusas = [CAIO.toUpperCase()]
-
-    const corpo = await ler(await pedido("GET"))
-
-    for (const p of corpo.marcaveis) expect(Object.keys(p).sort()).toEqual(CHAVES_MARCAVEL)
-    expect(corpo.marcaveis).toEqual([BIA_MARCAVEL, { ...CAIO_NA_RESPOSTA, recusou: true }])
+  it("400 marcado_recusou com recusados, antes de gravar", async () => {
+    banco.tabelas.post_tag_recusas.push({ trip_id: VIAGEM, post_id: null, author_id: ANA, tagged_id: CAIO })
+    const { status, corpo } = await publicar({ ...CORPO, marcados: [BIA, CAIO] })
+    expect(status).toBe(400)
+    expect(corpo).toEqual({ error: expect.any(String), codigo: "marcado_recusou", recusados: [CAIO] })
+    expect(banco.tabelas.posts).toEqual([])
   })
 
-  it("200 com título do post diferente: previa.title continua o da viagem", async () => {
-    estado.post = postPadrao({ title: "Réveillon sem a família" })
-
-    const corpo = await ler(await pedido("GET"))
-
-    expect(corpo.previa.title).toBe("Lisboa em família")
-    expect(corpo.post.title).toBe("Réveillon sem a família")
+  it("400 com código quando a viagem não cabe no post (ViagemForaDoPost)", async () => {
+    estado.projecao = { ...projecao(), end_date: "2026-11-01" }
+    const { status, corpo } = await publicar()
+    expect(status).toBe(400)
+    expect(corpo.codigo).toBe("datas_da_viagem_invertidas")
   })
 
-  it("500 sem a mensagem crua quando a leitura das recusas falha", async () => {
-    estado.erroRecusas = new Error("[marcações do post] x", { cause: { message: "segredo do postgres" } })
-
-    const resposta = await pedido("GET")
-
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-  })
-
-  it("200 com a assinatura da capa falhando: cover_url nulo, e a resposta continua", async () => {
-    estado.post = postPadrao({ cover_path: CAPA })
-    estado.urlCapa = null
-
-    const corpo = await ler(await pedido("GET"))
-
-    expect(corpo.post.cover_url).toBeNull()
-  })
-
-  it("403 não-membro, sem ler a projeção, os marcáveis nem o post", async () => {
+  it("400 corpo inválido; 403 sem_username; 403 não-membro; 409 já publicado; 401", async () => {
+    expect((await publicar({ ...CORPO, trip_id: VIAGEM })).status).toBe(400)
+    banco.sessao = DORA
+    expect((await publicar()).corpo.codigo).toBe("sem_username")
+    banco.sessao = ANA
     estado.membro = false
-
-    const resposta = await pedido("GET")
-
-    expect(resposta.status).toBe(403)
-    expect(await ler(resposta)).toEqual({ error: "Sem permissão para acessar esta viagem" })
-    expect(funcoesChamadas()).toEqual(["exigirMembro"])
-  })
-
-  it("404 quando a projeção não existe para a sessão", async () => {
-    estado.projecao = null
-
-    const resposta = await pedido("GET")
-
-    expect(resposta.status).toBe(404)
-    expect(await ler(resposta)).toEqual({ error: "Viagem não encontrada" })
-  })
-
-  it("500 sem a mensagem crua quando a leitura do post falha", async () => {
-    estado.erroPost = new Error("[post da viagem] não foi possível ler a publicação", {
-      cause: { message: 'relation "trip_posts" secreta' },
-    })
-
-    const resposta = await pedido("GET")
-
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-  })
-
-  it("500 genérico quando a autorização falha no banco (ErroHttp 500 com a mensagem do Postgres)", async () => {
-    estado.erroMembro = new ErroHttp(500, 'relation "trip_members" segredo do postgres')
-
-    const resposta = await pedido("GET")
-
-    expect(resposta.status).toBe(500)
-    const texto = JSON.stringify(await ler(resposta))
-    expect(texto).toBe(JSON.stringify({ error: "Erro interno do servidor" }))
-    expect(resposta.headers.get("x-codigo-erro")).toMatch(/^[0-9a-f]{8}$/)
+    expect((await publicar()).status).toBe(403)
+    estado.membro = true
+    postDaAna()
+    banco.falhas.push({ tabela: "posts", operacao: "insert", erro: { code: "23505" } })
+    expect((await publicar()).status).toBe(409)
+    banco.sessao = null
+    expect((await publicar()).status).toBe(401)
   })
 })
 
-describe("POST /api/social/viagens/[tripId]/post", () => {
-  it("201 grava a cópia montada da projeção, nunca do corpo, e marca quem foi escolhido", async () => {
-    const resposta = await pedido("POST", CORPO_VALIDO)
+describe("PATCH e DELETE /api/social/viagens/[tripId]/post (@RF09.7)", () => {
+  it("200: atualiza a cópia e as marcas; quem já estava marcado e perdeu o username continua", async () => {
+    const meu = postDaAna({ caption: "velha" })
+    semearMarca(meu.id, ANA, CAIO)
+    banco.tabelas.profiles.find((p) => p.id === CAIO)!.username = null
+    const { status, corpo } = await atualizar({ ...CORPO, legenda: "nova", marcados: [CAIO] })
+    expect(status).toBe(200)
+    expect(corpo.post.caption).toBe("nova")
+    expect(banco.tabelas.post_tags.map((t) => t.tagged_id)).toEqual([CAIO])
+  })
 
-    expect(resposta.status).toBe(201)
-    const corpo = await ler(resposta)
+  it("404 sem post; 403 não-membro; 400 corpo", async () => {
+    expect((await atualizar()).status).toBe(404)
+    estado.membro = false
+    expect((await atualizar()).status).toBe(403)
+    estado.membro = true
+    expect((await atualizar({ x: 1 })).status).toBe(400)
+  })
+
+  it("DELETE 200: despublica e apaga as fotos, mesmo sem ser mais membro", async () => {
+    postDaAna({ photos: [fotoDe(ANA, 1), fotoDe(ANA, 2)] })
+    estado.membro = false
+    const { status, corpo } = await despublicar()
+    expect(status).toBe(200)
+    expect(corpo).toEqual({ ok: true })
+    expect(banco.tabelas.posts).toEqual([])
+    expect(banco.storage.remocoes).toEqual([{ bucket: "capas-posts", caminhos: [fotoDe(ANA, 1), fotoDe(ANA, 2)] }])
+  })
+
+  it("DELETE 404 sem post; 400; 401", async () => {
+    expect((await despublicar()).status).toBe(404)
+    expect((await despublicar("x")).status).toBe(400)
+    banco.sessao = null
+    expect((await despublicar()).status).toBe(401)
+  })
+})
+
+describe("PUT /api/social/viagens/[tripId]/post/fotos (@RF09.7)", () => {
+  it("200: substitui todas, na ordem; WebP sem GPS; apaga as anteriores; devolve o PostVisto", async () => {
+    postDaAna({ photos: [fotoDe(ANA, 1)] })
+    const { status, corpo } = await trocarFotos([JPEG, PNG])
+    expect(status).toBe(200)
     expect(Object.keys(corpo)).toEqual(["post"])
-    expect(Object.keys(corpo.post).sort()).toEqual(CHAVES_POST)
-    expect(corpo.post).toMatchObject({ ...COPIA_ESPERADA, id: POST_ID, cover_url: null })
-    expect(corpo.post.marcados).toEqual([BIA_NA_RESPOSTA])
-
-    // A ordem: sessão, autorização, username, corpo, projeção e marcáveis, gravação, marcas.
-    expect(funcoesChamadas()).toEqual([
-      "exigirMembro",
-      "temUsername",
-      "projecaoPublicaDaViagem",
-      "membrosMarcaveis",
-      "recusasDaViagem",
-      "publicar",
-      "sincronizarMarcacoes",
-      "marcadosDoPost",
-    ])
-    expect(argumentosDe("exigirMembro")).toEqual([sessao(), TRIP, ANA])
-    expect(argumentosDe("temUsername")).toEqual([sessao(), ANA])
-    expect(argumentosDe("publicar")).toEqual([sessao(), { tripId: TRIP, autorId: ANA, copia: COPIA_ESPERADA }])
-    expect(argumentosDe("sincronizarMarcacoes")).toEqual([sessao(), POST_ID, ANA, [BIA], [BIA, CAIO], []])
-    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
+    const novas = banco.tabelas.posts[0].photos as string[]
+    expect(novas).toEqual(banco.storage.envios.map((e) => e.caminho))
+    expect(corpo.post.fotos).toEqual(novas.map(urlDe))
+    expect(banco.storage.remocoes).toEqual([{ bucket: "capas-posts", caminhos: [fotoDe(ANA, 1)] }])
+    for (const marca of [MARCAS.gps, MARCAS.exif]) expect(contemTexto(banco.storage.envios[0].bytes, marca)).toBe(false)
+    expect((await sharp(banco.storage.envios[0].bytes).metadata()).format).toBe("webp")
   })
 
-  it.each([
-    ["escolhido, sem os espaços das pontas", "  Réveillon em Lisboa  ", "Réveillon em Lisboa"],
-    ["com 120 caracteres, no teto", "t".repeat(120), "t".repeat(120)],
-    ["só com espaços: o da viagem", "   ", "Lisboa em família"],
-    ["vazio: o da viagem", "", "Lisboa em família"],
-    ["nulo: o da viagem", null, "Lisboa em família"],
-    ["ausente: o da viagem", undefined, "Lisboa em família"],
-  ])("201 com título %s", async (_caso, titulo, esperado) => {
-    const resposta = await pedido("POST", { ...CORPO_VALIDO, titulo })
-
-    expect(resposta.status).toBe(201)
-    expect((await ler(resposta)).post.title).toBe(esperado)
-    const { copia } = (argumentosDe("publicar") as [unknown, { copia: unknown }])[1]
-    expect(copia).toEqual({ ...COPIA_ESPERADA, title: esperado })
+  it("200: 0 fotos tira todas (o post de viagem fica com o grafismo)", async () => {
+    postDaAna({ photos: [fotoDe(ANA, 1)] })
+    const { status, corpo } = await trocarFotos([])
+    expect(status).toBe(200)
+    expect(corpo.post.fotos).toEqual([])
+    expect(banco.tabelas.posts[0].photos).toEqual([])
   })
 
-  it("201 com texto do grupo acima dos tetos do CHECK: item longo fora, local e descrição longos omitidos", async () => {
-    const projecao = estado.projecao as unknown as { itens: Record<string, unknown>[] }
-    projecao.itens = [
-      { title: "x".repeat(121), date: "2026-12-10", location: "Belém", description: "curta" },
-      { title: "Título no teto".padEnd(120, "."), location: "l".repeat(201), description: "d".repeat(2001) },
-      { title: "No limite", location: "l".repeat(200), description: "d".repeat(2000) },
-    ]
-
-    const resposta = await pedido("POST", { ...CORPO_VALIDO, roteiro: { local: true, descricao: true } })
-
-    expect(resposta.status).toBe(201)
-    await ler(resposta)
-    const { copia } = (argumentosDe("publicar") as [unknown, { copia: { items: unknown[] } }])[1]
-    expect(copia.items).toEqual([
-      { title: "Título no teto".padEnd(120, ".") },
-      { title: "No limite", location: "l".repeat(200), description: "d".repeat(2000) },
-    ])
-  })
-
-  it("201 com roteiro e lugares desligados e sem legenda: post só com a viagem, sem marcas", async () => {
-    const resposta = await pedido("POST", { roteiro: null, lugares: null })
-
-    expect(resposta.status).toBe(201)
-    const corpo = await ler(resposta)
-    expect(corpo.post).toMatchObject({ caption: null, items: [], places: [], marcados: [] })
-    const { copia } = (argumentosDe("publicar") as [unknown, { copia: unknown }])[1]
-    expect(copia).toEqual({ ...COPIA_ESPERADA, caption: null, items: [], places: [] })
-    expect(argumentosDe("sincronizarMarcacoes")).toEqual([sessao(), POST_ID, ANA, [], [BIA, CAIO], []])
-  })
-
-  it("201 com descrição ligada e local desligado: a subchave vale para o post inteiro", async () => {
-    await ler(await pedido("POST", { ...CORPO_VALIDO, roteiro: { local: false, descricao: true } }))
-
-    const { copia } = (argumentosDe("publicar") as [unknown, { copia: { items: unknown[] } }])[1]
-    expect(copia.items).toEqual([
-      {
-        title: "Check-in no hotel",
-        date: "2026-12-10",
-        start_time: "14:00:00",
-        category: "accommodation",
-        description: "quarto 12",
-      },
-      {
-        title: "Museu dos Coches",
-        date: "2026-12-11",
-        start_time: "10:00:00",
-        end_time: "12:00:00",
-        category: "activity",
-        description: "ingresso na bilheteria",
-      },
-    ])
-  })
-
-  it("403 não-membro, sem gravar nem ler a projeção", async () => {
-    estado.membro = false
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(403)
-    expect(await ler(resposta)).toEqual({ error: "Sem permissão para acessar esta viagem" })
-    expect(funcoesChamadas()).toEqual(["exigirMembro"])
-  })
-
-  it("403 sem_username: a sessão sem nome de usuário não publica, e nada é gravado", async () => {
-    estado.username = false
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(403)
-    expect(await ler(resposta)).toEqual({
-      error: "Escolha um nome de usuário para publicar uma viagem",
-      codigo: "sem_username",
-    })
-    expect(funcoesChamadas()).toEqual(["exigirMembro", "temUsername"])
-  })
-
-  it.each(CORPOS_INVALIDOS)("400 com %s, sem ler a projeção nem gravar", async (_caso, corpo) => {
-    const resposta = await pedido("POST", corpo)
-
-    expect(resposta.status).toBe(400)
-    const lido = await ler(resposta)
-    expect(lido.error).toBe("Dados inválidos")
-    expect(lido.detalhes).toBeDefined()
-    expect(funcoesChamadas()).toEqual(["exigirMembro", "temUsername"])
-  })
-
-  it("400 com JSON malformado, e não o 500 de um SyntaxError", async () => {
-    const resposta = await pedido("POST", undefined, { cru: "{ roteiro: [" })
-
-    expect(resposta.status).toBe(400)
-    expect((await ler(resposta)).error).toBe("Dados inválidos")
-    expect(funcoesChamadas()).toEqual(["exigirMembro", "temUsername"])
-  })
-
-  it.each([
-    ["quem não é marcável (saiu da viagem, sem username ou de fora)", [BIA, DORA]],
-    ["a própria sessão", [ANA]],
-  ])("400 marcado_invalido ao marcar %s, sem gravar o post", async (_caso, marcados) => {
-    const resposta = await pedido("POST", { ...CORPO_VALIDO, marcados })
-
-    expect(resposta.status).toBe(400)
-    expect(await ler(resposta)).toEqual({
-      error: "Só dá para marcar quem viajou com você e tem nome de usuário",
-      codigo: "marcado_invalido",
-    })
-    expect(funcoesChamadas()).not.toContain("publicar")
-    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
-  })
-
-  it.each([
-    ["só quem recusou", [CAIO]],
-    ["quem recusou junto de outro marcável", [BIA, CAIO]],
-  ])("400 marcado_recusou ao republicar marcando %s, sem gravar o post", async (_caso, marcados) => {
-    // Recusa num post desta viagem que o autor já despublicou: vale para a viagem.
-    estado.recusas = [CAIO]
-
-    const resposta = await pedido("POST", { ...CORPO_VALIDO, marcados })
-
-    expect(resposta.status).toBe(400)
-    expect(await ler(resposta)).toEqual({
-      error: "Quem removeu a própria marcação numa publicação sua desta viagem não pode ser marcado de novo",
-      codigo: "marcado_recusou",
-    })
-    expect(funcoesChamadas()).not.toContain("publicar")
-    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
-  })
-
-  it("201 com recusa na viagem marcando outros: as recusas vão para a sincronização", async () => {
-    estado.recusas = [CAIO]
-
-    const resposta = await pedido("POST", { ...CORPO_VALIDO, marcados: [BIA] })
-
-    expect(resposta.status).toBe(201)
-    await ler(resposta)
-    expect((argumentosDe("sincronizarMarcacoes") as unknown[])[5]).toEqual([CAIO])
-  })
-
-  it("500 sem a mensagem crua e sem gravar quando a leitura das recusas falha no POST", async () => {
-    estado.erroRecusas = new Error("[marcações do post] x", { cause: { message: "segredo do postgres" } })
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-    expect(funcoesChamadas()).not.toContain("publicar")
-  })
-
-  it("404 quando a projeção não existe, sem gravar", async () => {
-    estado.projecao = null
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(404)
-    await ler(resposta)
-    expect(funcoesChamadas()).not.toContain("publicar")
-  })
-
-  it("409 quando a sessão já publicou esta viagem, sem mexer nas marcas", async () => {
-    estado.erroPublicar = new ErroHttp(409, "Você já publicou esta viagem")
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(409)
-    expect(await ler(resposta)).toEqual({ error: "Você já publicou esta viagem" })
-    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
-  })
-
-  it("500 sem a mensagem crua quando o banco falha ao gravar", async () => {
-    const cru = { code: "XX000", message: 'violates check constraint "trip_posts_places_validos" segredo' }
-    estado.erroPublicar = new Error("[post da viagem] não foi possível publicar esta viagem", { cause: cru })
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(500)
-    const texto = JSON.stringify(await ler(resposta))
-    expect(texto).toBe(JSON.stringify({ error: "Erro interno do servidor" }))
-    expect(texto).not.toContain("segredo")
-    expect(resposta.headers.get("x-codigo-erro")).toMatch(/^[0-9a-f]{8}$/)
-  })
-
-  it("marcas falham depois de publicar: desfaz o post e responde 500 sem a mensagem crua", async () => {
-    estado.erroSincronizar = new Error("[marcações do post] x", { cause: { message: "segredo do postgres" } })
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-    expect(funcoesChamadas()).toEqual(expect.arrayContaining(["publicar", "sincronizarMarcacoes", "despublicar"]))
-    expect(argumentosDe("despublicar")).toEqual([sessao(), POST_ID])
-  })
-
-  it("marcas falham e desfazer também falha: o erro original segue, e a falha vai ao log", async () => {
-    estado.erroSincronizar = new ErroHttp(403, "Sem permissão para marcar quem viajou com você")
-    const falha = new Error("rede")
-    estado.erroDespublicar = falha
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(403)
-    await ler(resposta)
-    expect(log).toHaveBeenCalledWith("[post da viagem] post sem marcas não foi desfeito", POST_ID, falha)
-  })
-
-  it("500 sem a mensagem crua quando a leitura do itinerário ou dos marcáveis falha", async () => {
-    estado.erroProjecao = new Error("Não foi possível ler o itinerário da viagem")
-    let resposta = await pedido("POST", CORPO_VALIDO)
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-    expect(funcoesChamadas()).not.toContain("publicar")
-
-    reiniciar()
-    estado.erroMarcaveis = new Error("[marcações do post] x", { cause: { message: "segredo" } })
-    resposta = await pedido("POST", CORPO_VALIDO)
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-    expect(funcoesChamadas()).not.toContain("publicar")
-  })
-})
-
-describe("PATCH /api/social/viagens/[tripId]/post", () => {
-  beforeEach(() => {
-    estado.post = postPadrao({ cover_path: CAPA })
-    // Dora saiu da viagem mas continua marcada; Caio está marcado e é marcável.
-    estado.marcados = [pessoa(DORA, "dora"), pessoa(CAIO, "caio")]
-  })
-
-  it("200 copia a viagem de novo e troca as marcas; quem saiu da viagem pode continuar marcado", async () => {
-    estado.atualizado = postPadrao({ ...COPIA_ESPERADA, cover_path: CAPA, updated_at: "2026-11-16T14:00:00.000Z" })
-
-    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, marcados: [DORA, BIA] })
-
-    expect(resposta.status).toBe(200)
-    const corpo = await ler(resposta)
-    expect(Object.keys(corpo)).toEqual(["post"])
-    expect(Object.keys(corpo.post).sort()).toEqual(CHAVES_POST)
-    expect(corpo.post).toMatchObject({ ...COPIA_ESPERADA, cover_url: URL_CAPA, updated_at: "2026-11-16T14:00:00.000Z" })
-    expect(corpo.post.marcados).toEqual([
-      { id: DORA, username: "dora", full_name: "DORA", avatar_url: null },
-      BIA_NA_RESPOSTA,
-    ])
-    expect(funcoesChamadas()).toEqual([
-      "exigirMembro",
-      "postDaViagem",
-      "projecaoPublicaDaViagem",
-      "membrosMarcaveis",
-      "marcadosDoPost",
-      "recusasDaViagem",
-      "atualizar",
-      "sincronizarMarcacoes",
-      "marcadosDoPost",
-      "assinarCapa",
-    ])
-    expect(argumentosDe("exigirMembro")).toEqual([sessao(), TRIP, ANA])
-    expect(argumentosDe("recusasDaViagem")).toEqual([sessao(), TRIP])
-    expect(argumentosDe("atualizar")).toEqual([sessao(), POST_ID, COPIA_ESPERADA])
-    expect(argumentosDe("sincronizarMarcacoes")).toEqual([
-      sessao(),
-      POST_ID,
-      ANA,
-      [DORA, BIA],
-      [BIA, CAIO, DORA, CAIO],
-      [],
-    ])
-  })
-
-  it("200 com título escolhido: a cópia atualizada leva o título novo", async () => {
-    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, titulo: " Fim de ano " })
-
-    expect(resposta.status).toBe(200)
-    expect((await ler(resposta)).post.title).toBe("Fim de ano")
-    expect(argumentosDe("atualizar")).toEqual([sessao(), POST_ID, { ...COPIA_ESPERADA, title: "Fim de ano" }])
-  })
-
-  it("200 marcando outros: as recusas da viagem vão para a sincronização, que as confere de novo", async () => {
-    estado.recusas = [CAIO]
-
-    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, marcados: [BIA] })
-
-    expect(resposta.status).toBe(200)
-    await ler(resposta)
-    expect((argumentosDe("sincronizarMarcacoes") as unknown[])[5]).toEqual([CAIO])
-  })
-
-  it.each([
-    ["só quem recusou", [CAIO]],
-    ["quem recusou junto de outro marcável", [BIA, CAIO]],
-  ])("400 marcado_recusou ao marcar %s, sem atualizar nem marcar", async (_caso, marcados) => {
-    estado.marcados = [pessoa(DORA, "dora")]
-    estado.recusas = [CAIO]
-
-    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, marcados })
-
-    expect(resposta.status).toBe(400)
-    expect(await ler(resposta)).toEqual({
-      error: "Quem removeu a própria marcação numa publicação sua desta viagem não pode ser marcado de novo",
-      codigo: "marcado_recusou",
-    })
-    expect(funcoesChamadas()).not.toContain("atualizar")
-    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
-  })
-
-  it("400 marcado_invalido ao marcar alguém novo que não é marcável, sem atualizar", async () => {
-    const resposta = await pedido("PATCH", { ...CORPO_VALIDO, marcados: [BIA, ANA] })
-
-    expect(resposta.status).toBe(400)
-    expect((await ler(resposta)).codigo).toBe("marcado_invalido")
-    expect(funcoesChamadas()).not.toContain("atualizar")
-    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
-  })
-
-  it("403 de quem saiu da viagem, sem atualizar", async () => {
-    estado.membro = false
-
-    const resposta = await pedido("PATCH", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(403)
-    await ler(resposta)
-    expect(funcoesChamadas()).toEqual(["exigirMembro"])
-  })
-
-  it("403 quando a policy recusa (42501 vira 403 na lib)", async () => {
-    estado.erroAtualizar = new ErroHttp(403, "Sem permissão para atualizar esta publicação")
-
-    const resposta = await pedido("PATCH", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(403)
-    expect(await ler(resposta)).toEqual({ error: "Sem permissão para atualizar esta publicação" })
-  })
-
-  it("404 sem post da sessão nesta viagem, sem ler a projeção nem atualizar", async () => {
-    estado.post = null
-
-    const resposta = await pedido("PATCH", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(404)
-    expect(await ler(resposta)).toEqual({ error: "Publicação não encontrada" })
-    expect(funcoesChamadas()).toEqual(["exigirMembro", "postDaViagem"])
-  })
-
-  it("404 quando o post some entre a leitura e a escrita, sem mexer nas marcas", async () => {
-    estado.atualizado = null
-
-    const resposta = await pedido("PATCH", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(404)
-    await ler(resposta)
-    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
-  })
-
-  it.each(CORPOS_INVALIDOS)("400 com %s, sem ler o post nem atualizar", async (_caso, corpo) => {
-    const resposta = await pedido("PATCH", corpo)
-
-    expect(resposta.status).toBe(400)
-    expect((await ler(resposta)).error).toBe("Dados inválidos")
-    expect(funcoesChamadas()).toEqual(["exigirMembro"])
-  })
-
-  it("500 sem a mensagem crua quando o banco falha ao atualizar ou ao marcar", async () => {
-    estado.erroAtualizar = new Error("[post da viagem] x", { cause: { message: "segredo do postgres" } })
-    let resposta = await pedido("PATCH", CORPO_VALIDO)
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-
-    reiniciar()
-    estado.post = postPadrao()
-    estado.erroSincronizar = new Error("[marcações do post] x", { cause: { message: "segredo do postgres" } })
-    resposta = await pedido("PATCH", CORPO_VALIDO)
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-    // No PATCH o conteúdo novo fica: não há o que desfazer.
-    expect(funcoesChamadas()).not.toContain("despublicar")
-  })
-})
-
-/**
- * Regressão da segunda revisão de segurança (18/11, R2): os casos que davam 500
- * ao publicar. Os de item saem do item e publicam; os da viagem são 400 com
- * código e mensagem, sem gravar nada.
- */
-describe.each<"POST" | "PATCH">(["POST", "PATCH"])("%s — campos fora dos CHECKs não dão 500 (R2, @RF09.7)", (metodo) => {
-  const escrita = metodo === "POST" ? "publicar" : "atualizar"
-  const sucesso = metodo === "POST" ? 201 : 200
-  /** A cópia que chegou a `publicar`/`atualizar`. */
-  const copiaGravada = () => {
-    const argumentos = argumentosDe(escrita)!
-    return (metodo === "POST" ? (argumentos[1] as { copia: unknown }).copia : argumentos[2]) as {
-      items: Record<string, string>[]
+  it("409: outra aba trocou as fotos entre a leitura e a troca; as recém-enviadas saem do bucket", async () => {
+    const meu = postDaAna({ photos: [fotoDe(ANA, 1)] })
+    banco.antesDe = (tabela, operacao) => {
+      if (tabela === "posts" && operacao === "update") meu.photos = [fotoDe(ANA, 2)]
     }
-  }
-
-  beforeEach(() => {
-    if (metodo === "PATCH") estado.post = postPadrao()
+    const { status } = await trocarFotos([PNG])
+    expect(status).toBe(409)
+    expect(meu.photos).toEqual([fotoDe(ANA, 2)])
+    expect(banco.storage.arquivos.has(`capas-posts/${banco.storage.envios[0].caminho}`)).toBe(false)
+    // A foto da outra aba não foi apagada.
+    expect(banco.storage.remocoes.flatMap((r) => r.caminhos)).not.toContain(fotoDe(ANA, 2))
   })
 
-  const comItem = (campos: Record<string, string>) => {
-    const projecao = estado.projecao!
-    projecao.itens = [{ ...projecao.itens[1], ...campos }]
-  }
-
-  it.each([
-    ["hora 24:00:00 no início", { start_time: "24:00:00" }, "start_time"],
-    ["hora 24:00:00 no fim", { end_time: "24:00:00" }, "end_time"],
-    ["hora com fração de segundo", { start_time: "10:00:00.5" }, "start_time"],
-    ["data 10000-01-01", { date: "10000-01-01" }, "date"],
-    ["data 0044-03-15 BC", { date: "0044-03-15 BC" }, "date"],
-    ["categoria fora da lista do CHECK", { category: "hotel" }, "category"],
-  ])(`${sucesso}: item com %s publica sem o campo`, async (_caso, campos, omitido) => {
-    comItem(campos)
-
-    const resposta = await pedido(metodo, CORPO_VALIDO)
-
-    expect(resposta.status).toBe(sucesso)
-    await ler(resposta)
-    const [item] = copiaGravada().items
-    expect(item).not.toHaveProperty(omitido)
-    expect(item.title).toBe("Museu dos Coches")
+  it("500 na troca: as recém-enviadas saem do bucket, sem vazar a mensagem", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    postDaAna({ photos: [fotoDe(ANA, 1)] })
+    banco.falhas.push({ tabela: "posts", operacao: "update", erro: { code: "XX000", message: "detalhe cru" } })
+    const { status, corpo } = await trocarFotos([PNG])
+    expect(status).toBe(500)
+    expect(JSON.stringify(corpo)).not.toContain("detalhe cru")
+    expect(banco.storage.arquivos.has(`capas-posts/${banco.storage.envios[0].caminho}`)).toBe(false)
   })
 
-  it.each([
-    [
-      "título da viagem com 130 caracteres, sem `titulo` no corpo",
-      { title: "t".repeat(130) },
-      "titulo_da_viagem_longo",
-      "O título da viagem passa de 120 caracteres: escreva um título para a publicação",
-    ],
-    [
-      "destino com 170 caracteres",
-      { destination: "d".repeat(170) },
-      "destino_da_viagem_longo",
-      "O destino da viagem passa de 160 caracteres: encurte o destino na viagem para publicar",
-    ],
-    [
-      "datas invertidas",
-      { start_date: "2026-12-17", end_date: "2026-12-10" },
-      "datas_da_viagem_invertidas",
-      "A volta da viagem está antes da ida: corrija as datas na viagem para publicar",
-    ],
-    [
-      "data da viagem 10000-01-01",
-      { end_date: "10000-01-01" },
-      "datas_da_viagem_invalidas",
-      "As datas da viagem estão fora do formato: corrija a ida e a volta na viagem para publicar",
-    ],
-  ])("400: %s — código e mensagem, sem gravar nem marcar", async (_caso, campos, codigo, mensagem) => {
-    Object.assign(estado.projecao!, campos)
-
-    const resposta = await pedido(metodo, CORPO_VALIDO)
-
-    expect(resposta.status).toBe(400)
-    expect(await ler(resposta)).toEqual({ error: mensagem, codigo })
-    expect(funcoesChamadas()).not.toContain(escrita)
-    expect(funcoesChamadas()).not.toContain("sincronizarMarcacoes")
-  })
-
-  it(`${sucesso}: o título da viagem com 130 caracteres publica quando o corpo traz \`titulo\``, async () => {
-    estado.projecao!.title = "t".repeat(130)
-
-    const resposta = await pedido(metodo, { ...CORPO_VALIDO, titulo: "Lisboa, enfim" })
-
-    expect(resposta.status).toBe(sucesso)
-    await ler(resposta)
-    expect((copiaGravada() as unknown as { title: string }).title).toBe("Lisboa, enfim")
-  })
-
-  it(`${sucesso}: título só com invisíveis (U+200B, U+FEFF, U+2060) vale o da viagem, e a legenda vira null (R3)`, async () => {
-    const resposta = await pedido(metodo, { ...CORPO_VALIDO, titulo: "​﻿⁠", legenda: "⁠​" })
-
-    expect(resposta.status).toBe(sucesso)
-    await ler(resposta)
-    expect(copiaGravada()).toMatchObject({ title: "Lisboa em família", caption: null })
-  })
-})
-
-/**
- * Corrida da revisão de 18/11 (S1): a pessoa remove a própria marca entre a
- * leitura das recusas e o INSERT. A lib transforma o 42501 em
- * `ErroHttp(400, "marcado_recusou")` (provado em tests/lib/marcacoes.test.ts);
- * aqui, o que a rota faz com ele.
- */
-describe("POST e PATCH — a recusa chega só no INSERT da marca (S1, @RF09.13)", () => {
-  const corrida = () => {
-    estado.erroSincronizar = new ErroHttp(400, "marcado_recusou")
-  }
-
-  it("POST: 400 marcado_recusou, e o post recém-criado é desfeito", async () => {
-    corrida()
-
-    const resposta = await pedido("POST", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(400)
-    expect((await ler(resposta)).codigo).toBe("marcado_recusou")
-    expect(funcoesChamadas()).toContain("publicar")
-    expect(funcoesChamadas().at(-1)).toBe("despublicar")
-  })
-
-  it("PATCH: 400 marcado_recusou; o conteúdo já foi atualizado (limite registrado na rota)", async () => {
-    estado.post = postPadrao()
-    corrida()
-
-    const resposta = await pedido("PATCH", CORPO_VALIDO)
-
-    expect(resposta.status).toBe(400)
-    expect((await ler(resposta)).codigo).toBe("marcado_recusou")
-    expect(funcoesChamadas()).toContain("atualizar")
-    expect(funcoesChamadas()).not.toContain("despublicar")
-  })
-})
-
-describe("DELETE /api/social/viagens/[tripId]/post", () => {
-  beforeEach(() => {
-    estado.post = postPadrao({ cover_path: CAPA })
-    estado.despublicado = { capaAnterior: CAPA }
-  })
-
-  it("200 apaga o post e depois a capa, na pasta da sessão, com o cliente de serviço", async () => {
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(200)
-    expect(await ler(resposta)).toEqual({ ok: true })
-    expect(funcoesChamadas()).toEqual(["postDaViagem", "despublicar", "removerCapa"])
-    expect(argumentosDe("postDaViagem")).toEqual([sessao(), TRIP])
-    expect(argumentosDe("despublicar")).toEqual([sessao(), POST_ID])
-    expect(argumentosDe("removerCapa")).toEqual([estado.clientesDeServico[0], CAPA, ANA])
-    expect(log).not.toHaveBeenCalled()
-  })
-
-  it("200 para quem saiu da viagem: o post é do autor, e o exigirMembro não é chamado", async () => {
+  it("400 com 4 fotos ou campo estranho; 404 sem post; 403; 429; 401", async () => {
+    expect((await trocarFotos([PNG, PNG, PNG, PNG])).status).toBe(400)
+    postDaAna()
+    expect((await trocarFotos([PNG], undefined, ["photos", "x"])).status).toBe(400)
+    banco.tabelas.posts = []
+    expect((await trocarFotos([PNG])).status).toBe(404)
+    expect(banco.storage.envios).toEqual([])
     estado.membro = false
-
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(200)
-    await ler(resposta)
-    expect(funcoesChamadas()).not.toContain("exigirMembro")
-    expect(funcoesChamadas()).toContain("despublicar")
-  })
-
-  it("200 sem capa: não cria o cliente de serviço nem vai ao Storage", async () => {
-    estado.despublicado = { capaAnterior: null }
-
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(200)
-    await ler(resposta)
-    expect(estado.clientesDeServico).toEqual([])
-    expect(funcoesChamadas()).not.toContain("removerCapa")
-  })
-
-  it("200 mesmo se o Storage falhar ao apagar a capa: o post já saiu, e a falha vai para o log", async () => {
-    const erro = new Error("[capa do post] remoção falhou")
-    estado.erroRemoverCapa = erro
-
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(200)
-    expect(await ler(resposta)).toEqual({ ok: true })
-    expect(log).toHaveBeenCalledWith("[post da viagem] capa não apagada", CAPA, erro)
-  })
-
-  it("200 e log quando a capa não sai do bucket (arquivo já ausente ou fora da pasta)", async () => {
-    estado.capaRemovida = false
-
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(200)
-    await ler(resposta)
-    expect(log).toHaveBeenCalledWith("[post da viagem] capa não apagada", CAPA)
-  })
-
-  it("404 sem post da sessão nesta viagem, sem apagar nada", async () => {
-    estado.post = null
-
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(404)
-    expect(await ler(resposta)).toEqual({ error: "Publicação não encontrada" })
-    expect(funcoesChamadas()).toEqual(["postDaViagem"])
-  })
-
-  it("404 quando nada foi apagado (despublicado em outra aba), sem ir ao Storage", async () => {
-    estado.despublicado = null
-
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(404)
-    await ler(resposta)
-    expect(funcoesChamadas()).not.toContain("removerCapa")
-  })
-
-  it("500 sem a mensagem crua quando o banco falha ao apagar, e a capa fica", async () => {
-    estado.erroDespublicar = new Error("[post da viagem] x", { cause: { message: "segredo do postgres" } })
-
-    const resposta = await pedido("DELETE")
-
-    expect(resposta.status).toBe(500)
-    expect(await ler(resposta)).toEqual({ error: "Erro interno do servidor" })
-    expect(funcoesChamadas()).not.toContain("removerCapa")
+    expect((await trocarFotos([PNG])).status).toBe(403)
+    estado.membro = true
+    banco.limite = { permitido: false, retry_after: 9 }
+    expect((await trocarFotos([PNG])).status).toBe(429)
+    banco.sessao = null
+    expect((await trocarFotos([PNG])).status).toBe(401)
   })
 })

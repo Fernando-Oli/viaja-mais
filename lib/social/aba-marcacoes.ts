@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { naoEncontrado, semPermissao } from "@/lib/http"
 import { assinarAvatares, type ClienteDeServico } from "./avatar"
-import { assinarCapas } from "./capa"
+import { assinarFotos } from "./capa"
+import { fotosGravadas } from "./posts"
 import { buscarPerfilPorUsername } from "./perfil-visto"
 import { podeVerRede } from "./rede"
 
@@ -19,23 +20,26 @@ import { podeVerRede } from "./rede"
  *   `post_tags` deixa quem enxerga o post ler as marcas dele pela Data API,
  *   inclusive a de uma pessoa com perfil privado que essa sessão não segue;
  * - **ser marcado não abre o post** (opção 2, como no Instagram). Cada post
- *   segue a RLS de `trip_posts` (`pode_ver_rede(author_id)`): se quem vê
+ *   segue a RLS de `posts` (`pode_ver_rede(author_id)`): se quem vê
  *   enxerga o post, o cartão leva o resumo; se não enxerga e é a própria pessoa
  *   marcada, o cartão leva só quem a marcou; para os outros, o cartão não sai.
  *
  * Tudo com o cliente da sessão, numa consulta: `post_tags` com o autor
- * (`profiles`, pela FK `author_id`) e o post (`trip_posts`, pela FK `post_id`)
+ * (`profiles`, pela FK `author_id`) e o post (`posts`, pela FK `post_id`)
  * embutidos. O embed do post passa pela RLS dele: post que a sessão não
  * enxerga volta `null`, e é isso que separa os dois cartões. A RLS de
  * `post_tags` (migration 20261116234030) esconde de terceiros só a marca de
  * post que eles não enxergam, e o filtro daqui repete essa regra. Ela não é a
  * segunda linha do "perfil privado só abre a seguidores": essa fica só no
- * `podeVerRede` desta lib. A chave de serviço só assina fotos e capas.
+ * `podeVerRede` desta lib. A chave de serviço só assina as fotos.
  *
- * O que sai, campo a campo: o id do post (para remover a marca), quando a
- * pessoa foi marcada, o autor pelo username (nunca o `author_id`), e do post só
- * título, destino, datas, legenda e a capa assinada. Nunca `trip_id` (nem é
- * legível), `cover_path` cru, itinerário, lugares, e-mail ou outros marcados.
+ * O que sai, campo a campo: o id do post (para remover a marca e linkar ao
+ * detalhe, /feed/<post_id>), quando a pessoa foi marcada, o autor pelo
+ * username (nunca o `author_id`), e do post só título, destino e datas (nulos
+ * no post sem viagem, 18/11 noite), legenda e a 1ª foto assinada (`foto`; nula
+ * só no post de viagem sem fotos, que a tela desenha com o grafismo). Nunca
+ * `trip_id` (nem é legível), caminho do Storage, itinerário, lugares, e-mail ou
+ * outros marcados.
  *
  * Sem paginação: a aba traz as `LIMITE_MARCACOES` mais recentes.
  *
@@ -56,12 +60,14 @@ export type AutorDaMarcacao = {
 
 /** O resumo do post que o cartão mostra, quando quem vê enxerga o post. */
 export type ResumoDoPost = {
-  title: string
-  destination: string
-  start_date: string
-  end_date: string
+  /** Os quatro da viagem: nulos no post sem viagem. */
+  title: string | null
+  destination: string | null
+  start_date: string | null
+  end_date: string | null
   caption: string | null
-  cover_url: string | null
+  /** A 1ª foto assinada; nula só no post de viagem sem fotos (ou se a assinatura falhar). */
+  foto: string | null
 }
 
 /**
@@ -88,16 +94,16 @@ export type AbaMarcacoes = {
 export const COLUNAS_MARCACAO =
   "post_id, created_at, " +
   "autor:profiles!post_tags_author_id_fkey(id, username, full_name, avatar_url), " +
-  "post:trip_posts!post_tags_post_id_fkey(title, destination, start_date, end_date, caption, cover_path)"
+  "post:posts!post_tags_post_id_fkey(title, destination, start_date, end_date, caption, photos)"
 
 type LinhaDoAutor = { id: string; username: string | null; full_name: string | null; avatar_url: string | null }
 type LinhaDoPost = {
-  title: string
-  destination: string
-  start_date: string
-  end_date: string
+  title: string | null
+  destination: string | null
+  start_date: string | null
+  end_date: string | null
   caption: unknown
-  cover_path: string | null
+  photos: unknown
 }
 type LinhaDaMarcacao = {
   post_id: string
@@ -148,15 +154,13 @@ export async function marcacoesDoPerfil(
       !!linha.autor?.username && (linha.post !== null || proprio),
   )
 
-  const [fotos, capas] = await Promise.all([
+  const primeiras = linhas.map(({ post }) => (post ? (fotosGravadas(post.photos)[0] ?? null) : null))
+  const [fotos, links] = await Promise.all([
     assinarAvatares(
       criarAdmin,
       linhas.map(({ autor }) => ({ id: autor.id, avatar_url: autor.avatar_url })),
     ),
-    assinarCapas(
-      criarAdmin,
-      linhas.map(({ post }) => post?.cover_path ?? null),
-    ),
+    assinarFotos(criarAdmin, primeiras),
   ])
 
   return {
@@ -176,7 +180,7 @@ export async function marcacoesDoPerfil(
             start_date: linha.post.start_date,
             end_date: linha.post.end_date,
             caption: legenda(linha.post.caption),
-            cover_url: (linha.post.cover_path && capas.get(linha.post.cover_path)) || null,
+            foto: (primeiras[i] && links.get(primeiras[i]!)) || null,
           }
         : null,
     })),

@@ -49,8 +49,11 @@ export const MAXIMO_LEGENDA = 280
 export const MAXIMO_LUGARES_NO_POST = 200
 /** Teto do endereço de um lugar: o mesmo de `social_lugares_do_post_validos`. */
 export const MAXIMO_ENDERECO = 300
-/** Teto de marcados num post. */
-export const MAXIMO_MARCADOS = 50
+/** Teto de marcados num post (decisão de 18/11, noite: até 20, como num post do Instagram). */
+export const MAXIMO_MARCADOS = 20
+/** Fotos de um post: de 1 a 3; só o post de viagem pode ficar com 0 (mostra o grafismo). */
+export const MINIMO_FOTOS = 1
+export const MAXIMO_FOTOS = 3
 
 /** Tamanho em caracteres, como o `char_length` do Postgres: um emoji conta 1. */
 export const caracteres = (texto: string) => [...texto].length
@@ -125,7 +128,7 @@ const textoOpcional = (nome: string, maximo: number) =>
 
 const tituloSchema = textoOpcional("o título", MAXIMO_TITULO)
 
-const legendaSchema = textoOpcional("a legenda", MAXIMO_LEGENDA)
+export const legendaSchema = textoOpcional("a legenda", MAXIMO_LEGENDA)
 
 export const roteiroSchema = z
   .object(
@@ -171,7 +174,8 @@ export const lugaresSchema = z
   )
   .nullable()
 
-export const marcadosSchema = z
+/** Os marcados, sem o padrão: o PATCH distingue "não mexer" (ausente) de "ninguém" (`[]`). */
+export const listaDeMarcadosSchema = z
   .array(uuidMinusculo("pessoa marcada inválida"), { invalid_type_error: "informe os marcados em uma lista" })
   .max(MAXIMO_MARCADOS, `marque até ${MAXIMO_MARCADOS} pessoas`)
   .superRefine(
@@ -181,7 +185,8 @@ export const marcadosSchema = z
       "pessoa marcada repetida",
     ),
   )
-  .default([])
+
+export const marcadosSchema = listaDeMarcadosSchema.default([])
 
 export const pedidoPostSchema = z
   .object(
@@ -206,3 +211,75 @@ export type EscolhaDoRoteiro = NonNullable<PedidoPost["roteiro"]>
 export type LugarEscolhido = NonNullable<PedidoPost["lugares"]>[number]
 /** `"nenhum"`, `"google"` ou o endereço digitado, já limpo. */
 export type EnderecoDoLugar = LugarEscolhido["endereco"]
+
+/**
+ * O id de um post na URL (`/api/social/posts/[postId]`): uuid, em minúsculas.
+ * Fora do formato é 400 sem ir ao banco (o Postgres responderia 22P02).
+ *
+ * @RF09.17 detalhe do post
+ */
+export const postIdSchema = z.string().uuid("publicação inválida").transform((id) => id.toLowerCase())
+
+/**
+ * Os campos de texto do multipart de POST /api/social/posts (o post com fotos):
+ * `legenda` (opcional, até 280, a mesma regra do post de viagem) e `marcados`
+ * (opcional, uma lista JSON de uuids, até `MAXIMO_MARCADOS`, sem repetição).
+ * As fotos são conferidas à parte, pelos bytes (lib/social/capa.ts). Estrito:
+ * outro campo de texto (`author_id`, `photos`, `trip_id`...) é 400.
+ *
+ * @RF09.15 post com fotos · @RF09.13 marcar
+ */
+const marcadosEmJsonSchema = z
+  .string({ invalid_type_error: "envie os marcados como uma lista JSON" })
+  .transform((texto, ctx) => {
+    try {
+      return JSON.parse(texto) as unknown
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "envie os marcados como uma lista JSON" })
+      return z.NEVER
+    }
+  })
+  .pipe(listaDeMarcadosSchema)
+
+export const novoPostSchema = z
+  .object(
+    {
+      legenda: legendaSchema,
+      marcados: marcadosEmJsonSchema.optional().transform((lista) => lista ?? []),
+    },
+    { invalid_type_error: "envie os campos do post" },
+  )
+  .strict("campo não permitido no post")
+
+export type NovoPost = z.infer<typeof novoPostSchema>
+
+/**
+ * O corpo de PATCH /api/social/posts/[postId]: editar a legenda e as
+ * marcações depois de publicar, como no Instagram. As fotos não mudam (só no
+ * post de viagem, pela rota de fotos dele). Cada campo é opcional, mas pelo
+ * menos um vem: ausente é "não mexer"; `legenda: null` (ou vazia) tira a
+ * legenda; `marcados: []` desmarca todo mundo. Estrito.
+ *
+ * @RF09.15 editar o post · @RF09.13 marcar
+ */
+const legendaEditadaSchema = z
+  .string({ invalid_type_error: "a legenda deve ser texto" })
+  .nullable()
+  .transform((texto) => (texto === null ? null : limparTextoLivre(texto)))
+  .refine(
+    (texto) => texto === null || caracteres(texto) <= MAXIMO_LEGENDA,
+    `a legenda pode ter até ${MAXIMO_LEGENDA} caracteres`,
+  )
+
+export const editarPostSchema = z
+  .object(
+    {
+      legenda: legendaEditadaSchema.optional(),
+      marcados: listaDeMarcadosSchema.optional(),
+    },
+    { invalid_type_error: "envie as alterações do post em um objeto" },
+  )
+  .strict("campo não permitido: só a legenda e as marcações mudam depois de publicar")
+  .refine((dados) => dados.legenda !== undefined || dados.marcados !== undefined, "envie a legenda ou os marcados")
+
+export type EdicaoDoPost = z.infer<typeof editarPostSchema>

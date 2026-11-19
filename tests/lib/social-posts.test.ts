@@ -4,9 +4,11 @@
  * nunca notas, coordenadas, status, preço nem ids; texto do grupo acima dos tetos do CHECK fica fora sem
  * derrubar a publicação; data, hora e categoria fora do formato do CHECK saem do item; campo da viagem
  * fora dos CHECKs de trip_posts é 400 com código (ViagemForaDoPost); título e legenda só com invisíveis
- * valem como vazios; as escritas usam só as colunas do grant, sem trip_id
+ * valem como vazios; as escritas usam só as colunas do grant, sem trip_id; as fotos trocam por inteiro,
+ * condicionadas às lidas (409 em corrida)
  */
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach } from "vitest"
+import { banco, semearPost } from "../api/banco-falso"
 import type { ItemPublico } from "@/lib/trips/publico"
 import type { PedidoPost } from "@/lib/schemas/post"
 import { ErroHttp } from "@/lib/http"
@@ -22,7 +24,9 @@ import {
   MAXIMO_TITULO_VIAGEM,
   ViagemForaDoPost,
   atualizar,
-  definirCapa,
+  definirFotos,
+  fotosGravadas,
+  viagemDaLinha,
   despublicar,
   lugaresDaProjecao,
   montarPost,
@@ -592,70 +596,13 @@ describe("montarPost — pureza", () => {
   })
 })
 // ---------------------------------------------------------------------------
-// Funções de banco, com um cliente dublado
+// Funções de banco, sobre o banco falso (tests/api/banco-falso.ts)
 // ---------------------------------------------------------------------------
-
-type Resposta = { data: unknown; error: { code?: string; message?: string } | null }
-type Chamada = [metodo: string, ...args: unknown[]]
-
-/**
- * Cliente falso: cada `from(tabela)` consome a próxima resposta da fila e
- * registra o encadeamento inteiro (`select`, `insert`, `update`, `delete`,
- * `eq`, `is`) até o terminal (`single` ou `maybeSingle`). `rpc` registra o nome
- * e os argumentos e responde com `rpc`.
- */
-function clienteFalso({ rpc, respostas = [] }: { rpc?: Resposta; respostas?: Resposta[] }) {
-  const consultas: { tabela: string; chamadas: Chamada[] }[] = []
-  const rpcs: [string, unknown][] = []
-  const fila = [...respostas]
-
-  const from = (tabela: string) => {
-    const consulta = { tabela, chamadas: [] as Chamada[] }
-    consultas.push(consulta)
-    const resposta = fila.shift() ?? { data: null, error: null }
-    const encadeia =
-      (metodo: string) =>
-      (...args: unknown[]) => {
-        consulta.chamadas.push([metodo, ...args])
-        return construtor
-      }
-    const termina =
-      (metodo: string) =>
-      () => {
-        consulta.chamadas.push([metodo])
-        return Promise.resolve(resposta)
-      }
-    const construtor = {
-      select: encadeia("select"),
-      insert: encadeia("insert"),
-      update: encadeia("update"),
-      delete: encadeia("delete"),
-      eq: encadeia("eq"),
-      is: encadeia("is"),
-      single: termina("single"),
-      maybeSingle: termina("maybeSingle"),
-    }
-    return construtor
-  }
-
-  const cliente = {
-    from,
-    rpc: (nome: string, args: unknown) => {
-      rpcs.push([nome, args])
-      return Promise.resolve(rpc ?? { data: null, error: null })
-    },
-  }
-  return { cliente: cliente as unknown as Parameters<typeof postDaViagem>[0], consultas, rpcs }
-}
 
 const VIAGEM = "99999999-9999-4999-8999-999999999999"
 const AUTOR = "11111111-1111-4111-8111-111111111111"
-const POST = "77777777-7777-4777-8777-777777777777"
-const CAPA_VELHA = `${AUTOR}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
-const CAPA_NOVA = `${AUTOR}/1c7a3d5f-6e8b-4b9f-8c2d-3a4f5e6b7c8d.png`
-
-const COLUNAS_ESPERADAS =
-  "id, title, destination, start_date, end_date, caption, items, places, cover_path, created_at, updated_at"
+const FOTO_1 = `${AUTOR}/0b6f2c4e-5d7a-4a8e-9b1c-2f3e4d5a6b7c.webp`
+const FOTO_2 = `${AUTOR}/1c7a3d5f-6e8b-4b9f-8c2d-3a4f5e6b7c8d.webp`
 
 const COPIA: CopiaDoPost = {
   title: "Chapada",
@@ -667,370 +614,112 @@ const COPIA: CopiaDoPost = {
   places: [{ name: "Mirante", address: "Estrada, km 3" }],
 }
 
-/** Linha "do banco", com `trip_id` e `author_id` de propósito: não podem chegar à rota. */
-const LINHA = {
-  id: POST,
-  trip_id: VIAGEM,
-  author_id: AUTOR,
-  title: "Chapada",
-  destination: "Alto Paraíso",
-  start_date: "2026-12-01",
-  end_date: "2026-12-05",
-  caption: "Que viagem!",
-  items: [{ title: "Trilha", location: "Vale da Lua" }],
-  places: [{ name: "Mirante", address: "Estrada, km 3" }],
-  cover_path: null,
-  created_at: "2026-11-16T10:00:00Z",
-  updated_at: "2026-11-16T10:00:00Z",
-}
-
 const CHAVES_DO_POST = [
   "caption",
-  "cover_path",
   "created_at",
   "destination",
   "end_date",
   "id",
   "items",
+  "photos",
   "places",
   "start_date",
   "title",
   "updated_at",
 ]
 
-const ERRO_CRU = { code: "XX000", message: 'relation "trip_posts" column trip_id secret detail' }
+const sessao = () => banco.clienteDaSessao()
 
-/** O erro lançado não pode carregar a mensagem do Postgres. */
-async function lancaSemMensagemCrua(promessa: Promise<unknown>) {
-  const erro = await promessa.then(
-    () => null,
-    (e: unknown) => e,
-  )
-  expect(erro).toBeInstanceOf(Error)
-  expect(erro).not.toBeInstanceOf(ErroHttp)
-  expect((erro as Error).message).not.toContain("trip_id")
-  expect((erro as Error).message).not.toContain("secret")
-  expect((erro as Error).cause).toBe(ERRO_CRU)
+function postGravado(campos: Record<string, unknown> = {}) {
+  return semearPost({ author_id: AUTOR, trip_id: VIAGEM, ...COPIA, ...campos })
 }
 
-async function lancaHttp(promessa: Promise<unknown>, status: number) {
-  const erro = await promessa.then(
-    () => null,
-    (e: unknown) => e,
-  )
-  expect(erro).toBeInstanceOf(ErroHttp)
-  expect((erro as ErroHttp).status).toBe(status)
-  return erro as ErroHttp
-}
+describe("funções de banco do post de viagem (posts)", () => {
+  beforeEach(() => {
+    banco.reiniciar()
+    banco.tabelas.profiles.push({ id: AUTOR, username: "autor" })
+    banco.membros.set(VIAGEM, [AUTOR])
+    banco.sessao = AUTOR
+  })
 
-describe("postDaViagem", () => {
-  it("acha o id pela função do banco e lê as colunas listadas, sem trip_id nem author_id", async () => {
-    const { cliente, consultas, rpcs } = clienteFalso({
-      rpc: { data: POST, error: null },
-      respostas: [{ data: LINHA, error: null }],
-    })
-
-    const post = await postDaViagem(cliente, VIAGEM)
-
-    expect(rpcs).toEqual([["social_meu_post_da_viagem", { viagem: VIAGEM }]])
-    expect(consultas).toEqual([
-      {
-        tabela: "trip_posts",
-        chamadas: [["select", COLUNAS_ESPERADAS], ["eq", "id", POST], ["maybeSingle"]],
-      },
-    ])
-    expect(COLUNAS_ESPERADAS).not.toMatch(/trip_id|author_id|\*/)
+  it("postDaViagem: acha pela função do banco e devolve sem trip_id nem author_id; sem post, null sem ler a tabela", async () => {
+    expect(await postDaViagem(sessao(), VIAGEM)).toBeNull()
+    expect(banco.consultas).toEqual([])
+    const linha = postGravado({ photos: [FOTO_1], items: [{ title: "Trilha", notes: "senha", latitude: -14 }] })
+    const post = await postDaViagem(sessao(), VIAGEM)
     expect(Object.keys(post!).sort()).toEqual(CHAVES_DO_POST)
-    expect(post).toMatchObject({
-      id: POST,
+    expect(post).toMatchObject({ id: linha.id, photos: [FOTO_1], items: [{ title: "Trilha" }] })
+    expect(banco.consultas[0].colunas).not.toMatch(/trip_id|author_id|\*/)
+  })
+
+  it("postDaViagem: erro da função lança sem a mensagem crua", async () => {
+    banco.falhas.push({ tabela: "rpc:social_meu_post_da_viagem", operacao: "rpc", erro: { code: "XX000", message: "cru" } })
+    const erro = await postDaViagem(sessao(), VIAGEM).catch((e: Error) => e)
+    expect(erro).not.toBeInstanceOf(ErroHttp)
+    expect((erro as Error).message).not.toContain("cru")
+  })
+
+  it("publicar: só as colunas do grant, sem photos, e devolve o post", async () => {
+    const copiaSuja = { ...COPIA, photos: [FOTO_1], notes: "x" } as CopiaDoPost
+    const post = await publicar(sessao(), { tripId: VIAGEM, autorId: AUTOR, copia: copiaSuja })
+    expect(Object.keys(banco.consultas[0].valores as object).sort()).toEqual(
+      ["author_id", "caption", "destination", "end_date", "items", "places", "start_date", "title", "trip_id"],
+    )
+    expect(post.photos).toEqual([])
+  })
+
+  it("publicar: 23505 vira 409 e 42501 vira 403", async () => {
+    banco.falhas.push({ tabela: "posts", operacao: "insert", erro: { code: "23505" } })
+    await expect(publicar(sessao(), { tripId: VIAGEM, autorId: AUTOR, copia: COPIA })).rejects.toMatchObject({ status: 409 })
+    banco.membros.set(VIAGEM, [])
+    await expect(publicar(sessao(), { tripId: VIAGEM, autorId: AUTOR, copia: COPIA })).rejects.toMatchObject({ status: 403 })
+  })
+
+  it("atualizar: só o conteúdo; null quando nenhuma linha mudou", async () => {
+    const linha = postGravado({ photos: [FOTO_1] })
+    const post = await atualizar(sessao(), linha.id as string, { ...COPIA, caption: "nova" })
+    expect(post).toMatchObject({ caption: "nova", photos: [FOTO_1] })
+    expect(Object.keys(banco.consultas.at(-1)!.valores as object)).not.toContain("photos")
+    expect(await atualizar(sessao(), "88888888-8888-4888-8888-888888888888", COPIA)).toBeNull()
+  })
+
+  it("definirFotos: troca condicionada às fotos lidas e devolve as anteriores; post alheio null; corrida 409", async () => {
+    const linha = postGravado({ photos: [FOTO_1] })
+    expect(await definirFotos(sessao(), linha.id as string, [FOTO_2])).toEqual({ fotosAnteriores: [FOTO_1] })
+    expect(linha.photos).toEqual([FOTO_2])
+    expect(await definirFotos(sessao(), linha.id as string, [])).toEqual({ fotosAnteriores: [FOTO_2] })
+    expect(await definirFotos(sessao(), "88888888-8888-4888-8888-888888888888", [])).toBeNull()
+
+    banco.antesDe = (tabela, operacao) => {
+      if (tabela === "posts" && operacao === "update") linha.photos = [FOTO_1]
+    }
+    await expect(definirFotos(sessao(), linha.id as string, [FOTO_2])).rejects.toMatchObject({ status: 409 })
+  })
+
+  it("definirFotos: caminho gravado fora do formato não vira filtro", async () => {
+    const linha = postGravado({ photos: ["https://x/y.webp"] })
+    await expect(definirFotos(sessao(), linha.id as string, [FOTO_1])).rejects.toThrow(/fora do formato/)
+  })
+
+  it("despublicar: apaga e devolve as fotos; null quando nada foi apagado", async () => {
+    const linha = postGravado({ photos: [FOTO_1, FOTO_2] })
+    expect(await despublicar(sessao(), linha.id as string)).toEqual({ fotosAnteriores: [FOTO_1, FOTO_2] })
+    expect(await despublicar(sessao(), linha.id as string)).toBeNull()
+    banco.falhas.push({ tabela: "posts", operacao: "delete", erro: { code: "42501" } })
+    await expect(despublicar(sessao(), linha.id as string)).rejects.toMatchObject({ status: 403 })
+  })
+
+  it("viagemDaLinha: null sem os quatro campos; lista branca nos itens; fotosGravadas só texto", () => {
+    expect(viagemDaLinha({ title: null })).toBeNull()
+    expect(viagemDaLinha({ ...COPIA, items: [{ title: "T", notes: "x" }], places: "não lista" })).toStrictEqual({
       title: "Chapada",
-      caption: "Que viagem!",
-      items: [{ title: "Trilha", location: "Vale da Lua" }],
-      places: [{ name: "Mirante", address: "Estrada, km 3" }],
+      destination: "Alto Paraíso",
+      start_date: "2026-12-01",
+      end_date: "2026-12-05",
+      items: [{ title: "T" }],
+      places: [],
     })
-  })
-
-  it("sem post da sessão nessa viagem, devolve null e não consulta a tabela", async () => {
-    const { cliente, consultas } = clienteFalso({ rpc: { data: null, error: null } })
-    expect(await postDaViagem(cliente, VIAGEM)).toBeNull()
-    expect(consultas).toEqual([])
-  })
-
-  it("post apagado entre a função e o select: null", async () => {
-    const { cliente } = clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: null, error: null }] })
-    expect(await postDaViagem(cliente, VIAGEM)).toBeNull()
-  })
-
-  it("erro da função ou do select lança sem a mensagem crua", async () => {
-    await lancaSemMensagemCrua(postDaViagem(clienteFalso({ rpc: { data: null, error: ERRO_CRU } }).cliente, VIAGEM))
-    await lancaSemMensagemCrua(
-      postDaViagem(
-        clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: null, error: ERRO_CRU }] }).cliente,
-        VIAGEM,
-      ),
-    )
-  })
-
-  it("o items gravado volta pela mesma lista branca: chave estranha e item malformado não chegam à rota", async () => {
-    const gravado = {
-      ...LINHA,
-      items: [
-        { title: "Trilha", notes: "senha", latitude: -14, date: "2026-12-02", location: "" },
-        "não é objeto",
-        null,
-        { location: "sem título" },
-      ],
-    }
-    const { cliente } = clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: gravado, error: null }] })
-    const post = await postDaViagem(cliente, VIAGEM)
-    expect(post!.items).toStrictEqual([{ title: "Trilha", date: "2026-12-02" }])
-  })
-
-  it("o items gravado passa pela mesma conferência de formato (R2): só volta o que o CHECK aceita", async () => {
-    const gravado = {
-      ...LINHA,
-      items: [{ title: "Trilha", date: "0044-03-15 BC", start_time: "24:00:00", end_time: "10:00", category: "hotel" }],
-    }
-    const { cliente } = clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: gravado, error: null }] })
-    const post = await postDaViagem(cliente, VIAGEM)
-    expect(post!.items).toStrictEqual([{ title: "Trilha", end_time: "10:00" }])
-  })
-
-  it("caption gravada só com invisíveis volta null (R3)", async () => {
-    const { cliente } = clienteFalso({
-      rpc: { data: POST, error: null },
-      respostas: [{ data: { ...LINHA, caption: "​﻿⁠" }, error: null }],
-    })
-    expect((await postDaViagem(cliente, VIAGEM))!.caption).toBeNull()
-  })
-
-  it("items e places que não são lista viram lista vazia", async () => {
-    const { cliente } = clienteFalso({
-      rpc: { data: POST, error: null },
-      respostas: [{ data: { ...LINHA, items: { title: "x" }, places: "Mirante" }, error: null }],
-    })
-    const post = await postDaViagem(cliente, VIAGEM)
-    expect(post!.items).toEqual([])
-    expect(post!.places).toEqual([])
-  })
-
-  it("o places gravado volta pela lista branca: notas, coordenadas e lugar sem nome não chegam à rota", async () => {
-    const gravado = {
-      ...LINHA,
-      places: [
-        { name: "Mirante", notes: "senha", latitude: -14, rating: 5, place_id: "ChIJ", category: "viewpoint" },
-        { name: "Bar", address: "Rua B", visited: true },
-        ["lista"],
-        null,
-        { address: "sem nome" },
-      ],
-    }
-    const { cliente } = clienteFalso({ rpc: { data: POST, error: null }, respostas: [{ data: gravado, error: null }] })
-    const post = await postDaViagem(cliente, VIAGEM)
-    expect(post!.places).toStrictEqual([{ name: "Mirante", category: "viewpoint" }, { name: "Bar", address: "Rua B" }])
-  })
-
-  it.each([
-    ["nula", null],
-    ["vazia", ""],
-    ["que não é texto", 42],
-  ])("caption gravada %s volta null", async (_caso, caption) => {
-    const { cliente } = clienteFalso({
-      rpc: { data: POST, error: null },
-      respostas: [{ data: { ...LINHA, caption }, error: null }],
-    })
-    expect((await postDaViagem(cliente, VIAGEM))!.caption).toBeNull()
-  })
-})
-
-describe("publicar", () => {
-  it("insere só as colunas do grant, campo a campo, sem cover_path, e devolve sem trip_id nem author_id", async () => {
-    const { cliente, consultas } = clienteFalso({ respostas: [{ data: LINHA, error: null }] })
-    // Chaves a mais na cópia (em runtime) não podem chegar ao INSERT.
-    const copiaSuja = { ...COPIA, cover_path: CAPA_NOVA, notes: "x", id: POST } as CopiaDoPost
-
-    const post = await publicar(cliente, { tripId: VIAGEM, autorId: AUTOR, copia: copiaSuja })
-
-    expect(consultas).toHaveLength(1)
-    const [{ tabela, chamadas }] = consultas
-    expect(tabela).toBe("trip_posts")
-    expect(chamadas).toEqual([
-      [
-        "insert",
-        {
-          trip_id: VIAGEM,
-          author_id: AUTOR,
-          title: "Chapada",
-          destination: "Alto Paraíso",
-          start_date: "2026-12-01",
-          end_date: "2026-12-05",
-          caption: "Que viagem!",
-          items: [{ title: "Trilha", location: "Vale da Lua" }],
-          places: [{ name: "Mirante", address: "Estrada, km 3" }],
-        },
-      ],
-      ["select", COLUNAS_ESPERADAS],
-      ["single"],
-    ])
-    expect(Object.keys(post).sort()).toEqual(CHAVES_DO_POST)
-  })
-
-  it("23505 (a sessão já publicou esta viagem) vira 409", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: null, error: { code: "23505", message: "duplicate key" } }] })
-    const erro = await lancaHttp(publicar(cliente, { tripId: VIAGEM, autorId: AUTOR, copia: COPIA }), 409)
-    expect(erro.message).toBe("Você já publicou esta viagem")
-  })
-
-  it("42501 (policy: não-membro ou sem username) vira 403 sem a mensagem do banco", async () => {
-    const { cliente } = clienteFalso({
-      respostas: [{ data: null, error: { code: "42501", message: "new row violates row-level security policy" } }],
-    })
-    const erro = await lancaHttp(publicar(cliente, { tripId: VIAGEM, autorId: AUTOR, copia: COPIA }), 403)
-    expect(erro.message).not.toContain("row-level")
-  })
-
-  it("outro erro lança sem a mensagem crua", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: null, error: ERRO_CRU }] })
-    await lancaSemMensagemCrua(publicar(cliente, { tripId: VIAGEM, autorId: AUTOR, copia: COPIA }))
-  })
-})
-
-describe("atualizar", () => {
-  it("atualiza só o conteúdo, pelo id, e devolve o post", async () => {
-    const { cliente, consultas } = clienteFalso({ respostas: [{ data: LINHA, error: null }] })
-    const copiaSuja = { ...COPIA, trip_id: "outra", author_id: "outro", cover_path: CAPA_NOVA } as CopiaDoPost
-
-    const post = await atualizar(cliente, POST, copiaSuja)
-
-    expect(consultas[0].chamadas).toEqual([
-      [
-        "update",
-        {
-          title: "Chapada",
-          destination: "Alto Paraíso",
-          start_date: "2026-12-01",
-          end_date: "2026-12-05",
-          caption: "Que viagem!",
-          items: [{ title: "Trilha", location: "Vale da Lua" }],
-          places: [{ name: "Mirante", address: "Estrada, km 3" }],
-        },
-      ],
-      ["eq", "id", POST],
-      ["select", COLUNAS_ESPERADAS],
-      ["maybeSingle"],
-    ])
-    expect(Object.keys(post!).sort()).toEqual(CHAVES_DO_POST)
-  })
-
-  it("0 linhas (post inexistente ou de outra pessoa) devolve null", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: null, error: null }] })
-    expect(await atualizar(cliente, POST, COPIA)).toBeNull()
-  })
-
-  it("autor que saiu da viagem esbarra na policy (42501) e recebe 403", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: null, error: { code: "42501" } }] })
-    await lancaHttp(atualizar(cliente, POST, COPIA), 403)
-  })
-
-  it("outro erro lança sem a mensagem crua", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: null, error: ERRO_CRU }] })
-    await lancaSemMensagemCrua(atualizar(cliente, POST, COPIA))
-  })
-})
-
-describe("definirCapa", () => {
-  it("lê a capa atual, troca só cover_path se ela ainda for a lida, e devolve a anterior", async () => {
-    const { cliente, consultas } = clienteFalso({
-      respostas: [
-        { data: { cover_path: CAPA_VELHA }, error: null },
-        { data: { id: POST }, error: null },
-      ],
-    })
-
-    expect(await definirCapa(cliente, POST, CAPA_NOVA)).toEqual({ capaAnterior: CAPA_VELHA })
-    expect(consultas.map((c) => c.chamadas)).toEqual([
-      [["select", "cover_path"], ["eq", "id", POST], ["maybeSingle"]],
-      [["update", { cover_path: CAPA_NOVA }], ["eq", "id", POST], ["eq", "cover_path", CAPA_VELHA], ["select", "id"], ["maybeSingle"]],
-    ])
-  })
-
-  it("sem capa antes, condiciona com is null; tirar a capa grava null", async () => {
-    const { cliente, consultas } = clienteFalso({
-      respostas: [
-        { data: { cover_path: null }, error: null },
-        { data: { id: POST }, error: null },
-      ],
-    })
-    expect(await definirCapa(cliente, POST, null)).toEqual({ capaAnterior: null })
-    expect(consultas[1].chamadas).toEqual([
-      ["update", { cover_path: null }],
-      ["eq", "id", POST],
-      ["is", "cover_path", null],
-      ["select", "id"],
-      ["maybeSingle"],
-    ])
-  })
-
-  it("post inexistente ou de outra pessoa: null, sem tentar atualizar", async () => {
-    const { cliente, consultas } = clienteFalso({ respostas: [{ data: null, error: null }] })
-    expect(await definirCapa(cliente, POST, CAPA_NOVA)).toBeNull()
-    expect(consultas).toHaveLength(1)
-  })
-
-  it("a capa mudou entre a leitura e a troca (outra aba): 409", async () => {
-    const { cliente } = clienteFalso({
-      respostas: [
-        { data: { cover_path: CAPA_VELHA }, error: null },
-        { data: null, error: null },
-      ],
-    })
-    await lancaHttp(definirCapa(cliente, POST, CAPA_NOVA), 409)
-  })
-
-  it("autor que saiu da viagem (42501) recebe 403; outro erro sai sem a mensagem crua", async () => {
-    await lancaHttp(
-      definirCapa(
-        clienteFalso({
-          respostas: [
-            { data: { cover_path: null }, error: null },
-            { data: null, error: { code: "42501" } },
-          ],
-        }).cliente,
-        POST,
-        CAPA_NOVA,
-      ),
-      403,
-    )
-    await lancaSemMensagemCrua(
-      definirCapa(clienteFalso({ respostas: [{ data: null, error: ERRO_CRU }] }).cliente, POST, CAPA_NOVA),
-    )
-  })
-})
-
-describe("despublicar", () => {
-  it("apaga pelo id e devolve a capa que o post tinha", async () => {
-    const { cliente, consultas } = clienteFalso({ respostas: [{ data: { cover_path: CAPA_VELHA }, error: null }] })
-    expect(await despublicar(cliente, POST)).toEqual({ capaAnterior: CAPA_VELHA })
-    expect(consultas).toEqual([
-      {
-        tabela: "trip_posts",
-        chamadas: [["delete"], ["eq", "id", POST], ["select", "cover_path"], ["maybeSingle"]],
-      },
-    ])
-  })
-
-  it("post sem capa: apagado, com capaAnterior null", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: { cover_path: null }, error: null }] })
-    expect(await despublicar(cliente, POST)).toEqual({ capaAnterior: null })
-  })
-
-  it("nada apagado (post inexistente ou de outra pessoa): null", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: null, error: null }] })
-    expect(await despublicar(cliente, POST)).toBeNull()
-  })
-
-  it("erro lança sem a mensagem crua", async () => {
-    const { cliente } = clienteFalso({ respostas: [{ data: null, error: ERRO_CRU }] })
-    await lancaSemMensagemCrua(despublicar(cliente, POST))
+    expect(fotosGravadas([FOTO_1, 3, "", null])).toEqual([FOTO_1])
+    expect(fotosGravadas("x")).toEqual([])
   })
 })
