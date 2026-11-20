@@ -1,0 +1,43 @@
+
+ RUN  v4.1.11
+      Coverage enabled with v8
+
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > lista vazia devolve nenhum grupo 2ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > soma por categoria em centavos, sem erro de ponto flutuante 1ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > aceita o valor como texto, como o numeric pode chegar do banco 0ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > valor não numérico conta como zero em vez de envenenar o total com NaN 0ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > nunca soma moedas diferentes: Hospedagem BRL 300 + USD 100 são dois grupos 10ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > moeda nula entra como BRL, como no acerto de contas 1ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > percentual é sobre o total da moeda, e ordena do maior para o menor 8ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > empate no valor desempata pelo rótulo 0ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > moedas em ordem alfabética do código 0ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > conta despesas por categoria 0ms
+ ✓ tests/lib/finance-categorias.test.ts > relatorioPorCategoria > grupo só com despesas de valor zero não divide por zero 0ms
+ ✓ tests/lib/finance-categorias.test.ts > rótulos > as seis categorias têm rótulo pt-BR 0ms
+ ✓ tests/lib/finance-categorias.test.ts > rótulos > categoria desconhecida aparece com a própria chave 0ms
+ ✓ tests/lib/finance-categorias.test.ts > formatarPercentual > uma casa decimal com vírgula 0ms
+stderr | tests/components/finance-category-chart.test.tsx > FinanceCategoryChart > um bloco por moeda, sem somar moedas diferentes
+
+ ✓ tests/components/finance-category-chart.test.tsx > FinanceCategoryChart > sem despesas mostra o estado vazio e nenhum gráfico 36ms
+stderr | tests/components/finance-category-chart.test.tsx > FinanceCategoryChart > o gráfico de cada moeda tem descrição com categoria, valor e participação
+
+ ✓ tests/components/finance-category-chart.test.tsx > FinanceCategoryChart > um bloco por moeda, sem somar moedas diferentes 141ms
+ ✓ tests/components/finance-category-chart.test.tsx > FinanceCategoryChart > o gráfico de cada moeda tem descrição com categoria, valor e participação 17ms
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  15:03:01
+   Duration  1.96s (transform 92ms, setup 405ms, import 449ms, tests 225ms, environment 835ms)
+
+ % Coverage report from v8
+---------------|---------|----------|---------|---------|-------------------
+File           | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+---------------|---------|----------|---------|---------|-------------------
+---------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 100% ( 25/25 )
+Branches     : 100% ( 14/14 )
+Functions    : 100% ( 10/10 )
+Lines        : 100% ( 23/23 )
+================================================================================
