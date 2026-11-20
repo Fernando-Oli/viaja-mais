@@ -1,5 +1,8 @@
 /**
  * @RF09.7 a projeção pública da viagem não carrega orçamento, notas, coordenadas nem membros
+ *
+ * Proposta do Micael (S06-M-publicar-viagem, 19/11) para revisão da Audrey: os
+ * testes cobrem também os lugares (lista branca, ordem, teto e erro).
  */
 import { describe, it, expect, vi } from "vitest"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -10,9 +13,14 @@ type Resposta = { data: unknown; error: unknown }
 /**
  * Cliente falso com os dois encadeamentos que o helper usa:
  * trips → select().eq().maybeSingle() e
- * itinerary_items → select().eq().or().order().order().limit().returns().
+ * itinerary_items → select().eq().or().order().order().limit().returns() e
+ * places → select().eq().order().limit().returns().
  */
-function clienteFalso(viagem: Resposta, itens: Resposta = { data: [], error: null }) {
+function clienteFalso(
+  viagem: Resposta,
+  itens: Resposta = { data: [], error: null },
+  lugares: Resposta = { data: [], error: null },
+) {
   const chamadas = {
     selectViagem: vi.fn(),
     selectItens: vi.fn(),
@@ -20,6 +28,17 @@ function clienteFalso(viagem: Resposta, itens: Resposta = { data: [], error: nul
     or: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
+    selectLugares: vi.fn(),
+    eqLugares: vi.fn(),
+    orderLugares: vi.fn(),
+    limitLugares: vi.fn(),
+  }
+
+  const consultaLugares = {
+    eq: (...a: unknown[]) => (chamadas.eqLugares(...a), consultaLugares),
+    order: (...a: unknown[]) => (chamadas.orderLugares(...a), consultaLugares),
+    limit: (...a: unknown[]) => (chamadas.limitLugares(...a), consultaLugares),
+    returns: () => Promise.resolve(lugares),
   }
 
   const consultaItens = {
@@ -36,6 +55,14 @@ function clienteFalso(viagem: Resposta, itens: Resposta = { data: [], error: nul
         select: (c: string) => {
           chamadas.selectViagem(c)
           return { eq: () => ({ maybeSingle: () => Promise.resolve(viagem) }) }
+        },
+      }
+    }
+    if (tabela === "places") {
+      return {
+        select: (c: string) => {
+          chamadas.selectLugares(c)
+          return consultaLugares
         },
       }
     }
@@ -79,22 +106,41 @@ const ITEM_DO_BANCO = {
   status: "confirmed",
 }
 
+// Idem para o lugar: as colunas privadas vêm na linha e não podem sair.
+const LUGAR_DO_BANCO = {
+  id: "p1",
+  name: "Cachoeira Santa Bárbara",
+  category: "attraction",
+  address: "Cavalcante, GO",
+  notes: "chave do portão 1234",
+  latitude: -13.9,
+  longitude: -47.4,
+  rating: 4.8,
+  visited: true,
+  place_id: "ChIJ-segredo",
+  user_id: "u-dono",
+  created_at: "2026-11-01T10:00:00Z",
+}
+
 describe("projecaoPublicaDaViagem", () => {
-  it("devolve exatamente as chaves públicas da viagem e dos itens", async () => {
+  it("devolve exatamente as chaves públicas da viagem, dos itens e dos lugares", async () => {
     const { cliente } = clienteFalso(
       { data: VIAGEM_DO_BANCO, error: null },
       { data: [ITEM_DO_BANCO], error: null },
+      { data: [LUGAR_DO_BANCO], error: null },
     )
 
     const viagem = await projecaoPublicaDaViagem(cliente, "t1")
 
     // Trava as chaves: coluna nova só chega ao post se alguém decidir.
     expect(Object.keys(viagem!).sort()).toEqual(
-      ["destination", "end_date", "itens", "start_date", "title"].sort(),
+      ["destination", "end_date", "itens", "lugares", "start_date", "title"].sort(),
     )
     expect(Object.keys(viagem!.itens[0]).sort()).toEqual(
       ["category", "date", "description", "end_time", "id", "location", "start_time", "title"].sort(),
     )
+    expect(Object.keys(viagem!.lugares[0]).sort()).toEqual(["address", "category", "id", "name"].sort())
+    expect(JSON.stringify(viagem!.lugares)).not.toMatch(/1234|ChIJ|4\.8|-13\.9|-47\.4|u-dono|visited/)
     expect(viagem).toEqual({
       title: "Chapada",
       destination: "Alto Paraíso",
@@ -112,6 +158,7 @@ describe("projecaoPublicaDaViagem", () => {
           description: null,
         },
       ],
+      lugares: [{ id: "p1", name: "Cachoeira Santa Bárbara", category: "attraction", address: "Cavalcante, GO" }],
     })
   })
 
@@ -124,6 +171,32 @@ describe("projecaoPublicaDaViagem", () => {
     expect(chamadas.selectItens).toHaveBeenCalledWith(
       "id, title, date, start_time, end_time, category, location, description",
     )
+    expect(chamadas.selectLugares).toHaveBeenCalledWith("id, name, category, address")
+  })
+
+  it("lê os lugares da viagem na ordem da tela de lugares, com o teto do post", async () => {
+    const { cliente, chamadas } = clienteFalso({ data: VIAGEM_DO_BANCO, error: null })
+
+    await projecaoPublicaDaViagem(cliente, "t1")
+
+    expect(chamadas.eqLugares).toHaveBeenCalledWith("trip_id", "t1")
+    expect(chamadas.orderLugares).toHaveBeenCalledWith("created_at", { ascending: false })
+    expect(chamadas.limitLugares).toHaveBeenCalledWith(200)
+  })
+
+  it("viagem sem lugares devolve lista vazia", async () => {
+    const { cliente } = clienteFalso({ data: VIAGEM_DO_BANCO, error: null }, undefined, { data: null, error: null })
+
+    expect((await projecaoPublicaDaViagem(cliente, "t1"))!.lugares).toEqual([])
+  })
+
+  it("erro ao ler os lugares lança, como nos itens", async () => {
+    const { cliente } = clienteFalso({ data: VIAGEM_DO_BANCO, error: null }, undefined, {
+      data: null,
+      error: { message: "falhou" },
+    })
+
+    await expect(projecaoPublicaDaViagem(cliente, "t1")).rejects.toThrow("Não foi possível ler os lugares")
   })
 
   it("filtra a viagem, tira os cancelados (mantendo status nulo) e ordena com nulos por último", async () => {
@@ -158,6 +231,7 @@ describe("projecaoPublicaDaViagem", () => {
 
     expect(await projecaoPublicaDaViagem(cliente, "t1")).toBeNull()
     expect(from).not.toHaveBeenCalledWith("itinerary_items")
+    expect(from).not.toHaveBeenCalledWith("places")
   })
 
   it("erro ao ler a viagem devolve null", async () => {
