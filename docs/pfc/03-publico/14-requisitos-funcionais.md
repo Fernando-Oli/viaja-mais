@@ -241,14 +241,15 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 
 | ID | Descrição | Status | Prioridade | Regras |
 |---|---|---|---|---|
-| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Parcial | Alta | RNE-025 |
-| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | Alta | RNE-025 |
-| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | Média | RNE-025 |
+| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Existente | Alta | RNE-025 |
+| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Existente | Alta | RNE-025 |
+| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Existente | Média | RNE-025 |
 
 **Detalhamento:**
 
-- **RF12.1** — A geração está em `POST /api/roteiros/gerar`, atrás da interface `GeradorDeRoteiro` (`lib/ai/provider.ts`): um gerador determinístico para desenvolvimento e integração contínua (`lib/ai/fake.ts`) e o Gemini, na camada gratuita, como provedor real (`lib/ai/gemini.ts`). A saída do modelo é normalizada e validada por esquema (`lib/ai/roteiro.ts`) antes de chegar à tela, e a rota não grava nada. A geração se limita a cinco dias por viagem, para caber no tempo do RNF07.3. Fica parcial até a tela de revisão.
-- **RF12.2 e RF12.3** — A tela "Nova viagem com a Avori" ainda é a prévia: conduz a conversa, mas monta o roteiro a partir de um modelo fixo e não grava nada.
+- **RF12.1** — A geração está em `POST /api/roteiros/gerar`, atrás da interface `GeradorDeRoteiro` (`lib/ai/provider.ts`): um gerador determinístico para desenvolvimento e integração contínua (`lib/ai/fake.ts`) e o Gemini, na camada gratuita, como provedor real (`lib/ai/gemini.ts`). A saída do modelo é normalizada e validada por esquema (`lib/ai/roteiro.ts`) antes de chegar à tela, e a rota não grava nada. A geração se limita a cinco dias por viagem, para caber no tempo do RNF07.3.
+- **RF12.2** — A tela "Nova viagem com a Avori" (`app/dashboard/trips/criar/ia/page.tsx`) mostra o roteiro gerado para revisão: a pessoa edita o título da viagem e o título e o horário de cada atividade, remove o que não quiser e só então cria a viagem, pelas rotas de viagem e de itinerário, que validam tudo novamente. Descrição e local sugeridos pela IA não são editáveis na revisão, só removíveis junto com a atividade.
+- **RF12.3** — "Refazer" descarta o roteiro sem nenhuma escrita. O fluxo inteiro é coberto por `e2e/roteiro-ia.spec.ts`, que confere pela API que a viagem criada tem exatamente o roteiro editado, e por `tests/lib/ai-salvar.test.ts`.
 - **Condições atendidas pela rota** — A chave do provedor fica só no servidor, no cabeçalho da chamada; a saída do modelo é validada antes de virar itinerário; e a rota consome o limite de 10 gerações por usuário por hora (RNF07.4).
 
 ### 14.14 Notificações (RF13)
