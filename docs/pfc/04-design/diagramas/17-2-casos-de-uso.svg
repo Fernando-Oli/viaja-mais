@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1000" height="640" fill="#ffffff"/>
+  <defs>
+    <marker id="h" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#ffffff" stroke="#1f2a27"/></marker>
+    <g id="ator"><circle cx="0" cy="0" r="11" fill="none" stroke="#1f2a27" stroke-width="2"/><line x1="0" y1="11" x2="0" y2="42" stroke="#1f2a27" stroke-width="2"/><line x1="-18" y1="22" x2="18" y2="22" stroke="#1f2a27" stroke-width="2"/><line x1="0" y1="42" x2="-14" y2="64" stroke="#1f2a27" stroke-width="2"/><line x1="0" y1="42" x2="14" y2="64" stroke="#1f2a27" stroke-width="2"/></g>
+  </defs>
+  <text x="500" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2a27">Casos de uso da Avori (domínio de viagem em destaque)</text>
+  <rect x="200" y="45" width="600" height="580" rx="14" fill="#fbfaf6" stroke="#24483e" stroke-width="2"/>
+  <text x="215" y="68" font-size="14" font-weight="bold" fill="#24483e">Avori</text>
+
+  <!-- atores -->
+  <g font-size="13" fill="#1f2a27" text-anchor="middle">
+    <use href="#ator" x="90" y="80"/><text x="90" y="165">Visitante</text>
+    <use href="#ator" x="90" y="300"/><text x="90" y="385">Viajante</text>
+    <text x="90" y="400" font-size="11">(autenticado)</text>
+    <use href="#ator" x="910" y="250"/><text x="910" y="335">Membro</text>
+    <text x="910" y="350" font-size="11">da viagem</text>
+    <use href="#ator" x="910" y="480"/><text x="910" y="565">Dono</text>
+    <text x="910" y="580" font-size="11">da viagem</text>
+  </g>
+  <!-- generalizações -->
+  <line x1="910" y1="472" x2="910" y2="372" stroke="#1f2a27" stroke-width="1.5" marker-end="url(#h)"/>
+
+  <g font-size="12.5" fill="#1f2a27" text-anchor="middle">
+    <!-- visitante -->
+    <ellipse cx="330" cy="105" rx="105" ry="22" fill="#ffffff" stroke="#1f2a27"/><text x="330" y="109">Cadastrar-se (RF01.1)</text>
+    <ellipse cx="330" cy="155" rx="105" ry="22" fill="#ffffff" stroke="#1f2a27"/><text x="330" y="159">Entrar / redefinir senha</text>
+    <!-- viajante -->
+    <ellipse cx="330" cy="235" rx="105" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="330" y="239">Criar viagem (RF03.1)</text>
+    <ellipse cx="330" cy="285" rx="105" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="330" y="289">Listar viagens (RF03.4)</text>
+    <ellipse cx="330" cy="335" rx="105" ry="22" fill="#ffffff" stroke="#1f2a27"/><text x="330" y="339">Editar perfil (RF02)</text>
+    <ellipse cx="330" cy="385" rx="105" ry="22" fill="#ffffff" stroke="#1f2a27"/><text x="330" y="389">Pesquisar e seguir (RF09)</text>
+    <ellipse cx="330" cy="435" rx="105" ry="22" fill="#ffffff" stroke="#1f2a27"/><text x="330" y="439">Aceitar convite (RF04)</text>
+    <!-- membro -->
+    <ellipse cx="660" cy="105" rx="120" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="660" y="109">Ver detalhe da viagem (RF03.5)</text>
+    <ellipse cx="660" cy="155" rx="120" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="660" y="159">Gerir itinerário (RF05)</text>
+    <ellipse cx="660" cy="205" rx="120" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="660" y="209">Gerir reservas (RF07)</text>
+    <ellipse cx="660" cy="255" rx="120" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="660" y="259">Gerir lugares (RF08)</text>
+    <ellipse cx="660" cy="305" rx="120" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="660" y="309">Avaliar lugar (RF11)</text>
+    <ellipse cx="660" cy="355" rx="120" ry="22" fill="#ffffff" stroke="#1f2a27"/><text x="660" y="359">Despesas e acerto (RF06)</text>
+    <ellipse cx="660" cy="405" rx="120" ry="22" fill="#ffffff" stroke="#1f2a27" stroke-dasharray="5 4"/><text x="660" y="409">Publicar viagem (RF09.7)</text>
+    <!-- dono -->
+    <ellipse cx="660" cy="480" rx="120" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="660" y="484">Editar viagem (RF03.2)</text>
+    <ellipse cx="660" cy="530" rx="120" ry="22" fill="#eef3ea" stroke="#24483e"/><text x="660" y="534">Excluir viagem (RF03.3)</text>
+    <ellipse cx="660" cy="580" rx="120" ry="22" fill="#ffffff" stroke="#1f2a27"/><text x="660" y="584">Convidar / remover membro</text>
+  </g>
+  <g stroke="#1f2a27" stroke-width="1.2">
+    <line x1="110" y1="110" x2="225" y2="105"/><line x1="110" y1="120" x2="225" y2="155"/>
+    <line x1="110" y1="330" x2="225" y2="235"/><line x1="110" y1="335" x2="225" y2="285"/>
+    <line x1="110" y1="340" x2="225" y2="335"/><line x1="110" y1="345" x2="225" y2="385"/>
+    <line x1="110" y1="350" x2="225" y2="435"/>
+    <line x1="890" y1="275" x2="780" y2="105"/><line x1="890" y1="278" x2="780" y2="155"/>
+    <line x1="890" y1="281" x2="780" y2="205"/><line x1="890" y1="284" x2="780" y2="255"/>
+    <line x1="890" y1="287" x2="780" y2="305"/><line x1="890" y1="290" x2="780" y2="355"/>
+    <line x1="890" y1="293" x2="780" y2="405"/>
+    <line x1="890" y1="505" x2="780" y2="480"/><line x1="890" y1="510" x2="780" y2="530"/>
+    <line x1="890" y1="515" x2="780" y2="580"/>
+  </g>
+  <!-- legenda -->
+  <g font-size="11.5" fill="#1f2a27">
+    <rect x="215" y="480" width="18" height="12" rx="6" fill="#eef3ea" stroke="#24483e"/><text x="240" y="490">domínio de viagem e itinerário</text>
+    <rect x="215" y="502" width="18" height="12" rx="6" fill="#ffffff" stroke="#1f2a27"/><text x="240" y="512">outros domínios</text>
+    <rect x="215" y="524" width="18" height="12" rx="6" fill="#ffffff" stroke="#1f2a27" stroke-dasharray="4 3"/><text x="240" y="534">prévia, ainda sem gravar</text>
+    <text x="215" y="565">Dono herda todos os casos do Membro</text>
+    <text x="215" y="582">(seta de generalização à direita).</text>
+  </g>
+</svg>
