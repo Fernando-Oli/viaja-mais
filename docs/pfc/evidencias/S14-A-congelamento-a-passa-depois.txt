@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 C:/Users/HOME/Desktop/viaja-mais
+
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  21:54:45
+   Duration  1.00s (transform 149ms, setup 1.24s, import 102ms, tests 33ms, environment 1ms)
+
