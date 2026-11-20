@@ -241,14 +241,15 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 
 | ID | Descrição | Status | Prioridade | Regras |
 |---|---|---|---|---|
-| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Não iniciado | Alta | RNE-025 |
+| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Parcial | Alta | RNE-025 |
 | RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | Alta | RNE-025 |
 | RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | Média | RNE-025 |
 
 **Detalhamento:**
 
-- **RF12.1 a RF12.3** — Não há integração com modelo de inteligência artificial nem rota de geração. A tela "Nova viagem com a Avori" é uma prévia: conduz a conversa, mas monta o roteiro a partir de um modelo fixo e não grava nada.
-- **Condições para implementar** — A chave do provedor deverá ficar só no servidor, a saída do modelo deverá ser validada antes de virar itinerário, e o limite de 10 gerações por usuário por hora já está declarado no módulo de limites, à espera da rota.
+- **RF12.1** — A geração está em `POST /api/roteiros/gerar`, atrás da interface `GeradorDeRoteiro` (`lib/ai/provider.ts`): um gerador determinístico para desenvolvimento e integração contínua (`lib/ai/fake.ts`) e o Gemini, na camada gratuita, como provedor real (`lib/ai/gemini.ts`). A saída do modelo é normalizada e validada por esquema (`lib/ai/roteiro.ts`) antes de chegar à tela, e a rota não grava nada. A geração se limita a cinco dias por viagem, para caber no tempo do RNF07.3. Fica parcial até a tela de revisão.
+- **RF12.2 e RF12.3** — A tela "Nova viagem com a Avori" ainda é a prévia: conduz a conversa, mas monta o roteiro a partir de um modelo fixo e não grava nada.
+- **Condições atendidas pela rota** — A chave do provedor fica só no servidor, no cabeçalho da chamada; a saída do modelo é validada antes de virar itinerário; e a rota consome o limite de 10 gerações por usuário por hora (RNF07.4).
 
 ### 14.14 Notificações (RF13)
 

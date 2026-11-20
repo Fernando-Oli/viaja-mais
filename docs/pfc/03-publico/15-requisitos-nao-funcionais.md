@@ -138,14 +138,15 @@ Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 19 aten
 |---|---|---|---|
 | RNF07.1 | O feed deve carregar a primeira página (20 publicações) em menos de 2 segundos no percentil 95 | Não iniciado | Alta |
 | RNF07.2 | O feed deve paginar por cursor, sem carregar todas as publicações de uma vez | Não iniciado | Alta |
-| RNF07.3 | A geração de roteiro por IA deve responder em até 15 segundos, ou informar erro claro ao usuário | Não iniciado | Média |
-| RNF07.4 | A geração de roteiro deve ser limitada a no máximo 10 requisições por usuário por hora | Não iniciado | Alta |
+| RNF07.3 | A geração de roteiro por IA deve responder em até 15 segundos, ou informar erro claro ao usuário | Atendido | Média |
+| RNF07.4 | A geração de roteiro deve ser limitada a no máximo 10 requisições por usuário por hora | Parcial | Alta |
 | RNF07.5 | A central de notificações deve carregar as 20 mais recentes em menos de 2 segundos no percentil 95, e o contador de não-lidas deve ser calculado em menos de 500 milissegundos | Não iniciado | Média |
 
 **Detalhamento:**
 
 - **RNF07.1 e RNF07.2** — Acompanham o feed (RF09.8), que ainda é prévia. A grade de publicações de um perfil já pagina por cursor, e é o modelo previsto para o feed.
-- **RNF07.3 e RNF07.4** — Acompanham a geração de roteiro (RF12), não implementada. O limite de 10 por hora já está declarado no módulo de limites e protege a cota do provedor contra abuso.
+- **RNF07.3** — A rota corta a espera pelo provedor em 15 segundos contados desde a chegada do pedido, com até quatro tentativas de no máximo 7 segundos cada; ao estourar o prazo, responde 504 com mensagem em português. A prova está em `tests/api/roteiros-gerar-route.test.ts` e `tests/lib/ai-gemini.test.ts`. Para caber no prazo, a geração se limita a cinco dias por viagem.
+- **RNF07.4** — A rota consome o limite `roteiro-ia` (10 por usuário por hora) depois da validação do pedido e antes de chamar o provedor, provado por `tests/api/roteiros-gerar-route.test.ts`. Fica parcial porque a função do banco que conta as requisições aceita a janela de tempo informada por quem chama: trocando a janela, um usuário autenticado zera o próprio contador. A correção cabe à plataforma, na migration `plataforma_rate_limit`.
 - **RNF07.5** — A central existe só para solicitações de seguidor (RF13.2), sem contador de não lidas, e não foi medida.
 
 ### 15.9 Financeiro (RNF08)
