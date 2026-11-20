@@ -8,7 +8,7 @@ import {
   type EscolhaDoRoteiro,
   type PedidoPost,
 } from "@/lib/schemas/post"
-import type { ViagemPublica } from "@/lib/trips/publico"
+import type { LugarPublico, ViagemPublica } from "@/lib/trips/publico"
 import { FORMATO_CAMINHO } from "./foto"
 import { ErroComCodigo } from "./post-http"
 
@@ -76,22 +76,20 @@ import { ErroComCodigo } from "./post-http"
 type ClienteDaSessao = Pick<SupabaseClient, "from" | "rpc">
 
 /**
- * Um lugar salvo como a projeção o entrega. A Audrey vai acrescentar `lugares`
- * à `ViagemPublica` (pedido de 18/11); até lá, o tipo mora aqui e a lista é
- * lida como opcional.
+ * Um lugar salvo como a projeção o entrega. O tipo mora em `lib/trips/publico`
+ * (a `ViagemPublica` traz `lugares` desde a proposta de 19/11) e é reexportado
+ * aqui para quem já o importava do Social.
  */
-export type LugarPublico = {
-  /** Só para a tela escolher o lugar e o endereço; não vai para o post. */
-  id: string
-  name: string
-  category: string | null
-  address: string | null
-}
+export type { LugarPublico }
 
-/** A projeção com os lugares: compila hoje, e funciona quando `lugares` chegar à `ViagemPublica`. */
-export type ProjecaoComLugares = ViagemPublica & { lugares?: LugarPublico[] }
+/**
+ * A projeção como `montarPost` a aceita: `lugares` continua opcional para que
+ * uma projeção sem a lista (cópia antiga, dublê de teste) publique sem lugares
+ * em vez de quebrar.
+ */
+export type ProjecaoComLugares = Omit<ViagemPublica, "lugares"> & { lugares?: LugarPublico[] }
 
-/** Os lugares da projeção, ou a lista vazia enquanto ela ainda não os traz. */
+/** Os lugares da projeção, ou a lista vazia quando ela não os traz. */
 export function lugaresDaProjecao(projecao: ProjecaoComLugares): LugarPublico[] {
   return projecao.lugares ?? []
 }
