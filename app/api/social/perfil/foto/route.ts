@@ -12,6 +12,7 @@ import {
   caminhoDaNovaFoto,
   tipoDaImagem,
 } from "@/lib/social/foto"
+import { LADO_FOTO, reprocessarImagem } from "@/lib/social/imagem"
 
 /**
  * Foto do próprio perfil: enviar (POST, multipart com o campo `foto`) e
@@ -25,9 +26,16 @@ import {
  * usuário (migration social_avatares), então ninguém grava nem apaga nele pela
  * API do Storage com o JWT do navegador. Só esta rota grava, e só depois de
  * conferir a assinatura do arquivo (os magic bytes do começo) — que nem a RLS
- * nem o bucket conferem, já que o bucket confia no tipo declarado. É só a
- * assinatura: a rota não decodifica a imagem. É o critério de
- * lib/supabase/admin.ts: usar a chave para o que a RLS não resolve.
+ * nem o bucket conferem, já que o bucket confia no tipo declarado — e de
+ * regerar a imagem. É o critério de lib/supabase/admin.ts: usar a chave para o
+ * que a RLS não resolve.
+ *
+ * O que vai ao bucket nunca é o arquivo recebido: a assinatura só recusa o
+ * óbvio, barato, e depois a foto é decodificada e regerada com o sharp
+ * (`reprocessarImagem`, lib/social/imagem.ts) — WebP de até 512×512, girada
+ * pelo EXIF e sem metadado nenhum. O GPS da foto não chega ao bucket, e um
+ * arquivo que só começa como imagem é 400 sem gravar nada. Por isso o caminho
+ * termina sempre em `.webp`.
  *
  * O perfil, ao contrário, é atualizado com a sessão do usuário: a RLS de
  * `profiles` e o trigger de `avatar_url` continuam valendo.
@@ -186,17 +194,19 @@ export async function POST(request: Request) {
     if (arquivo.size > LIMITE_FOTO_BYTES) throw new ErroHttp(413, "A foto pode ter até 2 MB")
 
     // O tipo vem dos bytes, não do nome nem do content-type que o cliente mandou.
-    const bytes = new Uint8Array(await arquivo.arrayBuffer())
-    const tipo = tipoDaImagem(bytes)
-    if (!tipo) throw new ErroHttp(400, "Envie uma imagem JPEG, PNG ou WebP")
+    const recebidos = new Uint8Array(await arquivo.arrayBuffer())
+    if (!tipoDaImagem(recebidos)) throw new ErroHttp(400, "Envie uma imagem JPEG, PNG ou WebP")
 
     const anterior = await avatarAtual(supabase, user.id)
 
+    // O que sobe é o WebP regerado, sem EXIF/GPS; o arquivo recebido não vai ao bucket.
+    const foto = await reprocessarImagem(recebidos, { lado: LADO_FOTO, limiteBytes: LIMITE_FOTO_BYTES })
+
     const admin = criarClienteAdmin()
-    const caminho = caminhoDaNovaFoto(user.id, randomUUID(), tipo)
+    const caminho = caminhoDaNovaFoto(user.id, randomUUID(), foto.tipo)
     const { error: erroEnvio } = await admin.storage
       .from(BUCKET_AVATARES)
-      .upload(caminho, bytes, { contentType: tipo, upsert: false })
+      .upload(caminho, foto.bytes, { contentType: foto.tipo, upsert: false })
     if (erroEnvio) throw erroEnvio
 
     let perfil: Perfil

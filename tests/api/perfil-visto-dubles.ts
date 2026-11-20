@@ -1,7 +1,8 @@
 /**
  * Dublês dos clientes Supabase para as rotas do perfil de outra pessoa
- * (S05-M-seguir): o da sessão, que lê `profiles`, lê/grava/apaga em `follows` e
- * chama a função `contar_rede`, e o de serviço, que só assina fotos. Registram
+ * (S05-M-seguir): o da sessão, que lê `profiles`, lê/grava/apaga em `follows`,
+ * conta `posts` (S06-M-perfil-instagram) e chama a função `contar_rede`, e o
+ * de serviço, que só assina fotos. Registram
  * tudo o que a rota pede, para os testes provarem QUEM foi consultado e COM
  * QUAIS filtros.
  *
@@ -25,7 +26,7 @@ export type PerfilNoBanco = {
 }
 
 type Erro = { code?: string; message: string } | null
-type Consulta = { tabela: string; colunas?: string; filtros: [string, unknown][] }
+type Consulta = { tabela: string; colunas?: string; opcoes?: unknown; filtros: [string, unknown][] }
 type Resolver<T> = (r: T) => unknown
 
 /** Um thenable que só executa `executar` quando alguém o espera. */
@@ -50,6 +51,9 @@ export const estado = {
   erroRemocao: null as Erro,
   contagem: { seguidores: 0, seguindo: 0 },
   erroContagem: null as Erro,
+  /** O que a contagem de `posts` devolve (a RLS já aplicada). */
+  publicacoes: 0,
+  erroPublicacoes: null as Erro,
   semChave: false,
   consultas: [] as Consulta[],
   gravacoes: [] as { valores: Record<string, unknown>; opcoes: unknown }[],
@@ -73,6 +77,8 @@ export function reiniciar() {
   estado.erroRemocao = null
   estado.contagem = { seguidores: 0, seguindo: 0 }
   estado.erroContagem = null
+  estado.publicacoes = 0
+  estado.erroPublicacoes = null
   estado.semChave = false
   estado.consultas.length = 0
   estado.gravacoes.length = 0
@@ -90,8 +96,9 @@ export function clienteDaSessao() {
       const consulta: Consulta = { tabela, filtros: [] }
       estado.consultas.push(consulta)
       const cadeia = {
-        select(colunas: string) {
+        select(colunas: string, opcoes?: unknown) {
           consulta.colunas = colunas
+          if (opcoes !== undefined) consulta.opcoes = opcoes
           return cadeia
         },
         eq(coluna: string, valor: unknown) {
@@ -127,6 +134,17 @@ export function clienteDaSessao() {
           }
           return remocao
         },
+      }
+      // A contagem de `posts` é esperada direto na cadeia (`head: true`, sem maybeSingle).
+      if (tabela === "posts") {
+        return Object.assign(
+          cadeia,
+          preguicoso(() =>
+            estado.erroPublicacoes
+              ? { data: null, count: null, error: estado.erroPublicacoes }
+              : { data: null, count: estado.publicacoes, error: null },
+          ),
+        )
       }
       return cadeia
     },

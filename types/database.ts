@@ -238,6 +238,21 @@ export type Database = {
           },
         ]
       }
+      fotos_a_remover: {
+        Row: {
+          caminho: string
+          criado_em: string
+        }
+        Insert: {
+          caminho: string
+          criado_em?: string
+        }
+        Update: {
+          caminho?: string
+          criado_em?: string
+        }
+        Relationships: []
+      }
       itinerary_items: {
         Row: {
           category: string | null
@@ -382,6 +397,168 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "places_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_tag_recusas: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: number
+          post_id: string | null
+          tagged_id: string
+          trip_id: string | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: never
+          post_id?: string | null
+          tagged_id: string
+          trip_id?: string | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: never
+          post_id?: string | null
+          tagged_id?: string
+          trip_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_tag_recusas_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tag_recusas_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tag_recusas_tagged_id_fkey"
+            columns: ["tagged_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tag_recusas_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_tags: {
+        Row: {
+          author_id: string
+          created_at: string
+          post_id: string
+          tagged_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          post_id: string
+          tagged_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          post_id?: string
+          tagged_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_tags_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tags_tagged_id_fkey"
+            columns: ["tagged_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          author_id: string
+          caption: string | null
+          created_at: string
+          destination: string | null
+          end_date: string | null
+          id: string
+          items: Json
+          photos: string[]
+          places: Json
+          start_date: string | null
+          title: string | null
+          trip_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          caption?: string | null
+          created_at?: string
+          destination?: string | null
+          end_date?: string | null
+          id?: string
+          items?: Json
+          photos?: string[]
+          places?: Json
+          start_date?: string | null
+          title?: string | null
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          caption?: string | null
+          created_at?: string
+          destination?: string | null
+          end_date?: string | null
+          id?: string
+          items?: Json
+          photos?: string[]
+          places?: Json
+          start_date?: string | null
+          title?: string | null
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_trip_id_fkey"
             columns: ["trip_id"]
             isOneToOne: false
             referencedRelation: "trips"
@@ -689,6 +866,23 @@ export type Database = {
       pode_acessar_despesa: { Args: { expense_uuid: string }; Returns: boolean }
       pode_editar_despesa: { Args: { expense_uuid: string }; Returns: boolean }
       pode_ver_rede: { Args: { perfil: string }; Returns: boolean }
+      social_fotos_do_post_validas: {
+        Args: { autor: string; fotos: string[] }
+        Returns: boolean
+      }
+      social_itens_do_post_validos: { Args: { itens: Json }; Returns: boolean }
+      social_lugares_do_post_validos: {
+        Args: { lugares: Json }
+        Returns: boolean
+      }
+      social_membros_marcaveis: { Args: { viagem: string }; Returns: string[] }
+      social_meu_post_da_viagem: { Args: { viagem: string }; Returns: string }
+      social_pode_marcar: {
+        Args: { marcado: string; post: string }
+        Returns: boolean
+      }
+      social_recusas_da_viagem: { Args: { viagem: string }; Returns: string[] }
+      social_recusas_do_post: { Args: { post: string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never

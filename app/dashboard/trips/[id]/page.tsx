@@ -12,7 +12,7 @@ import { ExpenseList } from "@/components/expense-list"
 import { TripMembers } from "@/components/trip-members"
 import { nomesDosPerfis } from "@/lib/social/perfis"
 import { CapaViagem } from "@/components/brand/capa-viagem"
-import { BotaoPublicar } from "@/components/prototipo/botao-publicar"
+import { PublicarViagem } from "@/components/social/publicar-viagem"
 
 function parseLocalDate(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number)
@@ -185,7 +185,7 @@ export default async function TripDetailPage({
                   </Link>
                 </Button>
               )}
-              <BotaoPublicar
+              <PublicarViagem
                 viagemId={id}
                 titulo={trip.title}
                 datas={`${parseLocalDate(trip.start_date).toLocaleDateString("pt-BR")} – ${parseLocalDate(trip.end_date).toLocaleDateString("pt-BR")}`}

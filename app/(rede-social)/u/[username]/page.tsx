@@ -3,16 +3,17 @@
 import { use, useEffect, useRef, useState, type Ref } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PerfilAbas } from "@/components/social/perfil-abas";
+import { PerfilCabecalho, podeVerRedeDo } from "@/components/social/perfil-cabecalho";
+import { BotaoCriarPost } from "@/components/social/criar-post";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, ChevronDown, Clock, Loader2, Lock, Map as IconeMapa, Pencil, UserPlus, UserRound, UserRoundX } from "lucide-react";
+import { Check, ChevronDown, Clock, Loader2, Lock, Pencil, UserPlus, UserRoundX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -27,7 +28,14 @@ import { useToast } from "@/hooks/use-toast";
  * O botão segue o vínculo: Seguir (público) ou Solicitar (privado); Seguindo e
  * Solicitado abrem um menu com a confirmação de desfazer (decisão do Micael,
  * para ninguém deixar de seguir com um clique sem querer); no próprio perfil,
- * Editar perfil. As viagens publicadas chegam na S06.
+ * Editar perfil e, ao lado, "Criar" (o post: 1 a 3 fotos, legenda e marcações),
+ * até o menu da rede social ganhar o seu.
+ *
+ * O cabeçalho (foto, nome, contadores, bio) e as abas Publicações (a grade de
+ * posts, aberta por padrão, RF09.16) e Marcações (RF09.14) são os mesmos do
+ * próprio perfil em /dashboard/perfil (S06-M-perfil-instagram):
+ * components/social/perfil-cabecalho.tsx e perfil-abas.tsx. As abas só
+ * aparecem a quem pode ver a rede do perfil.
  *
  * Seguir ou desfazer troca o botão por outro elemento; o foco vai para o botão
  * novo (ou volta ao mesmo, se o pedido falhou), e o resultado é anunciado numa
@@ -38,9 +46,11 @@ import { useToast } from "@/hooks/use-toast";
  * escolher um, com o link para o Perfil: sem ele, ninguém entra na rede.
  *
  * Os contadores levam às listas de seguidores e de seguindo (S05-M-listas)
- * quando a rede do perfil é visível a quem vê.
+ * quando a rede do perfil é visível a quem vê. "Editar perfil" leva ao
+ * formulário em /dashboard/perfil/editar.
  *
- * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir · @RF09.6 listas
+ * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir · @RF09.6 listas · @RF09.14 aba Marcações
+ * @RF09.16 aba Publicações
  */
 
 type Vinculo = "proprio" | "nenhum" | "solicitado" | "seguindo";
@@ -54,6 +64,7 @@ type PerfilVisto = {
   vinculo: Vinculo;
   seguidores: number | null;
   seguindo: number | null;
+  publicacoes: number | null;
   sem_username: boolean;
 };
 
@@ -70,13 +81,6 @@ function avisoDoVinculo(antes: Vinculo, depois: Vinculo, username: string) {
   if (depois === "solicitado") return `Solicitação enviada a @${username}.`;
   if (antes === "solicitado") return `Solicitação a @${username} cancelada.`;
   return `Você deixou de seguir @${username}.`;
-}
-
-const numero = new Intl.NumberFormat("pt-BR");
-
-function contador(valor: number | null, singular: string, plural: string) {
-  if (valor === null) return `— ${plural}`;
-  return `${numero.format(valor)} ${valor === 1 ? singular : plural}`;
 }
 
 export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ username: string }> }) {
@@ -194,87 +198,47 @@ export default function PerfilDeOutraPessoaPage({ params }: { params: Promise<{ 
   }
 
   const { perfil } = estado;
-  const nome = perfil.full_name || perfil.username;
-  const podeVerViagens = perfil.vinculo === "proprio" || perfil.vinculo === "seguindo" || perfil.is_public;
   // Os mesmos três casos da função `pode_ver_rede` do banco: o dono, quem segue
   // com vínculo aceito, ou perfil público. Fora deles os contadores não viram
-  // link; quem decide de verdade é a rota das listas (403).
-  const podeVerRede = podeVerViagens;
+  // link e as abas não aparecem; quem decide de verdade são as rotas (403).
+  const podeVerRede = podeVerRedeDo(perfil);
 
   return (
     <div className="space-y-6">
-      <Card role="region" aria-label={`Perfil de @${perfil.username}`}>
-        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <Avatar className="h-28 w-28 shrink-0">
-            {perfil.avatar_url ? <AvatarImage src={perfil.avatar_url} alt={`Foto de ${nome}`} /> : null}
-            <AvatarFallback role="img" aria-label="Sem foto de perfil" className="bg-primary text-primary-foreground">
-              <UserRound className="h-12 w-12" aria-hidden />
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-3xl font-semibold tracking-tight text-foreground">{nome}</h1>
-              {perfil.is_public ? null : (
-                <Badge variant="outline" className="gap-1">
-                  <Lock aria-hidden />
-                  Perfil privado
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">@{perfil.username}</p>
-            {perfil.bio ? <p className="whitespace-pre-line break-words text-foreground">{perfil.bio}</p> : null}
-            <p className="flex gap-4 text-sm text-foreground">
-              {podeVerRede ? (
-                <>
-                  <Link href={`/u/${perfil.username}/seguidores`} className="rounded-sm hover:underline">
-                    {contador(perfil.seguidores, "seguidor", "seguidores")}
-                  </Link>
-                  <Link href={`/u/${perfil.username}/seguindo`} className="rounded-sm hover:underline">
-                    {perfil.seguindo === null ? "—" : numero.format(perfil.seguindo)} seguindo
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <span>{contador(perfil.seguidores, "seguidor", "seguidores")}</span>
-                  <span>{perfil.seguindo === null ? "—" : numero.format(perfil.seguindo)} seguindo</span>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="shrink-0">
+      <PerfilCabecalho
+        perfil={perfil}
+        acoes={
+          <>
             <BotaoDoVinculo
               perfil={perfil}
               enviando={enviando}
               botao={botao}
               aoAlterar={(metodo) => alterarVinculo(perfil, metodo)}
             />
-          </div>
-          <p role="status" className="sr-only">
-            {aviso}
-          </p>
-        </CardContent>
-      </Card>
+            {perfil.vinculo === "proprio" ? <BotaoCriarPost /> : null}
+          </>
+        }
+      >
+        <p role="status" className="sr-only">
+          {aviso}
+        </p>
+      </PerfilCabecalho>
 
-      <Card role="region" aria-label="Viagens publicadas">
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          {podeVerViagens ? (
-            <>
-              <IconeMapa className="h-10 w-10 text-muted-foreground" aria-hidden />
-              <p className="text-sm text-muted-foreground">Nenhuma viagem publicada ainda.</p>
-            </>
-          ) : (
-            <>
-              <Lock className="h-10 w-10 text-muted-foreground" aria-hidden />
-              <p className="font-semibold text-foreground">Esta conta é privada</p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                {perfil.vinculo === "solicitado"
-                  ? `Sua solicitação está pendente. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`
-                  : `Solicite para seguir. Quando @${perfil.username} aprovar, você verá as viagens publicadas.`}
-              </p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {podeVerRede ? (
+        <PerfilAbas username={perfil.username} proprio={perfil.vinculo === "proprio"} />
+      ) : (
+        <Card role="region" aria-label="Publicações">
+          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <Lock className="h-10 w-10 text-muted-foreground" aria-hidden />
+            <p className="font-semibold text-foreground">Esta conta é privada</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              {perfil.vinculo === "solicitado"
+                ? `Sua solicitação está pendente. Quando @${perfil.username} aprovar, você verá as publicações.`
+                : `Solicite para seguir. Quando @${perfil.username} aprovar, você verá as publicações.`}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -294,8 +258,8 @@ function BotaoDoVinculo({
 
   if (perfil.vinculo === "proprio") {
     return (
-      <Button asChild variant="outline">
-        <Link href="/dashboard/perfil">
+      <Button asChild variant="outline" className="h-11 rounded-xl">
+        <Link href="/dashboard/perfil/editar">
           <Pencil className="mr-2 h-4 w-4" aria-hidden />
           Editar perfil
         </Link>
