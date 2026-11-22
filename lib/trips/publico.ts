@@ -111,19 +111,19 @@ export async function projecaoPublicaDaViagem(
   }
 
   return {
-    title: viagem.title,
-    destination: viagem.destination,
+    title: cortar(viagem.title, LIMITES_DO_POST.tituloViagem),
+    destination: cortar(viagem.destination, LIMITES_DO_POST.destino),
     start_date: viagem.start_date,
     end_date: viagem.end_date,
     itens: (itens ?? []).map((item) => ({
       id: item.id,
-      title: item.title,
+      title: cortar(item.title, LIMITES_DO_POST.tituloItem),
       date: item.date,
       start_time: item.start_time,
       end_time: item.end_time,
       category: item.category,
-      location: item.location,
-      description: item.description,
+      location: cortarOpcional(item.location, LIMITES_DO_POST.local),
+      description: cortarOpcional(item.description, LIMITES_DO_POST.descricao),
     })),
     // Proposta do Micael (S06-M-publicar-viagem, 19/11) para revisão da Audrey: cópia campo a campo.
     lugares: (lugares ?? []).map((lugar) => ({
@@ -133,4 +133,30 @@ export async function projecaoPublicaDaViagem(
       address: lugar.address,
     })),
   }
+}
+
+/**
+ * Tetos de cada texto no post, iguais aos CHECK de `trip_posts` e de
+ * `social_itens_do_post_validos` no banco (e aos de lib/schemas/viagem.ts e
+ * lib/schemas/itinerario.ts). Linhas gravadas antes do zod podem passar disso;
+ * sem o corte, o insert do post era recusado e publicar devolvia 500.
+ *
+ * @RF09.7 a projeção entrega cada texto dentro do limite que o post aceita
+ */
+export const LIMITES_DO_POST = {
+  tituloViagem: 120,
+  destino: 160,
+  tituloItem: 120,
+  local: 200,
+  descricao: 2000,
+} as const
+
+/** Corta por caractere, como o `char_length` do Postgres: não parte emoji ao meio. */
+function cortar(texto: string, limite: number): string {
+  const caracteres = Array.from(texto)
+  return caracteres.length <= limite ? texto : caracteres.slice(0, limite).join("")
+}
+
+function cortarOpcional(texto: string | null, limite: number): string | null {
+  return texto === null ? null : cortar(texto, limite)
 }
