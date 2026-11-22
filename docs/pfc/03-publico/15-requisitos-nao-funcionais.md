@@ -13,7 +13,7 @@ Valem os status definidos na seção 14.1, com um acréscimo próprio dos requis
 | Parcial | Satisfeito em parte do sistema, ou verificado só em parte |
 | Não iniciado | Sem implementação nem medição |
 
-Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 18 atendidos, 7 parciais e 9 não iniciados.
+Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 19 atendidos, 8 parciais e 7 não iniciados.
 
 ### 15.2 Desempenho (RNF01)
 
@@ -85,8 +85,8 @@ Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 18 aten
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
-| RNF04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Não iniciado | Média |
-| RNF04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Não iniciado | Alta |
+| RNF04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Parcial | Média |
+| RNF04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Atendido | Alta |
 | RNF04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | Alta |
 | RNF04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Implementado | Alta |
 | RNF04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | Alta |
@@ -94,8 +94,8 @@ Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 18 aten
 
 **Detalhamento:**
 
-- **RNF04.1** — Revisamos a meta herdada de 99,9% para 99,5%, porque as camadas gratuitas de hospedagem e de banco não sustentam o valor anterior. Não há monitoramento de disponibilidade, e por isso a meta não é apurada.
-- **RNF04.2** — O backup depende do plano contratado no provedor do banco, e não verificamos sua existência nem a retenção.
+- **RNF04.1** — Revisamos a meta herdada de 99,9% para 99,5%, porque as camadas gratuitas de hospedagem e de banco não sustentam o valor anterior. Desde 22/11/2026, um monitor no GitHub Actions consulta a página inicial e a rota `/api/saude`, que exige resposta do banco, a cada cinco minutos; `npm run pfc:metricas` calcula a disponibilidade a partir dessas verificações. O requisito é parcial porque a série ainda não cobre um mês inteiro.
+- **RNF04.2** — O backup automático diário está configurado no projeto de produção do Supabase, conferido pela equipe no painel do provedor em 22/11/2026. A configuração fica fora do repositório, e nenhum teste de restauração foi feito.
 - **RNF04.3 e RNF04.5** — As 22 migrações estão versionadas, e o fluxo de banco da integração contínua as aplica numa base limpa e roda os testes de isolamento. Na última execução, 473 testes passaram, em 2,9 minutos.
 - **RNF04.4** — Cada área da aplicação tem estados de erro, de não encontrado e de carregamento. A falha inesperada mostra uma explicação e a opção de tentar de novo; o endereço inexistente e a viagem de que a pessoa não participa mostram a mesma página, sem revelar se o recurso existe.
 - **RNF04.6** — Um único módulo lê as variáveis de ambiente, valida a configuração e falha com mensagem que identifica a variável; o teste cobre variável ausente, vazia e inválida.

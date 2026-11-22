@@ -38,10 +38,13 @@ const tabela = (cab, linhas) =>
   [`| ${cab.join(" | ")} |`, `|${cab.map(() => "---").join("|")}|`, ...linhas.map((l) => `| ${l.join(" | ")} |`)].join("\n")
 
 /* 1. Execuções da esteira -------------------------------------------------- */
-const runs = gh(
-  "run", "list", "--limit", "2000",
-  "--json", "databaseId,workflowName,conclusion,createdAt,updatedAt,event,headBranch,headSha",
-).filter((r) => r.createdAt.slice(0, 10) >= DESDE && r.conclusion)
+// O monitor de disponibilidade roda 288 vezes por dia: numa listagem única, ele
+// empurraria a esteira para fora do limite. Ele é lido à parte, na seção 2b.
+const MONITOR = "Disponibilidade"
+const CAMPOS = "databaseId,workflowName,conclusion,createdAt,updatedAt,event,headBranch,headSha"
+const runs = gh("run", "list", "--limit", "3000", "--json", CAMPOS).filter(
+  (r) => r.createdAt.slice(0, 10) >= DESDE && r.conclusion && r.workflowName !== MONITOR,
+)
 
 const porWorkflow = new Map()
 for (const r of runs) {
@@ -103,6 +106,57 @@ for (const [nome, run] of Object.entries(ultimas)) {
   }
 }
 
+/* 2b. Disponibilidade -------------------------------------------------------- */
+// Cada execução agendada do monitor é uma amostra: sucesso no ar, falha fora do
+// ar. Execução cancelada (substituída pela seguinte) não conta. A janela é de
+// 30 dias, a da meta do RNF04.1.
+let disponibilidade
+{
+  const janela = new Date(Date.now() - 30 * 86400_000).toISOString()
+  let amostras = []
+  try {
+    amostras = gh("run", "list", "--workflow", "disponibilidade.yml", "--limit", "9000", "--json", CAMPOS)
+      .filter((r) => r.event === "schedule" && r.createdAt >= janela && ["success", "failure"].includes(r.conclusion))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  } catch {
+    // workflow ainda não existe na main
+  }
+  if (!amostras.length) {
+    disponibilidade = "_O monitor ainda não tem execuções agendadas registradas._"
+  } else {
+    const no = amostras.filter((r) => r.conclusion === "success").length
+    const quedas = []
+    let atual = null
+    for (const r of amostras) {
+      if (r.conclusion === "failure") {
+        atual ??= { inicio: r.createdAt, fim: r.createdAt, n: 0 }
+        atual.fim = r.createdAt
+        atual.n++
+      } else if (atual) {
+        quedas.push(atual)
+        atual = null
+      }
+    }
+    if (atual) quedas.push(atual)
+    const data = (iso) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    const horas = (segundos(amostras[0].createdAt, amostras.at(-1).createdAt) / 3600).toFixed(0)
+    const intervalos = amostras.slice(1).map((r, i) => segundos(amostras[i].createdAt, r.createdAt) / 60).sort((a, b) => a - b)
+    disponibilidade = [
+      `${amostras.length} verificações em ${horas} h (de ${data(amostras[0].createdAt)} a ${data(amostras.at(-1).createdAt)}), uma a cada ${Math.round(quantil(intervalos, 0.5) ?? 5)} min na mediana.`,
+      "",
+      tabela(["Indicador", "Valor"], [
+        ["Disponibilidade amostrada", pct(no, amostras.length)],
+        ["Meta (RNF04.1)", "99,5% no mês"],
+        ["Verificações fora do ar", String(amostras.length - no)],
+        ["Quedas (falhas consecutivas)", String(quedas.length)],
+      ]),
+      ...(quedas.length
+        ? ["", tabela(["Início", "Última falha", "Verificações"], quedas.map((q) => [data(q.inicio), data(q.fim), q.n]))]
+        : []),
+    ].join("\n")
+  }
+}
+
 /* 3. Pull requests --------------------------------------------------------- */
 const prs = gh(
   "pr", "list", "--state", "all", "--limit", "1000",
@@ -147,6 +201,10 @@ ${tabela(["Workflow", "Execuções", "Sucesso", "Falha", "Cancelada", "Taxa de s
 ${tabela(["Workflow", "Etapa", "Resultado", "Duração"], linhasJobs)}
 
 ${testes.length ? tabela(["Verificação", "Quantidade", "Resultado"], testes) : "_Log da execução indisponível._"}
+
+## Disponibilidade em produção
+
+${disponibilidade}
 
 ## Pull requests
 

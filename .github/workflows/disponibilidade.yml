@@ -1,0 +1,46 @@
+name: Disponibilidade
+
+# Monitor de disponibilidade da aplicação em produção (RNF04.1).
+#
+# A cada cinco minutos, consulta a página inicial e /api/saude. Cada execução é
+# um ponto da série: verde no ar, vermelha fora do ar. `npm run pfc:metricas`
+# calcula a disponibilidade do mês a partir delas. O GitHub avisa por e-mail
+# quando uma execução agendada falha.
+#
+# Gratuito porque o repositório é público. O agendamento do GitHub não é
+# pontual: em horário de pico a execução atrasa e, às vezes, é pulada. A série
+# mede disponibilidade nos instantes amostrados, não a cada minuto.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Endereço a verificar"
+        required: false
+        default: "https://viaja-mais.online"
+
+# Só a verificação mais recente importa; uma presa não acumula fila.
+concurrency:
+  group: disponibilidade
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: Página inicial e /api/saude
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/monitor
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verificar
+        run: node scripts/monitor/verificar.mjs
+        env:
+          MONITOR_URL: ${{ inputs.url || vars.MONITOR_URL || 'https://viaja-mais.online' }}

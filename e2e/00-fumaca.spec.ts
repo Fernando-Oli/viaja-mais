@@ -24,6 +24,16 @@ test.describe("páginas públicas", () => {
   })
 })
 
+test.describe("verificação de saúde", () => {
+  // @RNF04.1 — o monitor de disponibilidade consulta esta rota sem sessão.
+  test("responde 200 sem sessão, com o banco ok e sem cache", async ({ request }) => {
+    const r = await request.get("/api/saude")
+    expect(r.status()).toBe(200)
+    expect(await r.json()).toMatchObject({ status: "ok", banco: "ok" })
+    expect(r.headers()["cache-control"]).toBe("no-store")
+  })
+})
+
 test.describe("proteção de rotas", () => {
   // Regressão: o middleware precisa barrar o dashboard para quem não tem sessão.
   test("visitante anônimo é redirecionado do dashboard para o login", async ({ page }) => {

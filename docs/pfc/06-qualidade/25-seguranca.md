@@ -173,7 +173,7 @@ O que continua em aberto, em ordem de prioridade:
 1. **Fonte única para o papel de dono.** Fazer `exigirDono` consultar a mesma fonte que o banco (`trips.user_id`), para que a falha corrigida em R23 não reapareça por outro caminho.
 2. **Direitos do titular.** Implementar a exclusão de conta (RF02.4) e publicar uma política de privacidade antes de receber usuários reais em escala.
 3. **Migrations em produção.** Automatizar a aplicação a partir da `main`, ou ao menos comparar o schema publicado com o do repositório na esteira.
-3. **Auditoria de dependências.** Nenhum dos quatro workflows audita dependências, e `@supabase/ssr` está declarado como `latest` no `package.json`. Os próximos passos são fixar a versão e incluir a auditoria na esteira.
+3. **Auditoria de dependências.** Nenhum dos workflows audita dependências, e `@supabase/ssr` está declarado como `latest` no `package.json`. Os próximos passos são fixar a versão e incluir a auditoria na esteira.
 4. **CSP com nonce.** Retirar `'unsafe-inline'` dos scripts, aceitando a renderização dinâmica das páginas.
 5. **Teste de intrusão externo.** Toda a análise desta seção foi feita pela própria equipe. Nenhuma pessoa de fora tentou atacar a aplicação.
 6. **Registro estruturado de erros**, com rota, usuário e causa, para que um incidente possa ser reconstruído.

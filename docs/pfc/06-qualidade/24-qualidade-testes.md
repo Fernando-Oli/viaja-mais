@@ -39,7 +39,7 @@ A distribuição real da suíte em 22/11/2026 tem a forma de pirâmide: a base �
 
 ### 24.2 Integração contínua
 
-A integração contínua roda no GitHub Actions e é definida por quatro arquivos em `.github/workflows/`. Dois verificam o código (`ci.yml` e `db.yml`); dois apenas registram (`notion.yml` e `evidencias.yml`). A Figura 24.1 mostra o caminho de uma alteração, do pull request à publicação.
+A integração contínua roda no GitHub Actions e é definida por cinco arquivos em `.github/workflows/`. Dois verificam o código (`ci.yml` e `db.yml`); dois apenas registram (`notion.yml` e `evidencias.yml`); e um vigia a produção (`disponibilidade.yml`). A Figura 24.1 mostra o caminho de uma alteração, do pull request à publicação.
 
 ![Figura 24.1 — Esteira de integração contínua, do pull request à publicação](../diagramas/24-1-esteira-ci.png)
 
@@ -54,6 +54,7 @@ O que cada etapa faz:
 - **Playwright em 4 partes** (`ci.yml`). Cada parte sobe o próprio Supabase local, com as migrations e o seed aplicados do zero, gera o build contra ele e roda um quarto da suíte. Uma parte que falha não cancela as outras.
 - **Migrations e RLS** (`db.yml`). Roda quando o PR altera `supabase/`, `tests/rls/` ou o próprio workflow, e no push à `main` que altera os dois primeiros. Sobe o banco do zero e executa os testes de isolamento.
 - **Notion** (`notion.yml`). Espelha a abertura, a revisão e o fechamento do PR no quadro de atividades. É tolerante a falha e nunca bloqueia.
+- **Disponibilidade** (`disponibilidade.yml`). Roda a cada cinco minutos, fora da esteira de PR. Consulta a página inicial e `/api/saude` em produção; a falha só conta depois de uma segunda tentativa, 20 s depois. Cada execução é uma amostra do RNF04.1.
 - **Evidências** (`evidencias.yml`). Roda toda segunda-feira às 08:17 e sob demanda. Mede a cobertura, gera a matriz e roda o checklist do documento, e arquiva o resultado por 90 dias.
 
 Duas decisões reduzem o tempo de espera. O `ci.yml` declara um grupo de concorrência por branch com cancelamento: um push novo cancela a execução ainda em andamento, que já não diz nada sobre o código atual. E a divisão do ponta a ponta em quatro partes, cada uma com o próprio banco, levou a suíte de cerca de 15 minutos em série para 6 a 9 minutos.

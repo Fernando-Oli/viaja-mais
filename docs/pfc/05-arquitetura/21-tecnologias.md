@@ -32,7 +32,7 @@ A tabela seguinte reúne as ferramentas de desenvolvimento e de qualidade. Os re
 | @axe-core/playwright 4.14.0 | Verificação automática de acessibilidade | Aplica as regras WCAG 2.1 A e AA dentro dos próprios testes ponta a ponta |
 | ESLint ^9.39.5, com eslint-config-next | Análise estática | Teto de avisos que só pode cair; uma regra proíbe ler variável de ambiente fora de `lib/env.ts` |
 | TypeScript (`tsc --noEmit`) | Verificação de tipos no CI | Erro de tipo reprova o pull request |
-| GitHub Actions | Quatro workflows: `ci.yml`, `db.yml`, `evidencias.yml` e `notion.yml` | Integrado ao repositório; executa a esteira a cada pull request sem servidor próprio |
+| GitHub Actions | Cinco workflows: `ci.yml`, `db.yml`, `evidencias.yml`, `notion.yml` e `disponibilidade.yml` | Integrado ao repositório; executa a esteira a cada pull request sem servidor próprio |
 | Supabase CLI 2.104.0 e Docker | Supabase local na máquina de cada integrante e no CI | Banco descartável e idêntico ao de produção; a versão é fixa porque uma atualização automática do CLI já derrubou a esteira |
 | PlantUML, pela imagem Docker oficial | Diagramas deste documento, em `docs/pfc/diagramas` | Diagrama como texto versionado, revisado no mesmo pull request que a mudança que ele descreve |
 

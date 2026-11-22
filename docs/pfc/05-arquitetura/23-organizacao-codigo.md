@@ -24,7 +24,7 @@ tests/               unidade, rota (api/), componente e isolamento (rls/)
 e2e/                 testes de ponta a ponta com Playwright
 scripts/             ambiente local, montagem do documento, quadro Notion
 docs/                plano do semestre, planos de atividade, evidências, este documento
-.github/workflows/   ci.yml, db.yml, evidencias.yml, notion.yml
+.github/workflows/   ci.yml, db.yml, evidencias.yml, notion.yml, disponibilidade.yml
 ```
 
 ### 23.2 Responsabilidade de cada pasta
