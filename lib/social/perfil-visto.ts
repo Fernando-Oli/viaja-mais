@@ -19,6 +19,12 @@ import { assinarAvatar } from "./avatar"
  * - A foto vai como URL assinada (lib/social/avatar.ts). É o único uso da chave
  *   de serviço, e só quando há foto.
  *
+ * - `publicacoes` conta os posts do perfil (S06-M-perfil-instagram), também com
+ *   a sessão de quem vê. Fora da rede visível ele vem nulo: a RLS de `posts`
+ *   (pode_ver_rede) esconderia as linhas e a contagem daria 0, o que seria
+ *   falso. A regra local é a mesma da função do banco: o dono, quem segue com
+ *   vínculo aceito, ou perfil público. Se a contagem falhar, vem nulo também.
+ *
  * - `sem_username` diz se quem vê ainda não escolheu um nome de usuário: sem
  *   ele, ninguém entra na rede de ninguém (migration 20261110200043,
  *   S05-M-listas), e a tela mostra o aviso no lugar do Seguir.
@@ -27,6 +33,7 @@ import { assinarAvatar } from "./avatar"
  * campo (o caminho da foto assinada o contém, e ele não é segredo desde a S03).
  *
  * @RF02.8 perfil de outro usuário · @RF09.1 @RF09.2 @RF09.5 seguir · @RF09.9 sem username, fora da rede
+ * @RF09.16 contador de publicações
  */
 
 type ClienteDaSessao = Pick<SupabaseClient, "from" | "rpc">
@@ -44,6 +51,7 @@ export type PerfilVisto = {
   vinculo: Vinculo
   seguidores: number | null
   seguindo: number | null
+  publicacoes: number | null
   sem_username: boolean
 }
 
@@ -100,6 +108,25 @@ async function contarRede(supabase: ClienteDaSessao, perfil: string): Promise<Co
   }
 }
 
+async function contarPublicacoes(supabase: ClienteDaSessao, perfil: string): Promise<number | null> {
+  try {
+    const { count, error } = await supabase
+      .from("posts")
+      .select("id", { count: "exact", head: true })
+      .eq("author_id", perfil)
+    if (error) throw error
+    return count ?? 0
+  } catch (erro) {
+    console.error("[perfil visto] não foi possível contar as publicações", erro)
+    return null
+  }
+}
+
+/** Os mesmos três casos da função `pode_ver_rede` do banco. */
+function podeVerRede(vinculo: Vinculo, perfil: PerfilAlvo) {
+  return vinculo === "proprio" || vinculo === "seguindo" || perfil.is_public
+}
+
 export async function montarPerfilVisto(
   supabase: ClienteDaSessao,
   criarAdmin: () => ClienteDeServico,
@@ -107,11 +134,12 @@ export async function montarPerfilVisto(
   perfil: PerfilAlvo,
 ): Promise<PerfilVisto> {
   // No próprio perfil o username é o da página, então não precisa ler de novo.
-  const [contagem, vinculo, avatar_url, comUsername] = await Promise.all([
+  const [contagem, vinculo, avatar_url, comUsername, publicacoes] = await Promise.all([
     contarRede(supabase, perfil.id),
     vinculoCom(supabase, quemVe, perfil.id),
     assinarAvatar(criarAdmin, perfil),
     quemVe === perfil.id ? true : temUsername(supabase, quemVe),
+    contarPublicacoes(supabase, perfil.id),
   ])
 
   return {
@@ -123,6 +151,7 @@ export async function montarPerfilVisto(
     vinculo,
     seguidores: contagem.seguidores,
     seguindo: contagem.seguindo,
+    publicacoes: podeVerRede(vinculo, perfil) ? publicacoes : null,
     sem_username: !comUsername,
   }
 }

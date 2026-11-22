@@ -7,7 +7,9 @@
  * campo para o objeto de saída, então uma coluna nova em `trips` só chega ao
  * post se alguém a acrescentar aqui (e o teste das chaves quebra quando isso
  * acontece). Nunca entram: da viagem, `budget`, `currency`, `description`,
- * `status` e os membros; dos itens, `notes`, `latitude`, `longitude` e `status`.
+ * `status` e os membros; dos itens, `notes`, `latitude`, `longitude` e `status`;
+ * dos lugares, `notes`, `latitude`, `longitude`, `rating`, `visited`,
+ * `place_id` e `user_id`.
  *
  * Roda com o cliente da sessão: a RLS da viagem continua valendo. A
  * autorização explícita (`exigirMembro`) é de quem chama.
@@ -29,12 +31,22 @@ export type ItemPublico = {
   description: string | null
 }
 
+// Proposta do Micael (S06-M-publicar-viagem, 19/11) para revisão da Audrey: lugares salvos da viagem na projeção, em lista branca.
+export type LugarPublico = {
+  /** Só para a tela escolher o lugar e o endereço; não vai para o post. */
+  id: string
+  name: string
+  category: string | null
+  address: string | null
+}
+
 export type ViagemPublica = {
   title: string
   destination: string
   start_date: string
   end_date: string
   itens: ItemPublico[]
+  lugares: LugarPublico[]
 }
 
 const COLUNAS_VIAGEM = "title, destination, start_date, end_date"
@@ -42,7 +54,12 @@ const COLUNAS_VIAGEM = "title, destination, start_date, end_date"
 export const MAXIMO_ITENS_NO_POST = 200
 const COLUNAS_ITEM = "id, title, date, start_time, end_time, category, location, description"
 
-type LinhaViagem = Omit<ViagemPublica, "itens">
+// Proposta do Micael (S06-M-publicar-viagem, 19/11) para revisão da Audrey: colunas e teto dos lugares.
+const COLUNAS_LUGAR = "id, name, category, address"
+/** O mesmo limite da checagem de `trip_posts.places` no banco. */
+export const MAXIMO_LUGARES_NO_POST = 200
+
+type LinhaViagem = Omit<ViagemPublica, "itens" | "lugares">
 
 /**
  * Devolve `null` quando a viagem não existe ou a sessão não a enxerga.
@@ -78,6 +95,21 @@ export async function projecaoPublicaDaViagem(
     throw new Error("Não foi possível ler o itinerário da viagem")
   }
 
+  // Proposta do Micael (S06-M-publicar-viagem, 19/11) para revisão da Audrey:
+  // lê os lugares com o mesmo cliente e o mesmo tratamento de erro dos itens,
+  // na ordem da tela de lugares da viagem (mais recentes primeiro).
+  const { data: lugares, error: erroLugares } = await supabase
+    .from("places")
+    .select(COLUNAS_LUGAR)
+    .eq("trip_id", tripId)
+    .order("created_at", { ascending: false })
+    .limit(MAXIMO_LUGARES_NO_POST)
+    .returns<LugarPublico[]>()
+
+  if (erroLugares) {
+    throw new Error("Não foi possível ler os lugares da viagem")
+  }
+
   return {
     title: cortar(viagem.title, LIMITES_DO_POST.tituloViagem),
     destination: cortar(viagem.destination, LIMITES_DO_POST.destino),
@@ -92,6 +124,13 @@ export async function projecaoPublicaDaViagem(
       category: item.category,
       location: cortarOpcional(item.location, LIMITES_DO_POST.local),
       description: cortarOpcional(item.description, LIMITES_DO_POST.descricao),
+    })),
+    // Proposta do Micael (S06-M-publicar-viagem, 19/11) para revisão da Audrey: cópia campo a campo.
+    lugares: (lugares ?? []).map((lugar) => ({
+      id: lugar.id,
+      name: lugar.name,
+      category: lugar.category,
+      address: lugar.address,
     })),
   }
 }

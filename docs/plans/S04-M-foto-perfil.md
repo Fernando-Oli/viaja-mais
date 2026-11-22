@@ -181,6 +181,13 @@ tipo declarado).
   metadados e com `limitInputPixels`. O `sharp` já está no `node_modules` como dependência
   opcional do Next 16, mas precisa ser declarado no `package.json`, que é compartilhado. Fica
   à espera de um PR dedicado, com o aval do Fernando.
+  - **Feito em 18/11, no PR #51 (S06).** A revisão de segurança da S06 reproduziu o GPS do EXIF
+    saindo na capa do post, e o Micael decidiu corrigir a capa e a foto juntas.
+  - `lib/social/imagem.ts` (`reprocessarImagem`), usada pelas duas rotas: gira pelo EXIF,
+    reduz para 512 px na foto e 1600 px na capa, gera WebP sem metadados, limita a entrada a 40 MP
+    e recusa com 400 o que não decodifica.
+  - `sharp` 0.35.4 está no `package.json` (exato, a mesma versão do lockfile). O aval do
+    Fernando é pedido no #51.
 - **Apagar a pasta da foto ao excluir a conta** (ação 4 dos riscos, registrada pelo Micael em
   21/10). A exclusão de conta (RF02.4) não existe e cruza domínios: as viagens que a pessoa
   possui caem em cascata, e `expenses.paid_by` é `ON DELETE RESTRICT`. O fluxo é da

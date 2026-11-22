@@ -28,7 +28,8 @@ async function abrirPerfilDoDavi(page: Page) {
   await page.fill("#password", SENHA_TESTE)
   await page.click('button[type="submit"]')
   await page.waitForURL("/dashboard")
-  await page.goto("/dashboard/perfil")
+  // O formulário, com o lápis da foto, mora em /dashboard/perfil/editar desde a S06 (S06-M-perfil-instagram).
+  await page.goto("/dashboard/perfil/editar")
 }
 
 async function escolherNoMenu(page: Page, item: string) {

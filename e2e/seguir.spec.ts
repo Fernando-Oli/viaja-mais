@@ -57,7 +57,7 @@ test("abre o perfil público pela busca, segue e deixa de seguir", async ({ page
 
     const perfil = page.getByRole("region", { name: "Perfil de @carla" })
     await expect(perfil.getByRole("heading", { name: "Carla Teste" })).toBeVisible()
-    await expect(page.getByRole("region", { name: "Viagens publicadas" }).getByText("Nenhuma viagem publicada ainda.")).toBeVisible()
+    await expect(page.getByRole("region", { name: "Publicações" }).getByText("Nenhuma publicação ainda")).toBeVisible()
 
     const antes = await seguidores(perfil)
     await perfil.getByRole("button", { name: "Seguir" }).click()
@@ -136,7 +136,7 @@ test("no perfil privado, solicita sem mudar o contador e cancela a solicitação
 
     const perfil = page.getByRole("region", { name: "Perfil de @bruno" })
     await expect(perfil.getByText("Perfil privado", { exact: true })).toBeVisible()
-    const viagens = page.getByRole("region", { name: "Viagens publicadas" })
+    const viagens = page.getByRole("region", { name: "Publicações" })
     await expect(viagens.getByText("Esta conta é privada")).toBeVisible()
 
     // Os números aparecem também em perfil privado (decisão do Micael).
