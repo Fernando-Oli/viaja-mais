@@ -1,0 +1,24 @@
+@startuml 20-1-c4-contexto
+!include _tema.puml
+!include <C4/C4_Context>
+
+top to bottom direction
+
+Person(visitante, "Visitante", "Pessoa sem sessão. Acessa só a página inicial e as telas de cadastro, login e recuperação de senha.")
+Person(viajante, "Viajante", "Pessoa autenticada. Organiza viagens, itinerário, reservas, lugares e despesas, e usa a rede social.")
+Person(convidado, "Convidado", "Pessoa convidada por e-mail pelo dono de uma viagem. Aceita ou recusa o convite.")
+
+System(viajamais, "Viaja Mais", "Aplicação web de planejamento de viagens em grupo, com controle financeiro compartilhado e rede social.")
+
+System_Ext(supabase, "Supabase", "Serviço gerenciado: autenticação, hospedagem do PostgreSQL e armazenamento de arquivos. Envia os e-mails de convite e de recuperação de senha.")
+System_Ext(maps, "Google Maps Platform", "API JavaScript do Maps e Places: busca de lugares e exibição no mapa.")
+
+Rel(visitante, viajamais, "Cadastra-se e entra", "HTTPS")
+Rel(viajante, viajamais, "Planeja viagens e registra despesas", "HTTPS")
+Rel(convidado, viajamais, "Aceita ou recusa o convite", "HTTPS")
+
+Rel(viajamais, supabase, "Autentica, lê e grava dados e arquivos", "HTTPS")
+Rel(viajamais, maps, "Busca lugares (a partir do navegador)", "HTTPS")
+Rel(supabase, convidado, "Envia o convite", "e-mail")
+
+@enduml

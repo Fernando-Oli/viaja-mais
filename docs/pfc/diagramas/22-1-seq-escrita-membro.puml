@@ -1,0 +1,44 @@
+@startuml 22-1-seq-escrita-membro
+!include _tema.puml
+autonumber
+hide footbox
+
+participant "Navegador" as nav
+participant "proxy.ts" as proxy
+participant "Route Handler\nitinerary/route.ts" as rota
+participant "Supabase Auth" as auth
+participant "lib/authz/trip.ts" as authz
+participant "zod\nlib/schemas/itinerario.ts" as zod
+database "PostgreSQL\n(RLS)" as db
+
+nav -> proxy : POST /api/trips/{tripId}/itinerary\n(cookie de sessão)
+proxy -> auth : getUser()
+alt sem sessão válida
+  proxy --> nav : 401 "Não autenticado" (JSON)
+else sessão válida
+  proxy -> rota : encaminha a requisição
+  rota -> auth : getUser()
+  auth --> rota : usuário da sessão
+  rota -> authz : exigirMembro(tripId, user.id)
+  authz -> db : SELECT role FROM trip_members
+  db --> authz : papel ou nenhuma linha
+  alt não participa da viagem
+    authz --> rota : ErroHttp 403
+    rota --> nav : 403 (respostaDeErro)
+  else membro ou dono
+    rota -> zod : criarItemItinerarioSchema.safeParse(corpo)
+    alt corpo inválido
+      rota --> nav : 400 "Dados inválidos" + detalhes por campo
+    else corpo válido
+      rota -> db : INSERT itinerary_items\n(campo a campo; trip_id da URL)
+      note right of db : a policy itinerary_items_insert\nreavalia a participação
+      alt banco recusa
+        rota --> nav : 400 mensagem genérica
+      else gravado
+        db --> rota : linha criada
+        rota --> nav : 200 { item }
+      end
+    end
+  end
+end
+@enduml

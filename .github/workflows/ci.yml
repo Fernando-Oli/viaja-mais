@@ -49,7 +49,6 @@ jobs:
 
       - name: Cobertura
         run: npm run test:cov
-        continue-on-error: true
 
       - name: Arquivar cobertura
         if: always()

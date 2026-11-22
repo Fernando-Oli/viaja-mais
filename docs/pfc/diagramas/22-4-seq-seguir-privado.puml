@@ -1,0 +1,46 @@
+@startuml 22-4-seq-seguir-privado
+!include _tema.puml
+autonumber
+hide footbox
+
+participant "Navegador\nde quem segue" as a
+participant "Navegador\ndo dono do perfil" as b
+participant "Route Handler" as rota
+participant "zod\nformatoUsernameSchema" as zod
+participant "lib/social" as social
+database "PostgreSQL\n(RLS)" as db
+
+== Solicitação: POST /api/social/perfis/{username}/seguir ==
+a -> rota : (sem corpo; quem segue vem da sessão)
+rota -> zod : safeParse(username)
+note right of zod : fora do formato: 400
+rota -> social : buscarPerfilPorUsername()
+alt perfil inexistente ou o próprio
+  rota --> a : 404 ou 400
+else perfil de outra pessoa
+  rota -> db : rpc consumir_limite("seguir")
+  note right of db : mais de 30 por minuto: 429
+  rota -> social : temUsername(sessão)
+  alt sessão sem username
+    rota --> a : 403 { codigo: sem_username }
+  else com username
+    rota -> db : UPSERT follows (follower_id da sessão)\nON CONFLICT DO NOTHING
+    db -> db : trigger follows_estado_inicial:\nperfil privado nasce pending
+    rota --> a : 200 { perfil } (botão "Solicitado")
+  end
+end
+
+== Aprovação: POST /api/social/solicitacoes/{username} ==
+b -> rota : GET /api/social/solicitacoes?contagem=1 (sino)
+rota --> b : 200 { total }
+b -> rota : POST /api/social/solicitacoes/{username}
+rota -> zod : safeParse(username)
+rota -> social : aprovarSolicitacao(dono = sessão, quem pediu)
+social -> db : UPDATE follows SET status = accepted\nWHERE followee_id = sessão AND status = pending
+note right of db : follows_update só permite ao seguido,\ne só para accepted
+alt nenhuma linha alterada
+  rota --> b : 404 { codigo: sem_pendente }
+else aprovada
+  rota --> b : 200 { success }
+end
+@enduml

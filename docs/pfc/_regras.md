@@ -18,6 +18,25 @@ antes de escrever qualquer seção, e o que o `npm run pfc:check` valida.
   inserir a imagem". Diga o que cada parte representa e por que a estrutura é essa.
 - Registro: português formal, primeira pessoa do plural. Sem emoji, sem marketing.
 
+## O que o professor pediu na devolutiva da Fase 02
+
+Valem para toda seção, daqui em diante:
+
+- **Parágrafo curto.** No máximo 550 caracteres, cerca de seis linhas no PDF. O
+  `pfc:check` avisa acima de 600. Prefira parágrafo curto e lista ou tabela.
+- **Detalhamento de requisito em itens**, um por requisito ou assunto, nunca um
+  bloco corrido.
+- **Todo RF aponta as regras de negócio** de que depende (coluna "Regras" da
+  seção 14), e toda RNE aponta os requisitos (seção 13).
+- **Diagramas em PlantUML**, com a fonte em `docs/pfc/diagramas/`. Nada de
+  desenho em texto ou feito à mão.
+- **Casos de uso ligados aos requisitos** (tabela da seção 17.2), **DER** na 18,
+  **C4** na 20 e na 21, **diagrama de sequência por padrão de rota** na 22.
+- **A arquitetura é confrontada com os requisitos não funcionais** (20.4).
+- **Dados de CI/CD mostrados**, não descritos: os números vêm de
+  `npm run pfc:metricas`.
+- **Segurança tem peso**: risco, medida e o teste que prova, em tabela (25.5).
+
 ## Nosso período: 7º, Fase 02
 
 Criadas pela primeira vez nesta entrega:

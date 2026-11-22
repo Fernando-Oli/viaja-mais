@@ -1,0 +1,48 @@
+@startuml 22-5-seq-publicar-viagem
+!include _tema.puml
+autonumber
+hide footbox
+
+participant "Navegador" as nav
+participant "Route Handler" as rota
+participant "lib/authz/trip.ts" as authz
+participant "lib/social e\nlib/trips/publico.ts" as social
+database "PostgreSQL\n(RLS)" as db
+participant "Supabase Storage\n(chave de serviço)" as storage
+
+== Publicação: POST /api/social/viagens/{tripId}/post ==
+nav -> rota : { titulo, legenda, roteiro, lugares, marcados }
+rota -> authz : exigirMembro(tripId, user.id)
+note right of authz : 400 tripId inválido; 403 não membro;\n403 sem_username; 400 pedidoPostSchema
+rota -> social : projecaoPublicaDaViagem() (lista branca)
+rota -> social : validarMarcados() e conferirRecusas()
+alt marcado inválido ou que recusou
+  rota --> nav : 400 { codigo: marcado_invalido ou marcado_recusou }
+else marcações aceitas
+  rota -> db : INSERT posts (cópia montada por montarPost)
+  note right of db : unique (trip_id, author_id):\npublicar de novo é 409
+  rota -> db : sincronizarMarcacoes() em post_tags
+  alt marcações falham
+    rota -> db : DELETE posts (desfaz a publicação)
+    rota --> nav : erro
+  else
+    rota --> nav : 201 { post }
+  end
+end
+
+== Fotos: PUT /api/social/viagens/{tripId}/post/fotos ==
+nav -> rota : multipart, de 0 a 3 fotos
+rota -> authz : exigirMembro(tripId, user.id)
+rota -> db : rpc consumir_limite("foto-perfil")
+note right of db : 429 acima do limite; 413 tamanho;\n400 bytes que não são imagem
+rota -> social : reprocessarFotos() (sharp: WebP sem EXIF e GPS)
+rota -> storage : enviarFotos() na pasta da sessão
+rota -> db : definirFotos() condicionada às fotos lidas
+alt outra aba trocou antes (409) ou falha
+  rota -> storage : remove as fotos recém-enviadas
+  rota --> nav : 409 ou erro
+else troca gravada
+  rota -> storage : remove as fotos anteriores
+  rota --> nav : 200 { post }
+end
+@enduml

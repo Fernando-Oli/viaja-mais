@@ -1,12 +1,138 @@
-# 15 — Requisitos Não Funcionais
+## 15 Requisitos Não Funcionais
 
-Esta seção cataloga os requisitos não funcionais do produto, organizados por grupo
-de domínio. Cada requisito traz um valor-alvo mensurável, condição necessária para
-que possa ser verificado: metas expressas em tempo de resposta declaram o
-percentil em que são medidas, e metas de disponibilidade declaram a janela de
-apuração.
+Cada requisito não funcional traz um valor-alvo verificável, condição para que possa ser avaliado: metas de tempo de resposta declaram o percentil em que são medidas, e metas de disponibilidade, a janela de apuração. Os identificadores seguem o catálogo do repositório, como na seção 14.
 
-## RNF07 — Social, Descoberta e IA
+### 15.1 Critério de status
+
+Valem os status definidos na seção 14.1, com um acréscimo próprio dos requisitos não funcionais:
+
+| Status | Critério |
+|---|---|
+| Implementado | Código integrado e teste automatizado vinculado ao requisito na matriz de rastreabilidade |
+| Atendido | Satisfeito e verificável por inspeção da configuração, por medição registrada ou por revisão, sem teste vinculado ao requisito |
+| Parcial | Satisfeito em parte do sistema, ou verificado só em parte |
+| Não iniciado | Sem implementação nem medição |
+
+Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 18 atendidos, 7 parciais e 9 não iniciados.
+
+### 15.2 Desempenho (RNF01)
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF01.1 | O carregamento inicial do painel deve completar em menos de 3 segundos no percentil 95 | Atendido | Alta |
+| RNF01.2 | Toda operação de escrita via rota de API deve responder em menos de 1 segundo no percentil 95 | Atendido | Alta |
+| RNF01.3 | O sistema deve sustentar 1.000 usuários simultâneos sem degradação superior a 20% no tempo de resposta | Não iniciado | Média |
+| RNF01.4 | Toda listagem que possa crescer sem limite deve paginar, no máximo 20 registros por página | Parcial | Alta |
+| RNF01.5 | Toda coluna usada em filtro de consulta frequente deve ter índice, verificável no plano de execução | Implementado | Alta |
+
+**Detalhamento:** medimos o ambiente publicado em 13/11/2026, com 30 amostras por meta.
+
+- **RNF01.1** — O carregamento do painel teve percentil 95 de 623 ms, contra a meta de 3 s.
+- **RNF01.2** — A escrita pela API teve percentil 95 de 865 ms, contra a meta de 1 s. A margem é estreita porque cada escrita faz três idas ao banco, hospedado nos Estados Unidos: validar a sessão, conferir a participação e gravar.
+- **RNF01.3** — Não foi verificado: mil usuários simultâneos exigem teste de carga distribuído, acima dos limites das camadas gratuitas adotadas. Como indício, 50 leituras em paralelo de uma única máquina elevaram a mediana em 135%, muito acima dos 20% pretendidos.
+- **RNF01.4** — A rede social pagina de 20 em 20. As listas de uma viagem são lidas inteiras, por decisão de produto, sob o teto do RNF06.4.
+- **RNF01.5** — Toda chave estrangeira tem índice, e um teste confere o plano de execução das consultas da tela de viagem. Com cem mil despesas no banco, a consulta da aba de despesas caiu de 12,2 ms para 0,49 ms.
+
+### 15.3 Segurança (RNF02)
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | Alta |
+| RNF02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | Alta |
+| RNF02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | Alta |
+| RNF02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Implementado | Alta |
+| RNF02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | Alta |
+| RNF02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Atendido | Alta |
+| RNF02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | Alta |
+| RNF02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Parcial | Alta |
+| RNF02.9 | Os dados de rateio e de acerto de contas de uma viagem só devem ser visíveis aos seus membros | Implementado | Alta |
+| RNF02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Implementado | Alta |
+| RNF02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Implementado | Média |
+| RNF02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Parcial | Média |
+
+**Detalhamento:** a análise de riscos e das medidas está na seção 25; aqui registramos como cada requisito é verificado.
+
+- **RNF02.1 a RNF02.3** — São atendidos pela infraestrutura: HTTPS pela hospedagem, hash de senha e emissão de token pelo serviço de autenticação. O token é conferido no servidor de autenticação a cada requisição, e não apenas decodificado do cookie.
+- **RNF02.4** — Row Level Security (segurança em nível de linha do PostgreSQL) está habilitada nas 18 tabelas, com políticas versionadas nas migrações. Os testes de isolamento usam dois usuários reais e verificam leitura e escrita; resultado vazio não é aceito como prova, pois também ocorreria se o dado não existisse.
+- **RNF02.5 e RNF02.7** — Toda rota valida o corpo por esquema e grava campo a campo. Os testes de rota cobrem obrigatoriamente o caminho de corpo inválido.
+- **RNF02.6** — A revisão de segurança de 12/11/2026 não encontrou escrita no banco a partir de componente ou página.
+- **RNF02.8** — O limite vale para as ações de maior custo ou risco de abuso: convite, troca de senha, envio de fotos e pedido de seguir, com os valores da RNE-044. As demais rotas não têm limite, e uma falha na contagem libera a requisição em vez de bloqueá-la; por isso o requisito é parcial.
+- **RNF02.9** — Partes do rateio e pagamentos do acerto só são lidos por participantes da viagem, e um pagamento só é gravado pelo próprio pagador, o que os testes de isolamento comprovam.
+- **RNF02.10** — A chave de serviço fica restrita a um único módulo de acesso administrativo, usado só em rota de servidor, e nunca recebe o prefixo que a exporia ao navegador.
+- **RNF02.11** — Erro de banco chega ao cliente como mensagem genérica, verificada pelos testes de rota.
+- **RNF02.12** — A política restringe as origens de script, de conexão e de formulário e impede a incorporação da aplicação em página de terceiros, mas admite script embutido na própria página. Removê-lo exigiria renderização dinâmica de todas as páginas.
+
+### 15.4 Usabilidade (RNF03)
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF03.1 | Toda tela deve ser utilizável em largura de celular (412 pixels) e de computador, sem perda de função | Implementado | Alta |
+| RNF03.2 | A aplicação deve funcionar nas duas versões mais recentes de Chrome, Firefox, Safari e Edge | Parcial | Média |
+| RNF03.3 | Toda ação de escrita deve dar retorno visual de sucesso ou de falha, e ação destrutiva deve exigir confirmação | Parcial | Alta |
+| RNF03.4 | Erro de validação devolvido pelo servidor deve ser exibido ao usuário com o motivo, e não como mensagem genérica | Parcial | Alta |
+| RNF03.5 | Toda tela deve apresentar zero violações das regras WCAG 2.1 níveis A e AA verificáveis por ferramenta automática | Parcial | Alta |
+
+**Detalhamento:**
+
+- **RNF03.1** — Toda a suíte ponta a ponta roda em dois perfis de navegador, computador e celular (Pixel 7, 412 pixels); uma tela que perca função numa das larguras faz o teste falhar.
+- **RNF03.2** — Os testes executam apenas no motor do Chrome; os demais navegadores não foram verificados.
+- **RNF03.3 e RNF03.4** — As telas de viagem, itinerário, reservas, lugares e avaliações mostram notificação de sucesso ou de falha, exibem o motivo devolvido pela rota e pedem confirmação antes de excluir. As demais telas ainda não foram uniformizadas.
+- **RNF03.5** — Um teste ponta a ponta submete 13 telas e um diálogo à ferramenta axe-core, nos dois perfis de navegador, sem nenhuma regra desligada. As correções que ele exigiu incluíram contraste de cores, nomes acessíveis de botões e campos e textos de links na largura de celular.
+- **Limite do RNF03.5** — Telas fora da lista não são verificadas; a criação de despesa, por exemplo, tem campos de seleção sem nome acessível. Foco visível e navegação por teclado não são verificáveis pela ferramenta.
+- **Identidade visual** — A troca de identidade para Avori, em novembro de 2026, adotou uma paleta escolhida com razão de contraste mínima de 4,5:1 para texto; a cor mais clara é usada só como fundo.
+
+### 15.5 Confiabilidade (RNF04)
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Não iniciado | Média |
+| RNF04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Não iniciado | Alta |
+| RNF04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | Alta |
+| RNF04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Implementado | Alta |
+| RNF04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | Alta |
+| RNF04.6 | A configuração de ambiente deve ser validada na inicialização, e a falha deve nomear a variável ausente ou inválida, sem que valor indefinido chegue à execução | Implementado | Alta |
+
+**Detalhamento:**
+
+- **RNF04.1** — Revisamos a meta herdada de 99,9% para 99,5%, porque as camadas gratuitas de hospedagem e de banco não sustentam o valor anterior. Não há monitoramento de disponibilidade, e por isso a meta não é apurada.
+- **RNF04.2** — O backup depende do plano contratado no provedor do banco, e não verificamos sua existência nem a retenção.
+- **RNF04.3 e RNF04.5** — As 22 migrações estão versionadas, e o fluxo de banco da integração contínua as aplica numa base limpa e roda os testes de isolamento. Na última execução, 473 testes passaram, em 2,9 minutos.
+- **RNF04.4** — Cada área da aplicação tem estados de erro, de não encontrado e de carregamento. A falha inesperada mostra uma explicação e a opção de tentar de novo; o endereço inexistente e a viagem de que a pessoa não participa mostram a mesma página, sem revelar se o recurso existe.
+- **RNF04.6** — Um único módulo lê as variáveis de ambiente, valida a configuração e falha com mensagem que identifica a variável; o teste cobre variável ausente, vazia e inválida.
+
+### 15.6 Manutenibilidade (RNF05)
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF05.1 | O código deve ser escrito em TypeScript no modo estrito e compilar sem erro de tipo, verificado pela integração contínua | Atendido | Alta |
+| RNF05.2 | Diálogos, confirmações e campos de formulário devem vir da biblioteca de componentes compartilhada, sem reimplementação por tela | Atendido | Média |
+| RNF05.3 | Todo requisito implementado deve estar marcado no código e no teste, com rastreabilidade gerada automaticamente | Atendido | Alta |
+| RNF05.4 | A cobertura de testes deve ser de no mínimo 70% em linhas, ramos, funções e instruções, no total e em `lib/`, com bloqueio pela integração contínua | Atendido | Alta |
+| RNF05.5 | Os erros do servidor devem ser registrados em formato estruturado, com rota, usuário e causa | Não iniciado | Baixa |
+
+**Detalhamento:**
+
+- **RNF05.1** — O modo estrito está ligado na configuração do TypeScript, e a integração contínua verifica os tipos em todo pull request.
+- **RNF05.2** — Diálogos e campos vêm da biblioteca de componentes, e um único modal de confirmação substituiu as caixas nativas do navegador.
+- **RNF05.3** — A matriz de rastreabilidade é gerada a partir das marcações e conferida em todo pull request. Hoje, 140 requisitos estão no catálogo, 78 marcados no código e 72 com teste.
+- **RNF05.4** — O corte de 70% nas quatro métricas está configurado desde a atividade S10-A-cobertura. Até 22/11/2026 o passo de cobertura da esteira não reprovava o pull request quando falhava; a marcação que o permitia foi removida nesta versão, e o corte passou a bloquear. Na execução de 22/11/2026, a cobertura foi de 97,56% das linhas, 95,3% das instruções, 90,36% dos desvios e 96,58% das funções, medida sobre `lib/` e `app/api/`; as telas são verificadas pelos testes ponta a ponta, que não entram nessa conta.
+- **RNF05.5** — Os erros são registrados no console, sem estrutura.
+
+### 15.7 Escalabilidade (RNF06)
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF06.1 | A aplicação deve executar sem estado no servidor, permitindo múltiplas instâncias simultâneas | Atendido | Alta |
+| RNF06.2 | Os arquivos estáticos devem ser servidos por rede de distribuição de conteúdo | Atendido | Média |
+| RNF06.3 | O acesso ao banco deve usar pool de conexões, sem abrir conexão por requisição | Atendido | Alta |
+| RNF06.4 | Toda consulta de listagem deve ter limite explícito de registros, sem depender do volume atual de dados | Atendido | Alta |
+
+**Detalhamento:**
+
+- **RNF06.1 a RNF06.3** — Decorrem das escolhas da seção 19: a aplicação roda em funções sem estado, a hospedagem distribui o conteúdo estático, e o banco é acessado pelo pool de conexões do provedor. Registramo-los porque explicam por que essas escolhas foram feitas.
+- **RNF06.4** — Toda listagem leva limite explícito de 500 registros. A exceção deliberada são o acerto de contas e os totais de finanças, que somam despesas: cortar a lista em silêncio produziria saldo errado.
+
+### 15.8 Social, Descoberta e IA (RNF07)
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
@@ -16,224 +142,18 @@ apuração.
 | RNF07.4 | A geração de roteiro deve ser limitada a no máximo 10 requisições por usuário por hora | Não iniciado | Alta |
 | RNF07.5 | A central de notificações deve carregar as 20 mais recentes em menos de 2 segundos no percentil 95, e o contador de não-lidas deve ser calculado em menos de 500 milissegundos | Não iniciado | Média |
 
-**Detalhamento:** todos os requisitos deste grupo têm valor-alvo mensurável,
-como exige o template. O RNF07.4 protege a cota do provedor de IA gratuito e
-evita abuso. Os requisitos RNF07.1 e RNF07.2 sustentam o feed em escala sem
-sobrecarregar o banco. Os requisitos RNF01 a RNF06 — performance geral,
-segurança, usabilidade, confiabilidade, manutenibilidade e escalabilidade —
-pertencem a outros domínios.
+**Detalhamento:**
 
-## 15. Requisitos Não Funcionais — Financeiro e Roteio
+- **RNF07.1 e RNF07.2** — Acompanham o feed (RF09.8), que ainda é prévia. A grade de publicações de um perfil já pagina por cursor, e é o modelo previsto para o feed.
+- **RNF07.3 e RNF07.4** — Acompanham a geração de roteiro (RF12), não implementada. O limite de 10 por hora já está declarado no módulo de limites e protege a cota do provedor contra abuso.
+- **RNF07.5** — A central existe só para solicitações de seguidor (RF13.2), sem contador de não lidas, e não foi medida.
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RNF-08.1 | O cálculo do roteio deve ser determinístico: a soma das partes de `expense_shares` deve sempre igualar o valor total da despesa | Planejado | Alta |
-| RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | Alta |
-
-**Detalhamento:** o primeiro item é testável de forma unitária, sem I/O — é exatamente o papel de `lib/finance/rateio.ts` (regra RNE-020, seção 18), o que o torna um bom candidato a caso de teste na seção 24. O segundo depende de RLS que ainda não existe no repositório (T0 não rodou nesta semana); fica "Planejado" e não "Atendido", para não repetir o erro que o `_regras.md` aponta na documentação antiga ("declara RLS habilitada sem policy versionada").
-
-
-
-## RNF01 — Performance
+### 15.9 Financeiro (RNF08)
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
-| RNF01.1 | O carregamento inicial do painel deve completar em menos de 3 segundos no percentil 95 | Atendido | Alta |
-| RNF01.2 | Toda operação de escrita via rota de API deve responder em menos de 1 segundo no percentil 95 | Atendido | Alta |
-| RNF01.3 | O sistema deve sustentar 1.000 usuários simultâneos sem degradação superior a 20% no tempo de resposta | Planejado | Média |
-| RNF01.4 | Toda listagem que possa crescer sem limite deve paginar, no máximo 20 registros por página | Parcial | Alta |
-| RNF01.5 | Toda coluna usada em filtro de consulta frequente deve ter índice, verificável no plano de execução | Atendido | Média |
+| RNF08.1 | O cálculo do rateio deve ser determinístico: a soma das partes deve sempre igualar o valor total da despesa | Implementado | Alta |
 
-**Detalhamento:** os três primeiros itens reproduzem as metas herdadas de
-`docs/ARCHITECTURE.md` §7, agora com percentil declarado — sem ele a medição não
-é reprodutível e o requisito não é verificável. A medição, feita pelo script
-`scripts/pfc/medir-desempenho.mjs` no ambiente publicado em 13/11/2026,
-registrou percentil 95 de 623 ms no carregamento do painel e de 865 ms nas
-escritas pela API, ambos dentro das metas. A margem do RNF01.2 é estreita:
-cada escrita percorre três vezes o trajeto até o banco, hospedado nos Estados
-Unidos (validação da sessão, checagem de participação na viagem e a escrita),
-e é a latência de rede, e não o processamento, que domina o tempo. O RNF01.3 não foi verificado: mil usuários simultâneos exigem teste de
-carga distribuído, acima dos limites das camadas gratuitas de hospedagem e de
-banco adotadas. O RNF01.4 e o RNF01.5 foram acrescentados por decorrerem
-diretamente do modelo de dados. O RNF01.5 é atendido: toda chave estrangeira
-tem índice, e o plano de execução das consultas da tela de viagem usa o índice
-(`tests/rls/15-indices.test.ts`); com cem mil despesas no banco, a consulta da
-aba de despesas caiu de 12,2 ms para 0,49 ms. O RNF01.4 é Parcial: a rede
-social pagina de 20 em 20, enquanto as listas de uma viagem são lidas inteiras
-por decisão de produto — a pessoa quer ver a viagem toda, e uma viagem tem
-tamanho natural limitado —, sob o teto do RNF06.4.
+**Detalhamento:**
 
-## RNF02 — Segurança
-
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RNF02.1 | Toda comunicação entre cliente e servidor deve ocorrer sobre HTTPS | Atendido | Alta |
-| RNF02.2 | As senhas devem ser armazenadas com algoritmo de hash resistente, nunca em texto claro | Atendido | Alta |
-| RNF02.3 | A sessão deve ser mantida por token assinado, validado no servidor a cada requisição | Atendido | Alta |
-| RNF02.4 | Toda tabela do banco deve ter Row Level Security habilitada e política por operação utilizada | Atendido | Alta |
-| RNF02.5 | Todo corpo de requisição deve ser validado por esquema no servidor antes de qualquer escrita | Atendido | Alta |
-| RNF02.6 | Nenhuma escrita no banco deve partir do navegador: toda alteração passa por rota de API | Atendido | Alta |
-| RNF02.7 | Nenhuma rota deve repassar o corpo da requisição diretamente ao banco, evitando atribuição em massa | Atendido | Alta |
-| RNF02.8 | As rotas de API devem limitar requisições por usuário e por janela de tempo | Atendido | Alta |
-| RNF02.12 | A aplicação deve declarar política de segurança de conteúdo que restrinja as origens de script | Parcial | Média |
-| RNF02.10 | A chave de serviço do banco, que ignora a Row Level Security, não deve alcançar o navegador nem componentes de interface | Atendido | Alta |
-| RNF02.11 | Mensagem de erro devolvida ao cliente não deve revelar nome de coluna, restrição ou detalhe interno do banco | Atendido | Média |
-
-**Detalhamento:** os requisitos RNF02.1 a RNF02.3 são atendidos pela
-infraestrutura adotada — HTTPS pela hospedagem, hash de senha e emissão de token
-pelo serviço de autenticação do Supabase — e a validação do token no servidor é
-feita por `getUser()` em `lib/supabase/proxy.ts`. O RNF02.4 deixou de ser
-declaração para tornar-se fato verificável: as políticas estão versionadas em
-`supabase/migrations/20260910012723_plataforma_rls_isolamento.sql` e o isolamento
-é provado por `tests/rls/01-isolamento.test.ts`, que exercita dois usuários reais
-e verifica tanto leitura quanto escrita — um resultado vazio de consulta não é
-aceito como prova, pois também ocorreria se o dado simplesmente não existisse.
-Esse teste é a origem da marcação `@RNF02` no repositório.
-
-O RNF02.5 e o RNF02.7 decorrem das regras do `CLAUDE.md` e são exercitados pelos
-testes de rota em `tests/api/`, que cobrem obrigatoriamente o caminho de corpo
-inválido. O RNF02.6 é atendido: a revisão de segurança de 12/11/2026
-(`S10-F-revisao-seguranca`) não encontrou escrita no banco a partir de componente
-ou página; toda alteração passa por rota de API, e a Row Level Security nega as
-alterações de coluna que nenhuma rota faz. O RNF02.8 é atendido pela função `consumir_limite`, no
-banco, que conta as requisições de cada usuário em janela fixa; as rotas de
-convite, troca de senha, foto de perfil e seguir recusam com código 429 quando o
-limite é excedido, antes de qualquer efeito, e o usuário não consegue alterar o
-próprio contador pela API (`tests/rls/12-rate-limit.test.ts`). O RNF02.12 é
-Parcial: a política de segurança de conteúdo restringe as origens de script, de
-conexão e de formulário e impede a incorporação da aplicação em página de
-terceiros, mas admite script embutido na própria página (`'unsafe-inline'`), pois
-a alternativa com nonce exigiria renderização dinâmica de todas as páginas; o
-risco residual está descrito na seção 25. O RNF02.10 é a razão de a chave de serviço ser
-restrita a um único módulo de acesso administrativo e nunca receber o prefixo que
-a exporia ao pacote do navegador. O identificador RNF02.9 já é utilizado na
-subseção do domínio financeiro, adiante, para a visibilidade dos dados de
-rateio; preservamo-lo e numeramos a política de segurança de conteúdo como
-RNF02.12, a fim de não invalidar referência já existente.
-
-## RNF03 — Usabilidade
-
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RNF03.1 | Toda tela deve ser utilizável em largura de celular (412 pixels) e de computador, sem perda de função | Atendido | Alta |
-| RNF03.2 | A aplicação deve funcionar nas duas versões mais recentes de Chrome, Firefox, Safari e Edge | Parcial | Média |
-| RNF03.3 | Toda ação de escrita deve dar retorno visual de sucesso ou de falha, e ação destrutiva deve exigir confirmação | Parcial | Alta |
-| RNF03.4 | Erro de validação devolvido pelo servidor deve ser exibido ao usuário com o motivo, e não como mensagem genérica | Parcial | Alta |
-| RNF03.5 | Toda tela deve apresentar zero violações das regras WCAG 2.1 níveis A e AA verificáveis por ferramenta automática | Parcial | Alta |
-
-**Detalhamento:** os cinco requisitos mantêm a numeração herdada de
-`docs/ARCHITECTURE.md` §7, agora com critério verificável. O RNF03.1 é atendido
-porque toda a suíte ponta a ponta executa em dois perfis de navegador, computador
-e celular (Pixel 7), e uma tela que perca função em uma das larguras faz o teste
-falhar. O RNF03.2 permanece Parcial: os testes automatizados executam apenas no
-motor do Chrome, e os demais navegadores não foram verificados.
-
-O RNF03.3 e o RNF03.4 são cumpridos nas telas de viagem, itinerário, reservas,
-lugares e avaliações, que exibem notificação de sucesso ou de falha, mostram a
-mensagem de validação devolvida pela rota e pedem confirmação no `ConfirmModal`
-antes de excluir; nenhuma tela usa as caixas `alert()` e `confirm()` do navegador.
-Permanecem Parciais enquanto as demais telas não forem uniformizadas, trabalho
-compartilhado com o RNF04.4.
-
-O RNF03.5 é verificado pelo teste `e2e/acessibilidade.spec.ts`, que submete as
-telas de login, cadastro, painel, detalhe da viagem, avaliações de lugar e
-criação de atividade do itinerário à biblioteca axe-core, nos dois perfis de
-navegador, e falha com a lista de violações encontradas. Nenhuma regra foi
-desligada. A primeira execução encontrou três classes de problema, todas
-corrigidas: contraste insuficiente entre o texto branco e as cores da marca,
-botões e campos de seleção sem nome acessível e links da barra lateral que
-perdiam o texto na largura de celular. A correção de contraste alterou a
-identidade visual: o laranja passou de `#FF7F50` para `#C2410C` e o verde de
-`#319F43` para `#267E35`, que atingem a razão mínima de 4,5:1 exigida pelo nível
-AA para texto. O logotipo manteve as cores originais, pois a norma isenta
-logotipos dessa exigência. Em novembro de 2026, o rebranding para Avori
-substituiu essa paleta por marfim, floresta, grafite e cítrico, escolhida já com
-razão de contraste de pelo menos 4,5:1 para texto; o cítrico, mais claro, é usado
-apenas como fundo, sempre com texto grafite, e nunca como cor de texto sobre
-marfim. Na mesma ocasião, o teste passou a cobrir também a página inicial, a
-escolha entre criar a viagem com a Avori ou manualmente, a criação com a Avori,
-o formulário de criação manual, o feed, a busca de reservas e as prévias de
-compra de passagens e de hospedagem. Essa ampliação encontrou dois problemas,
-ambos corrigidos: o campo de orçamento da criação de viagem tinha um rótulo
-associado a um identificador inexistente, de modo que ficava sem nome acessível,
-e os botões de curtir e comentar do feed exibiam a contagem sem que ela fizesse
-parte do nome lido pelo leitor de tela. O requisito permanece Parcial porque as telas fora
-dessa lista não são verificadas; a tela de criação de despesa, por exemplo, tem
-campos de seleção sem nome acessível. Foco visível e navegação por teclado não
-são verificáveis pela ferramenta e constam do roteiro manual da atividade
-`S10-A-cobertura`.
-
-## RNF04 — Confiabilidade
-
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RNF04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Planejado | Média |
-| RNF04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Planejado | Alta |
-| RNF04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | Alta |
-| RNF04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Atendido | Alta |
-| RNF04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | Alta |
-| RNF04.6 | A configuração de ambiente deve ser validada na inicialização, e a falha deve nomear a variável ausente ou inválida, sem que valor indefinido chegue à execução | Atendido | Alta |
-
-**Detalhamento:** revisamos a meta de disponibilidade herdada, de 99,9% para
-99,5%, por honestidade técnica: o projeto utiliza camada gratuita de hospedagem e
-de banco, cujos próprios acordos de serviço não sustentam o valor anterior;
-declarar 99,9% seria enunciar um requisito que não temos como verificar nem
-cumprir. O RNF04.3 e o RNF04.5 são atendidos e verificáveis: as migrações estão
-em `supabase/migrations/` e o fluxo de integração contínua definido em
-`.github/workflows/db.yml` aplica o schema em base limpa e executa os testes de
-isolamento a cada alteração. O RNF04.4 é atendido pelos estados de erro,
-de não encontrado e de carregamento de cada segmento da aplicação
-(`error.tsx`, `global-error.tsx`, `not-found.tsx` e `loading.tsx`): a falha
-inesperada mostra uma explicação e a opção de tentar de novo, sem expor a
-mensagem interna; o endereço inexistente, ou de viagem de que a pessoa não
-participa, mostra a mesma página de não encontrado, sem revelar se o recurso
-existe. O RNF04.6 é atendido por `lib/env.ts`, ponto único de
-leitura das variáveis de ambiente, que valida a configuração com `zod` e falha
-com mensagem que identifica a variável; `tests/lib/env.test.ts` cobre variável
-ausente, vazia e inválida.
-
-## RNF05 — Manutenibilidade
-
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RNF05.1 | O código deve ser escrito em TypeScript no modo estrito e compilar sem erro de tipo, verificado pela integração contínua | Atendido | Alta |
-| RNF05.2 | Diálogos, confirmações e campos de formulário devem vir da biblioteca de componentes compartilhada, sem reimplementação por tela | Atendido | Média |
-| RNF05.3 | Todo requisito implementado deve estar marcado no código e no teste, com rastreabilidade gerada automaticamente | Atendido | Alta |
-| RNF05.4 | A cobertura de testes deve ser de no mínimo 70% em linhas, ramos, funções e instruções, no total e em `lib/`, com bloqueio pela integração contínua | Atendido | Alta |
-| RNF05.5 | Os erros do servidor devem ser registrados em formato estruturado, com rota, usuário e causa | Planejado | Baixa |
-
-**Detalhamento:** os requisitos mantêm a numeração herdada e ganham critério
-verificável. O RNF05.1 é atendido pela opção `strict` do `tsconfig.json` e pelo
-passo `typecheck` do fluxo de integração contínua. O RNF05.2 é atendido pelos
-componentes de `components/ui` e pelo `ConfirmModal`, que substituiu as caixas
-nativas do navegador em todas as telas. O RNF05.3 é verificado por
-`npm run pfc:rastreabilidade`, que gera a matriz requisito–código–teste e falha
-quando um requisito implementado não tem teste.
-
-O RNF05.4 é atendido desde a atividade `S10-A-cobertura`, que ligou o corte de
-cobertura em `vitest.config.mts`. O passo `test:cov` da integração contínua
-passou a falhar quando qualquer das quatro métricas fica abaixo de 70%, no total
-ou em `lib/`. Na ativação, a cobertura de linhas era de 91,4% no total e de
-91,5% em `lib/`. Nenhum arquivo foi retirado da medição para atingir o valor:
-os módulos de conexão com o Supabase, exercitados apenas pelos testes ponta a
-ponta, permanecem com cobertura zero e contam contra a média. O RNF05.5 não tem
-implementação: os erros são hoje registrados com `console.error`, sem estrutura.
-
-## RNF06 — Escalabilidade
-
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RNF06.1 | A aplicação deve executar sem estado no servidor, permitindo múltiplas instâncias simultâneas | Atendido | Alta |
-| RNF06.2 | Os arquivos estáticos devem ser servidos por rede de distribuição de conteúdo | Atendido | Média |
-| RNF06.3 | O acesso ao banco deve usar pool de conexões, sem abrir conexão por requisição | Atendido | Alta |
-| RNF06.4 | Toda consulta de listagem deve ter limite explícito de registros, sem depender do volume atual de dados | Atendido | Alta |
-
-**Detalhamento:** os três primeiros requisitos são atendidos por consequência das
-escolhas tecnológicas descritas na seção 19: a aplicação executa em funções sem
-estado, com distribuição de conteúdo estático pela própria hospedagem, e o acesso
-ao banco ocorre pelo pool gerenciado do Supabase. Registramo-los ainda assim
-porque a seção 21 exige justificar as escolhas, e é este grupo que explica por
-que elas foram feitas. O RNF06.4 é atendido: toda consulta de listagem leva
-limite explícito de 500 registros (`lib/listagem.ts`), com uma exceção
-deliberada — o acerto de contas e os totais de finanças somam despesas, e
-cortar a lista em silêncio produziria saldo errado.
+- **RNF08.1** — A garantia é dupla. A aplicação calcula em centavos inteiros, com desempate por uma ordem fixa dos participantes, de modo que tela e servidor chegam ao mesmo resultado (RNE-020). O banco recusa, ao fim da transação, partes que não somem o valor da despesa, comportamento coberto por teste de isolamento.

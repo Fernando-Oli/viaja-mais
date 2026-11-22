@@ -1,0 +1,62 @@
+@startuml 25-1-camadas-de-defesa
+!include _tema.puml
+
+|Navegador|
+start
+:Requisição HTTPS
+com o cookie de sessão;
+
+|Proxy|
+:getUser() valida o token
+no serviço de autenticação;
+if (Sessão válida ou\nrota pública?) then (não)
+  :401 em JSON na API,
+  ou ida para o login;
+  stop
+else (sim)
+endif
+
+|Rota de API|
+:getUser() de novo
+e identifica o usuário;
+:Limite por usuário
+nas rotas que custam;
+note right
+  Acima do limite:
+  429 com Retry-After
+end note
+:exigirMembro ou
+exigirDono;
+note right
+  Quem não participa:
+  403, sem consultar dados
+end note
+:Validação zod e
+campos um a um;
+note right
+  Corpo inválido: 400.
+  Campo extra não passa.
+end note
+:Consulta com a sessão
+do próprio usuário;
+
+|PostgreSQL|
+:RLS por participação
+e grant por coluna;
+note right
+  Linha alheia não aparece;
+  escrita fora da regra
+  é recusada pelo banco.
+end note
+
+|Rota de API|
+:Resposta, ou erro genérico
+com código para o log;
+
+|Proxy|
+:CSP e cabeçalhos
+de segurança na resposta;
+
+|Navegador|
+stop
+@enduml

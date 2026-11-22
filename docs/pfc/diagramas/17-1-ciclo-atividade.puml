@@ -1,0 +1,23 @@
+@startuml 17-1-ciclo-atividade
+!include _tema.puml
+
+start
+:Plano em docs/plans/\ncom "O que testar" e\n"O que validar" preenchidos;
+:Branch própria\n(feat/, fix/, chore/ ou docs/\n+ identificador da atividade);
+
+repeat
+  :Código e testes exigidos\npelo tipo de mudança,\ncom as tags @RFxx.y;
+  :Verificação local\n(npm run verify):\nlint, tipos, testes e build;
+  :Pull request com os\ncritérios de validação;
+  note right
+    notion.yml espelha o
+    pull request no quadro
+  end note
+  :Integração contínua:\nci.yml sempre;\ndb.yml se mudou o banco;
+  :Revisão no pull request\n(registrada em 19 de 79);
+repeat while (Esteira vermelha\nou ajuste pedido?) is (sim) not (não)
+
+:Merge na main;
+:Atualização das seções\ndo documento e da Parte 00;
+stop
+@enduml

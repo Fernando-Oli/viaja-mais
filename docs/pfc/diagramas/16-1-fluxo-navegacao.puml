@@ -1,0 +1,47 @@
+@startuml 16-1-fluxo-navegacao
+!include _tema.puml
+
+start
+:Página inicial pública\n( / );
+:Entrar, cadastrar-se ou\nredefinir a senha\n(/auth/...);
+:Painel\n(/dashboard);
+note right
+  Barra superior no computador;
+  barra de abas no celular
+end note
+
+split
+  :Viagens\n(/dashboard/trips);
+  :Nova viagem: formulário\nou prévia com a Avori;
+  :Detalhe da viagem\n(/dashboard/trips/[id]);
+  :Abas: itinerário, despesas,\nlugares e reservas;
+  :Acerto de contas\n(.../[id]/acerto);
+split again
+  :Agenda, Finanças,\nReservas e Lugares;
+  :Busca de voos e\nhotéis (prévia);
+end split
+
+:Volta à barra\nde navegação;
+
+split
+  :Feed\n(lista em prévia);
+  :Criar publicação;
+  :Publicação\n(/feed/[postId]);
+split again
+  :Pesquisar pessoas\n(/pesquisar);
+  :Perfil de outro viajante\n(/u/[username]);
+  :Seguidores e seguindo;
+end split
+
+:Volta à barra\nde navegação;
+
+split
+  :Meu perfil e\nedição do perfil;
+split again
+  :Notificações:\nsolicitações para seguir;
+split again
+  :Configurações:\ntroca de senha;
+end split
+
+stop
+@enduml

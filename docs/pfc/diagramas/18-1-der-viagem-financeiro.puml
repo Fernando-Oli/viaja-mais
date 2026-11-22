@@ -1,0 +1,125 @@
+@startuml 18-1-der-viagem-financeiro
+!include _tema.puml
+hide circle
+hide empty members
+skinparam linetype ortho
+
+entity "profiles" as profiles {
+  *id : uuid <<PK>>
+  --
+  username : citext <<unique>>
+  full_name : text
+  is_public : boolean
+}
+
+entity "trips" as trips {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  title : text
+  start_date, end_date : date
+  budget : numeric(10,2)
+  status : text (CHECK)
+}
+
+entity "trip_members" as trip_members {
+  *id : uuid <<PK>>
+  --
+  trip_id : uuid <<FK>>
+  user_id : uuid <<FK>>
+  role : owner ou member
+  UNIQUE (trip_id, user_id)
+}
+
+entity "trip_invitations" as trip_invitations {
+  *id : uuid <<PK>>
+  --
+  trip_id : uuid <<FK>>
+  inviter_id : uuid <<FK>>
+  invitee_email : text
+  status : pending, accepted ou declined
+}
+
+entity "itinerary_items" as itinerary_items {
+  *id : uuid <<PK>>
+  --
+  trip_id : uuid <<FK>>
+  title : text
+  date : date
+  category : text (CHECK)
+}
+
+entity "bookings" as bookings {
+  *id : uuid <<PK>>
+  --
+  trip_id : uuid <<FK>>
+  user_id : uuid <<FK>>
+  type : text (CHECK)
+  price : numeric(10,2)
+}
+
+entity "places" as places {
+  *id : uuid <<PK>>
+  --
+  trip_id : uuid <<FK>>
+  user_id : uuid <<FK>>
+  name : text
+  place_id : text (Google)
+  visited : boolean
+}
+
+entity "place_reviews" as place_reviews {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  google_place_id : text
+  rating : smallint (1 a 5)
+  UNIQUE (google_place_id, user_id)
+}
+
+entity "expenses" as expenses {
+  *id : uuid <<PK>>
+  --
+  trip_id : uuid <<FK>>
+  user_id : uuid <<FK>>
+  paid_by : uuid <<FK>>
+  amount : numeric(10,2)
+  split_type : equal, weight ou exact
+}
+
+entity "expense_shares" as expense_shares {
+  *id : uuid <<PK>>
+  --
+  expense_id : uuid <<FK>>
+  user_id : uuid <<FK>>
+  amount : numeric(10,2)
+  settled_at : timestamptz
+  UNIQUE (expense_id, user_id)
+}
+
+entity "settlements" as settlements {
+  *id : uuid <<PK>>
+  --
+  trip_id : uuid <<FK>>
+  from_user_id : uuid <<FK>>
+  to_user_id : uuid <<FK>>
+  amount : numeric(10,2) > 0
+  idempotency_key : uuid
+}
+
+profiles ||..o{ trips
+trips ||--o{ trip_members
+profiles ||..o{ trip_members
+trips ||--o{ trip_invitations
+trips ||---o{ itinerary_items
+trips ||---o{ bookings
+trips ||---o{ places
+trips ||--o{ expenses
+profiles ||..o{ expenses
+expenses ||--o{ expense_shares
+profiles ||..o{ expense_shares
+trips ||---o{ settlements
+profiles ||..o{ settlements
+places }o..o{ place_reviews : "place_id = google_place_id"
+profiles ||..o{ place_reviews
+@enduml

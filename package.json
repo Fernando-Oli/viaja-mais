@@ -30,6 +30,8 @@
     "pfc:rastreabilidade": "node scripts/pfc/rastreabilidade.mjs",
     "pfc:rastreabilidade:check": "node scripts/pfc/rastreabilidade.mjs --check",
     "pfc:desempenho": "node scripts/pfc/medir-desempenho.mjs",
+    "pfc:metricas": "node scripts/pfc/metricas.mjs",
+    "pfc:diagramas": "node scripts/pfc/diagramas.mjs",
     "notion:seed": "node scripts/notion/seed.mjs",
     "notion:sync": "node scripts/notion/sync.mjs",
     "notion:pull": "node scripts/notion/pull.mjs",
