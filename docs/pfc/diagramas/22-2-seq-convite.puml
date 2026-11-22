@@ -7,7 +7,7 @@ participant "Navegador\ndo dono" as dono
 participant "Navegador\ndo convidado" as conv
 participant "Route Handler" as rota
 participant "lib/authz/trip.ts" as authz
-participant "Supabase Auth" as auth
+participant "Serviço de\nautenticação" as auth
 database "PostgreSQL\n(RLS)" as db
 
 == Convite: POST /api/invitations ==

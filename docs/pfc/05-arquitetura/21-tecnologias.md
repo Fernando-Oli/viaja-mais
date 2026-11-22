@@ -8,16 +8,16 @@ Organizamos as tecnologias pelos contêineres do diagrama C4 da Figura 20.2, de 
 | Interface no navegador | Tailwind CSS ^4.1.9 | Estilo | Estilo junto do componente, sem folhas globais que se sobrepõem e causam efeito colateral em outras telas |
 | Interface no navegador | shadcn/ui sobre Radix UI (pacotes 1.x e 2.x) | Diálogos, menus, campos e notificações | Componentes acessíveis por teclado e leitor de tela, copiados para `components/ui` e adaptáveis sem esperar a biblioteca |
 | Interface no navegador | recharts 2.15.4 e lucide-react ^0.454.0 | Gráfico de despesas por categoria e ícones | Gráfico declarativo em React, sem código de desenho próprio |
-| Aplicação Next.js | Next.js ^16.3.3 (App Router) | `proxy.ts`, Server Components e route handlers | Páginas e rotas de dados no mesmo projeto, com uma linguagem e uma publicação para uma equipe de quatro |
-| Aplicação Next.js | TypeScript ^5, modo estrito | Linguagem de todo o código | Os tipos das tabelas são gerados do banco (`types/database.ts`); divergência com o schema vira erro de compilação |
-| Aplicação Next.js | zod 3.25.76 | Validação do corpo das rotas e das variáveis de ambiente | O resultado validado é tipado, o que torna natural gravar campo a campo e impede a atribuição em massa |
-| Aplicação Next.js | @supabase/ssr (latest) e @supabase/supabase-js ^2.47.10 | Clientes de sessão e administrativo | Leem a sessão do cookie no servidor, de modo que a RLS vale também nas rotas |
-| Aplicação Next.js | sharp 0.35.4 | Regera as fotos enviadas | Decodifica e regrava a imagem em WebP, sem metadados de localização, antes de ela chegar ao Storage |
-| Supabase Auth | GoTrue, operado pelo Supabase | Cadastro, sessão, recuperação de senha, convite por e-mail | Autenticação por serviço maduro; hash de senha e token escritos por nós seriam vulnerabilidade |
-| PostgreSQL | PostgreSQL 17 com RLS | 18 tabelas, políticas, funções e gatilhos | Modelo relacional forte e segurança por linha: o requisito central é de acesso, e resolvê-lo no banco evita que uma falha de código vire vazamento |
-| Supabase Storage | Buckets privados `avatars` e `capas-posts` | Fotos de perfil e de publicação | Mesmo provedor do banco e da autenticação; a foto de perfil é entregue por URL assinada que expira em 10 minutos |
-| Google Maps Platform | Maps JavaScript API e Places | Busca de lugares e exibição no mapa | Base de lugares que a equipe não teria como manter; consumida só no navegador, em dois componentes |
-| Aplicação Next.js (hospedagem) | Vercel | Rede de borda e funções sem estado | Publicação a cada merge na `main`, HTTPS e distribuição de conteúdo estático sem servidor para administrar |
+| Aplicação web | Next.js ^16.3.3 (App Router) | `proxy.ts`, Server Components e route handlers | Páginas e rotas de dados no mesmo projeto, com uma linguagem e uma publicação para uma equipe de quatro |
+| Aplicação web | TypeScript ^5, modo estrito | Linguagem de todo o código | Os tipos das tabelas são gerados do banco (`types/database.ts`); divergência com o schema vira erro de compilação |
+| Aplicação web | zod 3.25.76 | Validação do corpo das rotas e das variáveis de ambiente | O resultado validado é tipado, o que torna natural gravar campo a campo e impede a atribuição em massa |
+| Aplicação web | @supabase/ssr (latest) e @supabase/supabase-js ^2.47.10 | Clientes de sessão e administrativo | Leem a sessão do cookie no servidor, de modo que a RLS vale também nas rotas |
+| Aplicação web | sharp 0.35.4 | Regera as fotos enviadas | Decodifica e regrava a imagem em WebP, sem metadados de localização, antes de ela chegar ao Storage |
+| Autenticação | GoTrue, operado pelo Supabase | Cadastro, sessão, recuperação de senha, convite por e-mail | Autenticação por serviço maduro; hash de senha e token escritos por nós seriam vulnerabilidade |
+| Banco de dados | PostgreSQL 17 com RLS, no Supabase | 18 tabelas, políticas, funções e gatilhos | Modelo relacional forte e segurança por linha: o requisito central é de acesso, e resolvê-lo no banco evita que uma falha de código vire vazamento |
+| Armazenamento de arquivos | Supabase Storage, buckets privados `avatars` e `capas-posts` | Fotos de perfil e de publicação | Mesmo provedor do banco e da autenticação; a foto de perfil é entregue por URL assinada que expira em 10 minutos |
+| Serviço de mapas | Google Maps Platform: Maps JavaScript API e Places | Busca de lugares e exibição no mapa | Base de lugares que a equipe não teria como manter; consumida só no navegador, em dois componentes |
+| Hospedagem da aplicação | Vercel | Rede de borda e funções sem estado | Publicação a cada merge na `main`, HTTPS e distribuição de conteúdo estático sem servidor para administrar |
 
 Agrupamos os três serviços do Supabase porque foram escolhidos juntos: um único projeto fornece banco, autenticação e arquivos, com ambiente local idêntico em Docker. Isso permitiu concentrar o semestre nas regras de acesso e nas funcionalidades, e não na operação de servidores.
 

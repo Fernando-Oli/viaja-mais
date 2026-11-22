@@ -2,40 +2,45 @@
 !include _tema.puml
 !include <C4/C4_Deployment>
 
+' Nós genéricos: o diagrama descreve papéis de infraestrutura, não provedores.
+' Qual provedor ocupa cada nó hoje está na seção 21.
+
 top to bottom direction
 
 Deployment_Node(dispositivo, "Dispositivo do usuário", "Computador ou celular") {
-  Container(navegador, "Navegador", "React 19", "Interface carregada de viaja-mais.online")
+  Container(navegador, "Navegador", "React 19", "Interface da aplicação")
 }
 
-Deployment_Node(vercel, "Vercel", "Hospedagem gerenciada") {
-  Deployment_Node(borda, "Rede de borda", "CDN") {
-    Container(estaticos, "Arquivos estáticos", "JS, CSS, imagens de _next/static")
+Deployment_Node(hospedagem, "Hospedagem da aplicação", "Plataforma gerenciada") {
+  Deployment_Node(borda, "Rede de distribuição", "CDN") {
+    Container(estaticos, "Arquivos estáticos", "JS, CSS, imagens")
   }
   Deployment_Node(funcoes, "Funções sob demanda", "Node.js, sem estado") {
-    Container(app, "Aplicação Next.js", "Next.js 16", "proxy.ts, Server Components e route handlers")
+    Container(app, "Aplicação web", "Next.js 16", "proxy.ts, Server Components e route handlers")
   }
 }
 
-Deployment_Node(supabase, "Projeto Supabase de produção", "Serviço gerenciado") {
-  ContainerDb(pg, "PostgreSQL", "PostgreSQL 17 + RLS", "Schema aplicado manualmente a partir de supabase/migrations")
-  Container(auth, "Auth e Storage", "GoTrue e Storage", "Sessão, e-mails e buckets privados")
+Deployment_Node(dados, "Serviço de dados e identidade", "Gerenciado") {
+  ContainerDb(pg, "Banco de dados", "PostgreSQL + RLS", "Schema aplicado manualmente a partir das migrations")
+  Container(auth, "Autenticação e arquivos", "Sessão por token, buckets privados", "Sessão, e-mails e fotos")
 }
 
-Deployment_Node(github, "GitHub", "Repositório e esteira") {
+Deployment_Node(versionamento, "Repositório e integração contínua", "Serviço de Git") {
   Container(repo, "Repositório", "Git", "Branch main é a versão publicada")
-  Deployment_Node(runner, "GitHub Actions", "ubuntu-latest") {
-    Deployment_Node(docker, "Docker", "Supabase CLI 2.104.0") {
-      ContainerDb(local, "Supabase local efêmero", "Auth, PostgreSQL, Storage", "Migrations do zero, testes de RLS e E2E")
+  Deployment_Node(executor, "Executor da esteira", "Máquina temporária") {
+    Deployment_Node(conteiner, "Contêineres", "Docker") {
+      ContainerDb(local, "Banco e autenticação locais", "Efêmeros", "Migrations do zero, testes de RLS e E2E")
     }
   }
+  Container(monitor, "Monitor de disponibilidade", "Agendado a cada 5 min", "Consulta a página inicial e /api/saude")
 }
 
 Rel(navegador, estaticos, "Baixa", "HTTPS")
 Rel(navegador, app, "Páginas e /api/**", "HTTPS")
 Rel(app, pg, "Consultas com a sessão", "HTTPS")
 Rel(app, auth, "Valida token, envia convite, grava fotos", "HTTPS")
-Rel(repo, local, "PR e push na main disparam os workflows", "ci.yml, db.yml")
-Rel(repo, app, "Merge na main publica", "integração Git da Vercel")
+Rel(repo, local, "PR e push na main disparam a esteira", "ci.yml, db.yml")
+Rel(repo, app, "Merge na main publica", "integração com o Git")
+Rel(monitor, app, "Verifica", "HTTPS")
 
 @enduml

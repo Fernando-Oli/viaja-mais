@@ -33,7 +33,7 @@ fork again
     :**Playwright**
     4 partes em paralelo,
     cada uma com o seu
-    Supabase local;
+    banco local em contêiner;
   endif
 fork again
   if (Mudou o banco ou\nos testes de RLS?) then (sim)
@@ -57,8 +57,8 @@ fork
   :CI de novo
   sobre a main;
 fork again
-  :Vercel publica em
-  viaja-mais.online;
+  :A hospedagem publica
+  a nova versão;
 end fork
 :Migrations aplicadas
 manualmente em produção;

@@ -2,6 +2,9 @@
 !include _tema.puml
 !include <C4/C4_Context>
 
+' Nomes genéricos de propósito: o provedor de cada serviço pode mudar sem que a
+' arquitetura mude. A correspondência com os provedores atuais está na seção 21.
+
 top to bottom direction
 
 Person(visitante, "Visitante", "Pessoa sem sessão. Acessa só a página inicial e as telas de cadastro, login e recuperação de senha.")
@@ -10,15 +13,15 @@ Person(convidado, "Convidado", "Pessoa convidada por e-mail pelo dono de uma via
 
 System(viajamais, "Viaja Mais", "Aplicação web de planejamento de viagens em grupo, com controle financeiro compartilhado e rede social.")
 
-System_Ext(supabase, "Supabase", "Serviço gerenciado: autenticação, hospedagem do PostgreSQL e armazenamento de arquivos. Envia os e-mails de convite e de recuperação de senha.")
-System_Ext(maps, "Google Maps Platform", "API JavaScript do Maps e Places: busca de lugares e exibição no mapa.")
+System_Ext(backend, "Serviço de dados e identidade", "Autenticação, banco PostgreSQL e armazenamento de arquivos. Envia os e-mails de convite e de recuperação de senha.")
+System_Ext(mapas, "Serviço de mapas", "Busca de lugares e exibição no mapa.")
 
 Rel(visitante, viajamais, "Cadastra-se e entra", "HTTPS")
 Rel(viajante, viajamais, "Planeja viagens e registra despesas", "HTTPS")
 Rel(convidado, viajamais, "Aceita ou recusa o convite", "HTTPS")
 
-Rel(viajamais, supabase, "Autentica, lê e grava dados e arquivos", "HTTPS")
-Rel(viajamais, maps, "Busca lugares (a partir do navegador)", "HTTPS")
-Rel(supabase, convidado, "Envia o convite", "e-mail")
+Rel(viajamais, backend, "Autentica, lê e grava dados e arquivos", "HTTPS")
+Rel(viajamais, mapas, "Busca lugares (a partir do navegador)", "HTTPS")
+Rel(backend, convidado, "Envia o convite", "e-mail")
 
 @enduml

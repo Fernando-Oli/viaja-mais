@@ -6,7 +6,7 @@ top to bottom direction
 
 Container_Ext(navegador, "Interface no navegador", "React 19")
 
-Container_Boundary(app, "Aplicação Next.js") {
+Container_Boundary(app, "Aplicação web (Next.js)") {
   Component(proxy, "proxy.ts", "Next.js proxy", "Renova a sessão, barra quem não tem sessão (redirect ou 401) e aplica a CSP.")
   Component(paginas, "Server Components", "app/dashboard/**", "Leem dados para montar a página. Não escrevem.")
   Component(rotas, "Route handlers", "app/api/**", "Viagens (14), social (20), convites (3), perfil (1), senha (1). Única porta de escrita.")
@@ -15,12 +15,12 @@ Container_Boundary(app, "Aplicação Next.js") {
   Component(http, "lib/http", "TypeScript", "ErroHttp e respostaDeErro(): 400, 401, 403, 404, 429 e 500 genérico.")
   Component(regras, "lib/finance e lib/social", "TypeScript", "Regras de domínio: rateio em centavos, saldos, acerto, fotos, cursor.")
   Component(seguranca, "lib/seguranca", "TypeScript", "CSP, limite por usuário (429) e política de senha.")
-  Component(sessao, "Cliente de sessão", "lib/supabase/server.ts", "Chave anon + cookie do usuário: a RLS vale.")
-  Component(admin, "Cliente administrativo", "lib/supabase/admin.ts", "Chave de serviço: ignora a RLS. Só convite e fotos.")
+  Component(sessao, "Cliente de sessão", "SDK do serviço de dados", "Chave pública + cookie do usuário: a RLS vale.")
+  Component(admin, "Cliente administrativo", "SDK do serviço de dados", "Chave de serviço: ignora a RLS. Só convite e fotos.")
   Component(env, "lib/env", "zod", "Variáveis de ambiente validadas no arranque.")
 }
 
-ContainerDb_Ext(supabase, "Supabase", "Auth, PostgreSQL + RLS, Storage")
+ContainerDb_Ext(dados, "Serviço de dados e identidade", "Autenticação, PostgreSQL + RLS, arquivos")
 
 Rel(navegador, proxy, "Toda requisição", "HTTPS")
 Rel(proxy, paginas, "Páginas")
@@ -40,7 +40,7 @@ Lay_D(regras, authz)
 Lay_D(seguranca, schemas)
 Lay_D(admin, http)
 Lay_D(authz, env)
-Rel(sessao, supabase, "Sessão do usuário", "HTTPS")
-Rel(admin, supabase, "Chave de serviço", "HTTPS")
+Rel(sessao, dados, "Sessão do usuário", "HTTPS")
+Rel(admin, dados, "Chave de serviço", "HTTPS")
 
 @enduml

@@ -64,7 +64,7 @@ entity "places" as places {
   trip_id : uuid <<FK>>
   user_id : uuid <<FK>>
   name : text
-  place_id : text (Google)
+  place_id : text (serviço de mapas)
   visited : boolean
 }
 
