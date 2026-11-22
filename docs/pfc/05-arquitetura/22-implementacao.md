@@ -8,7 +8,7 @@ A interface foi desenvolvida em Next.js 16 com o App Router, sobre React 19. No 
 
 #### Organização das telas
 
-Todas as telas da área autenticada compartilham o layout definido em `app/dashboard/layout.tsx`. No computador, uma barra superior reúne a assinatura da marca, as seções Painel, Feed, Viagens, Agenda, Finanças, Reservas e Lugares, a pesquisa de pessoas, o sino de notificações, o botão Nova viagem e o menu do usuário com Meu perfil, Configurações e Sair. No celular, as mesmas seções aparecem numa faixa rolável logo abaixo da barra, e uma barra de abas fixa no rodapé dá acesso a Início, Pesquisar, Nova viagem, Viagens e Perfil. A tela central do sistema é o detalhe da viagem, que reúne a capa, o resumo, os membros, os convites e as abas Itinerário, Despesas, Lugares e Reservas. A tabela a seguir relaciona cada tela ao tipo de componente adotado e aos requisitos do catálogo da seção 14 que ela atende.
+Todas as telas da área autenticada compartilham o layout definido em `app/dashboard/layout.tsx`. No computador, uma barra superior reúne a assinatura da marca, as seções Painel, Feed, Viagens, Agenda, Finanças, Reservas e Lugares, a pesquisa de pessoas, o sino de notificações, o botão Nova viagem e o menu do usuário com Meu perfil, Configurações e Sair. No celular, uma barra de abas fixa no rodapé dá acesso a Início, Pesquisar, Nova viagem, Viagens e Perfil, e as seções que não têm aba própria (Painel, Agenda, Finanças, Reservas e Lugares) passam para o menu do usuário, aberto pelo avatar. A tela central do sistema é o detalhe da viagem, que reúne a capa, o resumo, os membros, os convites e as abas Itinerário, Despesas, Lugares e Reservas. A tabela a seguir relaciona cada tela ao tipo de componente adotado e aos requisitos do catálogo da seção 14 que ela atende.
 
 | Tela (rota) | Tipo | Requisitos atendidos |
 |---|---|---|
@@ -16,6 +16,10 @@ Todas as telas da área autenticada compartilham o layout definido em `app/dashb
 | `/auth/login` | Cliente | RF01.3 |
 | `/auth/reset-password` | Cliente | RF01.7 |
 | `/dashboard/settings` | Cliente | RF01.8, RF02.2, RF02.3 |
+| `/dashboard/perfil` | Cliente | RF02.1, RF02.2, RF02.5 a RF02.7 |
+| `/u/[username]`, `/u/[username]/seguidores`, `/u/[username]/seguindo` | Cliente / Servidor | RF02.8; RF09.1, RF09.2, RF09.5, RF09.6, RF09.9 |
+| `/pesquisar` | Servidor | RF09.10, RF09.12 |
+| `/notificacoes` | Servidor | RF13.2, RF13.4 |
 | `/dashboard` | Cliente | RF03.4 (visão geral das viagens) |
 | `/dashboard/trips` | Cliente | RF03.4 |
 | `/dashboard/trips/criar` | Servidor | RF03.1 (escolha entre criar com a Avori e criar manualmente) |
@@ -26,12 +30,13 @@ Todas as telas da área autenticada compartilham o layout definido em `app/dashb
 | `/dashboard/trips/[id]/itinerary/new` | Cliente | RF05.1 |
 | `/dashboard/trips/[id]/itinerary/[itemId]/edit` | Cliente | RF05.2 |
 | `/dashboard/itinerary` | Servidor | RF05.4 |
-| `/dashboard/trips/[id]/expenses/new` | Cliente | RF06.1 |
+| `/dashboard/trips/[id]/expenses/new`, `/dashboard/trips/[id]/expenses/[expenseId]/edit` | Cliente | RF06.1, RF06.2 |
+| `/dashboard/trips/[id]/acerto` | Cliente | RF06 (acerto de contas entre os membros) |
 | `/dashboard/finances` | Servidor | RF06.4, RF06.5 |
 | `/dashboard/bookings` | Servidor | RF07.7 |
 | `/dashboard/trips/[id]/bookings/new` | Cliente | RF07.1 a RF07.4 |
 | `/dashboard/trips/[id]/bookings/[bookingId]/edit` | Cliente | RF07.5 |
-| `/dashboard/places`, `/dashboard/trips/[id]/places` | Servidor / Cliente | RF08 |
+| `/dashboard/places`, `/dashboard/trips/[id]/places` | Servidor / Cliente | RF08; RF11.1 a RF11.3 (avaliações, no componente `place-reviews.tsx`) |
 | `/feed` | Servidor | RF10 (prévia visual, com dados de exemplo) |
 | `/dashboard/reservar/voos`, `/dashboard/reservar/hoteis` | Cliente | Prévia visual de compra de passagens e hospedagem, sem requisito no catálogo |
 
@@ -61,7 +66,7 @@ As reservas seguem o mesmo desenho em `booking-list.tsx`, com uma particularidad
 
 #### Responsividade e verificação
 
-Abaixo do ponto de quebra `lg` do Tailwind, as seções da barra superior passam para a faixa rolável e a barra de abas aparece no rodapé, com espaço reservado no fim do conteúdo para que ela não cubra o último elemento da página; os cabeçalhos de página e os cartões são empilhados em telas estreitas. A verificação da interface é feita por testes ponta a ponta em Playwright, executados em dois perfis definidos em `playwright.config.ts`: `chromium`, que simula um navegador de computador, e `mobile`, que simula um Pixel 7. O perfil de celular já revelou um defeito real: a antiga barra lateral sobrepunha o conteúdo e cobria o botão de salvar, o que levou à correção do layout do painel registrada na versão 2.6 da Parte 00.
+Abaixo do ponto de quebra `lg` do Tailwind, as seções da barra superior sem aba própria passam para o menu do usuário e a barra de abas aparece no rodapé, com espaço reservado no fim do conteúdo para que ela não cubra o último elemento da página; os cabeçalhos de página e os cartões são empilhados em telas estreitas. A verificação da interface é feita por testes ponta a ponta em Playwright, executados em dois perfis definidos em `playwright.config.ts`: `chromium`, que simula um navegador de computador, e `mobile`, que simula um Pixel 7. O perfil de celular já revelou um defeito real: a antiga barra lateral sobrepunha o conteúdo e cobria o botão de salvar, o que levou à correção do layout do painel registrada na versão 2.6 da Parte 00.
 
 ![Detalhe da viagem após a edição, perfil de celular](../evidencias/S03-A-editar-viagem-mobile.png)
 
