@@ -25,7 +25,7 @@ A tabela seguinte reúne as ferramentas de desenvolvimento e de qualidade. Os re
 
 | Ferramenta e versão | Uso no projeto | Por que foi escolhida |
 |---|---|---|
-| Vitest ^4.1.11, com @vitest/coverage-v8 | Testes unitários, de rota e de RLS; cobertura com corte de 70% | Executa TypeScript sem etapa de compilação separada; o job de lint, tipos e os 1.511 testes leva cerca de dois minutos no CI |
+| Vitest ^4.1.11, com @vitest/coverage-v8 | Testes unitários, de rota e de RLS; cobertura com corte de 70% | Executa TypeScript sem etapa de compilação separada; o job de lint, tipos e os 1.532 testes leva cerca de dois minutos no CI |
 | Testing Library (@testing-library/react ^16.3.2) e jsdom ^29.1.1 | Testes de componentes | Testa o componente pelo que o usuário vê, e não pela estrutura interna |
 | pg ^8.23.0 | Conexão direta ao banco nos testes de RLS | Permite preparar dados e conferir o banco sem passar pela RLS que está sob teste |
 | Playwright ^1.62.1 | Testes ponta a ponta em navegador real | Executa cada fluxo nos perfis de computador e de celular, com dois usuários, e arquiva captura de tela como evidência |

@@ -11,15 +11,15 @@ catálogo das seções 14 e 15.
 |---|---|---|---|---|---|
 | RF-01.1 | O usuário deve poder registrar-se com e-mail e senha | Implementado | `app/auth/sign-up/page.tsx` | `tests/auth/sign-up.test.tsx`<br>`tests/rls/06-plataforma-convite.test.ts`<br>`e2e/jornada-completa.spec.ts` | 3fce68b |
 | RF-01.2 | O sistema deve enviar e-mail de confirmação após o registro | Implementado | `app/auth/sign-up/page.tsx` | `tests/auth/sign-up.test.tsx` | 3fce68b |
-| RF-01.3 | O usuário deve poder autenticar-se com e-mail e senha | Parcial | — | — | — |
-| RF-01.4 | O usuário deve poder encerrar a sessão | Parcial | — | — | — |
-| RF-01.5 | O sistema deve manter e renovar a sessão entre requisições | Parcial | — | — | — |
-| RF-01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Parcial | — | — | — |
-| RF-01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Parcial | — | — | — |
-| RF-01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | — | — | — |
+| RF-01.3 | O usuário deve poder autenticar-se com e-mail e senha | Implementado | — | `e2e/00-fumaca.spec.ts` | — |
+| RF-01.4 | O usuário deve poder encerrar a sessão | Implementado | — | `e2e/00-fumaca.spec.ts` | — |
+| RF-01.5 | O sistema deve manter e renovar a sessão entre requisições | Implementado | — | `e2e/00-fumaca.spec.ts` | — |
+| RF-01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Implementado | — | `tests/lib/supabase-proxy.test.ts`<br>`e2e/00-fumaca.spec.ts` | — |
+| RF-01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Implementado | — | `tests/auth/reset-password.test.tsx` | — |
+| RF-01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Implementado | — | `tests/api/change-password-route.test.ts` | — |
 | RF-02.1 | O usuário deve poder visualizar seu perfil | Implementado | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/editar/page.tsx`<br>`app/dashboard/perfil/page.tsx`<br>`components/social/perfil-cabecalho.tsx` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-route.test.ts`<br>`tests/components/perfil-cabecalho.test.tsx`<br>`e2e/editar-perfil.spec.ts`<br>`e2e/perfil-proprio.spec.ts` | d1d638e |
 | RF-02.2 | O usuário deve poder editar nome e avatar | Implementado | `app/api/profile/[userId]/route.ts`<br>`app/api/social/perfil/foto/route.ts`<br>`app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/editar/enquadrar-foto.tsx`<br>`app/dashboard/perfil/editar/page.tsx`<br>`app/dashboard/perfil/editar/recortar-foto.ts`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts`<br>`lib/social/avatar.ts`<br>`lib/social/enquadramento.ts`<br>`lib/social/foto.ts`<br>`lib/social/imagem.ts` | `tests/api/profile-userid-route.test.ts`<br>`tests/api/social-perfil-foto-route.test.ts`<br>`tests/api/social-perfil-route.test.ts`<br>`tests/fixtures/imagens.ts`<br>`tests/lib/avatar.test.ts`<br>`tests/lib/enquadramento.test.ts`<br>`tests/lib/foto.test.ts`<br>`tests/lib/imagem.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/05-avatares.test.ts`<br>`e2e/foto-perfil.spec.ts` | d1d638e |
-| RF-02.3 | O usuário deve poder alterar a senha | Parcial | — | — | — |
+| RF-02.3 | O usuário deve poder alterar a senha | Implementado | — | `tests/api/change-password-route.test.ts` | — |
 | RF-02.4 | O usuário deve poder excluir a conta | Não iniciado | — | — | — |
 | RF-02.5 | O usuário deve poder definir um nome de usuário (username) único | Implementado | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/editar/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`tests/rls/11-exigir-username.test.ts`<br>`e2e/editar-perfil.spec.ts` | d1d638e |
 | RF-02.6 | O usuário deve poder escrever uma biografia | Implementado | `app/api/social/perfil/route.ts`<br>`app/dashboard/perfil/editar/page.tsx`<br>`lib/schemas/perfil-limites.ts`<br>`lib/schemas/perfil.ts` | `tests/api/social-perfil-route.test.ts`<br>`tests/lib/perfil-schema.test.ts`<br>`tests/rls/04-social.test.ts`<br>`e2e/editar-perfil.spec.ts` | d1d638e |
@@ -37,11 +37,11 @@ catálogo das seções 14 e 15.
 | RF-04.2 | O convidado deve receber notificação do convite por e-mail | Parcial | `app/api/invitations/route.ts` | `tests/api/invitations-post.test.ts` | d5809c8 |
 | RF-04.3 | O convidado deve poder aceitar ou recusar o convite | Implementado | `app/api/invitations/[invitationId]/accept/route.ts`<br>`components/trip-invitations.tsx` | `tests/api/invitation-accept-route.test.ts`<br>`tests/api/invitations-get.test.ts`<br>`tests/rls/06-plataforma-convite.test.ts`<br>`tests/rls/13-participante.test.ts`<br>`tests/rls/16-meus-convites.test.ts`<br>`tests/rls/convite.ts`<br>`e2e/grupo-convite.spec.ts` | 350a528 |
 | RF-04.4 | Os membros devem poder visualizar a viagem e seus dados | Implementado | `lib/trips/escopo.ts` | `tests/api/trips-get.test.ts`<br>`tests/lib/escopo-grupo.test.ts`<br>`tests/rls/03-escopo-grupo.test.ts` | 47dbca9 |
-| RF-04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | — | — | — |
-| RF-04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | `app/api/trips/[tripId]/expenses/route.ts` | — | d5809c8 |
+| RF-04.5 | Os membros devem poder editar o itinerário da viagem | Implementado | — | `tests/rls/13-participante.test.ts` | — |
+| RF-04.6 | Os membros devem poder adicionar despesas à viagem | Implementado | `app/api/trips/[tripId]/expenses/route.ts` | `tests/rls/13-participante.test.ts` | d5809c8 |
 | RF-04.7 | O dono deve poder remover membros da viagem | Implementado | `app/api/trips/[tripId]/members/route.ts`<br>`components/trip-members.tsx` | `tests/api/members-route.test.ts` | 5015b38 |
 | RF-04.8 | O membro deve poder sair da viagem por vontade própria | Implementado | `app/api/trips/[tripId]/members/route.ts` | `tests/api/members-route.test.ts` | 5015b38 |
-| RF-04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Parcial | — | — | — |
+| RF-04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Implementado | — | `tests/lib/authz-trip.test.ts` | — |
 | RF-05.1 | O usuário deve poder adicionar atividade ao itinerário | Implementado | `app/api/trips/[tripId]/itinerary/route.ts`<br>`lib/schemas/itinerario.ts` | `tests/api/itinerary-route.test.ts`<br>`e2e/adicionar-atividade.spec.ts`<br>`e2e/jornada-completa.spec.ts` | d5809c8 |
 | RF-05.2 | O usuário deve poder editar atividade | Implementado | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`lib/schemas/itinerario.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | ad9d35b |
 | RF-05.3 | O usuário deve poder excluir atividade | Implementado | `app/api/trips/[tripId]/itinerary/[itemId]/route.ts`<br>`components/itinerary-list.tsx` | `tests/api/itinerary-item-route.test.ts`<br>`e2e/itinerario-crud.spec.ts` | ad9d35b |
@@ -128,8 +128,8 @@ catálogo das seções 14 e 15.
 | RNF-03.3 | Toda ação de escrita deve dar retorno visual de sucesso ou de falha, e ação destrutiva deve exigir confirmação | Parcial | — | — | — |
 | RNF-03.4 | Erro de validação devolvido pelo servidor deve ser exibido ao usuário com o motivo, e não como mensagem genérica | Parcial | — | — | — |
 | RNF-03.5 | Toda tela deve apresentar zero violações das regras WCAG 2.1 níveis A e AA verificáveis por ferramenta automática | Parcial | — | `e2e/acessibilidade.spec.ts` | — |
-| RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Não iniciado | — | — | — |
-| RNF-04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Não iniciado | — | — | — |
+| RNF-04.1 | A aplicação deve manter disponibilidade mensal de ao menos 99,5% | Parcial | `app/api/saude/route.ts` | `tests/api/saude-route.test.ts`<br>`tests/lib/monitor-verificar.test.ts`<br>`tests/lib/supabase-proxy.test.ts`<br>`e2e/00-fumaca.spec.ts` | 3a9dbdd |
+| RNF-04.2 | O banco de dados deve ter backup automático diário, com retenção mínima de 7 dias | Atendido | — | — | — |
 | RNF-04.3 | O schema do banco deve ser integralmente reproduzível a partir do repositório, sem intervenção manual | Atendido | — | — | — |
 | RNF-04.4 | Toda falha de operação deve resultar em mensagem compreensível ao usuário, nunca em tela em branco ou erro não tratado | Implementado | `app/(rede-social)/error.tsx`<br>`app/(rede-social)/loading.tsx`<br>`app/dashboard/error.tsx`<br>`app/dashboard/loading.tsx`<br>`app/dashboard/not-found.tsx`<br>`app/error.tsx`<br>`app/global-error.tsx`<br>`app/not-found.tsx`<br>`components/estado-erro.tsx`<br>`components/estado-nao-encontrado.tsx` | `tests/components/estado-erro.test.tsx`<br>`e2e/estados-erro.spec.ts` | 222c2c0 |
 | RNF-04.5 | A integração contínua deve aplicar as migrações do zero e executar os testes de isolamento a cada alteração do banco | Atendido | — | — | — |
@@ -153,7 +153,7 @@ catálogo das seções 14 e 15.
 ## Resumo
 
 - Requisitos no catálogo: **140**
-- Com implementação marcada: **78**
-- Com teste marcado: **72**
+- Com implementação marcada: **79**
+- Com teste marcado: **83**
 
 _Nenhuma inconsistência._

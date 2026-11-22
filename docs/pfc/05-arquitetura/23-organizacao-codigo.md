@@ -61,28 +61,28 @@ Há uma exceção deliberada à posse vertical: migrations e políticas de RLS s
 
 As migrations levam marca temporal, e não número sequencial, porque quatro pessoas criam migrations em paralelo e a numeração sequencial colidiria. As tags de requisito alimentam a matriz de rastreabilidade: `npm run pfc:rastreabilidade:check` roda na esteira e falha quando um requisito marcado como implementado não tem teste ou quando uma tag não existe no catálogo.
 
-O uso da convenção de commits pode ser medido no histórico. Dos 162 commits da `main`, 149 usam um dos cinco tipos abaixo.
+O uso da convenção de commits pode ser medido no histórico. Dos 171 commits da `main`, 157 usam um dos cinco tipos abaixo.
 
 **Tabela 23.1 — Commits da `main` por tipo (até 22/11/2026)**
 
 | Tipo | Commits | Uso |
 |---|---|---|
-| `feat` | 59 | funcionalidade nova |
-| `fix` | 34 | correção de defeito |
-| `docs` | 27 | documentação e este documento |
-| `chore` | 19 | configuração, dependências, esteira |
-| `test` | 10 | testes |
+| `feat` | 60 | funcionalidade nova |
+| `fix` | 35 | correção de defeito |
+| `docs` | 30 | documentação e este documento |
+| `chore` | 21 | configuração, dependências, esteira |
+| `test` | 11 | testes |
 
-Por autor, os commits da `main` se dividem em Fernando 73, Micael 58, Audrey 15 e Abner 14. O número não mede esforço, porque um commit pode conter de uma linha a uma funcionalidade inteira, e, pela regra da seção 23.3, migrations e políticas de todos os domínios ficam com a Plataforma.
+Por autor, os commits da `main` se dividem em Fernando 82, Micael 58, Audrey 15 e Abner 14. O número não mede esforço, porque um commit pode conter de uma linha a uma funcionalidade inteira, e, pela regra da seção 23.3, migrations e políticas de todos os domínios ficam com a Plataforma.
 
 ### 23.5 Fluxo de uma mudança
 
-1. Plano: a atividade ganha um arquivo em `docs/plans/`, com os blocos "O que testar" e "O que validar" preenchidos antes da implementação. Há 79 planos no repositório.
+1. Plano: a atividade ganha um arquivo em `docs/plans/`, com os blocos "O que testar" e "O que validar" preenchidos antes da implementação. Há 81 planos no repositório.
 2. Implementação em branch própria, com os testes exigidos pelo tipo de mudança.
 3. Verificação local com `npm run verify`, que executa lint, checagem de tipos, testes e build.
 4. Pull request com os critérios de validação do plano; a esteira roda sobre ele.
 5. Integração na `main` com a esteira verde.
 
-Os dados mostram até onde o fluxo foi seguido. Dos 79 pull requests abertos, 72 foram integrados e 7 fechados sem integração; a mediana entre abrir e integrar foi de 1,5 hora. Apenas 19 dos 79 têm revisão registrada no GitHub. A revisão por outra pessoa, prevista no processo, não ficou registrada na maior parte dos casos, e tratamos isso como lacuna de processo, não como prática cumprida.
+Os dados mostram até onde o fluxo foi seguido. Dos 84 pull requests abertos, 77 foram integrados e 7 fechados sem integração; a mediana entre abrir e integrar foi de 1 hora. Apenas 19 dos 84 têm revisão registrada no GitHub. A revisão por outra pessoa, prevista no processo, não ficou registrada na maior parte dos casos, e tratamos isso como lacuna de processo, não como prática cumprida.
 
 O funcionamento da esteira, os tempos de cada etapa e os resultados dos testes estão na seção 24.

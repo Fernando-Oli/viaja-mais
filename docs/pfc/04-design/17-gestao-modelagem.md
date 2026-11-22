@@ -31,17 +31,17 @@ A tabela resume os dados de processo do semestre, extraídos do git e da API do 
 
 | Indicador (26/08 a 22/11/2026) | Valor |
 |---|---|
-| Planos de atividade em `docs/plans/` | 79 |
-| Pull requests abertos | 79: 72 integrados, 7 fechados sem integração |
-| Tempo entre abrir e integrar | Mediana de 1,5 h; P90 de 7,2 dias |
-| Pull requests com revisão registrada | 19 de 79 |
-| Commits na `main`, sem merges | 162: Fernando 73, Micael 58, Audrey 15, Abner 14, agente automatizado 2 |
-| Commits por tipo | feat 59, fix 34, docs 27, chore 19, test 10, outros 13 |
-| Requisitos marcados no código e com teste | 78 marcados e 72 com teste, de 140 no catálogo |
+| Planos de atividade em `docs/plans/` | 81 |
+| Pull requests abertos | 84: 77 integrados, 7 fechados sem integração |
+| Tempo entre abrir e integrar | Mediana de 1,0 h; P90 de 7,2 dias |
+| Pull requests com revisão registrada | 19 de 84 |
+| Commits na `main`, sem merges | 171: Fernando 82, Micael 58, Audrey 15, Abner 14, agente automatizado 2 |
+| Commits por tipo | feat 60, fix 35, docs 30, chore 21, test 11, outros 14 |
+| Requisitos marcados no código e com teste | 79 marcados e 83 com teste, de 140 no catálogo |
 
-Os dados mostram um desvio do processo planejado. A revisão por outra pessoa estava prevista para todo pull request, mas só 19 dos 79 têm revisão registrada no GitHub. Nos demais, a garantia antes do merge veio da esteira automatizada. A mediana de 1,5 h entre abrir e integrar é coerente com esse quadro: a maior parte dos pull requests foi integrada sem esperar revisão.
+Os dados mostram um desvio do processo planejado. A revisão por outra pessoa estava prevista para todo pull request, mas só 19 dos 84 têm revisão registrada no GitHub. Nos demais, a garantia antes do merge veio da esteira automatizada. A mediana de 1,0 h entre abrir e integrar é coerente com esse quadro: a maior parte dos pull requests foi integrada sem esperar revisão.
 
-A distribuição dos commits também é desigual: Fernando e Micael somam 131 dos 162. Contagem de commits não mede esforço, porque o tamanho de cada um varia, mas a diferença é grande o bastante para indicar carga desigual entre os domínios. A plataforma e a rede social concentraram a maior parte dos requisitos novos do semestre.
+A distribuição dos commits também é desigual: Fernando e Micael somam 140 dos 171. Contagem de commits não mede esforço, porque o tamanho de cada um varia, mas a diferença é grande o bastante para indicar carga desigual entre os domínios. A plataforma e a rede social concentraram a maior parte dos requisitos novos do semestre.
 
 ### 17.2 Modelagem e Diagramas
 

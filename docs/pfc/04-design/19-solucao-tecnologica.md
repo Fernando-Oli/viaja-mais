@@ -33,7 +33,7 @@ As experimentações foram de três tipos. A primeira, nos períodos anteriores,
 
 A segunda, no início deste período, foi extrair o schema real do banco herdado para arquivos de migration e reaplicá-lo em base limpa. O experimento provou que o projeto não era reproduzível a partir do repositório e deu origem à migration base, `20260910000333_plataforma_schema_base.sql`, da qual partem as outras 20.
 
-A terceira é o conjunto de provas construídas para sustentar decisões técnicas. A principal é o teste de isolamento entre contas: cria dois usuários reais, autentica ambos e tenta, com o segundo, ler e escrever os dados do primeiro, verificando que toda tentativa falha. Ele revelou três falhas de isolamento que a documentação herdada dava como inexistentes, e a suíte que cresceu a partir dele soma hoje 473 testes contra banco real.
+A terceira é o conjunto de provas construídas para sustentar decisões técnicas. A principal é o teste de isolamento entre contas: cria dois usuários reais, autentica ambos e tenta, com o segundo, ler e escrever os dados do primeiro, verificando que toda tentativa falha. Ele revelou três falhas de isolamento que a documentação herdada dava como inexistentes, e a suíte que cresceu a partir dele soma hoje 475 testes contra banco real.
 
 O mesmo experimento foi estendido em duas direções neste semestre. A primeira olha para dentro do grupo: `tests/rls/13-participante.test.ts` verifica o que um membro consegue fazer além do devido. Ele encontrou cinco falhas, entre elas um membro que se tornava dono da viagem trocando um campo, corrigidas na migration `20261112010000_plataforma_rls_participante.sql`.
 

@@ -86,15 +86,15 @@ Para validar a arquitetura, confrontamos cada grupo de requisitos não funcionai
 | RNF01.1 e RNF01.2 — tempo do painel e da escrita | Leitura no servidor; escrita por rota, com três idas ao banco | p95 de 623 ms (meta 3 s) e de 865 ms (meta 1 s) em produção, 13/11/2026 (`S09-F-desempenho-producao.md`) | Atendido |
 | RNF01.3 — 1.000 usuários simultâneos | Funções sem estado; banco único | Com 50 leituras paralelas, a mediana subiu 135% (meta: até 20%); teste de carga não realizado | Não atendido |
 | RNF01.4, RNF01.5 e RNF06.4 — paginação, índices e limite | Teto de 500 registros (`lib/listagem.ts`); índice em toda chave estrangeira | `tests/rls/15-indices.test.ts`; consulta de despesas de 12,2 ms para 0,49 ms; listas de viagem sem paginação | Parcial |
-| RNF02.4 e RNF02.9 — RLS | Políticas por operação, versionadas; cliente de sessão também no servidor | 473 testes de RLS e de integração com dois usuários, no `db.yml` | Atendido |
+| RNF02.4 e RNF02.9 — RLS | Políticas por operação, versionadas; cliente de sessão também no servidor | 475 testes de RLS e de integração com dois usuários, no `db.yml` | Atendido |
 | RNF02.5 a RNF02.7 — validação e escrita | Caminho único de escrita; zod; gravação campo a campo | Testes de rota com o caso 400 obrigatório; cliente Supabase do navegador só nas telas de autenticação | Atendido |
 | RNF02.8 — limite por usuário | Contador no PostgreSQL, por usuário | `tests/rls/12-rate-limit.test.ts`; falha aberta se o contador cair | Atendido |
 | RNF02.10 — chave de serviço | Só em `lib/supabase/admin.ts`, que falha no navegador | Revisão `S10-F-revisao-seguranca.md` | Atendido |
 | RNF02.12 — CSP | Política aplicada pelo `proxy.ts` | `tests/lib/csp.test.ts` e `e2e/csp.spec.ts`; admite `'unsafe-inline'` | Parcial |
 | RNF03 — usabilidade | shadcn/ui sobre Radix; layout responsivo | E2E em computador e celular; axe-core em parte das telas; só Chromium | Parcial |
 | RNF04.1 e RNF04.2 — disponibilidade e backup | Monitor a cada 5 min sobre página e `/api/saude`; backup diário do Supabase | `disponibilidade.yml`, série desde 22/11; backup conferido no painel, sem teste de restauração | Parcial |
-| RNF04.3 a RNF04.6 — schema, falhas e ambiente | Migrations versionadas; páginas de erro; `lib/env.ts` | 21 migrations aplicadas do zero no CI; `tests/lib/env.test.ts`; produção aplicada à mão | Atendido, com ressalva |
-| RNF05 — manutenibilidade | TypeScript estrito, ESLint, rastreabilidade, regras em `lib/` | 1.511 testes; 97,56% das linhas cobertas; corte de 70% bloqueia o CI; sem log estruturado | Parcial |
+| RNF04.3 a RNF04.6 — schema, falhas e ambiente | Migrations versionadas; páginas de erro; `lib/env.ts` | 22 migrations aplicadas do zero no CI; `tests/lib/env.test.ts`; produção aplicada à mão | Atendido, com ressalva |
+| RNF05 — manutenibilidade | TypeScript estrito, ESLint, rastreabilidade, regras em `lib/` | 1.532 testes; 98,21% das linhas cobertas; corte de 70% bloqueia o CI; sem log estruturado | Parcial |
 | RNF06.1 a RNF06.3 — escala horizontal | Funções sem estado; CDN; pool do Supabase | Sessão no cookie e limite no banco; um único banco, sem réplica | Parcial |
 | RNF07 — social e IA | Paginação por cursor nas publicações do perfil | Feed e roteiro por IA são prévias; limite `roteiro-ia` sem rota que o use | Não atendido |
 | RNF-08.1 — rateio determinístico | Cálculo em centavos em função pura; gatilho adiado confere a soma | `tests/lib/finance-rateio.test.ts` e `tests/rls/02-rateio.test.ts` | Atendido |
