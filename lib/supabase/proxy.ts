@@ -9,6 +9,13 @@ import { env } from "@/lib/env"
 const PUBLICAS = ["/auth"]
 
 /**
+ * A verificação de saúde é consultada pelo monitor de disponibilidade, que não
+ * tem sessão. Comparação exata, e não por prefixo: nenhuma rota abaixo dela
+ * herda a exceção.
+ */
+const PUBLICAS_EXATAS = ["/api/saude"]
+
+/**
  * Rotas de autenticação que um usuário logado ainda precisa acessar.
  *
  * `/auth/reset-password` está aqui porque o link de recuperação do Supabase cria
@@ -40,7 +47,10 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
-  const ehPublica = pathname === "/" || PUBLICAS.some((rota) => pathname.startsWith(rota))
+  const ehPublica =
+    pathname === "/" ||
+    PUBLICAS_EXATAS.includes(pathname) ||
+    PUBLICAS.some((rota) => pathname.startsWith(rota))
 
   if (!user && !ehPublica) {
     // Cliente de API recebe 401 em JSON. Antes recebia um 307 para uma página de
