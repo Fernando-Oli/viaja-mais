@@ -4,6 +4,8 @@ import { selecaoDeViagens, selecaoPorViagem, FILTRO_EM_VIAGENS, FILTRO_POR_VIAGE
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, TrendingUp, TrendingDown, PieChart } from "lucide-react"
+import { FinanceCategoryChart } from "@/components/finance-category-chart"
+import { relatorioPorCategoria, ROTULOS_CATEGORIA } from "@/lib/finance/categorias"
 
 export default async function FinancesPage() {
   const supabase = await createClient()
@@ -16,17 +18,24 @@ export default async function FinancesPage() {
     redirect("/auth/login")
   }
 
-  const { data: trips } = await supabase
+  const { data: trips, error: tripsError } = await supabase
     .from("trips")
     .select(selecaoDeViagens())
     .eq(FILTRO_EM_VIAGENS, user.id)
 
   // A despesa do grupo é do grupo. Filtrar por `user_id` mostrava ao convidado
   // só o que ele mesmo lançou, e o total da viagem saía errado para ele.
-  const { data: allExpenses } = await supabase
+  const { data: allExpenses, error: expensesError } = await supabase
     .from("expenses")
     .select(selecaoPorViagem("title, currency"))
     .eq(FILTRO_POR_VIAGEM, user.id)
+
+  // Falha de consulta vai para app/dashboard/error.tsx. Sem isso, o erro virava
+  // "Nenhuma despesa registrada" — um relatório vazio que parece verdadeiro.
+  // Mensagem genérica: a do Postgres pode revelar coluna ou constraint.
+  if (tripsError || expensesError) {
+    throw new Error("Não foi possível carregar os dados financeiros")
+  }
 
   // Somatórios por moeda. O reduce é tipado explicitamente e parte de [] em vez
   // de `allExpenses?`: sem isso o resultado é `Record<string, number> | undefined`,
@@ -37,20 +46,13 @@ export default async function FinancesPage() {
     return acc
   }, {})
 
-  // Somatórios por categoria — mesmo motivo do bloco acima.
-  const byCategory = (allExpenses ?? []).reduce<Record<string, number>>((acc, expense) => {
-    acc[expense.category] = (acc[expense.category] ?? 0) + Number(expense.amount)
-    return acc
-  }, {})
+  // Relatório por categoria, um grupo por moeda: sem conversão cambial, real e
+  // dólar não se somam. Calculado aqui, no servidor; o componente do gráfico
+  // recebe só o resultado.
+  // @RF06.5 visualizar gastos por categoria
+  const categoryReport = relatorioPorCategoria(allExpenses ?? [])
 
-  const categoryLabels: Record<string, string> = {
-    accommodation: "Hospedagem",
-    transport: "Transporte",
-    food: "Alimentação",
-    activities: "Atividades",
-    shopping: "Compras",
-    other: "Outros",
-  }
+  const categoryLabels = ROTULOS_CATEGORIA
 
   return (
     <div className="space-y-6">
@@ -103,10 +105,17 @@ export default async function FinancesPage() {
             <PieChart className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">
-              {Object.keys(byCategory).length > 0
-                ? categoryLabels[Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0][0]]
-                : "-"}
+            {/* A principal de cada moeda: comparar gasto em real com gasto em dólar não faz sentido. */}
+            <div className="space-y-1" data-testid="categoria-principal">
+              {categoryReport.map((grupo) => (
+                <div key={grupo.moeda} className="text-2xl font-semibold">
+                  {grupo.categorias[0].rotulo}
+                  {categoryReport.length > 1 && (
+                    <span className="ml-2 text-sm font-medium text-muted-foreground">{grupo.moeda}</span>
+                  )}
+                </div>
+              ))}
+              {categoryReport.length === 0 && <div className="text-2xl font-semibold">-</div>}
             </div>
             <p className="text-xs text-muted-foreground">maior gasto</p>
           </CardContent>
@@ -241,38 +250,10 @@ export default async function FinancesPage() {
           <Card>
             <CardHeader>
               <CardTitle>Gastos por Categoria</CardTitle>
-              <CardDescription>Distribuição dos seus gastos</CardDescription>
+              <CardDescription>Distribuição dos seus gastos, do maior para o menor, separada por moeda</CardDescription>
             </CardHeader>
             <CardContent>
-              {!byCategory || Object.keys(byCategory).length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <PieChart className="mb-4 h-12 w-12 text-muted-foreground" />
-                  <h3 className="mb-2 text-lg font-semibold text-foreground">Nenhuma despesa por categoria</h3>
-                  <p className="text-center text-muted-foreground">Registre despesas para ver a distribuição</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {Object.entries(byCategory)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([category, amount]) => {
-                      const total = Object.values(byCategory).reduce((sum, val) => sum + val, 0)
-                      const percentage = (amount / total) * 100
-
-                      return (
-                        <div key={category} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-foreground">{categoryLabels[category]}</span>
-                            <span className="text-sm text-muted-foreground">{percentage.toFixed(1)}%</span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div className="h-full bg-primary transition-all" style={{ width: `${percentage}%` }} />
-                          </div>
-                          <div className="text-right text-sm font-semibold text-foreground">R$ {amount.toFixed(2)}</div>
-                        </div>
-                      )
-                    })}
-                </div>
-              )}
+              <FinanceCategoryChart relatorios={categoryReport} />
             </CardContent>
           </Card>
         </TabsContent>

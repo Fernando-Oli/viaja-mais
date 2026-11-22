@@ -1,0 +1,17 @@
+◇ injected env (11) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+[WebServer] ⚠ Warning: Next.js ignored package-lock.json in C:\Users\HOME because it is outside the current Git repository (C:\Users\HOME\Desktop\viaja-mais).
+[WebServer]  To use this directory, set `outputFileTracingRoot` in your Next.js config.
+[WebServer] 
+
+Running 2 tests using 1 worker
+
+(node:7796) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from .env.local // tip: ⌘ override existing { override: true }
+  ✓  1 [chromium] › e2e\jornada-completa.spec.ts:21:5 › pessoa nova se cadastra, monta a viagem e chega à publicação (14.4s)
+(node:16492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+◇ injected env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+  ✓  2 [mobile] › e2e\jornada-completa.spec.ts:21:5 › pessoa nova se cadastra, monta a viagem e chega à publicação (14.5s)
+
+  2 passed (35.5s)
