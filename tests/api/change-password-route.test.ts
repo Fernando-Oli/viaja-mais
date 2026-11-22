@@ -11,7 +11,7 @@ import { limiteExcedido, LIMITES } from "@/lib/seguranca/limite"
  * nem chega a ser conferida. O limite real (contagem no banco) é
  * tests/lib/limite.test.ts e tests/rls/12-rate-limit.test.ts.
  *
- * @RNF02.8
+ * @RNF02.8 · @RF01.8 trocar a senha confirmando a atual · @RF02.3 alterar a senha
  */
 
 const limite = vi.hoisted(() => ({ exigir: vi.fn() }))

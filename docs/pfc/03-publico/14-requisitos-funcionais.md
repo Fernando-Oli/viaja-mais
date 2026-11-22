@@ -12,7 +12,7 @@ O status registra o estado verificado no repositório em 22/11/2026, e não inte
 | Parcial | O comportamento existe em parte: falta tela, operação ou teste vinculado ao requisito |
 | Não iniciado | Não há código que atenda ao requisito; tela de prévia com dados de exemplo não conta |
 
-A integração contínua confere o primeiro critério: o processo falha se um requisito marcado como implementado não tiver teste vinculado. Nesta versão, 51 dos 97 requisitos funcionais estão implementados, 33 parciais e 13 não iniciados. Alguns requisitos que a versão anterior dava como implementados voltaram a parciais porque o teste que os exercita existe, mas ainda não está vinculado a eles; cada caso está indicado no grupo.
+A integração contínua confere o primeiro critério: o processo falha se um requisito marcado como implementado não tiver teste vinculado. Nesta versão, 61 dos 97 requisitos funcionais estão implementados, 23 parciais e 13 não iniciados.
 
 ### 14.2 Autenticação e Acesso (RF01)
 
@@ -20,19 +20,19 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 |---|---|---|---|---|
 | RF01.1 | O usuário deve poder registrar-se com e-mail e senha | Implementado | Alta | RNE-001, RNE-003 |
 | RF01.2 | O sistema deve enviar e-mail de confirmação após o registro | Implementado | Alta | RNE-002 |
-| RF01.3 | O usuário deve poder autenticar-se com e-mail e senha | Parcial | Alta | RNE-002 |
-| RF01.4 | O usuário deve poder encerrar a sessão | Parcial | Alta | — |
-| RF01.5 | O sistema deve manter e renovar a sessão entre requisições | Parcial | Alta | RNE-004 |
-| RF01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Parcial | Alta | RNE-004 |
-| RF01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Parcial | Média | RNE-003 |
-| RF01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | Média | RNE-003, RNE-044 |
+| RF01.3 | O usuário deve poder autenticar-se com e-mail e senha | Implementado | Alta | RNE-002 |
+| RF01.4 | O usuário deve poder encerrar a sessão | Implementado | Alta | — |
+| RF01.5 | O sistema deve manter e renovar a sessão entre requisições | Implementado | Alta | RNE-004 |
+| RF01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Implementado | Alta | RNE-004 |
+| RF01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Implementado | Média | RNE-003 |
+| RF01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Implementado | Média | RNE-003, RNE-044 |
 
 **Detalhamento:**
 
 - **RF01.1 e RF01.2** — A tela de cadastro aplica a política de senha antes de enviar e decide o destino pela resposta do serviço de autenticação, de modo que funciona com a confirmação de e-mail ligada ou desligada.
-- **RF01.3 e RF01.4** — Entrar e sair têm tela e rota, e o login é usado por toda a suíte ponta a ponta, mas nenhum teste está vinculado a esses dois requisitos.
-- **RF01.5 e RF01.6** — A camada que intercepta as requisições renova a sessão e barra o acesso: rota de dados sem sessão recebe 401, e página é redirecionada ao login. O teste de fumaça ponta a ponta verifica os dois casos, mas não está vinculado aos requisitos.
-- **RF01.7 e RF01.8** — A redefinição tem teste de regressão e a troca de senha tem teste de rota, ambos sem vínculo com o requisito. A troca exige a senha atual, para que uma sessão sequestrada não altere a credencial.
+- **RF01.3 e RF01.4** — Entrar e sair têm tela e rota. O teste ponta a ponta de sessão entra com e-mail e senha, usa o menu Sair e confere que a área logada volta a exigir login.
+- **RF01.5 e RF01.6** — A camada que intercepta as requisições renova a sessão e barra o acesso: rota de dados sem sessão recebe 401, e página é redirecionada ao login. O teste ponta a ponta de sessão navega e recarrega sem novo login, e os testes de proteção de rotas cobrem os dois bloqueios.
+- **RF01.7 e RF01.8** — A redefinição tem teste de regressão da tela e do pedido do e-mail de recuperação; a troca de senha tem teste de rota com os caminhos 200, 401, 400 e 429. A troca exige a senha atual, para que uma sessão sequestrada não altere a credencial.
 
 ### 14.3 Gestão de Perfil (RF02)
 
@@ -40,7 +40,7 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 |---|---|---|---|---|
 | RF02.1 | O usuário deve poder visualizar seu perfil | Implementado | Alta | — |
 | RF02.2 | O usuário deve poder editar nome e avatar | Implementado | Alta | RNE-044 |
-| RF02.3 | O usuário deve poder alterar a senha | Parcial | Média | RNE-003 |
+| RF02.3 | O usuário deve poder alterar a senha | Implementado | Média | RNE-003 |
 | RF02.4 | O usuário deve poder excluir a conta | Não iniciado | Baixa | RNE-005 |
 | RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Implementado | Alta | RNE-027 |
 | RF02.6 | O usuário deve poder escrever uma biografia | Implementado | Média | — |
@@ -51,7 +51,7 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 
 - **RF02.1, RF02.2 e RF02.5 a RF02.7** — O perfil é lido e gravado por rota própria, que aceita só os campos previstos e toma o identificador da sessão; ninguém edita o perfil de outra pessoa.
 - **RF02.2** — A foto é conferida pelo conteúdo do arquivo e guardada em área privada; chega ao navegador apenas por endereço temporário, emitido a quem está autenticado.
-- **RF02.3** — Repete o RF01.8 e acompanha o status dele.
+- **RF02.3** — Repete o RF01.8 e é provado pelo mesmo teste de rota.
 - **RF02.4** — Não há rota nem tela de exclusão de conta. Quando existir, deverá seguir a RNE-005.
 - **RF02.8** — O perfil de outra pessoa abre a partir da busca e mostra dados básicos, contadores e a situação do vínculo com quem visita. Passou de não iniciado a implementado nesta versão.
 
@@ -84,20 +84,20 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 | RF04.2 | O convidado deve receber notificação do convite por e-mail | Parcial | Alta | RNE-010 |
 | RF04.3 | O convidado deve poder aceitar ou recusar o convite | Implementado | Alta | RNE-011, RNE-016, RNE-017 |
 | RF04.4 | Os membros devem poder visualizar a viagem e seus dados | Implementado | Alta | RNE-011, RNE-015 |
-| RF04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | Alta | RNE-007, RNE-015 |
-| RF04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | Alta | RNE-007, RNE-015 |
+| RF04.5 | Os membros devem poder editar o itinerário da viagem | Implementado | Alta | RNE-007, RNE-015 |
+| RF04.6 | Os membros devem poder adicionar despesas à viagem | Implementado | Alta | RNE-007, RNE-015 |
 | RF04.7 | O dono deve poder remover membros da viagem | Implementado | Média | RNE-012, RNE-017 |
 | RF04.8 | O membro deve poder sair da viagem por vontade própria | Implementado | Média | RNE-012, RNE-042 |
-| RF04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Parcial | Alta | RNE-015 |
+| RF04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Implementado | Alta | RNE-015 |
 
 **Detalhamento:**
 
 - **RF04.1 e RF04.2** — O convite é gravado antes do envio do e-mail, para que uma falha de envio não desfaça um convite válido. O RF04.2 é parcial porque o e-mail só chega a quem ainda não tem conta; quem já tem encontra o convite na aplicação.
 - **RF04.3** — Aceitar ou recusar é ato do próprio convidado. Os testes de rota, de isolamento e ponta a ponta provam também que ninguém entra numa viagem sem convite pendente.
 - **RF04.4** — As telas consultam as viagens pela participação, e não pela autoria, por meio de um módulo único de escopo de grupo. Passou de parcial a implementado nesta versão.
-- **RF04.5 e RF04.6** — As rotas de itinerário e de despesas admitem qualquer participante, mas nenhum teste vinculado prova a escrita feita por um convidado.
+- **RF04.5 e RF04.6** — As rotas de itinerário e de despesas admitem qualquer participante. Os testes de RLS do participante provam que o membro convidado edita o itinerário e registra despesa que a dona vê.
 - **RF04.7 e RF04.8** — O teste da rota de participação cobre sucesso, ausência de sessão, falta de permissão e corpo inválido.
-- **RF04.9** — Não consta do levantamento herdado; registramo-lo porque sustenta a distinção entre dono e membro em todo o grupo e é a medida discutida na seção 25. As funções de verificação têm teste de unidade, ainda não vinculado ao requisito.
+- **RF04.9** — Não consta do levantamento herdado; registramo-lo porque sustenta a distinção entre dono e membro em todo o grupo e é a medida discutida na seção 25. As funções `exigirMembro` e `exigirDono` têm teste de unidade com os caminhos 401, 403 e falha do banco.
 
 ### 14.6 Itinerário (RF05)
 

@@ -10,7 +10,7 @@ secoes_doc: [25]
 branch: docs/S12-F-doc-25
 tipo: [documentacao]
 depende_de: [S10-F-revisao-seguranca, S11-F-correcoes-seguranca]
-status: backlog
+status: concluido
 ---
 # Seção 25: Segurança da Informação
 
@@ -53,3 +53,7 @@ critério combinado depois que já existe código para defender deixa de ser cri
 - [ ] Saida dos testes
 - [ ] Screenshot ou gravação do fluxo (se houver tela)
 - [ ] Delta de cobertura (se mexeu em `lib/`)
+
+## Encerramento
+
+Cumprida pelo PR #83: a seção 25 foi redigida no documento final (versão 4.0).

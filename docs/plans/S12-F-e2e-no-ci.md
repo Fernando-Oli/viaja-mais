@@ -10,7 +10,7 @@ secoes_doc: [24]
 branch: chore/S12-F-e2e-no-ci
 tipo: [infra, correcao-de-bug]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 
 ## 1. Contexto

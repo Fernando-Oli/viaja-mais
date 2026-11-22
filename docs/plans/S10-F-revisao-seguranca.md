@@ -10,7 +10,7 @@ secoes_doc: [15, 25]
 branch: fix/S10-F-revisao-seguranca
 tipo: [seguranca, route-handler]
 depende_de: [S08-F-revisao-rls-social, S06-F-rate-limit-csp]
-status: em-revisao
+status: concluido
 ---
 # Revisão de segurança da aplicação inteira e correções
 
