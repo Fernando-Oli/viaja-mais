@@ -1,374 +1,266 @@
-# 14 — Requisitos Funcionais
+## 14 Requisitos Funcionais
 
-Esta seção cataloga os requisitos funcionais do produto, organizados por grupo de
-domínio. Cada grupo é apresentado em tabela própria, um requisito por linha,
-seguida do respectivo bloco de detalhamento. Onde um requisito envolve dados de
-pessoas ou publicações, distinguimos explicitamente o que é público e o que é
-privado, pois é essa distinção que fundamenta as políticas de acesso definidas
-posteriormente. O status de cada requisito reflete evidência verificável no
-repositório, e não intenção: o critério adotado está enunciado no detalhamento do
-grupo RF01.
+Os requisitos estão agrupados por domínio, em tabelas de RF01 a RF13. Os identificadores são os do catálogo mantido no repositório, os mesmos das marcações de rastreabilidade no código e nos testes, de modo que cada requisito citado aqui pode ser localizado nos arquivos do projeto. A coluna "Regras" liga cada requisito às regras de negócio da seção 13, que por sua vez apontam de volta para cá.
 
-## RF02 — Gestão de Perfil
+### 14.1 Critério de status
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF02.1 | O usuário deve poder visualizar seu perfil | Existente | Alta |
-| RF02.2 | O usuário deve poder editar nome e avatar | Existente | Alta |
-| RF02.3 | O usuário deve poder alterar a senha | Parcial | Média |
-| RF02.4 | O usuário deve poder excluir a conta | Não iniciado | Baixa |
-| RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Existente | Alta |
-| RF02.6 | O usuário deve poder escrever uma biografia | Existente | Média |
-| RF02.7 | O usuário deve poder tornar o perfil público ou privado | Existente | Alta |
-| RF02.8 | O usuário deve poder visualizar o perfil de outro usuário | Não iniciado | Alta |
+O status registra o estado verificado no repositório em 22/11/2026, e não intenção. O critério vale para todos os grupos:
 
-**Detalhamento:** aplicamos a este grupo o critério de status descrito em RF01 e
-RF04. O perfil tem página própria (`app/dashboard/perfil`), que lê e grava pela
-rota `app/api/social/perfil`; a rota valida os dados e grava apenas os campos
-previstos, e o identificador do perfil vem sempre da sessão, de modo que ninguém
-edita o perfil de outra pessoa. A foto de perfil é enviada pela rota
-`app/api/social/perfil/foto`, que confere o conteúdo do arquivo e o grava em
-área privada do armazenamento; a imagem só chega ao navegador por um endereço
-temporário, emitido pelo servidor a quem está autenticado. O nome de usuário é
-único, segue um formato definido e não admite nomes reservados, regra verificada
-também no banco. Essas funcionalidades estão cobertas por testes de unidade, de
-integração, de políticas de acesso e ponta a ponta, o que classifica RF02.1,
-RF02.2, RF02.5, RF02.6 e RF02.7 como existentes. O RF02.3 permanece parcial: a
-alteração de senha tem rota, a cargo da plataforma, mas ainda sem teste
-automatizado. Em um perfil público, o nome, o username, a biografia e as viagens
-publicadas são visíveis a qualquer usuário autenticado, e o ato de seguir tem
-efeito imediato. Em um perfil privado, os dados básicos — nome, username, avatar
-e biografia — permanecem visíveis, mas as publicações só são acessíveis ao
-próprio dono e aos seguidores aprovados, e seguir exige solicitação e aprovação
-(conforme RF09). O perfil de outro usuário (RF02.8) é aberto a partir da busca de
-pessoas (RF09.10) e mostra os dados básicos, a quantidade de seguidores e de
-perfis seguidos e a situação do vínculo de quem o visita; em perfil privado, as
-quantidades permanecem visíveis, e as publicações e a lista de seguidores ficam
-restritas aos seguidores aprovados, com uma exceção equivalente à do Instagram:
-o vínculo de um seguidor de perfil público aparece na lista de perfis seguidos
-por ele, visível a qualquer usuário autenticado. A exclusão de conta (RF02.4) remove em
-cascata o perfil, os vínculos de seguir, as publicações, as curtidas e os
-arquivos de foto do usuário no armazenamento. Como decisão de dado a cargo da
-plataforma, a tabela `profiles` recebe as colunas `username` (única), `bio` e
-`is_public`.
+| Status | Critério |
+|---|---|
+| Implementado | Código integrado ao ramo principal e teste automatizado vinculado ao requisito na matriz de rastreabilidade (seção 24) |
+| Parcial | O comportamento existe em parte: falta tela, operação ou teste vinculado ao requisito |
+| Não iniciado | Não há código que atenda ao requisito; tela de prévia com dados de exemplo não conta |
 
-## 14.1 Existentes (reaproveitados de `docs/ARCHITECTURE.md` §6, status corrigido)
+A integração contínua confere o primeiro critério: o processo falha se um requisito marcado como implementado não tiver teste vinculado. Nesta versão, 51 dos 97 requisitos funcionais estão implementados, 33 parciais e 13 não iniciados. Alguns requisitos que a versão anterior dava como implementados voltaram a parciais porque o teste que os exercita existe, mas ainda não está vinculado a eles; cada caso está indicado no grupo.
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | Alta |
-| RF06.2 | Usuário deve poder editar despesa | Planejado | Média |
-| RF06.3 | Usuário deve poder excluir despesa | Planejado | Média |
-| RF06.4 | Usuário deve poder visualizar total de gastos | Existente | Alta |
-| RF06.5 | Usuário deve poder visualizar gastos por categoria | Existente | Média |
-| RF06.6 | Usuário deve poder comparar gastos com orçamento | A confirmar | Baixa |
-| RF06.7 | Sistema deve alertar quando gastos ultrapassarem 80% do orçamento | A confirmar | Baixa |
+### 14.2 Autenticação e Acesso (RF01)
 
-**Detalhamento:** RF06.1, RF06.4 e RF06.5 têm evidência direta em `app/dashboard/finances/page.tsx`. RF06.2 e RF06.3 estão listados em `docs/plans/00-plano-norte.md` §T1 como CRUD faltando ("editar/excluir despesa") — a documentação anterior os apresentava como prontos, o que o `_regras.md` já identificou como erro a não repetir. RF06.6 e RF06.7 não têm menção nem a favor nem contra no material disponível; ficam "A confirmar" até alguém checar o código, em vez de herdar um status não verificado.
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF01.1 | O usuário deve poder registrar-se com e-mail e senha | Implementado | Alta | RNE-001, RNE-003 |
+| RF01.2 | O sistema deve enviar e-mail de confirmação após o registro | Implementado | Alta | RNE-002 |
+| RF01.3 | O usuário deve poder autenticar-se com e-mail e senha | Parcial | Alta | RNE-002 |
+| RF01.4 | O usuário deve poder encerrar a sessão | Parcial | Alta | — |
+| RF01.5 | O sistema deve manter e renovar a sessão entre requisições | Parcial | Alta | RNE-004 |
+| RF01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Parcial | Alta | RNE-004 |
+| RF01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Parcial | Média | RNE-003 |
+| RF01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | Média | RNE-003, RNE-044 |
 
-## 14.2 Novos — Roteio de Despesas
+**Detalhamento:**
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF-06.8 | Usuário deve poder indicar quem pagou a despesa (`paid_by`) | Planejado | Alta |
-| RF-06.9 | Usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Planejado | Alta |
-| RF-06.10 | Sistema deve calcular o valor devido por membro (`expense_shares`), conforme o tipo de rateio | Planejado | Alta |
-| RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | Alta |
-| RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | Média |
-| RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | Baixa |
+- **RF01.1 e RF01.2** — A tela de cadastro aplica a política de senha antes de enviar e decide o destino pela resposta do serviço de autenticação, de modo que funciona com a confirmação de e-mail ligada ou desligada.
+- **RF01.3 e RF01.4** — Entrar e sair têm tela e rota, e o login é usado por toda a suíte ponta a ponta, mas nenhum teste está vinculado a esses dois requisitos.
+- **RF01.5 e RF01.6** — A camada que intercepta as requisições renova a sessão e barra o acesso: rota de dados sem sessão recebe 401, e página é redirecionada ao login. O teste de fumaça ponta a ponta verifica os dois casos, mas não está vinculado aos requisitos.
+- **RF01.7 e RF01.8** — A redefinição tem teste de regressão e a troca de senha tem teste de rota, ambos sem vínculo com o requisito. A troca exige a senha atual, para que uma sessão sequestrada não altere a credencial.
 
-**Detalhamento:** estes requisitos ainda não têm nenhuma evidência no código — são o escopo da trilha T2, que corre da S02 à S10. Os nomes de tabela e função (`expense_shares`, `settlements`, `paid_by`, `calcularSaldos()`, `minimizarTransferencias()`) já foram decididos em `plano-norte.md` §T2 e devem ser usados como estão, para não haver dois nomes diferentes para a mesma coisa entre a documentação e o código quando o Micael implementar. Os IDs `RF-NOVO` precisam ser substituídos pelo próximo número livre da sequência global antes do merge.
+### 14.3 Gestão de Perfil (RF02)
 
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF02.1 | O usuário deve poder visualizar seu perfil | Implementado | Alta | — |
+| RF02.2 | O usuário deve poder editar nome e avatar | Implementado | Alta | RNE-044 |
+| RF02.3 | O usuário deve poder alterar a senha | Parcial | Média | RNE-003 |
+| RF02.4 | O usuário deve poder excluir a conta | Não iniciado | Baixa | RNE-005 |
+| RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Implementado | Alta | RNE-027 |
+| RF02.6 | O usuário deve poder escrever uma biografia | Implementado | Média | — |
+| RF02.7 | O usuário deve poder tornar o perfil público ou privado | Implementado | Alta | RNE-022 |
+| RF02.8 | O usuário deve poder visualizar o perfil de outro usuário | Implementado | Alta | RNE-022, RNE-031 |
 
+**Detalhamento:**
 
-## RF09 — Rede Social
+- **RF02.1, RF02.2 e RF02.5 a RF02.7** — O perfil é lido e gravado por rota própria, que aceita só os campos previstos e toma o identificador da sessão; ninguém edita o perfil de outra pessoa.
+- **RF02.2** — A foto é conferida pelo conteúdo do arquivo e guardada em área privada; chega ao navegador apenas por endereço temporário, emitido a quem está autenticado.
+- **RF02.3** — Repete o RF01.8 e acompanha o status dele.
+- **RF02.4** — Não há rota nem tela de exclusão de conta. Quando existir, deverá seguir a RNE-005.
+- **RF02.8** — O perfil de outra pessoa abre a partir da busca e mostra dados básicos, contadores e a situação do vínculo com quem visita. Passou de não iniciado a implementado nesta versão.
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Não iniciado | Alta |
-| RF09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Não iniciado | Alta |
-| RF09.3 | O dono de um perfil privado deve poder visualizar suas solicitações pendentes | Não iniciado | Alta |
-| RF09.4 | O dono deve poder aprovar ou recusar uma solicitação | Não iniciado | Alta |
-| RF09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Não iniciado | Média |
-| RF09.6 | O usuário deve poder visualizar a lista de quem segue e de quem o segue | Não iniciado | Média |
-| RF09.7 | O usuário deve poder publicar uma viagem no feed | Não iniciado | Alta |
-| RF09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | Alta |
-| RF09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Não iniciado | Média |
-| RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Não iniciado | Alta |
-| RF09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | Média |
-| RF09.12 | O usuário deve poder ver, reabrir e apagar o histórico dos perfis que abriu pela pesquisa | Não iniciado | Média |
-| RF09.13 | O autor de uma publicação deve poder marcar nela outros usuários que tenham nome de usuário | Não iniciado | Média |
-| RF09.14 | O usuário marcado deve poder ver, na aba Marcações do próprio perfil, as publicações em que foi marcado e remover a própria marcação | Não iniciado | Média |
-| RF09.15 | O usuário deve poder criar uma publicação com uma a três fotos, legenda opcional e pessoas marcadas | Não iniciado | Alta |
-| RF09.16 | O usuário deve ver, na aba Publicações de um perfil que pode ver, a grade das publicações desse perfil | Não iniciado | Alta |
-| RF09.17 | O usuário deve poder abrir uma publicação que pode ver e, se for o autor, excluí-la | Não iniciado | Alta |
+### 14.4 Gestão de Viagens (RF03)
 
-**Detalhamento:** seguir um perfil público cria o vínculo já no estado aceito;
-seguir um perfil privado cria um vínculo pendente, que só se torna aceito após a
-aprovação do dono (RF09.4). Recusar descarta a solicitação. Não é permitido
-seguir a si mesmo, e solicitar duas vezes é idempotente. Quanto à visibilidade,
-que fundamenta as políticas de acesso, um seguidor só vê as publicações de um
-perfil privado quando o vínculo está aceito. Publicar uma viagem (RF09.7) expõe
-apenas título, destino, datas, imagem de capa e itinerário; nunca despesas,
-orçamento ou os demais membros da viagem. O feed (RF09.8) traz somente
-publicações a que o usuário tem acesso. Remover seguidor (RF09.9) é silencioso —
-o sistema não notifica o removido — e não impõe barreira: o removido pode voltar
-a seguir, se o perfil for público, ou solicitar novamente, se for privado, e é
-essa ausência de barreira que mantém a remoção indetectável; remover apenas
-desfaz o vínculo aceito, e em um perfil privado o removido perde o acesso às
-publicações. As listas de seguidores e de seguindo (RF09.6) abrem pelos
-contadores do perfil e mostram somente vínculos aceitos, nunca solicitações
-pendentes; são visíveis ao próprio dono, a quem o segue com vínculo aceito e,
-em perfil público, a qualquer usuário autenticado. Em perfil privado, os
-contadores continuam visíveis, mas as listas não. Cada pessoa da lista aparece
-com os mesmos dados básicos da busca, sem o identificador interno nem a data do
-vínculo. Que um perfil público segue um privado permanece visível, porque o
-vínculo está na lista do perfil público. Somente quem já escolheu um nome de
-usuário segue ou é seguido, porque sem ele a pessoa não tem página nem aparece
-nas listas; quem tem nome de usuário pode trocá-lo, mas não apagá-lo, e os
-contadores contam somente as pessoas que as listas mostram. Bloquear usuário está fora do escopo deste período. A busca de
-usuários (RF09.10) exige sessão autenticada e devolve os dados básicos de cada
-perfil encontrado — nome, username e foto — e a indicação de perfil público ou
-privado, inclusive de perfis privados, que permanecem encontráveis; nunca
-devolve o e-mail e não traz o identificador interno como campo da resposta,
-embora esse identificador componha o endereço temporário da foto de perfil; e não
-inclui o próprio usuário que realiza a busca. O histórico de pesquisa (RF09.12)
-guarda os perfis que o usuário abriu a partir da pesquisa, do mais recente para
-o mais antigo, com no máximo quinze entradas, e apaga as entradas com mais de
-trinta dias; é visível somente ao próprio usuário, acompanha a conta em qualquer
-dispositivo, não notifica a pessoa pesquisada e pode ser apagado entrada a
-entrada ou por inteiro. Nas sugestões do feed (RF09.11),
-somente publicações de perfis públicos podem ser sugeridas; uma publicação de
-perfil privado nunca é sugerida a quem não é seguidor aprovado. Toda
-publicação (RF09.15) tem de uma a três fotos, exibidas em carrossel na ordem
-em que foram escolhidas, e legenda opcional; publicar uma viagem (RF09.7) cria
-uma publicação que, além disso, leva a cópia da viagem, e é a única que pode não
-ter foto. As fotos são reprocessadas no servidor e publicadas sem metadados. A
-aba Publicações (RF09.16) mostra a grade das publicações do perfil, sem
-distinguir as de viagem, e segue a visibilidade do perfil; o detalhe (RF09.17)
-só abre a publicação a quem pode vê-la. A marcação
-(RF09.13) é a única forma de uma publicação indicar outros participantes da
-viagem: como no Instagram, o autor pode marcar qualquer usuário que tenha nome
-de usuário, mesmo quem não foi na viagem, e nunca marca a si mesmo; os membros
-da viagem aparecem como sugestão. Quem remove a própria marcação não pode ser
-marcado de novo pelo mesmo autor naquela viagem, ou naquela publicação quando
-ela não é de viagem. As marcações são visíveis a quem enxerga a publicação. Ser marcado não
-concede acesso à publicação: quando o autor tem perfil privado e a pessoa
-marcada não o segue com vínculo aceito, ela vê apenas quem a marcou e pode
-remover a marcação, sem ver o conteúdo, como ocorre no Instagram. A aba
-Marcações (RF09.14) segue a visibilidade do perfil da pessoa marcada e, dentro
-dela, a de cada publicação. A pessoa marcada pode remover a própria marcação a
-qualquer momento, e o autor pode desmarcar quem marcou. A marcação permanece se
-a pessoa marcada sair da viagem e é apagada junto com a publicação. Como decisão de
-dado a cargo da plataforma,
-criam-se a tabela `follows`, com estado pendente ou aceito, a tabela
-`posts` (originalmente `trip_posts`), a tabela `post_tags`, das marcações, com
-as recusas de remarcação, e a tabela `search_history`,
-do histórico de pesquisa.
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF03.1 | O usuário deve poder criar nova viagem | Implementado | Alta | RNE-006, RNE-009 |
+| RF03.2 | O usuário deve poder editar viagem | Implementado | Alta | RNE-006, RNE-007, RNE-009 |
+| RF03.3 | O usuário deve poder excluir viagem | Parcial | Média | RNE-008 |
+| RF03.4 | O usuário deve poder visualizar lista de viagens | Parcial | Alta | — |
+| RF03.5 | O usuário deve poder visualizar detalhes da viagem | Implementado | Alta | — |
+| RF03.6 | O usuário deve poder definir orçamento | Parcial | Média | RNE-007, RNE-018 |
+| RF03.7 | O usuário deve poder adicionar imagem de capa | Não iniciado | Baixa | RNE-007 |
+| RF03.8 | O usuário deve poder alterar status da viagem | Parcial | Média | RNE-007 |
 
-## RF10 — Interação Social
+**Detalhamento:**
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF10.1 | O usuário deve poder curtir uma publicação | Não iniciado | Média |
-| RF10.2 | O usuário deve poder remover a própria curtida | Não iniciado | Baixa |
-| RF10.3 | O usuário deve poder comentar em uma publicação | Não iniciado | Baixa |
-| RF10.4 | O usuário deve poder excluir o próprio comentário | Não iniciado | Baixa |
+- **RF03.1 e RF03.2** — Criar e editar passam por rotas que validam as datas e restringem a edição ao dono. Ambos têm teste de integração e teste ponta a ponta em navegador de computador e de celular.
+- **RF03.5** — O teste da jornada completa cria uma viagem e abre o detalhe dela, o que o classifica como implementado nesta versão.
+- **RF03.3 e RF03.4** — Excluir e listar têm a rota testada, mas a tela não é exercitada por teste.
+- **RF03.6 e RF03.8** — Orçamento e situação fazem parte do formulário e da rota de edição, sem teste que os verifique.
+- **RF03.7** — A tela exibe a capa quando ela existe, mas nenhuma tela ou rota permite defini-la; a versão anterior o dava como parcial.
 
-**Detalhamento:** curtidas e comentários só existem sobre publicações que o
-usuário pode ver — perfis públicos que ele segue ou perfis privados que o
-aprovaram. Cada usuário remove apenas a própria curtida ou o próprio comentário;
-o dono da publicação também pode remover comentários feitos na sua publicação.
-Como decisão de dado a cargo da plataforma, criam-se as tabelas `post_likes` e
-`post_comments`. A prioridade é reduzida por este grupo integrar a linha de corte
-do projeto.
+### 14.5 Viagens em Grupo (RF04)
 
-## RF11 — Avaliações de Lugares
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF04.1 | O dono da viagem deve poder convidar pessoas por e-mail | Implementado | Alta | RNE-010, RNE-044 |
+| RF04.2 | O convidado deve receber notificação do convite por e-mail | Parcial | Alta | RNE-010 |
+| RF04.3 | O convidado deve poder aceitar ou recusar o convite | Implementado | Alta | RNE-011, RNE-016, RNE-017 |
+| RF04.4 | Os membros devem poder visualizar a viagem e seus dados | Implementado | Alta | RNE-011, RNE-015 |
+| RF04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | Alta | RNE-007, RNE-015 |
+| RF04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | Alta | RNE-007, RNE-015 |
+| RF04.7 | O dono deve poder remover membros da viagem | Implementado | Média | RNE-012, RNE-017 |
+| RF04.8 | O membro deve poder sair da viagem por vontade própria | Implementado | Média | RNE-012, RNE-042 |
+| RF04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Parcial | Alta | RNE-015 |
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Existente | Média |
-| RF11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Existente | Média |
-| RF11.3 | O usuário deve poder editar ou excluir a própria avaliação | Existente | Baixa |
+**Detalhamento:**
 
-**Detalhamento:** este grupo atende à promessa da página inicial "Avaliações e
-Reviews — compartilhe experiências e ajude outros viajantes". Quanto à
-visibilidade, as avaliações são públicas a qualquer usuário autenticado, pois
-alimentam a descoberta; cada usuário edita ou exclui apenas a própria. A nota é
-numérica, de 1 a 5, com texto opcional. A tela de lugar pertence ao domínio de
-Viagem & Itinerário; a ação de avaliar pertence a este domínio. Como decisão de
-dado a cargo da plataforma, cria-se a tabela `place_reviews`. A tabela foi criada em `supabase/migrations/20261111120000_viagem_place_reviews.sql`, com leitura aberta a autenticados, escrita restrita a quem tem o lugar salvo em uma viagem da qual participa e edição e exclusão restritas ao autor, provadas por `tests/rls/07-avaliacoes.test.ts`. Avaliar, editar e excluir passam pela rota `app/api/trips/[tripId]/places/[placeId]/reviews/`, coberta por teste de integração (`tests/api/place-reviews-route.test.ts`) e por teste ponta a ponta (`e2e/avaliacoes.spec.ts`), no qual uma segunda pessoa, com o mesmo lugar salvo em viagem própria, visualiza a avaliação sem poder alterá-la — o que classifica RF11.1 a RF11.3 como existentes.
+- **RF04.1 e RF04.2** — O convite é gravado antes do envio do e-mail, para que uma falha de envio não desfaça um convite válido. O RF04.2 é parcial porque o e-mail só chega a quem ainda não tem conta; quem já tem encontra o convite na aplicação.
+- **RF04.3** — Aceitar ou recusar é ato do próprio convidado. Os testes de rota, de isolamento e ponta a ponta provam também que ninguém entra numa viagem sem convite pendente.
+- **RF04.4** — As telas consultam as viagens pela participação, e não pela autoria, por meio de um módulo único de escopo de grupo. Passou de parcial a implementado nesta versão.
+- **RF04.5 e RF04.6** — As rotas de itinerário e de despesas admitem qualquer participante, mas nenhum teste vinculado prova a escrita feita por um convidado.
+- **RF04.7 e RF04.8** — O teste da rota de participação cobre sucesso, ausência de sessão, falta de permissão e corpo inválido.
+- **RF04.9** — Não consta do levantamento herdado; registramo-lo porque sustenta a distinção entre dono e membro em todo o grupo e é a medida discutida na seção 25. As funções de verificação têm teste de unidade, ainda não vinculado ao requisito.
 
-## RF12 — IA de Roteiros
+### 14.6 Itinerário (RF05)
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Não iniciado | Alta |
-| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | Alta |
-| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | Média |
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF05.1 | O usuário deve poder adicionar atividade ao itinerário | Implementado | Alta | RNE-013 |
+| RF05.2 | O usuário deve poder editar atividade | Implementado | Alta | — |
+| RF05.3 | O usuário deve poder excluir atividade | Implementado | Média | — |
+| RF05.4 | O usuário deve poder visualizar itinerário por data | Parcial | Alta | — |
+| RF05.5 | O usuário deve poder categorizar atividades | Parcial | Média | RNE-014 |
+| RF05.6 | O usuário deve poder definir horários | Parcial | Média | RNE-045 |
+| RF05.7 | O usuário deve poder adicionar localização | Parcial | Média | — |
 
-**Detalhamento:** este grupo atende à promessa "Recomendações Personalizadas" da
-página inicial e ao roadmap de recomendações com IA descrito no modelo de
-negócio. Como regra de segurança, a saída do modelo nunca é gravada diretamente
-no banco — o usuário revisa e aprova primeiro (RF12.2), e a saída é validada
-antes de tornar-se itens de itinerário. A chave da IA permanece apenas no
-servidor, nunca exposta ao navegador. Em desenvolvimento e em integração
-contínua utiliza-se um gerador determinístico. Quanto à visibilidade, o roteiro
-gerado é privado ao usuário até que ele decida salvá-lo na viagem.
+**Detalhamento:**
 
-## RF13 — Notificações
+- **RF05.1 a RF05.3** — Incluir, editar, concluir e excluir atividade passam por rotas restritas aos participantes, com testes de integração e ponta a ponta. Concluir é tratado como edição da situação da atividade.
+- **RF05.4 e RF05.5** — A lista agrupa por data e exibe a categoria, mas nenhum teste verifica o agrupamento nem a recusa de categoria inválida.
+- **RF05.6 e RF05.7** — Os testes de rota recusam término anterior ao início, e o teste ponta a ponta altera o local, mas esses testes não estão vinculados aos dois requisitos; por isso voltaram a parciais.
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF13.1 | O usuário deve receber notificação informativa quando alguém começa a segui-lo (perfil público) | Não iniciado | Média |
-| RF13.2 | O usuário deve receber notificação acionável de nova solicitação de seguidor (perfil privado), que permanece visível até ser aceita ou recusada | Não iniciado | Alta |
-| RF13.3 | O usuário deve receber notificação informativa quando sua solicitação de seguir é aceita | Não iniciado | Média |
-| RF13.4 | O usuário deve poder ver a central de notificações, com contador de não-lidas e marcação de lidas | Não iniciado | Alta |
+### 14.7 Controle Financeiro e Rateio (RF06)
 
-**Detalhamento:** há dois comportamentos distintos. As notificações acionáveis
-(RF13.2, solicitações) ficam em uma seção própria e só saem quando resolvidas por
-RF09.4, ao aprovar ou recusar; marcá-las como lidas não as remove. As
-informativas (RF13.1 e RF13.3) entram em uma lista cronológica e são marcadas
-como lidas ao serem visualizadas. Quanto à visibilidade, cada usuário vê apenas
-as próprias notificações. Não há entrega em tempo real — o projeto não utiliza
-Realtime; as notificações são registros persistidos, exibidos ao abrir a central
-ou por atualização periódica. Ficam fora do escopo deste período as notificações
-de curtida, comentário e nova publicação, deliberadamente omitidas pelo alto
-volume que gerariam. Como decisão de dado a cargo da plataforma, cria-se a tabela
-`notifications`, com usuário destino, tipo, ator, referência, marcação de lida e
-data de criação. A seção de solicitações (RF13.2) não depende dessa tabela: cada
-solicitação é o próprio vínculo pendente de seguir, lido pelo dono do perfil, e
-deixa de existir quando ele a aprova ou recusa. A central é aberta por um sino no
-canto superior direito da aba Rede social, com a quantidade de solicitações
-pendentes.
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF06.1 | O usuário deve poder adicionar despesa com título, valor, categoria e data | Implementado | Alta | RNE-013 |
+| RF06.2 | O usuário deve poder editar despesa | Implementado | Média | RNE-039 |
+| RF06.3 | O usuário deve poder excluir despesa | Implementado | Média | RNE-039 |
+| RF06.4 | O usuário deve poder visualizar total de gastos | Parcial | Alta | RNE-018 |
+| RF06.5 | O usuário deve poder visualizar gastos por categoria | Implementado | Média | RNE-014 |
+| RF06.6 | O usuário deve poder comparar gastos com orçamento | Parcial | Baixa | RNE-018 |
+| RF06.7 | O sistema deve alertar quando gastos ultrapassarem 80% do orçamento | Parcial | Baixa | RNE-018 |
+| RF06.8 | O usuário deve poder indicar quem pagou a despesa | Parcial | Alta | RNE-019 |
+| RF06.9 | O usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Implementado | Alta | RNE-020, RNE-038 |
+| RF06.10 | O sistema deve calcular o valor devido por membro, conforme o tipo de rateio | Implementado | Alta | RNE-020, RNE-038 |
+| RF06.11 | O usuário deve poder visualizar o saldo por membro (quem deve a quem) | Implementado | Alta | RNE-040, RNE-042 |
+| RF06.12 | O usuário deve poder marcar uma parcela do rateio como quitada | Parcial | Média | RNE-021 |
+| RF06.13 | O sistema deve sugerir transferências para acerto de contas | Implementado | Baixa | RNE-021, RNE-040, RNE-041 |
 
-## RF03 — Gestão de Viagens
+**Detalhamento:**
 
-ID | Descrição | Status | Prioridade
---- | --- | --- | ---
-| RF03.1 | O usuário deve poder criar nova viagem | Existente | Alta
-| RF03.2 | O usuário deve poder editar viagem | Existente | Alta
-| RF03.3 | O usuário deve poder excluir viagem | Parcial | Média
-| RF03.4 | O usuário deve poder visualizar lista de viagens | Parcial | Alta
-| RF03.5 | O usuário deve poder visualizar detalhes da viagem | Parcial | Alta
-| RF03.6 | O usuário deve poder definir orçamento | Parcial | Média
-| RF03.7 | O usuário deve poder adicionar imagem de capa | Parcial | Baixa
-| RF03.8 | O usuário deve poder alterar status da viagem | Parcial | Média
+- **RF06.1 a RF06.3** — Registrar, editar e excluir despesa passam por rotas que gravam apenas os campos previstos. Editar e excluir ficam restritos a quem registrou a despesa ou ao dono da viagem.
+- **RF06.4 a RF06.7** — A tela de finanças totaliza por moeda e por categoria e muda a cor da barra de orçamento a partir de 80% e de 100%. Só o relatório por categoria tem teste, e não há um alerta propriamente dito.
+- **RF06.8** — O pagador é registrado automaticamente como quem lançou a despesa; ainda não há como indicar outra pessoa.
+- **RF06.9 e RF06.10** — O rateio é calculado em centavos inteiros na tela, como prévia, e recalculado no servidor, que não aceita as partes calculadas pelo navegador. Ao editar o valor de uma despesa dividida, as partes são recalculadas.
+- **RF06.11 e RF06.13** — O acerto mostra o saldo de cada participante, separado por moeda, e sugere as transferências que o zeram. Cada transferência pode ser registrada como paga, total ou parcialmente, por quem pagou.
+- **RF06.12** — A parcela tem campo de quitação, que o acerto respeita, mas nenhuma operação o preenche. A quitação passou a ser feita pelo registro de pagamento do RF06.13, que não se prende a uma parcela.
+- **Conversão entre moedas** — Existe função de conversão por cotação informada, com teste de unidade, ainda não usada por nenhuma tela; por isso os totais continuam separados por moeda.
 
-Detalhamento: aplicamos a este grupo o mesmo critério de status descrito em RF01 e RF04 — **Existente** exige implementação e teste automatizado que a exercite. O RF03.2 passou a atendê-lo com a tela `app/dashboard/trips/[id]/edit`, que usa a rota de atualização restrita ao dono da viagem e é coberta por teste de integração (`tests/api/trips-patch.test.ts`) e por teste ponta a ponta em navegador de computador e de celular (`e2e/editar-viagem.spec.ts`). O RF03.1 também o atende: além da rota, testada por integração (`tests/api/trips-post.test.ts`), a tela `app/dashboard/trips/new` é exercitada pelo teste ponta a ponta do fluxo de grupo (`e2e/grupo-convite.spec.ts`), que cria a viagem pelo formulário em navegador de computador e de celular. Os demais requisitos têm implementação, mas ainda não têm teste que os exercite por completo, e por isso permanecem como parciais. O defeito de vínculo do proprietário com os membros da viagem, antes citado aqui, foi corrigido na correção dos defeitos P0 (versão 2.4 da Parte 00).
+### 14.8 Reservas (RF07)
 
-## RF05 — Itinerário
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF07.1 | O usuário deve poder adicionar reserva de voo | Implementado | Alta | RNE-013, RNE-014 |
+| RF07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | Alta | RNE-013, RNE-014 |
+| RF07.3 | O usuário deve poder adicionar reserva de carro | Parcial | Média | RNE-013, RNE-014 |
+| RF07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | Média | RNE-013, RNE-014 |
+| RF07.5 | O usuário deve poder editar reserva | Implementado | Alta | — |
+| RF07.6 | O usuário deve poder excluir reserva | Implementado | Média | — |
+| RF07.7 | O usuário deve poder visualizar todas as reservas | Parcial | Alta | — |
 
-ID | Descrição | Status | Prioridade
---- | --- | --- | ---
-| RF05.1 | O usuário deve poder adicionar atividade ao itinerário | Existente | Alta
-| RF05.2 | O usuário deve poder editar atividade | Existente | Alta
-| RF05.3 | O usuário deve poder excluir atividade | Existente | Média
-| RF05.4 | O usuário deve poder visualizar itinerário por data | Parcial | Alta
-| RF05.5 | O usuário deve poder categorizar atividades | Parcial | Média
-| RF05.6 | O usuário deve poder definir horários | Existente | Média
-| RF05.7 | O usuário deve poder adicionar localização | Existente | Média
+**Detalhamento:**
 
-Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. Incluir, editar, concluir e excluir atividade passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/itinerary/` e `.../[itemId]/`), que validam os dados e gravam apenas os campos previstos; estão cobertas por testes de integração (`tests/api/itinerary-route.test.ts` e `tests/api/itinerary-item-route.test.ts`) e por testes ponta a ponta (`e2e/adicionar-atividade.spec.ts` e `e2e/itinerario-crud.spec.ts`), o que classifica RF05.1, RF05.2 e RF05.3 como existentes. A conclusão de uma atividade é tratada como edição do seu status (RF05.2). O RF05.6 é existente porque os testes exercitam a regra de horário — término anterior ao início é recusado —, e o RF05.7 porque o teste ponta a ponta altera o local e confere o novo valor na tela. O RF05.4 e o RF05.5 permanecem parciais: a lista agrupa por data e exibe a categoria, mas nenhum teste verifica o agrupamento nem a recusa de categoria inválida. O defeito no filtro que exibia itens de viagens alheias, antes citado aqui, foi corrigido na versão 2.4 da Parte 00.
+- **RF07.1, RF07.5 e RF07.6** — Criar, editar e excluir passam por rotas restritas aos participantes. O teste ponta a ponta cria uma reserva de voo pela aba Reservas da viagem, a edita e a exclui.
+- **RF07.2 a RF07.4** — Hotel, carro e atividade usam o mesmo formulário e a mesma rota, mas nenhum teste cria reserva desses tipos.
+- **RF07.7** — A listagem por viagem é testada; a tela geral de reservas, não.
+- **Busca e compra** — As telas de busca de reservas e de compra de passagens e de hospedagem são prévias com dados de exemplo e não atendem a nenhum requisito deste grupo.
 
-## RF07 — Reservas
+### 14.9 Lugares e Mapas (RF08)
 
-ID | Descrição | Status | Prioridade
---- | --- | --- | ---
-| RF07.1 | O usuário deve poder adicionar reserva de voo | Existente | Alta
-| RF07.2 | O usuário deve poder adicionar reserva de hotel | Parcial | Alta
-| RF07.3 | O usuário deve poder adicionar reserva de carro | Parcial | Média
-| RF07.4 | O usuário deve poder adicionar reserva de atividade | Parcial | Média
-| RF07.5 | O usuário deve poder editar reserva | Existente | Alta
-| RF07.6 | O usuário deve poder excluir reserva | Existente | Média
-| RF07.7 | O usuário deve poder visualizar todas as reservas | Parcial | Alta
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF08.1 | O usuário deve poder buscar lugares | Parcial | Alta | — |
+| RF08.2 | O usuário deve poder salvar lugares favoritos | Parcial | Alta | RNE-013 |
+| RF08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | Média | — |
+| RF08.4 | O usuário deve poder marcar lugares como visitados | Implementado | Média | — |
+| RF08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | Média | — |
+| RF08.6 | O usuário deve poder excluir lugares salvos | Implementado | Média | — |
 
-Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. A criação, a edição e a exclusão de reservas passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/bookings/` e `.../[bookingId]/`), que validam os dados, gravam apenas os campos previstos e tomam o autor da sessão; o ponto de entrada é a aba Reservas do detalhe da viagem. Essas operações estão cobertas por testes de integração (`tests/api/bookings-route.test.ts` e `tests/api/booking-item-route.test.ts`) e por teste ponta a ponta (`e2e/reservas.spec.ts`), que cria uma reserva de voo pela interface, a edita e a exclui — o que classifica RF07.1, RF07.5 e RF07.6 como existentes. Os tipos hotel, carro e atividade (RF07.2 a RF07.4) usam o mesmo formulário e a mesma rota, mas nenhum teste cria uma reserva desses tipos, e por isso permanecem parciais. O RF07.7 também permanece parcial: a listagem por viagem é testada, mas a tela geral `/dashboard/bookings` não é coberta por teste.
+**Detalhamento:**
 
-## RF08 — Lugares e Mapas
+- **RF08.4 e RF08.6** — O teste ponta a ponta marca um lugar como visitado, confirma que o estado persiste após recarregar a página, desmarca e exclui o lugar.
+- **RF08.1, RF08.2, RF08.3 e RF08.5** — Dependem do componente de busca do Google Maps, que não carrega com a chave usada nos testes. Salvar e anotar têm a rota testada, mas não a tela.
 
-ID | Descrição | Status | Prioridade
---- | --- | --- | ---
-| RF08.1 | O usuário deve poder buscar lugares | Parcial | Alta
-| RF08.2 | O usuário deve poder salvar lugares favoritos | Parcial | Alta
-| RF08.3 | O usuário deve poder adicionar notas aos lugares | Parcial | Média
-| RF08.4 | O usuário deve poder marcar lugares como visitados | Existente | Média
-| RF08.5 | O usuário deve poder visualizar lugares no mapa | Parcial | Média
-| RF08.6 | O usuário deve poder excluir lugares salvos | Existente | Média
+### 14.10 Rede Social (RF09)
 
-Detalhamento: aplicamos o mesmo critério de status de RF01 e RF04. Salvar, marcar como visitado e excluir lugares passam por rotas de API restritas aos participantes da viagem (`app/api/trips/[tripId]/places/` e `.../[placeId]/`), que validam os dados, gravam apenas os campos previstos e tomam o autor da sessão. Essas operações estão cobertas por testes de integração (`tests/api/places-route.test.ts` e `tests/api/place-item-route.test.ts`) e por teste ponta a ponta (`e2e/lugares.spec.ts`), que marca um lugar como visitado pela interface, confirma que o estado persiste após recarregar a página, desmarca e exclui o lugar — o que classifica RF08.4 e RF08.6 como existentes. A busca (RF08.1), o salvamento (RF08.2), as notas (RF08.3) e o mapa (RF08.5) dependem do componente de busca do Google Maps, que não carrega com a chave usada nos testes; o salvamento e as notas têm a rota testada, mas não a tela, e por isso esses requisitos permanecem parciais.
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF09.1 | O usuário deve poder seguir um perfil público, com efeito imediato | Implementado | Alta | RNE-022, RNE-028, RNE-029, RNE-044 |
+| RF09.2 | O usuário deve poder solicitar seguir um perfil privado, gerando solicitação pendente | Implementado | Alta | RNE-022, RNE-028, RNE-029, RNE-044 |
+| RF09.3 | O dono de um perfil privado deve poder visualizar suas solicitações pendentes | Implementado | Alta | RNE-029 |
+| RF09.4 | O dono deve poder aprovar ou recusar uma solicitação | Implementado | Alta | RNE-029 |
+| RF09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Implementado | Média | RNE-030 |
+| RF09.6 | O usuário deve poder visualizar a lista de quem segue e de quem o segue | Implementado | Média | RNE-028, RNE-031 |
+| RF09.7 | O usuário deve poder publicar uma viagem no feed | Implementado | Alta | RNE-023, RNE-028, RNE-032, RNE-044 |
+| RF09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | Alta | RNE-033 |
+| RF09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Implementado | Média | RNE-030 |
+| RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Implementado | Alta | RNE-037 |
+| RF09.11 | O usuário deve ver no feed sugestões de publicações públicas de perfis que ainda não segue | Não iniciado | Média | RNE-033 |
+| RF09.12 | O usuário deve poder ver, reabrir e apagar o histórico dos perfis que abriu pela pesquisa | Implementado | Média | RNE-036 |
+| RF09.13 | O autor de uma publicação deve poder marcar nela outros usuários que tenham nome de usuário | Implementado | Média | RNE-028, RNE-034, RNE-035 |
+| RF09.14 | O usuário marcado deve poder ver, na aba Marcações do próprio perfil, as publicações em que foi marcado e remover a própria marcação | Implementado | Média | RNE-034, RNE-035 |
+| RF09.15 | O usuário deve poder criar uma publicação com uma a três fotos, legenda opcional e pessoas marcadas | Implementado | Alta | RNE-028, RNE-032, RNE-044 |
+| RF09.16 | O usuário deve ver, na aba Publicações de um perfil que pode ver, a grade das publicações desse perfil | Implementado | Alta | RNE-033 |
+| RF09.17 | O usuário deve poder abrir uma publicação que pode ver e, se for o autor, excluí-la | Implementado | Alta | RNE-033 |
 
-## RF01 — Autenticação e Acesso
+**Detalhamento:** é o grupo que mais avançou desde a versão anterior, que o dava inteiro como não iniciado ou parcial. Hoje 15 dos 17 requisitos têm rota, tela e testes de rota, de isolamento entre usuários e ponta a ponta. As regras de visibilidade estão na seção 13.4; aqui ficam as decisões de comportamento.
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF01.1 | O usuário deve poder registrar-se com e-mail e senha | Parcial | Alta |
-| RF01.2 | O sistema deve enviar e-mail de confirmação após o registro | Parcial | Alta |
-| RF01.3 | O usuário deve poder autenticar-se com e-mail e senha | Parcial | Alta |
-| RF01.4 | O usuário deve poder encerrar a sessão | Parcial | Alta |
-| RF01.5 | O sistema deve manter e renovar a sessão entre requisições | Existente | Alta |
-| RF01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Existente | Alta |
-| RF01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Existente | Média |
-| RF01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | Média |
+- **RF09.1 a RF09.5** — Repetir o pedido de seguir não cria um segundo vínculo, e qualquer das duas partes desfaz o vínculo.
+- **RF09.6 e RF09.9** — As listas abrem pelos contadores do perfil e mostram cada pessoa com os mesmos dados da busca, sem identificador interno nem data do vínculo.
+- **RF09.7 e RF09.15** — Publicação é um conceito único: fotos, legenda e marcações. A publicação de viagem leva, além disso, uma cópia da viagem, que não muda quando a viagem é editada. As fotos são reprocessadas no servidor antes de publicadas.
+- **RF09.8 e RF09.11** — O feed ainda é tela de prévia com dados de exemplo: nem as publicações de quem se segue nem as sugestões foram implementadas.
+- **RF09.10 e RF09.12** — A busca exige sessão e encontra também perfis privados. O histórico acompanha a conta em qualquer dispositivo e pode ser apagado entrada a entrada ou por inteiro.
+- **RF09.13 e RF09.14** — Os participantes da viagem aparecem como sugestão de marcação. A marcação permanece se a pessoa sai da viagem e é apagada com a publicação; a restrição para perfis privados entrou após a revisão de segurança de 22/11/2026.
+- **RF09.16 e RF09.17** — A grade não distingue publicações de viagem das demais, e o detalhe só abre a quem pode ver a publicação.
 
-**Detalhamento:** adotamos nestes dois grupos um critério explícito de status,
-para não repetir o erro que o arquivo `_regras.md` identifica na documentação
-anterior. Classificamos como **Existente** apenas o requisito que possui
-implementação no repositório **e** teste automatizado que a exercita; como
-**Parcial**, aquele cuja implementação existe mas ainda não é coberta por teste;
-e como **Não iniciado**, o que não tem código correspondente. O status, portanto,
-mede evidência verificável, e não intenção.
+### 14.11 Interação Social (RF10)
 
-Os requisitos RF01.1 a RF01.4 têm tela ou rota implementada — respectivamente
-`app/auth/sign-up/page.tsx`, o fluxo de confirmação do Supabase com retorno em
-`app/auth/sign-up-success`, `app/auth/login/page.tsx` e `app/auth/signout/route.ts`
-—, mas nenhum deles é hoje coberto por teste. O RF01.5 e o RF01.6 são atendidos
-por `proxy.ts` e `lib/supabase/proxy.ts`, que renovam a sessão e aplicam uma
-lista de rotas públicas: requisição não autenticada a uma rota de `/api` recebe
-401 em JSON, e a requisição de página é redirecionada para `/auth/login`. A
-validação usa `getUser()`, que confere o token no servidor de autenticação, e não
-`getSession()`, que apenas decodifica o cookie e por isso não serve para decidir
-acesso. O RF01.7 conta com teste de regressão em `tests/auth/reset-password.test.tsx`.
-O RF01.8 é implementado por `app/api/auth/change-password/route.ts`, que exige a
-senha atual antes de aceitar a nova, impedindo que uma sessão sequestrada altere
-a credencial sem conhecê-la.
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF10.1 | O usuário deve poder curtir uma publicação | Não iniciado | Média | — |
+| RF10.2 | O usuário deve poder remover a própria curtida | Não iniciado | Baixa | RNE-024 |
+| RF10.3 | O usuário deve poder comentar em uma publicação | Não iniciado | Baixa | — |
+| RF10.4 | O usuário deve poder excluir o próprio comentário | Não iniciado | Baixa | RNE-024 |
 
-## RF04 — Viagens em Grupo
+**Detalhamento:**
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF04.1 | O dono da viagem deve poder convidar pessoas por e-mail | Parcial | Alta |
-| RF04.2 | O convidado deve receber notificação do convite por e-mail | Não iniciado | Alta |
-| RF04.3 | O convidado deve poder aceitar ou recusar o convite | Parcial | Alta |
-| RF04.4 | Os membros devem poder visualizar a viagem e seus dados | Parcial | Alta |
-| RF04.5 | Os membros devem poder editar o itinerário da viagem | Parcial | Alta |
-| RF04.6 | Os membros devem poder adicionar despesas à viagem | Parcial | Alta |
-| RF04.7 | O dono deve poder remover membros da viagem | Existente | Média |
-| RF04.8 | O membro deve poder sair da viagem por vontade própria | Existente | Média |
-| RF04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Existente | Alta |
+- **RF10.1 a RF10.4** — Curtidas e comentários não têm tabela, rota nem tela; os botões existem apenas na prévia do feed. O grupo faz parte da linha de corte do semestre, o que explica a prioridade reduzida.
 
-**Detalhamento:** o RF04.1 permanece Parcial por um motivo preciso, e não por
-cautela genérica: a rota `app/api/invitations/route.ts` já exige sessão, valida o
-corpo com `zod` e chama `exigirDono()` antes de gravar, mas o envio do e-mail
-ainda falha. A chamada `auth.admin.inviteUserByEmail` exige a chave de serviço, e
-o cliente utilizado é o anônimo; o convite é registrado na tabela
-`trip_invitations` e o erro de envio é apenas registrado em log. Enquanto isso
-não for corrigido pela atividade `S03-F-convite-email`, o RF04.2 não tem como ser
-atendido e permanece Não iniciado — o convidado só descobre o convite se abrir a
-aplicação por conta própria, o que `app/api/invitations` (GET) já permite.
+### 14.12 Avaliações de Lugares (RF11)
 
-Os requisitos RF04.7 e RF04.8 são atendidos por
-`app/api/trips/[tripId]/members/route.ts` e cobertos por
-`tests/api/members-route.test.ts`, que exercita os quatro caminhos exigidos pelo
-`CLAUDE.md`: resposta bem-sucedida, ausência de sessão, requisitante sem
-permissão e corpo inválido. O RF04.9 não consta do levantamento herdado de
-`docs/ARCHITECTURE.md`, mas descreve comportamento já implementado e testado, em
-`lib/authz/trip.ts` (`exigirMembro()` e `exigirDono()`) com teste em
-`tests/lib/authz-trip.test.ts`; registramo-lo como requisito porque é ele que
-sustenta a distinção entre dono e membro em todos os demais itens deste grupo, e
-porque sem enunciá-lo a seção 25 discutiria uma medida de segurança que nenhum
-requisito pede. Os requisitos RF04.4 a RF04.6 dependem do escopo de grupo nas
-consultas, hoje ainda filtradas por proprietário em parte das telas, o que é
-objeto da atividade `S05-F-escopo-grupo`.
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF11.1 | O usuário deve poder avaliar um lugar, com nota e comentário | Implementado | Média | RNE-043 |
+| RF11.2 | O usuário deve poder ver as avaliações de um lugar feitas por outros usuários | Implementado | Média | RNE-043 |
+| RF11.3 | O usuário deve poder editar ou excluir a própria avaliação | Implementado | Baixa | RNE-024, RNE-043 |
 
-> [!] PENDENTE: grupos de outros domínios — RF06 (financeiro, parcial); RNF03 (usabilidade) e RNF05 (manutenibilidade) — a cargo de seus respectivos donos.
+**Detalhamento:**
+
+- **RF11.1 a RF11.3** — A avaliação se prende ao lugar, e não à viagem: o mesmo lugar salvo em viagens diferentes mostra as mesmas avaliações. O teste ponta a ponta prova que uma segunda pessoa, com o lugar salvo em viagem própria, vê a avaliação sem poder alterá-la.
+
+### 14.13 Roteiros por Inteligência Artificial (RF12)
+
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Não iniciado | Alta | RNE-025 |
+| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | Alta | RNE-025 |
+| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | Média | RNE-025 |
+
+**Detalhamento:**
+
+- **RF12.1 a RF12.3** — Não há integração com modelo de inteligência artificial nem rota de geração. A tela "Nova viagem com a Avori" é uma prévia: conduz a conversa, mas monta o roteiro a partir de um modelo fixo e não grava nada.
+- **Condições para implementar** — A chave do provedor deverá ficar só no servidor, a saída do modelo deverá ser validada antes de virar itinerário, e o limite de 10 gerações por usuário por hora já está declarado no módulo de limites, à espera da rota.
+
+### 14.14 Notificações (RF13)
+
+| ID | Descrição | Status | Prioridade | Regras |
+|---|---|---|---|---|
+| RF13.1 | O usuário deve receber notificação informativa quando alguém começa a segui-lo (perfil público) | Não iniciado | Média | RNE-026 |
+| RF13.2 | O usuário deve receber notificação acionável de nova solicitação de seguidor (perfil privado), que permanece visível até ser aceita ou recusada | Implementado | Alta | RNE-026, RNE-029 |
+| RF13.3 | O usuário deve receber notificação informativa quando sua solicitação de seguir é aceita | Não iniciado | Média | RNE-026 |
+| RF13.4 | O usuário deve poder ver a central de notificações, com contador de não-lidas e marcação de lidas | Parcial | Alta | RNE-026 |
+
+**Detalhamento:**
+
+- **RF13.2** — Cada solicitação é o próprio vínculo pendente de seguir, exibido na central e removido quando o dono aprova ou recusa; não depende de um registro de notificação separado.
+- **RF13.4** — A central é aberta por um sino na aba Rede social, que mostra a quantidade de solicitações pendentes. Não há entrega em tempo real: a contagem é refeita ao abrir cada página e ao voltar à janela. Falta a marcação de lidas.
+- **RF13.1 e RF13.3** — As notificações informativas exigem um registro persistido de notificações, que ainda não existe.

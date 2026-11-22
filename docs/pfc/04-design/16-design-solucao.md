@@ -1,130 +1,57 @@
-# 16 — Design da Solução e Experiência do Usuário
+## 16 Design da Solução e Experiência do Usuário
 
-Esta seção descreve o design da experiência do usuário no domínio Social &
-Descoberta e IA de roteiros. A subseção 16.1 apresenta o fluxo de navegação entre
-as telas do domínio, com a visibilidade de cada tela explicitada; a subseção 16.2
-trata do protótipo navegável.
+### 16.1 Fluxo de Navegação
 
-## 16.1 — Fluxo de Navegação
+A Figura 16.1 mostra o caminho principal do usuário, da página inicial pública até as áreas do sistema. Desde 13/11/2026 as telas usam a identidade visual Avori, que é o nome do produto na interface; o projeto continua se chamando Viaja Mais. A navegação foi refeita junto com a identidade.
 
-Consideramos apenas as telas deste domínio; a autenticação e o casco do painel
-pertencem a outros domínios e aparecem aqui como fronteira. A legenda de
-visibilidade é a seguinte: **[Público]**, visível a qualquer usuário autenticado;
-**[Dono]**, visível apenas ao próprio usuário; **[Seguidores]**, visível apenas a
-seguidores aprovados, no caso de perfil privado.
+No computador, uma barra superior reúne as seções em pílulas, a pesquisa, o sino de notificações, o botão Nova viagem e o menu da conta. No celular, a barra superior mostra só a marca, o sino e o avatar, e uma barra de abas fixa no rodapé oferece Início, Pesquisar, Nova viagem, Viagens e Perfil. As seções que não cabem nas abas ficam no menu do avatar.
 
-### Telas
+![Figura 16.1 — Fluxo de navegação principal](../diagramas/16-1-fluxo-navegacao.png)
 
-1. **Meu perfil / editar** — `/dashboard/perfil` — nome, username, biografia,
-   avatar e alternância entre público e privado — [Dono].
-2. **Perfil de outro usuário** — `/u/[username]` — dados básicos e viagens
-   publicadas — dados básicos [Público]; publicações [Público] se o perfil for
-   público, [Seguidores] se for privado.
-3. **Feed** — `/feed` — publicações de quem o usuário segue, com acesso concedido
-   — [Dono].
-4. **Detalhe da publicação** — `/feed/[postId]` — viagem publicada, curtidas e
-   comentários — [Público] ou [Seguidores], conforme o dono.
-5. **Seguidores / Seguindo** — `/u/[username]/seguidores` e `/seguindo` — listas
-   de vínculos — [Público].
-6. **Central de Notificações** — `/notificacoes` — [Dono] — organizada em duas
-   zonas: a Zona 1, Solicitações, é acionável e persistente, com aprovar e
-   recusar via RF09.4, e só sai ao ser resolvida; a Zona 2, Atividades, é
-   informativa e cronológica ("começou a seguir você", "aceitou sua
-   solicitação"), marcada como lida ao ser visualizada.
-7. **Publicar viagem** — `/dashboard/trips/[id]/publicar` — [Dono] — parte da
-   tela de viagem, em fronteira com o domínio de Viagem & Itinerário.
-8. **Roteiro por IA** — `/dashboard/trips/[id]/roteiro-ia` — [Dono] — gerar,
-   revisar e editar, salvar, quando vira itinerário, ou descartar; em fronteira
-   com o domínio de Viagem & Itinerário.
+O visitante entra pela página inicial e só alcança as telas de autenticação: entrar, cadastrar-se e redefinir a senha. Qualquer outra rota exige sessão; sem ela, o painel devolve o usuário à tela de entrada. Autenticado, ele chega ao painel, de onde parte a barra de navegação.
 
-### Representação do fluxo
+A figura está dividida em três blocos, ligados pelo retorno à barra de navegação. O usuário não percorre as áreas em sequência: termina o que foi fazer em uma e escolhe outra pela barra. Dentro de cada coluna, a seta indica a tela alcançável a partir da anterior. Escolhemos essa forma vertical, e não um mapa com todas as telas lado a lado, para que a figura caiba na página sem reduzir o texto.
 
-```
-                     [ Painel autenticado ]  (fronteira: autenticação)
-                              |
-          +-------------------+-------------------+
-          |                   |                   |
-       (Feed)          (Meu perfil)        (Sininho / Notificações)
-          |                   |                   |
-          v                   v                   v
-   /feed  [Dono]     /dashboard/perfil    /notificacoes  [Dono]
-      |   |             [Dono]              |            |
-      |   |                                 |            |
-   autor publicação                    Zona 1        Zona 2
-      |     |                        Solicitações    Atividades
-      v     v                        (aprovar/       (lidas ao
- /u/[username]  /feed/[postId]        recusar =        visualizar)
-   [Pub/Seg]     curtir/comentar      RF09.4)
-      |            [Pub/Seg]
-      +--> perfil publico:  [Seguir] (imediato) --> passa a aparecer no meu Feed
-      +--> perfil privado:  [Solicitar] --> pendente --> dono aprova na Central
-      +--> ja sigo:         [Deixar de seguir]
-      |
- /u/[username]/seguidores  e  /seguindo  [Publico]
-      +--> [Remover seguidor] (silencioso)
+O primeiro bloco reúne as viagens, objeto central do sistema. Nova viagem oferece dois caminhos: o formulário, que grava a viagem, e Montar com a Avori, que abre uma prévia de roteiro por IA com dados de exemplo e não grava nada. O detalhe da viagem traz as abas de itinerário, despesas, lugares e reservas, a lista de participantes, o botão Editar, visível só ao dono, e o botão Publicar viagem. Da aba de despesas parte o acerto de contas.
 
-   Fronteira (tela da viagem, dominio Viagem & Itinerario):
-   /dashboard/trips/[id]/publicar   --> viagem aparece no feed de quem me segue
-   /dashboard/trips/[id]/roteiro-ia --> gerar -> revisar/editar -> salvar | descartar
-```
+Ao lado das viagens ficam as visões gerais, que juntam os dados de todas as viagens do usuário: Agenda, Finanças, Reservas e Lugares. Elas existem porque o usuário nem sempre entra pensando em uma viagem: às vezes quer saber quanto já gastou ou o que tem marcado para amanhã. A partir de Reservas, ele chega à busca de voos e hotéis, que é prévia.
 
-### Explicação do fluxo
+O segundo bloco é a rede social. A tela Feed ainda mostra uma lista com dados de exemplo, marcada como prévia, porque o feed das pessoas seguidas (RF09.8) não foi implementado. O botão Criar, porém, grava a publicação e leva ao detalhe dela. A pesquisa leva ao perfil de outro viajante, com as abas Publicações e Marcações e as listas de seguidores e seguindo.
 
-O usuário chega autenticado ao painel, que é a fronteira com o domínio de
-autenticação. A partir da barra de navegação, alcança três portas deste domínio:
-o Feed, o Meu perfil e as Notificações, estas representadas por um sininho com
-contador de não-lidas.
+O terceiro bloco é a conta: Meu perfil e a edição de nome, nome de usuário, biografia, foto e visibilidade; Notificações, que hoje mostra só as solicitações para seguir, com aprovar e recusar; e Configurações, com a troca de senha. Nenhuma ação destrutiva ocorre sem confirmação, e o retorno de cada ação aparece como aviso na própria tela.
 
-A partir do Feed, tocar em um autor leva ao perfil dele, e tocar em uma
-publicação abre o detalhe, onde é possível curtir e comentar. No perfil de outro
-usuário, o comportamento depende da visibilidade: se o perfil for público, o
-botão Seguir tem efeito imediato, e a partir daí as publicações desse usuário
-passam a aparecer no meu feed; se for privado, o botão Solicitar cria uma
-solicitação pendente, que fica assim até o dono aprovar na Central de
-Notificações; se eu já sigo o usuário, o botão exibido é Deixar de seguir. Nas
-minhas listas de Seguidores posso Remover seguidor, ação que é silenciosa e não
-impõe barreira ao removido.
+A tabela separa as telas que são apenas prévia visual, sem gravação nem integração externa, das demais, que leem e gravam dados reais.
 
-A tela de Publicar viagem parte da tela da viagem, em fronteira com o domínio de
-Viagem & Itinerário, e faz a viagem aparecer no feed de quem me segue. O Roteiro
-por IA também parte da tela da viagem: o usuário gera o roteiro, revisa e edita,
-e então salva, quando o roteiro se torna itinerário, ou descarta sem gravar nada.
-
-A Central de Notificações concentra dois comportamentos que a representação
-destaca em zonas separadas: a Zona 1, com solicitações acionáveis e persistentes,
-que só saem quando o dono aprova ou recusa; e a Zona 2, com atividades
-informativas e cronológicas, marcadas como lidas quando visualizadas. Optamos por
-essa representação em blocos e setas, com a legenda de visibilidade em cada
-tela, porque ela deixa explícito, além do caminho do usuário, quem pode ver cada
-tela — informação que sustenta as políticas de acesso definidas adiante.
-
-## 16.2 — Protótipos
-
-O protótipo navegável de alta fidelidade foi produzido em novembro de 2026,
-junto com a nova identidade visual Avori, e substitui o protótipo herdado do
-Figma, cujo link estava corrompido. Ele está publicado em
-https://claude.ai/artifact/5GGDo2PEXLKYQecpdUPakk e cobre todas as rotas do
-sistema em duas larguras, celular (390 px) e computador (1440 px), organizadas
-em páginas: Social, Nova viagem, Comprar voos e hotéis, Viagem, Finanças,
-Conta, Estados, Web e Desktop. As telas são ligadas entre si pelos mesmos
-botões e menus da interface, de modo que é possível percorrer, por exemplo, o
-caminho do feed ao perfil de outro viajante, ou da criação da viagem ao
-roteiro, sem sair do protótipo.
-
-O protótipo serviu de referência direta para a implementação: a navegação, as
-telas de conta, o detalhe da viagem e as telas de finanças do código seguem as
-pranchas correspondentes. A tabela relaciona as páginas do protótipo aos
-requisitos deste domínio e indica o que já está implementado.
-
-| Página do protótipo | Requisitos | Situação no código |
+| Tela | Endereço | O que é prévia |
 |---|---|---|
-| Social: feed, comentários, publicar | RF10 | Prévia visual com dados de exemplo |
-| Social: pesquisar, perfis, seguidores, notificações | RF02, RF09, RF13 | Implementado |
-| Nova viagem: conversa guiada e prévia do roteiro | RF12 | Prévia visual, sem geração de roteiro |
-| Conta: editar perfil, configurações | RF02 | Implementado |
+| Montar com a Avori | `/dashboard/trips/criar/ia` | Roteiro por IA (RF12), com dados de exemplo |
+| Voos e hotéis | `/dashboard/reservar/voos` e `/hoteis` | Busca e compra, sem fornecedor nem cobrança |
+| Feed | `/feed` | Lista de publicações (RF09.8 e RF09.11) |
 
-O protótipo também desenha funcionalidades que ainda não constam do catálogo,
-como a compra de passagens e de hospedagem dentro do sistema. No código, elas
-existem apenas como prévia visual, sem integração com fornecedor nem cobrança;
-a compra real depende de parceria com um provedor de reservas e fica registrada
-como evolução do projeto.
+### 16.2 Protótipos
+
+O primeiro protótipo navegável foi construído no Figma nos períodos anteriores e serviu de base para as primeiras telas. Ele definia a identidade anterior: tipografia Poppins, azul-escuro (#051B38) como fundo predominante e laranja (#FF7F50) nos botões de ação.
+
+Em 13/11/2026 adotamos a identidade Avori (atividade S12-F-rebranding-avori) e produzimos um novo protótipo navegável de alta fidelidade, que substitui o do Figma. Ele está publicado em https://claude.ai/artifact/5GGDo2PEXLKYQecpdUPakk, endereço registrado na seção 4.
+
+O protótipo cobre as telas em duas larguras, celular (390 px) e computador (1440 px), organizadas em páginas: Social, Nova viagem, Comprar voos e hotéis, Viagem, Finanças, Conta e Estados. As telas são ligadas pelos mesmos botões e menus da interface, de modo que é possível percorrer, por exemplo, o caminho da criação da viagem ao roteiro sem sair dele.
+
+As telas atuais usam a tipografia Instrument Sans e quatro cores com proporção definida: Marfim nas superfícies (cerca de 60%), Floresta na identidade, na navegação e no botão principal (25%), Grafite no texto (10%) e Cítrico em destaques pontuais (5%), nunca como cor de texto sobre Marfim.
+
+O protótipo serviu de referência direta para a implementação: a navegação, as telas de conta, o detalhe da viagem e as telas de finanças seguem as pranchas correspondentes. Não fizemos, porém, uma revisão formal, tela a tela, do alinhamento entre o protótipo e o que foi implementado, que a versão anterior deste documento havia replanejado.
+
+Também não houve validação com usuários antes da implementação. A verificação que existe é técnica: os fluxos das telas são cobertos por testes ponta a ponta, e um deles aplica a checagem automática de acessibilidade do axe-core às telas principais, em computador e em celular.
+
+A tabela relaciona as áreas das telas aos grupos de requisitos e indica a situação de cada uma no código.
+
+| Área | Requisitos | Situação nas telas |
+|---|---|---|
+| Autenticação e conta | RF01, RF02 | Implementada |
+| Viagens, itinerário, reservas e lugares | RF03, RF05, RF07, RF08, RF11 | Implementada |
+| Grupo e finanças | RF04, RF06 | Implementada |
+| Pesquisa, perfis, seguir e publicações | RF09, RF13 | Implementada, exceto a lista do feed |
+| Curtidas e comentários | RF10 | Não implementada |
+| Roteiro por IA | RF12 | Prévia visual |
+| Compra de voos e hotéis | Sem requisito no catálogo | Prévia visual |
+
+A compra de passagens e de hospedagem aparece nas telas, mas não consta do catálogo de requisitos. Ela depende de parceria com um provedor de reservas e fica registrada como evolução do projeto.

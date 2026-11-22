@@ -1,0 +1,47 @@
+@startuml 22-3-seq-despesa-rateio
+!include _tema.puml
+autonumber
+hide footbox
+
+participant "Navegador" as nav
+participant "Route Handler" as rota
+participant "lib/authz/trip.ts" as authz
+participant "zod\nlib/schemas/despesa.ts" as zod
+participant "lib/finance" as fin
+database "PostgreSQL\n(RLS)" as db
+
+== Registro: POST /api/trips/{tripId}/expenses ==
+nav -> rota : { title, amount, currency, ..., rateio }
+rota -> authz : exigirMembro(tripId, user.id)
+note right of authz : não participa: 403
+rota -> zod : criarDespesaSchema.safeParse
+note right of zod : inválido: 400 + detalhes
+rota -> rota : totalCentavos = round(amount x 100)
+rota -> authz : papelNaViagem(cada participante)
+alt algum participante não é membro
+  rota --> nav : 400
+else todos são membros
+  rota -> fin : calcularRateio(totalCentavos, rateio)
+  alt ErroRateio (partes não fecham, peso inválido)
+    rota --> nav : 400 com o motivo
+  else partes em centavos
+    rota -> db : INSERT expenses (user_id da sessão)
+    rota -> db : INSERT expense_shares (todas as partes)
+    note right of db : constraint trigger expense_shares_soma_fecha\nconfere a soma no commit
+    alt partes recusadas
+      rota -> db : DELETE expenses (desfaz a despesa)
+      rota --> nav : 400
+    else gravado
+      rota --> nav : 200 { expense, shares }
+    end
+  end
+end
+
+== Acerto: GET /api/trips/{tripId}/acerto ==
+nav -> rota : (sem corpo)
+rota -> authz : exigirMembro(tripId, user.id)
+rota -> db : SELECT expenses, expense_shares,\ntrip_members, settlements (em paralelo)
+rota -> fin : montarAcerto()
+fin -> fin : calcularSaldos() e minimizarTransferencias()
+rota --> nav : 200 saldos por membro e transferências sugeridas
+@enduml

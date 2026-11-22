@@ -1,0 +1,34 @@
+@startuml 17-4-uc-rede-social
+!include _tema.puml
+left to right direction
+
+actor "Viajante" as Viajante
+actor "Membro da viagem" as Membro
+
+Membro -|> Viajante
+
+rectangle "Viaja Mais" {
+  usecase "UC23 Buscar pessoas" as UC23
+  usecase "UC24 Ver o perfil de outro viajante" as UC24
+  usecase "UC25 Seguir ou solicitar seguir" as UC25
+  usecase "UC26 Responder solicitações para seguir" as UC26
+  usecase "UC27 Ver seguidores e seguindo" as UC27
+  usecase "UC28 Remover seguidor" as UC28
+  usecase "UC29 Criar publicação com fotos" as UC29
+  usecase "UC30 Publicar viagem" as UC30
+  usecase "UC31 Abrir, editar ou excluir publicação" as UC31
+  usecase "UC32 Remover a própria marcação" as UC32
+}
+
+Viajante --> UC23
+Viajante --> UC24
+Viajante --> UC25
+Viajante --> UC26
+Viajante --> UC27
+Viajante --> UC28
+Viajante --> UC29
+Viajante --> UC31
+Viajante --> UC32
+
+Membro --> UC30
+@enduml

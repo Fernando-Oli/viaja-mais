@@ -1,0 +1,71 @@
+@startuml 24-1-esteira-ci
+!include _tema.puml
+
+start
+:Pull request aberto ou atualizado,
+ou push na main;
+note right
+  Um push novo na mesma branch
+  cancela a execução do CI
+  que ainda está em andamento.
+  O notion.yml espelha o PR
+  no quadro e nunca bloqueia.
+end note
+fork
+  :**Lint, tipos e testes**;
+  :Lint
+  teto de 79 avisos;
+  :Tipos
+  TypeScript estrito;
+  :Vitest
+  unidade, tela e rota;
+  :Rastreabilidade
+  modo de conferência;
+  :Cobertura com corte
+  de 70%;
+fork again
+  :**Build de produção**;
+fork again
+  :**O que mudou**;
+  if (Só documentação\nou rascunho?) then (sim)
+    :Playwright pulado;
+  else (não)
+    :**Playwright**
+    4 partes em paralelo,
+    cada uma com o seu
+    Supabase local;
+  endif
+fork again
+  if (Mudou o banco ou\nos testes de RLS?) then (sim)
+    :**Migrations e RLS**
+    db.yml;
+    :Migrations do zero
+    e testes de RLS;
+  else (não)
+    :db.yml não roda;
+  endif
+end fork
+if (Algum job falhou?) then (sim)
+  :PR vermelho:
+  corrigir e novo push;
+  stop
+else (não)
+  :Revisão e merge
+  na main;
+endif
+fork
+  :CI de novo
+  sobre a main;
+fork again
+  :Vercel publica em
+  viaja-mais.online;
+end fork
+:Migrations aplicadas
+manualmente em produção;
+note right
+  O evidencias.yml roda à parte,
+  toda segunda às 08:17, e
+  arquiva cobertura e matriz.
+end note
+stop
+@enduml

@@ -1,0 +1,46 @@
+@startuml 20-3-c4-componentes
+!include _tema.puml
+!include <C4/C4_Component>
+
+top to bottom direction
+
+Container_Ext(navegador, "Interface no navegador", "React 19")
+
+Container_Boundary(app, "Aplicação Next.js") {
+  Component(proxy, "proxy.ts", "Next.js proxy", "Renova a sessão, barra quem não tem sessão (redirect ou 401) e aplica a CSP.")
+  Component(paginas, "Server Components", "app/dashboard/**", "Leem dados para montar a página. Não escrevem.")
+  Component(rotas, "Route handlers", "app/api/**", "Viagens (14), social (20), convites (3), perfil (1), senha (1). Única porta de escrita.")
+  Component(authz, "lib/authz", "TypeScript", "exigirMembro() e exigirDono(): participação na viagem.")
+  Component(schemas, "lib/schemas", "zod", "15 esquemas de validação do corpo.")
+  Component(http, "lib/http", "TypeScript", "ErroHttp e respostaDeErro(): 400, 401, 403, 404, 429 e 500 genérico.")
+  Component(regras, "lib/finance e lib/social", "TypeScript", "Regras de domínio: rateio em centavos, saldos, acerto, fotos, cursor.")
+  Component(seguranca, "lib/seguranca", "TypeScript", "CSP, limite por usuário (429) e política de senha.")
+  Component(sessao, "Cliente de sessão", "lib/supabase/server.ts", "Chave anon + cookie do usuário: a RLS vale.")
+  Component(admin, "Cliente administrativo", "lib/supabase/admin.ts", "Chave de serviço: ignora a RLS. Só convite e fotos.")
+  Component(env, "lib/env", "zod", "Variáveis de ambiente validadas no arranque.")
+}
+
+ContainerDb_Ext(supabase, "Supabase", "Auth, PostgreSQL + RLS, Storage")
+
+Rel(navegador, proxy, "Toda requisição", "HTTPS")
+Rel(proxy, paginas, "Páginas")
+Rel(proxy, rotas, "/api/**")
+Rel(rotas, schemas, "Valida o corpo")
+Rel(rotas, authz, "Autoriza")
+Rel(rotas, regras, "Calcula")
+Rel(rotas, seguranca, "Limita")
+Rel(rotas, http, "Converte erro")
+Rel(rotas, sessao, "Lê e grava")
+Rel(rotas, admin, "Convite e fotos")
+Rel(paginas, sessao, "Lê")
+Rel(sessao, env, "URL e chave anon")
+Rel(admin, env, "Chave de serviço")
+' Duas fileiras de módulos: sem isto a figura sai larga demais para a página.
+Lay_D(regras, authz)
+Lay_D(seguranca, schemas)
+Lay_D(admin, http)
+Lay_D(authz, env)
+Rel(sessao, supabase, "Sessão do usuário", "HTTPS")
+Rel(admin, supabase, "Chave de serviço", "HTTPS")
+
+@enduml

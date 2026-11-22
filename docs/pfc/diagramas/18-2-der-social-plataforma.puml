@@ -1,0 +1,97 @@
+@startuml 18-2-der-social-plataforma
+!include _tema.puml
+hide circle
+hide empty members
+skinparam linetype ortho
+
+entity "profiles" as profiles {
+  *id : uuid <<PK>>
+  --
+  username : citext <<unique>>
+  bio : text (até 280)
+  is_public : boolean
+  avatar_url : text
+}
+
+entity "trips" as trips {
+  *id : uuid <<PK>>
+  --
+  demais atributos na Figura 18.1
+}
+
+entity "follows" as follows {
+  *follower_id : uuid <<PK, FK>>
+  *followee_id : uuid <<PK, FK>>
+  --
+  status : pending ou accepted
+  CHECK: não segue a si mesmo
+}
+
+entity "search_history" as search_history {
+  *user_id : uuid <<PK, FK>>
+  *profile_id : uuid <<PK, FK>>
+  --
+  searched_at : timestamptz
+}
+
+entity "posts" as posts {
+  *id : uuid <<PK>>
+  --
+  author_id : uuid <<FK>>
+  trip_id : uuid <<FK>> (opcional)
+  photos : text[] (0 a 3)
+  caption : text
+  items, places : jsonb
+  UNIQUE (trip_id, author_id)
+}
+
+entity "post_tags" as post_tags {
+  *post_id : uuid <<PK, FK>>
+  *tagged_id : uuid <<PK, FK>>
+  --
+  author_id : uuid <<FK>>
+  created_at : timestamptz
+}
+
+entity "post_tag_recusas" as post_tag_recusas {
+  *id : bigint <<PK>>
+  --
+  author_id : uuid <<FK>>
+  tagged_id : uuid <<FK>>
+  trip_id, post_id : uuid <<FK>> (set null)
+  UNIQUE (author_id, tagged_id)
+}
+
+entity "fotos_a_remover" as fotos_a_remover {
+  *caminho : text <<PK>>
+  --
+  criado_em : timestamptz
+}
+
+entity "rate_limits" as rate_limits {
+  *user_id : uuid <<PK, FK>>
+  *chave : text <<PK>>
+  --
+  janela_inicio : timestamptz
+  contagem : integer > 0
+}
+
+profiles ||--o{ follows : "segue"
+profiles ||--o{ follows : "é seguido"
+profiles ||--o{ search_history : "pesquisou"
+profiles ||--o{ search_history : "foi aberto"
+profiles ||--o{ posts : "autor"
+trips |o--o{ posts
+posts ||--o{ post_tags
+profiles ||--o{ post_tags : "marcado"
+profiles ||--o{ post_tag_recusas : "autor"
+profiles ||--o{ post_tag_recusas : "marcado"
+posts |o..o{ post_tag_recusas
+trips |o..o{ post_tag_recusas
+profiles ||..o{ rate_limits
+
+note bottom of fotos_a_remover
+  Sem chave estrangeira: preenchida
+  por gatilho quando um post é apagado
+end note
+@enduml

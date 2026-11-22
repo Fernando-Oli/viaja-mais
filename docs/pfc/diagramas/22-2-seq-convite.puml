@@ -1,0 +1,50 @@
+@startuml 22-2-seq-convite
+!include _tema.puml
+autonumber
+hide footbox
+
+participant "Navegador\ndo dono" as dono
+participant "Navegador\ndo convidado" as conv
+participant "Route Handler" as rota
+participant "lib/authz/trip.ts" as authz
+participant "Supabase Auth" as auth
+database "PostgreSQL\n(RLS)" as db
+
+== Convite: POST /api/invitations ==
+dono -> rota : { email, tripId }
+rota -> rota : criarConviteSchema.safeParse
+alt corpo inválido
+  rota --> dono : 400 + detalhes
+else válido
+  rota -> authz : exigirDono(tripId, user.id)
+  alt não é o dono
+    authz --> rota : ErroHttp 403
+    rota --> dono : 403
+  else dono
+    rota -> db : rpc consumir_limite("convite")
+    alt mais de 10 em 10 minutos
+      rota --> dono : 429 + Retry-After
+    else dentro do limite
+      rota -> db : INSERT trip_invitations\n(inviter_id da sessão, status pending)
+      rota -> auth : inviteUserByEmail (cliente admin)
+      auth --> rota : enviado, ja-cadastrado ou falhou
+      rota --> dono : 200 { success, envio }
+    end
+  end
+end
+
+== Aceite: POST /api/invitations/{invitationId}/accept ==
+conv -> rota : (sem corpo)
+rota -> auth : getUser() (e-mail da sessão)
+rota -> db : SELECT trip_invitations\nWHERE id AND invitee_email = e-mail AND status = pending
+alt convite não encontrado ou de outra pessoa
+  rota --> conv : 404 "Convite não encontrado"
+else convite pendente
+  opt ainda não é membro
+    rota -> db : INSERT trip_members (role member)
+    note right of db : trip_members_insert só aceita\na própria pessoa com convite pendente
+  end
+  rota -> db : UPDATE trip_invitations SET status = accepted
+  rota --> conv : 200 { success, trip_id }
+end
+@enduml

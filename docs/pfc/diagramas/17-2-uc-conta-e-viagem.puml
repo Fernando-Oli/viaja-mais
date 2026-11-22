@@ -1,0 +1,39 @@
+@startuml 17-2-uc-conta-e-viagem
+!include _tema.puml
+left to right direction
+
+actor "Visitante" as Visitante
+actor "Viajante" as Viajante
+actor "Membro da viagem" as Membro
+actor "Dono da viagem" as Dono
+
+Dono -|> Membro
+Membro -|> Viajante
+
+rectangle "Viaja Mais" {
+  usecase "UC01 Cadastrar-se" as UC01
+  usecase "UC02 Entrar no sistema" as UC02
+  usecase "UC03 Redefinir a senha esquecida" as UC03
+  usecase "UC04 Alterar a própria senha" as UC04
+  usecase "UC05 Sair do sistema" as UC05
+  usecase "UC06 Ver e editar o próprio perfil" as UC06
+  usecase "UC07 Criar viagem" as UC07
+  usecase "UC08 Consultar viagens e visões gerais" as UC08
+  usecase "UC09 Ver o detalhe da viagem" as UC09
+  usecase "UC10 Editar viagem" as UC10
+}
+
+Visitante --> UC01
+Visitante --> UC02
+Visitante --> UC03
+
+Viajante --> UC04
+Viajante --> UC05
+Viajante --> UC06
+Viajante --> UC07
+Viajante --> UC08
+
+Membro --> UC09
+
+Dono --> UC10
+@enduml

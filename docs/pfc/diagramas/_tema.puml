@@ -1,0 +1,44 @@
+' Tema comum das figuras do documento. Incluir com: !include _tema.puml
+' Fundo branco e traço escuro: as figuras vão para um PDF impresso em A4.
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #1F2A27
+skinparam ArrowFontSize 12
+' Nos diagramas de sequência a figura é reduzida a menos da metade para caber
+' na página: letra maior e colunas mais juntas mantêm o texto legível.
+skinparam SequenceMessageFontSize 16
+skinparam SequenceGroupFontSize 15
+skinparam SequenceGroupHeaderFontSize 15
+skinparam SequenceDividerFontSize 15
+skinparam ParticipantFontSize 16
+skinparam DatabaseFontSize 16
+skinparam NoteFontSize 14
+' Quebra o texto das mensagens e notas: sem isto os diagramas de sequência
+' ficam largos demais e a letra some quando a figura é reduzida à página.
+skinparam maxMessageSize 135
+skinparam wrapWidth 200
+skinparam ActorBorderColor #1F2A27
+skinparam ActorBackgroundColor #FFFFFF
+skinparam NoteBackgroundColor #FBF8F1
+skinparam NoteBorderColor #8A8F8C
+skinparam SequenceLifeLineBorderColor #8A8F8C
+skinparam SequenceParticipantBackgroundColor #F1EDE3
+skinparam SequenceParticipantBorderColor #1F2A27
+skinparam UsecaseBackgroundColor #F1EDE3
+skinparam UsecaseBorderColor #1F2A27
+skinparam RectangleBorderColor #1F2A27
+skinparam RectangleBackgroundColor #FFFFFF
+skinparam ActivityBackgroundColor #F1EDE3
+skinparam ActivityBorderColor #1F2A27
+skinparam ActivityDiamondBackgroundColor #FFFFFF
+skinparam ActivityDiamondBorderColor #1F2A27
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #1F2A27
+skinparam ClassHeaderBackgroundColor #F1EDE3
+skinparam NodeBackgroundColor #FFFFFF
+skinparam NodeBorderColor #1F2A27
+skinparam DatabaseBackgroundColor #F1EDE3
+skinparam DatabaseBorderColor #1F2A27

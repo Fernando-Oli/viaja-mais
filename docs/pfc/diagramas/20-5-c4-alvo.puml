@@ -1,0 +1,41 @@
+@startuml 20-5-c4-alvo
+!include _tema.puml
+!include <C4/C4_Container>
+
+top to bottom direction
+
+AddElementTag("futuro", $borderStyle = DashedLine(), $fontColor = "#555555")
+AddRelTag("futuro", $lineStyle = DashedLine())
+
+Person(viajante, "Viajante")
+
+System_Boundary(alvo, "Viaja Mais: arquitetura-alvo") {
+  Container(web, "Aplicação web", "Next.js 16", "Telas. Repassa /api/* para a API (rewrites).")
+  Container(movel1, "Aplicativo móvel 1 (etapa 3)", "a definir", "Consome a mesma API.", $tags = "futuro")
+  Container(movel2, "Aplicativo móvel 2 (etapa 3)", "a definir", "Consome a mesma API.", $tags = "futuro")
+  Container(lb, "Balanceador de carga (etapa 2)", "a definir", "Distribui entre instâncias da API.", $tags = "futuro")
+  Container(graphql, "Camada GraphQL (etapa 2)", "a definir", "Consultas agregadas sobre os mesmos módulos.", $tags = "futuro")
+  Container(api, "API", "Hono 4, Node.js", "Monólito modular sem estado; autenticação com Better Auth.")
+  Container(api2, "Outras instâncias da API (etapa 2)", "Hono 4", "Réplicas idênticas.", $tags = "futuro")
+  ContainerDb(pg, "PostgreSQL", "PostgreSQL + RLS", "Mesmas políticas; sessões no schema auth.")
+  ContainerDb(s3, "Armazenamento de arquivos", "Protocolo S3", "Fotos de perfil, em URL assinada.")
+}
+
+System_Ext(smtp, "Servidor de e-mail", "SMTP")
+
+Rel(viajante, web, "Usa", "HTTPS")
+Rel(viajante, movel1, "Usa", $tags = "futuro")
+Rel(viajante, movel2, "Usa", $tags = "futuro")
+Rel(web, api, "/api/*", "HTTPS + cookie")
+Rel(movel1, lb, "HTTPS", $tags = "futuro")
+Rel(movel2, lb, "HTTPS", $tags = "futuro")
+Rel(lb, graphql, "Consultas GraphQL", $tags = "futuro")
+Rel(lb, api, "REST", $tags = "futuro")
+Rel(lb, api2, "REST", $tags = "futuro")
+Rel(graphql, api, "Reusa os módulos", $tags = "futuro")
+Rel(api, pg, "Transação como o usuário", "Kysely, pg")
+Rel(api2, pg, "Pool de conexões", $tags = "futuro")
+Rel(api, s3, "Grava e assina fotos de perfil", "AWS SDK")
+Rel(api, smtp, "Convite e recuperação de senha", "nodemailer")
+
+@enduml
