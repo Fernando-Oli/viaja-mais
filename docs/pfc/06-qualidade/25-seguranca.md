@@ -67,7 +67,7 @@ No banco, as 18 tabelas têm RLS ligada e ao menos uma política. Isso é confer
 | `rate_limits` | Ninguém, apenas a função de contagem | RLS que nega tudo e grant revogado | `12-rate-limit` |
 | Buckets `avatars` e `capas-posts` | Nenhum usuário lê ou grava; só a rota, por link temporário | Storage sem política e rota | `05-avatares`, `12-trip-posts` |
 
-A suíte de isolamento usa usuários reais do seed, autenticados pelo Auth local, e prova as duas direções: o que o usuário pode fazer e o que não pode. São 473 testes. Para as políticas mais sensíveis, aplicamos ainda o teste de mutação (seção 24.1): a política é sabotada no banco local e algum teste precisa falhar.
+A suíte de isolamento usa usuários reais do seed, autenticados pelo Auth local, e prova as duas direções: o que o usuário pode fazer e o que não pode. São 475 testes. Para as políticas mais sensíveis, aplicamos ainda o teste de mutação (seção 24.1): a política é sabotada no banco local e algum teste precisa falhar.
 
 A chave de serviço do Supabase ignora toda a RLS. Só o módulo `lib/supabase/admin.ts` a lê, e ele lança erro se for executado no navegador. Ela é usada em 16 rotas de servidor e num módulo auxiliar delas, sempre depois de a rota decidir que o usuário pode agir, e apenas para três coisas:
 

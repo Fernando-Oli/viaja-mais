@@ -96,7 +96,7 @@ Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 19 aten
 
 - **RNF04.1** — Revisamos a meta herdada de 99,9% para 99,5%, porque as camadas gratuitas de hospedagem e de banco não sustentam o valor anterior. Desde 22/11/2026, um monitor no GitHub Actions consulta a página inicial e a rota `/api/saude`, que exige resposta do banco, a cada cinco minutos; `npm run pfc:metricas` calcula a disponibilidade a partir dessas verificações. O requisito é parcial porque a série ainda não cobre um mês inteiro.
 - **RNF04.2** — O backup automático diário está configurado no projeto de produção do Supabase, conferido pela equipe no painel do provedor em 22/11/2026. A configuração fica fora do repositório, e nenhum teste de restauração foi feito.
-- **RNF04.3 e RNF04.5** — As 22 migrações estão versionadas, e o fluxo de banco da integração contínua as aplica numa base limpa e roda os testes de isolamento. Na última execução, 473 testes passaram, em 2,9 minutos.
+- **RNF04.3 e RNF04.5** — As 22 migrações estão versionadas, e o fluxo de banco da integração contínua as aplica numa base limpa e roda os testes de isolamento. Na última execução, 475 testes passaram, em 2,3 minutos.
 - **RNF04.4** — Cada área da aplicação tem estados de erro, de não encontrado e de carregamento. A falha inesperada mostra uma explicação e a opção de tentar de novo; o endereço inexistente e a viagem de que a pessoa não participa mostram a mesma página, sem revelar se o recurso existe.
 - **RNF04.6** — Um único módulo lê as variáveis de ambiente, valida a configuração e falha com mensagem que identifica a variável; o teste cobre variável ausente, vazia e inválida.
 
@@ -114,8 +114,8 @@ Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 19 aten
 
 - **RNF05.1** — O modo estrito está ligado na configuração do TypeScript, e a integração contínua verifica os tipos em todo pull request.
 - **RNF05.2** — Diálogos e campos vêm da biblioteca de componentes, e um único modal de confirmação substituiu as caixas nativas do navegador.
-- **RNF05.3** — A matriz de rastreabilidade é gerada a partir das marcações e conferida em todo pull request. Hoje, 140 requisitos estão no catálogo, 78 marcados no código e 72 com teste.
-- **RNF05.4** — O corte de 70% nas quatro métricas está configurado desde a atividade S10-A-cobertura. Até 22/11/2026 o passo de cobertura da esteira não reprovava o pull request quando falhava; a marcação que o permitia foi removida nesta versão, e o corte passou a bloquear. Na execução de 22/11/2026, a cobertura foi de 97,56% das linhas, 95,3% das instruções, 90,36% dos desvios e 96,58% das funções, medida sobre `lib/` e `app/api/`; as telas são verificadas pelos testes ponta a ponta, que não entram nessa conta.
+- **RNF05.3** — A matriz de rastreabilidade é gerada a partir das marcações e conferida em todo pull request. Hoje, 140 requisitos estão no catálogo, 79 marcados no código e 83 com teste.
+- **RNF05.4** — O corte de 70% nas quatro métricas está configurado desde a atividade S10-A-cobertura. Até 22/11/2026 o passo de cobertura da esteira não reprovava o pull request quando falhava; a marcação que o permitia foi removida nesta versão, e o corte passou a bloquear. Na execução de 22/11/2026, a cobertura foi de 98,21% das linhas, 95,88% das instruções, 91,03% dos desvios e 96,94% das funções, medida sobre `lib/` e `app/api/`; as telas são verificadas pelos testes ponta a ponta, que não entram nessa conta.
 - **RNF05.5** — Os erros são registrados no console, sem estrutura.
 
 ### 15.7 Escalabilidade (RNF06)

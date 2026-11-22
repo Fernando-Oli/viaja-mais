@@ -2,7 +2,7 @@
 
 Esta seção descreve como verificamos a qualidade do Viaja Mais: a estratégia de testes, a integração contínua que a executa, os dados da esteira e do processo, os resultados obtidos, a ligação entre testes e requisitos, os defeitos que os testes revelaram e os limites do que eles provam.
 
-Os números se referem à `main` no commit `9651a8d`, em 22/11/2026. Os dados da esteira foram extraídos do GitHub pelo comando `npm run pfc:metricas` e estão em `docs/pfc/evidencias/2026-11-22/metricas.md`.
+Os números se referem à `main` no commit `b524d98`, em 22/11/2026. Os dados da esteira foram extraídos do GitHub pelo comando `npm run pfc:metricas` e estão em `docs/pfc/evidencias/2026-11-22/metricas.md`.
 
 ### 24.1 Estratégia de testes
 
@@ -33,9 +33,9 @@ A distribuição real da suíte em 22/11/2026 tem a forma de pirâmide: a base �
 
 | Camada | Casos | Onde roda |
 |---|---|---|
-| Unidade, componente e rota | 1.511, em 83 arquivos | Job "Lint, tipos e testes", 2,0 min no total |
-| Isolamento e integração com banco real | 473 | Job "Migrations e RLS", 2,9 min |
-| Ponta a ponta, incluindo acessibilidade | 270 aprovados e 4 pulados | 4 jobs paralelos, de 6,2 a 9,1 min cada |
+| Unidade, componente e rota | 1.532, em 86 arquivos | Job "Lint, tipos e testes", 2,2 min no total |
+| Isolamento e integração com banco real | 475 | Job "Migrations e RLS", 2,3 min |
+| Ponta a ponta, incluindo acessibilidade | 274 aprovados e 4 pulados | 4 jobs paralelos, de 6,0 a 8,3 min cada |
 
 ### 24.2 Integração contínua
 
@@ -47,7 +47,7 @@ O diagrama se lê de cima para baixo. As barras horizontais marcam o início e o
 
 O que cada etapa faz:
 
-- **Lint, tipos e testes** (`ci.yml`). Roda o ESLint com teto de 79 avisos, que é a dívida herdada e só pode cair; a checagem de tipos do TypeScript; os 1.511 testes do Vitest; e a conferência de rastreabilidade (seção 24.5). Qualquer falha deixa o job vermelho.
+- **Lint, tipos e testes** (`ci.yml`). Roda o ESLint com teto de 79 avisos, que é a dívida herdada e só pode cair; a checagem de tipos do TypeScript; os 1.532 testes do Vitest; e a conferência de rastreabilidade (seção 24.5). Qualquer falha deixa o job vermelho.
 - **Cobertura**, no mesmo job. Mede a cobertura com corte de 70% configurado em `vitest.config.mts`; abaixo do corte, o job falha. Até 22/11/2026 o passo estava marcado com `continue-on-error` e não derrubava o job, o que corrigimos nesta versão. O relatório é arquivado por 30 dias.
 - **Build de produção** (`ci.yml`). Executa `next build` com valores substitutos para as variáveis públicas. Prova que o projeto compila; o artefato não é publicado.
 - **O que mudou** (`ci.yml`). Compara o PR com a base. Se só mudaram `docs/` ou arquivos `.md`, ou se o PR é rascunho, o ponta a ponta é pulado.
@@ -71,51 +71,51 @@ Os dados abrangem de 26/08/2026 a 22/11/2026. A taxa de sucesso desconsidera as 
 
 | Workflow | Execuções | Sucesso | Falha | Cancelada | Taxa de sucesso | Mediana | P90 |
 |---|---|---|---|---|---|---|---|
-| CI | 187 | 146 | 11 | 30 | 93,0% | 95 s | 7,4 min |
-| Banco de dados | 90 | 74 | 16 | 0 | 82,2% | 2,3 min | 3,0 min |
-| Notion | 186 | 180 | 6 | 0 | 96,8% | 32 s | 65 s |
+| CI | 199 | 155 | 11 | 33 | 93,4% | 97 s | 8,5 min |
+| Banco de dados | 95 | 79 | 16 | 0 | 83,2% | 2,3 min | 3,0 min |
+| Notion | 196 | 190 | 6 | 0 | 96,9% | 32 s | 65 s |
 | Evidências | 12 | 11 | 1 | 0 | 91,7% | 36 s | 80 s |
 
-As 30 execuções canceladas do CI são as substituídas por um push mais novo, efeito do cancelamento descrito acima. A distância entre a mediana de 95 s e o P90 de 7,4 min tem duas causas: o ponta a ponta não roda em PRs só de documentação, e, até 11/11/2026, o job de ponta a ponta terminava em cerca de 50 s sem executar teste algum (seção 24.6). O P90 representa as execuções em que o Playwright roda de fato.
+As 33 execuções canceladas do CI são as substituídas por um push mais novo, efeito do cancelamento descrito acima. A distância entre a mediana de 97 s e o P90 de 8,5 min tem duas causas: o ponta a ponta não roda em PRs só de documentação, e, até 11/11/2026, o job de ponta a ponta terminava em cerca de 50 s sem executar teste algum (seção 24.6). O P90 representa as execuções em que o Playwright roda de fato.
 
-O workflow de banco tem a menor taxa, 82,2%. O próprio arquivo registra duas causas de falha: a primeira migration, que quebrou o job quando ele ainda usava um PostgreSQL puro, e a mudança de versão da ferramenta em 10/11. Não conseguimos atribuir cada uma das 16 falhas a uma causa. Somam-se ao total seis execuções de automações do próprio GitHub (Copilot), que não fazem parte da esteira.
+O workflow de banco tem a menor taxa, 83,2%. O próprio arquivo registra duas causas de falha: a primeira migration, que quebrou o job quando ele ainda usava um PostgreSQL puro, e a mudança de versão da ferramenta em 10/11. Não conseguimos atribuir cada uma das 16 falhas a uma causa. Somam-se ao total seis execuções de automações do próprio GitHub (Copilot), que não fazem parte da esteira.
 
 Tempo por etapa na última execução bem-sucedida na `main`:
 
 | Workflow | Etapa | Duração |
 |---|---|---|
-| CI | O que mudou | 6 s |
-| CI | Build de produção | 79 s |
-| CI | Lint, tipos e testes | 2,0 min |
-| CI | Playwright 1/4 · 2/4 · 3/4 · 4/4 | 7,5 · 6,2 · 9,1 · 7,2 min |
-| Banco de dados | Migrations e RLS | 2,9 min |
+| CI | O que mudou | 5 s |
+| CI | Build de produção | 54 s |
+| CI | Lint, tipos e testes | 2,2 min |
+| CI | Playwright 1/4 · 2/4 · 3/4 · 4/4 | 8,3 · 6,0 · 7,6 · 7,1 min |
+| Banco de dados | Migrations e RLS | 2,3 min |
 
-O ponta a ponta domina o tempo, e a parte mais lenta define quando a esteira termina. O retorno sobre lint, tipos e os 1.511 testes chega em 2 minutos, antes de qualquer parte do Playwright terminar.
+O ponta a ponta domina o tempo, e a parte mais lenta define quando a esteira termina. O retorno sobre lint, tipos e os 1.532 testes chega em pouco mais de 2 minutos, antes de qualquer parte do Playwright terminar.
 
 Pull requests e commits no mesmo período:
 
 | Indicador | Valor |
 |---|---|
-| Pull requests abertos | 79 (72 integrados, 7 fechados sem integração) |
-| Tempo entre abrir e integrar | mediana de 1,5 h; P90 de 7,2 dias |
-| PRs com revisão registrada no GitHub | 19 de 79 |
-| Commits na `main`, sem merges | 162 |
-| Planos de atividade em `docs/plans/` | 79 |
+| Pull requests abertos | 84 (77 integrados, 7 fechados sem integração) |
+| Tempo entre abrir e integrar | mediana de 1,0 h; P90 de 7,2 dias |
+| PRs com revisão registrada no GitHub | 19 de 84 |
+| Commits na `main`, sem merges | 171 |
+| Planos de atividade em `docs/plans/` | 81 |
 
-O dado mais importante desta tabela é negativo. O fluxo da equipe prevê revisão de todo PR antes do merge, mas apenas 19 dos 79 têm revisão registrada no GitHub. Os dados não distinguem a revisão feita fora da ferramenta da revisão que não aconteceu; o que se pode afirmar é que a regra não deixou registro em 60 PRs. Com mediana de 1,5 h entre abrir e integrar, a maioria foi integrada no mesmo dia.
+O dado mais importante desta tabela é negativo. O fluxo da equipe prevê revisão de todo PR antes do merge, mas apenas 19 dos 84 têm revisão registrada no GitHub. Os dados não distinguem a revisão feita fora da ferramenta da revisão que não aconteceu; o que se pode afirmar é que a regra não deixou registro em 65 PRs. Com mediana de 1 h entre abrir e integrar, a maioria foi integrada no mesmo dia.
 
 | Tipo de commit | Commits |
 |---|---|
-| feat (funcionalidade) | 59 |
-| fix (correção) | 34 |
-| docs (documentação) | 27 |
-| chore (manutenção) | 19 |
-| test (teste) | 10 |
-| sem tipo, refactor, perf e revert | 13 |
+| feat (funcionalidade) | 60 |
+| fix (correção) | 35 |
+| docs (documentação) | 30 |
+| chore (manutenção) | 21 |
+| test (teste) | 11 |
+| sem tipo, refactor, ci, perf e revert | 14 |
 
 | Autor | Commits na `main` |
 |---|---|
-| Fernando Oliveira | 73 |
+| Fernando Oliveira | 82 |
 | Micael Cruz Batista Martins | 58 |
 | Audrey Lacerda | 15 |
 | Abner Cosmo | 14 |
@@ -130,14 +130,12 @@ Resultado da execução da esteira na `main` em 22/11/2026:
 | Verificação | Resultado |
 |---|---|
 | Lint e checagem de tipos | Sem erro |
-| Vitest: unidade, componente e rota | 1.511 testes em 83 arquivos, todos aprovados |
-| Cobertura sobre `lib/` e `app/api/` | 97,56% das linhas, 95,3% das instruções, 90,36% dos desvios, 96,58% das funções |
-| Migrations aplicadas do zero | 21, sem erro |
-| Isolamento e integração com banco real | 473 testes, todos aprovados |
-| Playwright, computador e celular | 270 aprovados, 4 pulados, nenhuma falha |
+| Vitest: unidade, componente e rota | 1.532 testes em 86 arquivos, todos aprovados |
+| Cobertura sobre `lib/` e `app/api/` | 98,21% das linhas, 95,88% das instruções, 91,03% dos desvios, 96,94% das funções |
+| Migrations aplicadas do zero | 22, sem erro |
+| Isolamento e integração com banco real | 475 testes, todos aprovados |
+| Playwright, computador e celular | 274 aprovados, 4 pulados, nenhuma falha |
 | Acessibilidade (axe-core) | Incluída no Playwright, sem violação |
-
-Depois dessa execução, a correção do risco R23 (seção 25.5) acrescentou uma migration e um teste de isolamento: na máquina de desenvolvimento, as 22 migrations aplicam do zero e os 474 testes passam.
 
 Os quatro testes pulados são declarados no próprio código e dependem do perfil: três verificam gestos e leiautes que só existem no celular e são pulados no computador; um usa o clique do meio do mouse e é pulado no celular.
 
@@ -148,7 +146,7 @@ A evolução da suíte ao longo do semestre:
 | 13/09/2026 | Fase 01 | 61 | 19 | 5 | não medida |
 | 18/10/2026 | Fase 02 | 421 | 111 | 22, só em execução local | 84,6% |
 | 13/11/2026 | Coleta intermediária | 928 | 280 | 183 | 96,55% |
-| 22/11/2026 | Esta entrega | 1.511 | 473 | 270 | 97,56% |
+| 22/11/2026 | Esta entrega | 1.532 | 475 | 274 | 98,21% |
 
 A suíte passou de 85 casos na Fase 01 para 2.254 nesta entrega. A mudança mais relevante não está no volume: até 18/10 o ponta a ponta rodava só nas máquinas da equipe, e desde 11/11 roda na esteira a cada PR com código.
 
@@ -158,14 +156,14 @@ O número mais importante da cobertura é o de `lib/finance/`, com 100% das linh
 
 A ligação é feita por marcação no código. Todo requisito implementado leva uma tag no formato `@RF03.2` em comentário, no arquivo que o implementa e no teste que o verifica. O script `scripts/pfc/rastreabilidade.mjs` cruza as tags com o catálogo das seções 14 e 15 e gera a matriz em `docs/pfc/rastreabilidade.md`.
 
-Em 22/11/2026, o catálogo tem 140 requisitos, 78 com implementação marcada e 72 com teste marcado.
+Em 22/11/2026, o catálogo tem 140 requisitos, 79 com implementação marcada e 83 com teste marcado.
 
 | Grupo | No catálogo | Marcados no código | Com teste |
 |---|---|---|---|
-| RF01 Autenticação | 8 | 2 | 2 |
-| RF02 Gestão de perfil | 8 | 6 | 6 |
+| RF01 Autenticação | 8 | 2 | 8 |
+| RF02 Gestão de perfil | 8 | 6 | 7 |
 | RF03 Viagens | 8 | 5 | 5 |
-| RF04 Viagens em grupo | 9 | 7 | 6 |
+| RF04 Viagens em grupo | 9 | 7 | 9 |
 | RF05 Itinerário | 7 | 7 | 4 |
 | RF06 Controle financeiro | 13 | 8 | 8 |
 | RF07 Reservas | 7 | 7 | 4 |
@@ -175,10 +173,10 @@ Em 22/11/2026, o catálogo tem 140 requisitos, 78 com implementação marcada e 
 | RF11 Avaliações de lugares | 3 | 3 | 3 |
 | RF12 IA de roteiros | 3 | 0 | 0 |
 | RF13 Notificações | 4 | 2 | 1 |
-| RNF01 a RNF08 | 43 | 11 | 14 |
-| **Total** | **140** | **78** | **72** |
+| RNF01 a RNF08 | 43 | 12 | 15 |
+| **Total** | **140** | **79** | **83** |
 
-A diferença entre as duas últimas colunas mostra onde há código sem teste próprio. Exemplos: os tipos de reserva hotel, carro e atividade (RF07.2 a RF07.4), que a rota aceita, mas só o voo é testado; e a busca de lugares do Google (RF08.1), que depende de chave real. Nos não funcionais o número de testes supera o de código, porque requisitos como o RNF03.1 (uso em celular) são provados por teste sem um arquivo de implementação único.
+A diferença entre as duas últimas colunas mostra onde há código sem teste próprio. Exemplos: os tipos de reserva hotel, carro e atividade (RF07.2 a RF07.4), que a rota aceita, mas só o voo é testado; e a busca de lugares do Google (RF08.1), que depende de chave real. Em RF01, RF04 e nos não funcionais o número de testes supera o de código, porque requisitos como a sessão (RF01.5) e o uso em celular (RNF03.1) são provados por teste sem um arquivo de implementação único.
 
 O comando `npm run pfc:rastreabilidade:check` roda em todo PR. Ele falha quando uma tag cita requisito que não existe no catálogo. Falha também quando um requisito marcado como "Implementado" não tem teste. Até esta versão o catálogo usava o rótulo "Existente", que o script não reconhecia, e essa segunda regra não conferia nada. O catálogo passou a usar "Implementado", e os 60 requisitos com esse status têm teste marcado.
 
@@ -239,4 +237,4 @@ Continuam em aberto:
 - **Sem teste de carga.** A medição com 50 requisições simultâneas, de uma máquina, mostrou degradação de 135% na mediana. É indício, não verificação do RNF01.3.
 - **Testes provam função, não aparência.** Na coleta de 13/11, a revisão manual das capturas achou três defeitos de leiaute que nenhum teste acusou.
 - **Serviços externos e prévias.** A busca do Google Places fica fora dos testes. As telas de roteiro por IA e de compra de passagens são prévias com dados de exemplo; seus testes provam a interface, não uma funcionalidade.
-- **Revisão formal baixa.** Só 19 dos 79 PRs têm revisão registrada; parte dos defeitos achados por revisão poderia ter sido achada antes.
+- **Revisão formal baixa.** Só 19 dos 84 PRs têm revisão registrada; parte dos defeitos achados por revisão poderia ter sido achada antes.

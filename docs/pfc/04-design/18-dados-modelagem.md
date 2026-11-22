@@ -79,4 +79,4 @@ A chave de serviço, que ignora a RLS, fica em `lib/supabase/admin.ts` e é usad
 | `fotos_a_remover` | Fila de arquivos a apagar | Chave de serviço | Gatilho de `posts` |
 | `rate_limits` | Limite de requisições | Ninguém pela aplicação | Função `consumir_limite` |
 
-A tabela mostra o desenho de acesso por participação: quase tudo o que pertence a uma viagem é lido por todos os membros, porque viagem é trabalho de grupo, e as exceções são as escritas que mudam a viagem como um todo ou o dinheiro de outra pessoa. As provas desse desenho são os 473 testes de RLS e de integração com banco real, que rodam com dois usuários e conferem que um não alcança os dados do outro (seção 25).
+A tabela mostra o desenho de acesso por participação: quase tudo o que pertence a uma viagem é lido por todos os membros, porque viagem é trabalho de grupo, e as exceções são as escritas que mudam a viagem como um todo ou o dinheiro de outra pessoa. As provas desse desenho são os 475 testes de RLS e de integração com banco real, que rodam com dois usuários e conferem que um não alcança os dados do outro (seção 25).
