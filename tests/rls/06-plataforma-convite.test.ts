@@ -88,6 +88,28 @@ describe("entrar numa viagem é aceitar um convite", () => {
     expect(error).not.toBeNull()
   })
 
+  // Regressão do risco R23 da seção 25: a policy exigia convite pendente, mas
+  // aceitava qualquer papel. O convidado se inseria como dono, e `exigirDono`,
+  // que lê `trip_members.role`, passava a tratá-lo como dono da viagem.
+  it("com convite pendente, o Bruno não entra como dono", async () => {
+    const tripId = await viagemDaAna("Convidado que se declara dono")
+    await ana
+      .from("trip_invitations")
+      .insert({ trip_id: tripId, inviter_id: usuarioAna.id, invitee_email: BRUNO.email })
+
+    const { error } = await bruno
+      .from("trip_members")
+      .insert({ trip_id: tripId, user_id: usuarioBruno.id, role: "owner" })
+    expect(error, "o convidado entrou na viagem com papel de dono").not.toBeNull()
+
+    const { data: donos } = await ana
+      .from("trip_members")
+      .select("user_id")
+      .eq("trip_id", tripId)
+      .eq("role", "owner")
+    expect(donos).toEqual([{ user_id: usuarioAna.id }])
+  })
+
   it("com convite pendente, o Bruno aceita e passa a ver a viagem", async () => {
     const tripId = await viagemDaAna("Convite aceito")
 
