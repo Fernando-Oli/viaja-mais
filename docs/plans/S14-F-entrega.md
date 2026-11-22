@@ -10,7 +10,7 @@ secoes_doc: ["00", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18
 branch: docs/S14-F-entrega
 tipo: [documentacao]
 depende_de: [S13-F-montar-documento, S14-A-congelamento-a, S14-Ab-congelamento-ab, S14-M-congelamento-m]
-status: em-desenvolvimento
+status: concluido
 ---
 # Build do documento, deploy estável e ensaio
 
@@ -79,3 +79,9 @@ critério combinado depois que já existe código para defender deixa de ser cri
 - [ ] Saida dos testes
 - [ ] Screenshot ou gravação do fluxo (se houver tela)
 - [ ] Delta de cobertura (se mexeu em `lib/`)
+
+## Encerramento
+
+Documento versão 4.0 montado por `npm run pfc:build` a partir da `main` em
+`b524d98` (108 páginas), conferido pelo Fernando e enviado pelo AVA em
+22/11/2026, antes do prazo de 01/12/2026.
