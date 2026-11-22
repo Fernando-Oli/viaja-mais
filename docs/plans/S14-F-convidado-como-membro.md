@@ -10,7 +10,7 @@ secoes_doc: [25]
 branch: fix/S14-F-convidado-como-membro
 tipo: [migration, rls, seguranca, bug]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 
 ## 1. Contexto
@@ -57,11 +57,16 @@ correções de 12/11.
 - [x] Convidado não consegue se inserir com papel de dono
 - [x] A linha do dono, gravada pelo gatilho na criação da viagem, não é afetada
 - [x] Nenhum outro teste de RLS mudou de resultado
-- [ ] Consulta de conferência do fim da migration rodada em produção, voltando vazia
-- [ ] Migration aplicada em produção (o merge não aplica)
+- [x] Consulta de conferência do fim da migration rodada em produção, voltando vazia
+- [x] Migration aplicada em produção (o merge não aplica)
 
 ## 6. Evidência
 
 - Antes: `1 failed | 9 passed` em `06-plataforma-convite.test.ts`, com
   "o convidado entrou na viagem com papel de dono".
 - Depois: `Test Files 21 passed (21) · Tests 474 passed (474)` em `npm run test:rls`.
+
+Produção, 22/11/2026: migration aplicada pelo SQL Editor e registrada em
+`supabase_migrations.schema_migrations` (22 migrations, a última
+`20261122160000_plataforma_convidado_entra_como_membro`). A política publicada
+`trip_members_insert` passou a exigir `role = 'member'::text`.
