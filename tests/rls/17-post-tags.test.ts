@@ -41,9 +41,14 @@ import { CONEXAO, logar, novoCliente } from "./apoio"
  *     e o autor as da viagem só pela social_recusas_da_viagem, que responde
  *     só sobre a sessão; as cascatas da viagem e das contas levam a recusa e
  *     NÃO falham por causa do trigger; despublicar não a leva;
- *   - o limite "igual ao Instagram": quem vê o post vê a marca de uma pessoa
- *     privada, também na lista por pessoa pela Data API (a aba Marcações de
- *     privado fecha só na rota).
+ *
+ * E as de 22/11 (S14-F-marcacao-privada), que revogam parte das anteriores:
+ *   - a recusa vale por (autora, pessoa) em QUALQUER post — outra viagem e o
+ *     post sem viagem também ficam bloqueados; outra autora, não;
+ *   - perfil privado só é marcado por quem ele segue (aceito) ou por colega
+ *     da viagem do post;
+ *   - a marca de pessoa privada só aparece a ela, à autora e a quem pode ver
+ *     a rede dela — também na lista por pessoa pela Data API.
  *
  * @RF09.13 @RF09.14 @RF09.15 @RNF02.4
  */
@@ -188,6 +193,15 @@ async function recusasNoBanco(viagem: string, autor: string) {
     [viagem, autor],
   )
   return rows.map((r) => r.tagged_id)
+}
+
+/** Post só de fotos, sem viagem, pela conexão direta. */
+async function postDeFotosDireto(autor: string) {
+  const { rows } = await db.query<{ id: string }>(
+    "insert into public.posts (author_id, photos) values ($1, $2) returning id",
+    [autor, [`${autor}/${crypto.randomUUID()}.webp`]],
+  )
+  return rows[0].id
 }
 
 /** Quantas recusas há com a coluna igual ao id — para conferir as cascatas. */
@@ -756,7 +770,7 @@ describe("recusa: quem removeu a própria marca não volta a ser marcado por aqu
   })
 })
 
-describe("recusa: vale para aquele autor naquela viagem, e só", () => {
+describe("recusa: vale para aquela autora em qualquer post, e só para ela (S14-F-marcacao-privada)", () => {
   let colega: Ator
   let viagemC: string
   let postC: string
@@ -770,14 +784,21 @@ describe("recusa: vale para aquele autor naquela viagem, e só", () => {
     if (error) throw new Error(`não removeu a marca: ${error.message}`)
   })
 
-  it("a recusa de uma viagem não bloqueia outra viagem da mesma autora", async () => {
+  it("a recusa de uma viagem bloqueia a mesma autora em outra viagem e no post sem viagem", async () => {
     expect(await recusasNoBanco(viagemC, autora.id)).toEqual([membro.id])
+
     const outra = await criarViagem(autora.id, [membro.id])
     const postOutra = await postDireto(autora.id, outra)
-    const { error } = await marcar(autora, postOutra, membro.id)
-    expect(error).toBeNull()
-    expect(await marcasNoBanco(postOutra)).toEqual([membro.id])
-    expect((await recusasPelaFuncao(autora, outra)).ids).toEqual([])
+    expect((await marcar(autora, postOutra, membro.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect(await marcasNoBanco(postOutra)).toEqual([])
+    expect((await recusasPelaFuncao(autora, outra)).ids).toContain(membro.id)
+
+    // O contorno achado na revisão de 22/11: um post só de fotos, sem viagem.
+    const semViagem = await postDeFotosDireto(autora.id)
+    expect((await marcar(autora, semViagem, membro.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect(await marcasNoBanco(semViagem)).toEqual([])
+    const pode = await autora.cliente.rpc("social_pode_marcar", { post: semViagem, marcado: membro.id })
+    expect(pode.data).toBe(false)
   })
 
   it("a recusa de uma autora não bloqueia outro autor da mesma viagem", async () => {
@@ -827,33 +848,40 @@ describe("recusa: quando NÃO se grava", () => {
 })
 
 describe("recusa: as cascatas levam a recusa e não falham por causa do trigger", () => {
-  it("despublicar não apaga a recusa; apagar a viagem, sim", async () => {
-    const viagem = await criarViagem(autora.id, [membro.id])
+  it("despublicar e apagar a viagem não apagam a recusa: ela fica, sem o lugar (S14-F-marcacao-privada)", async () => {
+    const pessoa = await criarAtor("ficaviagem")
+    const viagem = await criarViagem(autora.id, [pessoa.id])
     const post = await postDireto(autora.id, viagem)
-    await marcarDireto(post, membro.id, autora.id)
-    await removerMinhaMarca(membro, post)
-    expect(await recusasNoBanco(viagem, autora.id)).toEqual([membro.id])
+    await marcarDireto(post, pessoa.id, autora.id)
+    await removerMinhaMarca(pessoa, post)
+    expect(await recusasNoBanco(viagem, autora.id)).toEqual([pessoa.id])
 
     await db.query("delete from public.posts where id = $1", [post])
-    expect(await recusasNoBanco(viagem, autora.id)).toEqual([membro.id])
+    expect(await recusasNoBanco(viagem, autora.id)).toEqual([pessoa.id])
 
     await db.query("delete from public.trips where id = $1", [viagem])
     expect(await contarRecusas("trip_id", viagem)).toBe(0)
+    expect(await contarRecusas("tagged_id", pessoa.id)).toBe(1)
+
+    // E a autora continua sem poder marcá-la num post novo.
+    const novo = await postDeFotosDireto(autora.id)
+    expect((await marcar(autora, novo, pessoa.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 
-  it("a marcada, dona da viagem, apaga a viagem pela própria sessão: a cascata não falha nem grava recusa", async () => {
+  it("a marcada, dona da viagem, apaga a viagem pela própria sessão: a cascata não falha, e a recusa fica sem o lugar", async () => {
     // A sessão é a pessoa marcada (auth.uid() = tagged_id) quando a cascata
     // apaga a marca; gravar a recusa de um post que já não existe violaria a
     // FK e derrubaria a exclusão da viagem inteira.
-    const viagem = await criarViagem(membro.id, [autora.id])
+    const dona = await criarAtor("donaviagem")
+    const viagem = await criarViagem(dona.id, [autora.id])
     const post = await postDireto(autora.id, viagem)
-    await marcarDireto(post, membro.id, autora.id)
-    await removerMinhaMarca(membro, post)
+    await marcarDireto(post, dona.id, autora.id)
+    await removerMinhaMarca(dona, post)
     // A marca recolocada por fora: a viagem sai com marca E recusa.
-    await marcarDireto(post, membro.id, autora.id)
+    await marcarDireto(post, dona.id, autora.id)
     expect(await contarRecusas("trip_id", viagem)).toBe(1)
 
-    const { data, error } = await membro.cliente.from("trips").delete().eq("id", viagem).select("id")
+    const { data, error } = await dona.cliente.from("trips").delete().eq("id", viagem).select("id")
     expect(error).toBeNull()
     expect(data).toEqual([{ id: viagem }])
 
@@ -864,6 +892,7 @@ describe("recusa: as cascatas levam a recusa e não falham por causa do trigger"
     )
     expect(rows[0]).toEqual({ posts: 0, marcas: 0 })
     expect(await contarRecusas("trip_id", viagem)).toBe(0)
+    expect(await contarRecusas("tagged_id", dona.id)).toBe(1)
   })
 
   it("apagar a conta da marcada, mesmo na sessão dela, não falha e leva marcas e recusas", async () => {
@@ -906,34 +935,106 @@ describe("recusa: as cascatas levam a recusa e não falham por causa do trigger"
 })
 
 /**
- * O limite aceito (decisão do Micael em 18/11, achado 3): "igual ao Instagram",
- * a marca é visível a quem vê o post, mesmo que a pessoa marcada seja privada.
- * A policy de post_tags não a esconde; a aba Marcações de um perfil privado
- * só abre a seguidores na ROTA. Este teste documenta o limite: se um dia ele
- * falhar, a regra mudou e a documentação precisa mudar junto.
+ * O antigo limite aceito (decisão de 18/11, achado 3) caiu em 22/11
+ * (S14-F-marcacao-privada): com a marcação aberta a qualquer perfil, um
+ * estranho expunha a ligação de uma pessoa privada. Agora a policy de
+ * post_tags só mostra a marca dela a quem pode ver a rede dela, também na
+ * lista agregada por pessoa da Data API.
  *
- * @RF09.14
+ * @RF09.14 @RNF02.4
  */
-describe("limite aceito: a marca de pessoa privada é visível a quem vê o post", () => {
+describe("marca de pessoa privada: só quem pode ver a rede dela a lê (S14-F-marcacao-privada)", () => {
   let reservada: Ator
+  let fa: Ator
   let post: string
 
   beforeAll(async () => {
     reservada = await criarAtor("reservada", { privado: true })
+    fa = await criarAtor("fa")
+    await seguir(fa.id, reservada.id)
     const viagem = await criarViagem(autora.id, [reservada.id])
     post = await postDireto(autora.id, viagem)
     await marcarDireto(post, reservada.id, autora.id)
   })
 
-  it("quem não segue a pessoa privada vê a marca dela no post público, também pela lista por pessoa", async () => {
+  it("quem não segue a pessoa privada vê o post público, mas não a marca dela", async () => {
+    const oPost = await estranho.cliente.from("posts").select("id").eq("id", post)
+    expect(oPost.data).toEqual([{ id: post }])
+
     const noPost = await estranho.cliente.from("post_tags").select("tagged_id").eq("post_id", post)
     expect(noPost.error).toBeNull()
-    expect(noPost.data).toEqual([{ tagged_id: reservada.id }])
+    expect(noPost.data).toEqual([])
+  })
 
-    // A lista agregada por pessoa, pela Data API: é o que a rota fecha para privado.
+  it("a lista agregada por pessoa, pela Data API, volta vazia para quem não a segue", async () => {
     const porPessoa = await estranho.cliente.from("post_tags").select("post_id").eq("tagged_id", reservada.id)
     expect(porPessoa.error).toBeNull()
-    expect(porPessoa.data).toEqual([{ post_id: post }])
+    expect(porPessoa.data).toEqual([])
+  })
+
+  it("a própria pessoa, a autora e quem a segue (aceito) leem a marca", async () => {
+    for (const ator of [reservada, autora, fa]) {
+      const { data, error } = await ator.cliente.from("post_tags").select("tagged_id").eq("post_id", post)
+      expect(error).toBeNull()
+      expect(data).toEqual([{ tagged_id: reservada.id }])
+    }
+  })
+})
+
+/**
+ * Marcação de perfil privado (S14-F-marcacao-privada, 22/11): só com vínculo
+ * que a própria pessoa escolheu — ela segue a autora, ou foi na viagem do post.
+ *
+ * @RF09.13 @RNF02.4
+ */
+describe("perfil privado: só é marcado por quem ele segue ou por colega da viagem (S14-F-marcacao-privada)", () => {
+  let discreta: Ator
+
+  beforeAll(async () => {
+    discreta = await criarAtor("discreta", { privado: true })
+  })
+
+  it("um estranho não marca a pessoa privada num post só de fotos: 42501", async () => {
+    const post = await postDeFotosDireto(estranho.id)
+    expect((await marcar(estranho, post, discreta.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect(await marcasNoBanco(post)).toEqual([])
+    const pode = await estranho.cliente.rpc("social_pode_marcar", { post, marcado: discreta.id })
+    expect(pode.data).toBe(false)
+  })
+
+  it("um estranho também não a marca no post de uma viagem em que ela não está", async () => {
+    const viagem = await criarViagem(estranho.id)
+    const post = await postDireto(estranho.id, viagem)
+    expect((await marcar(estranho, post, discreta.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect(await marcasNoBanco(post)).toEqual([])
+  })
+
+  it("o colega da viagem marca a pessoa privada no post daquela viagem, e só nele", async () => {
+    const colegaDela = await criarAtor("colegadela")
+    const viagem = await criarViagem(colegaDela.id, [discreta.id])
+    const post = await postDireto(colegaDela.id, viagem)
+    expect((await marcar(colegaDela, post, discreta.id)).error).toBeNull()
+    expect(await marcasNoBanco(post)).toEqual([discreta.id])
+
+    const semViagem = await postDeFotosDireto(colegaDela.id)
+    expect((await marcar(colegaDela, semViagem, discreta.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+  })
+
+  it("quem a pessoa privada segue (aceito) passa a poder marcá-la", async () => {
+    const seguida = await criarAtor("seguida")
+    const post = await postDeFotosDireto(seguida.id)
+    expect((await marcar(seguida, post, discreta.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+
+    await seguir(discreta.id, seguida.id)
+    expect((await marcar(seguida, post, discreta.id)).error).toBeNull()
+    expect(await marcasNoBanco(post)).toEqual([discreta.id])
+  })
+
+  it("seguir a pessoa privada não basta: o vínculo é escolha dela", async () => {
+    const admiradora = await criarAtor("admiradora")
+    await seguir(admiradora.id, discreta.id)
+    const post = await postDeFotosDireto(admiradora.id)
+    expect((await marcar(admiradora, post, discreta.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 })
 
@@ -1073,7 +1174,14 @@ describe("post sem viagem: marcação e recusa por post", () => {
   it("social_recusas_do_post responde só à autora", async () => {
     const daAutora = await recusasDoPostPelaFuncao(autora, post)
     expect(daAutora.error).toBeNull()
-    expect(daAutora.ids).toEqual([estranho.id])
+    // A recusa vale por autora em qualquer post (S14-F-marcacao-privada): a
+    // função devolve todas as dela, inclusive a do membro, de outra viagem.
+    expect(daAutora.ids).toContain(estranho.id)
+    const todas = await db.query<{ tagged_id: string }>(
+      "select distinct tagged_id from public.post_tag_recusas where author_id = $1",
+      [autora.id],
+    )
+    expect(daAutora.ids).toEqual(todas.rows.map((r) => r.tagged_id).sort())
     for (const ator of [estranho, membro, seguidora]) {
       const { ids, error } = await recusasDoPostPelaFuncao(ator, post)
       expect(error).toBeNull()
@@ -1084,26 +1192,34 @@ describe("post sem viagem: marcação e recusa por post", () => {
     expect(doVisitante.error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 
-  it("a recusa de um post não bloqueia outro post da mesma autora", async () => {
+  it("a recusa de um post bloqueia a mesma autora em outro post (S14-F-marcacao-privada)", async () => {
     const outro = await postDeFotos(autora.id)
-    const { error } = await marcar(autora, outro, estranho.id)
-    expect(error).toBeNull()
-    expect(await marcasNoBanco(outro)).toEqual([estranho.id])
-    expect((await recusasDoPostPelaFuncao(autora, outro)).ids).toEqual([])
+    expect((await marcar(autora, outro, estranho.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
+    expect(await marcasNoBanco(outro)).toEqual([])
+    expect((await recusasDoPostPelaFuncao(autora, outro)).ids).toContain(estranho.id)
+  })
+
+  it("a recusa de um post não bloqueia outra autora", async () => {
+    const daSeguidora = await postDeFotos(seguidora.id)
+    expect((await marcar(seguidora, daSeguidora, estranho.id)).error).toBeNull()
+    expect(await marcasNoBanco(daSeguidora)).toEqual([estranho.id])
   })
 
   it("a autora desmarca: sem recusa, e ela marca de novo", async () => {
+    // Pessoa nova: o membro já recusou a autora em outra viagem, e a recusa
+    // vale em qualquer post dela.
+    const nova = await criarPerfil("desmarcada")
     const outro = await postDeFotos(autora.id)
-    await marcarDireto(outro, membro.id, autora.id)
+    await marcarDireto(outro, nova, autora.id)
     const desmarcado = await autora.cliente
       .from("post_tags")
       .delete()
       .eq("post_id", outro)
-      .eq("tagged_id", membro.id)
+      .eq("tagged_id", nova)
       .select("tagged_id")
-    expect(desmarcado.data).toEqual([{ tagged_id: membro.id }])
+    expect(desmarcado.data).toEqual([{ tagged_id: nova }])
     expect(await recusasDoPostNoBanco(outro)).toEqual([])
-    expect((await marcar(autora, outro, membro.id)).error).toBeNull()
+    expect((await marcar(autora, outro, nova)).error).toBeNull()
   })
 
   it("a remoção de uma marca recolocada por fora não falha (on conflict sem alvo)", async () => {
@@ -1114,24 +1230,25 @@ describe("post sem viagem: marcação e recusa por post", () => {
     expect(await recusasDoPostNoBanco(post)).toEqual([{ tagged_id: estranho.id, trip_id: null }])
   })
 
-  it("a recusa é de viagem OU de post, nunca dos dois nem de nenhum, e não se repete", async () => {
-    const tentativas: Array<[string, unknown[]]> = [
-      [
-        "insert into public.post_tag_recusas (trip_id, post_id, author_id, tagged_id) values ($1, $2, $3, $4)",
-        [viagemA, post, autora.id, membro.id],
-      ],
-      ["insert into public.post_tag_recusas (author_id, tagged_id) values ($1, $2)", [autora.id, membro.id]],
-    ]
-    for (const [sql, valores] of tentativas) {
-      await expect(db.query(sql, valores)).rejects.toMatchObject({ code: VIOLA_CHECK })
-    }
+  it("a recusa nunca é de viagem E de post, e há uma só por autora e pessoa (S14-F-marcacao-privada)", async () => {
     await expect(
-      db.query("insert into public.post_tag_recusas (post_id, author_id, tagged_id) values ($1, $2, $3)", [
+      db.query("insert into public.post_tag_recusas (trip_id, post_id, author_id, tagged_id) values ($1, $2, $3, $4)", [
+        viagemA,
         post,
         autora.id,
-        estranho.id,
+        semNome.id,
       ]),
-    ).rejects.toMatchObject({ code: VIOLA_UNIQUE })
+    ).rejects.toMatchObject({ code: VIOLA_CHECK })
+
+    // A estranha já recusou a autora neste post: outra recusa do mesmo par, em
+    // qualquer lugar ou em lugar nenhum, repete o par.
+    for (const [sql, valores] of [
+      ["insert into public.post_tag_recusas (post_id, author_id, tagged_id) values ($1, $2, $3)", [post, autora.id, estranho.id]],
+      ["insert into public.post_tag_recusas (trip_id, author_id, tagged_id) values ($1, $2, $3)", [viagemA, autora.id, estranho.id]],
+      ["insert into public.post_tag_recusas (author_id, tagged_id) values ($1, $2)", [autora.id, estranho.id]],
+    ] as Array<[string, unknown[]]>) {
+      await expect(db.query(sql, valores)).rejects.toMatchObject({ code: VIOLA_UNIQUE })
+    }
   })
 
   it("ninguém forja nem desfaz a recusa por post pela Data API", async () => {
@@ -1150,11 +1267,12 @@ describe("post sem viagem: marcação e recusa por post", () => {
     expect(comPost.error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 
-  it("apagar o post leva marcas e recusas dele, sem falhar", async () => {
+  it("apagar o post leva as marcas, mas a recusa fica, sem o lugar (S14-F-marcacao-privada)", async () => {
+    const pessoa = await criarAtor("ficapost")
     const outro = await postDeFotos(autora.id)
-    await marcarDireto(outro, membro.id, autora.id)
-    await removerMinhaMarca(membro, outro)
-    await marcarDireto(outro, membro.id, autora.id)
+    await marcarDireto(outro, pessoa.id, autora.id)
+    await removerMinhaMarca(pessoa, outro)
+    await marcarDireto(outro, pessoa.id, autora.id)
     expect(await recusasDoPostNoBanco(outro)).toHaveLength(1)
 
     const apagado = await autora.cliente.from("posts").delete().eq("id", outro).select("id")
@@ -1162,6 +1280,11 @@ describe("post sem viagem: marcação e recusa por post", () => {
     expect(apagado.data).toEqual([{ id: outro }])
     expect(await marcasNoBanco(outro)).toEqual([])
     expect(await recusasDoPostNoBanco(outro)).toEqual([])
+    expect(await contarRecusas("tagged_id", pessoa.id)).toBe(1)
+
+    // O contorno de apagar o post e publicar outro não funciona.
+    const novo = await postDeFotos(autora.id)
+    expect((await marcar(autora, novo, pessoa.id)).error?.code).toBe(VIOLA_RLS_OU_GRANT)
   })
 })
 

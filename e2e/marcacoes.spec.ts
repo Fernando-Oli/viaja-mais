@@ -8,6 +8,7 @@ import {
   type Response,
 } from "@playwright/test"
 import { convidar, entrar } from "./fixtures/contas"
+import { zerarRecusas } from "./fixtures/recusas"
 import { USUARIOS } from "../tests/fixtures/usuarios"
 
 /**
@@ -217,6 +218,7 @@ test.beforeAll(async ({ browser }, info) => {
 
   await apagarResiduos(carla)
   await apagarResiduos(bruno)
+  await zerarRecusas([CARLA.email, BRUNO.email, DAVI.email, ANA.email])
 
   await exigirPrivacidade(carla, true)
   await exigirPrivacidade(bruno, false)
@@ -364,6 +366,8 @@ test.describe("removendo a marca", () => {
   test.afterEach(async () => {
     await apagarViagem(propria)
     propria = undefined
+    // A recusa não sai com a viagem (S14-F-marcacao-privada): o próximo teste marca o Davi de novo.
+    await zerarRecusas([CARLA.email, DAVI.email])
   })
 
   test("confirmar a remoção avisa, tira o cartão e deixa a aba no estado vazio", async ({ page }) => {

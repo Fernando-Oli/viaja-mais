@@ -2,6 +2,7 @@ import { test, expect, type APIRequestContext, type Browser, type BrowserContext
 import sharp from "sharp"
 import { entrar } from "./fixtures/contas"
 import { zerarLimites } from "./fixtures/limite"
+import { zerarRecusas } from "./fixtures/recusas"
 import { USUARIOS } from "../tests/fixtures/usuarios"
 import { MARCAS, chunksDoWebp, contemTexto, jpegComGps } from "../tests/fixtures/imagens"
 
@@ -272,6 +273,7 @@ test.beforeAll(async ({ browser }, info) => {
 
   await apagarResiduos(carla)
   await apagarResiduos(bruno)
+  await zerarRecusas([CARLA.email, BRUNO.email, DAVI.email])
 })
 
 test.afterAll(async () => {
@@ -497,18 +499,25 @@ test.describe("editar", () => {
   })
 
   test("trocar as marcações tira @davi e põe @bruno no Com do detalhe", async ({ page }) => {
-    await abrirEditar(page)
+    // O Bruno é privado aqui: só é marcado por quem ele segue (S14-F-marcacao-privada).
+    const seguiu = await bruno.api.post("/api/social/perfis/carla/seguir")
+    expect(seguiu.ok(), "o Bruno segue a Carla").toBeTruthy()
+    try {
+      await abrirEditar(page)
 
-    await page.getByRole("button", { name: "Remover a marcação de @davi" }).click()
-    await marcar(page, "bruno", "bruno")
-    await evidencia(page, "12-editar-marcacoes", { inteira: false })
-    await page.getByRole("button", { name: "Salvar" }).click()
+      await page.getByRole("button", { name: "Remover a marcação de @davi" }).click()
+      await marcar(page, "bruno", "bruno")
+      await evidencia(page, "12-editar-marcacoes", { inteira: false })
+      await page.getByRole("button", { name: "Salvar" }).click()
 
-    await expect(page.getByRole("dialog", { name: "Editar publicação" })).toBeHidden()
-    const marcados = artigoDe(page, "carla").getByRole("list", { name: "Pessoas marcadas" })
-    await expect(marcados.getByRole("link")).toHaveText(["@bruno"])
-    const relido = await (await carla.api.get(`/api/social/posts/${id}`)).json()
-    expect(relido.post.marcados.map((p: { username: string }) => p.username)).toEqual(["bruno"])
+      await expect(page.getByRole("dialog", { name: "Editar publicação" })).toBeHidden()
+      const marcados = artigoDe(page, "carla").getByRole("list", { name: "Pessoas marcadas" })
+      await expect(marcados.getByRole("link")).toHaveText(["@bruno"])
+      const relido = await (await carla.api.get(`/api/social/posts/${id}`)).json()
+      expect(relido.post.marcados.map((p: { username: string }) => p.username)).toEqual(["bruno"])
+    } finally {
+      await bruno.api.delete("/api/social/perfis/carla/seguir")
+    }
   })
 })
 
@@ -656,6 +665,8 @@ test.describe("recusa de marcação", () => {
 
   test.afterEach(async () => {
     await apagarPost(carla, id)
+    // A recusa não sai com o post (S14-F-marcacao-privada): o próximo teste marca o Davi de novo.
+    await zerarRecusas([CARLA.email, DAVI.email])
   })
 
   async function daviRemove() {
