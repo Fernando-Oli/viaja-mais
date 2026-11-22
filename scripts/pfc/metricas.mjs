@@ -128,9 +128,14 @@ let disponibilidade
     const quedas = []
     let atual = null
     for (const r of amostras) {
-      if (r.conclusion === "failure") atual ??= { inicio: r.createdAt, fim: r.createdAt, n: 0 }
-      if (r.conclusion === "failure") Object.assign(atual, { fim: r.createdAt, n: atual.n + 1 })
-      else if (atual) quedas.push(atual), (atual = null)
+      if (r.conclusion === "failure") {
+        atual ??= { inicio: r.createdAt, fim: r.createdAt, n: 0 }
+        atual.fim = r.createdAt
+        atual.n++
+      } else if (atual) {
+        quedas.push(atual)
+        atual = null
+      }
     }
     if (atual) quedas.push(atual)
     const data = (iso) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
