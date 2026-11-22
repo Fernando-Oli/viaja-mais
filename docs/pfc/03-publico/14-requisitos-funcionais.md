@@ -52,34 +52,89 @@ arquivos de foto do usuário no armazenamento. Como decisão de dado a cargo da
 plataforma, a tabela `profiles` recebe as colunas `username` (única), `bio` e
 `is_public`.
 
-## 14.1 Existentes (reaproveitados de `docs/ARCHITECTURE.md` §6, status corrigido)
+## RF06 — Controle Financeiro
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
 | RF06.1 | Usuário deve poder adicionar despesa com título, valor, categoria e data | Existente | Alta |
-| RF06.2 | Usuário deve poder editar despesa | Planejado | Média |
-| RF06.3 | Usuário deve poder excluir despesa | Planejado | Média |
+| RF06.2 | Usuário deve poder editar despesa | Existente | Média |
+| RF06.3 | Usuário deve poder excluir despesa | Existente | Média |
 | RF06.4 | Usuário deve poder visualizar total de gastos | Existente | Alta |
 | RF06.5 | Usuário deve poder visualizar gastos por categoria | Existente | Média |
-| RF06.6 | Usuário deve poder comparar gastos com orçamento | A confirmar | Baixa |
-| RF06.7 | Sistema deve alertar quando gastos ultrapassarem 80% do orçamento | A confirmar | Baixa |
+| RF06.6 | Usuário deve poder comparar gastos com orçamento | Parcial | Baixa |
+| RF06.7 | Sistema deve alertar quando gastos ultrapassarem 80% do orçamento | Parcial | Baixa |
+| RF06.8 | Usuário deve poder indicar quem pagou a despesa (`paid_by`) | Parcial | Alta |
+| RF06.9 | Usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Existente | Alta |
+| RF06.10 | Sistema deve calcular o valor devido por membro (`expense_shares`), conforme o tipo de rateio | Existente | Alta |
+| RF06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Existente | Alta |
+| RF06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Não iniciado | Média |
+| RF06.13 | Sistema deve sugerir transferências para acerto de contas e permitir registrar como pago o valor transferido | Existente | Alta |
 
-**Detalhamento:** RF06.1, RF06.4 e RF06.5 têm evidência direta em `app/dashboard/finances/page.tsx`. RF06.2 e RF06.3 estão listados em `docs/plans/00-plano-norte.md` §T1 como CRUD faltando ("editar/excluir despesa") — a documentação anterior os apresentava como prontos, o que o `_regras.md` já identificou como erro a não repetir. RF06.6 e RF06.7 não têm menção nem a favor nem contra no material disponível; ficam "A confirmar" até alguém checar o código, em vez de herdar um status não verificado.
+**Detalhamento:** aplicamos a este grupo o critério de status descrito em RF01 e
+RF04. Os requisitos RF06.1 a RF06.7 foram herdados de `docs/ARCHITECTURE.md`, e
+os requisitos RF06.8 a RF06.13, que tratam do rateio e do acerto de contas, foram
+acrescentados na versão 2.3 da Parte 00; nesta revisão, preservamos a numeração e
+apenas normalizamos o formato dos identificadores. Toda escrita do domínio passa
+por rota de API que exige participação na viagem: a criação e a listagem em
+`app/api/trips/[tripId]/expenses/`, a edição e a exclusão em
+`.../expenses/[expenseId]/`, a consulta do acerto em `.../acerto/` e o registro de
+pagamento em `.../acerto/transferencias/`. As regras aplicadas estão descritas
+em RNE-010 a RNE-017, na seção 13.
 
-## 14.2 Novos — Roteio de Despesas
+A criação de despesa (RF06.1) é coberta por teste de integração
+(`tests/lib/expenses-route.test.ts`), que inclui os caminhos de ausência de
+sessão, acesso negado e dados inválidos, e pelo teste ponta a ponta
+`e2e/editar-despesa.spec.ts`, no qual um membro cria, edita e exclui uma despesa
+a partir da aba Despesas da viagem. Esse mesmo teste, com
+`tests/api/expense-item-route.test.ts`, classifica a edição e a exclusão (RF06.2
+e RF06.3) como existentes, restritas a quem registrou a despesa ou ao dono da
+viagem; a versão anterior desta seção as registrava como planejadas. O total de
+gastos (RF06.4) e os gastos por categoria (RF06.5) são exibidos em
+`app/dashboard/finances`, separados por moeda, sem somar real com dólar. O
+cálculo está em `lib/finance/categorias.ts` (`tests/lib/finance-categorias.test.ts`),
+e o gráfico e a tabela por categoria, com o total de cada moeda, são verificados
+por `tests/components/finance-category-chart.test.tsx` e por
+`e2e/graficos-categoria.spec.ts`.
 
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RF-06.8 | Usuário deve poder indicar quem pagou a despesa (`paid_by`) | Planejado | Alta |
-| RF-06.9 | Usuário deve poder escolher o tipo de rateio: igual, por peso ou por valor exato | Planejado | Alta |
-| RF-06.10 | Sistema deve calcular o valor devido por membro (`expense_shares`), conforme o tipo de rateio | Planejado | Alta |
-| RF-06.11 | Usuário deve poder visualizar o saldo por membro (quem deve a quem) | Planejado | Alta |
-| RF-06.12 | Usuário deve poder marcar uma parcela do rateio como quitada | Planejado | Média |
-| RF-06.13 | Sistema deve sugerir transferências para acerto de contas (`minimizarTransferencias()`) | Planejado | Baixa |
+O RF06.6 e o RF06.7 passam de "A confirmar" para Parcial após a conferência do
+código: a mesma tela mostra, por viagem, o orçamento, o percentual já utilizado e
+uma barra que muda de cor acima de 80% e acima de 100%. Não há, contudo, teste
+automatizado dessa comparação, e a indicação de 80% é apenas visual, sem aviso ou
+notificação ao usuário. O RF06.8 é Parcial: a coluna `expenses.paid_by` existe e
+alimenta o saldo, mas é preenchida automaticamente com quem registra a despesa e
+não pode ser escolhida nem alterada pela interface ou pela API (RNE-010).
 
-**Detalhamento:** estes requisitos ainda não têm nenhuma evidência no código — são o escopo da trilha T2, que corre da S02 à S10. Os nomes de tabela e função (`expense_shares`, `settlements`, `paid_by`, `calcularSaldos()`, `minimizarTransferencias()`) já foram decididos em `plano-norte.md` §T2 e devem ser usados como estão, para não haver dois nomes diferentes para a mesma coisa entre a documentação e o código quando o Micael implementar. Os IDs `RF-NOVO` precisam ser substituídos pelo próximo número livre da sequência global antes do merge.
+O rateio (RF06.9 e RF06.10) é calculado em `lib/finance/rateio.ts` e recalculado
+no servidor a cada criação ou alteração de valor; a soma das partes é conferida
+também no banco. É coberto por testes de unidade
+(`tests/lib/finance-rateio.test.ts`), de integração
+(`tests/lib/expenses-route.test.ts` e `tests/api/expense-item-route.test.ts`), de
+componente (`tests/components/expense-split.test.tsx`), de políticas de acesso
+(`tests/rls/02-rateio.test.ts`) e ponta a ponta (`e2e/rateio-despesa.spec.ts`),
+que exercita os três critérios pela interface. O saldo por membro (RF06.11) e as
+transferências sugeridas (RF06.13) são calculados em `lib/finance/balances.ts` e
+`lib/finance/acerto.ts` e exibidos na tela `app/dashboard/trips/[id]/acerto`,
+cobertos por `tests/lib/finance-balances.test.ts`,
+`tests/lib/finance-acerto.test.ts`, `tests/api/acerto-route.test.ts` e
+`e2e/acerto-contas.spec.ts`. O registro de um pagamento, que reduz o saldo de
+quem pagou e de quem recebeu, é gravado na tabela `settlements` e coberto por
+`tests/lib/finance-transferencia.test.ts`,
+`tests/api/acerto-transferencias-route.test.ts`, `tests/rls/07-settlements.test.ts`,
+`e2e/acerto-transferencias.spec.ts` e pela jornada `e2e/financeiro-jornada.spec.ts`.
+Por isso, a descrição do RF06.13 foi ampliada para incluir esse registro, já
+marcado no código e nos testes com a mesma identificação.
 
-
+O RF06.12 permanece Não iniciado. A coluna `expense_shares.settled_at` existe e o
+acerto desconsidera as partes quitadas, mas nenhuma rota ou tela permite marcar
+uma parcela individual como quitada; desde a migration
+`20261112010000_plataforma_rls_participante.sql`, a política do banco impede o
+participante de fazê-lo diretamente, pois a parte sairia do acerto sem que o
+dinheiro mudasse de mão (`tests/rls/13-participante.test.ts`). Na prática, a
+quitação ocorre pelo registro de pagamento do RF06.13. Quanto à conversão entre
+moedas, existe uma função pura com teste de unidade (`lib/finance/cambio.ts` e
+`tests/lib/finance-cambio.test.ts`), mas ela não está ligada a nenhuma tela, rota
+ou fonte de cotação, e não há requisito catalogado para ela; por isso, não a
+registramos como funcionalidade do produto.
 
 ## RF09 — Rede Social
 
@@ -359,9 +414,10 @@ aplicação por conta própria, o que `app/api/invitations` (GET) já permite.
 
 Os requisitos RF04.7 e RF04.8 são atendidos por
 `app/api/trips/[tripId]/members/route.ts` e cobertos por
-`tests/api/members-route.test.ts`, que exercita os quatro caminhos exigidos pelo
-`CLAUDE.md`: resposta bem-sucedida, ausência de sessão, requisitante sem
-permissão e corpo inválido. O RF04.9 não consta do levantamento herdado de
+`tests/api/members-route.test.ts`, que exercita os quatro caminhos exigidos de
+toda rota pela estratégia de testes da seção 24: resposta bem-sucedida (200),
+ausência de sessão (401), requisitante sem permissão (403) e requisição inválida
+(400). O RF04.9 não consta do levantamento herdado de
 `docs/ARCHITECTURE.md`, mas descreve comportamento já implementado e testado, em
 `lib/authz/trip.ts` (`exigirMembro()` e `exigirDono()`) com teste em
 `tests/lib/authz-trip.test.ts`; registramo-lo como requisito porque é ele que
@@ -370,5 +426,3 @@ porque sem enunciá-lo a seção 25 discutiria uma medida de segurança que nenh
 requisito pede. Os requisitos RF04.4 a RF04.6 dependem do escopo de grupo nas
 consultas, hoje ainda filtradas por proprietário em parte das telas, o que é
 objeto da atividade `S05-F-escopo-grupo`.
-
-> [!] PENDENTE: grupos de outros domínios — RF06 (financeiro, parcial); RNF03 (usabilidade) e RNF05 (manutenibilidade) — a cargo de seus respectivos donos.

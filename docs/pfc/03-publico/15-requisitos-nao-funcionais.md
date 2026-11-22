@@ -23,17 +23,6 @@ sobrecarregar o banco. Os requisitos RNF01 a RNF06 — performance geral,
 segurança, usabilidade, confiabilidade, manutenibilidade e escalabilidade —
 pertencem a outros domínios.
 
-## 15. Requisitos Não Funcionais — Financeiro e Roteio
-
-| ID | Descrição | Status | Prioridade |
-|---|---|---|---|
-| RNF-08.1 | O cálculo do roteio deve ser determinístico: a soma das partes de `expense_shares` deve sempre igualar o valor total da despesa | Planejado | Alta |
-| RNF-02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Planejado | Alta |
-
-**Detalhamento:** o primeiro item é testável de forma unitária, sem I/O — é exatamente o papel de `lib/finance/rateio.ts` (regra RNE-020, seção 18), o que o torna um bom candidato a caso de teste na seção 24. O segundo depende de RLS que ainda não existe no repositório (T0 não rodou nesta semana); fica "Planejado" e não "Atendido", para não repetir o erro que o `_regras.md` aponta na documentação antiga ("declara RLS habilitada sem policy versionada").
-
-
-
 ## RNF01 — Performance
 
 | ID | Descrição | Status | Prioridade |
@@ -90,9 +79,12 @@ e verifica tanto leitura quanto escrita — um resultado vazio de consulta não 
 aceito como prova, pois também ocorreria se o dado simplesmente não existisse.
 Esse teste é a origem da marcação `@RNF02` no repositório.
 
-O RNF02.5 e o RNF02.7 decorrem das regras do `CLAUDE.md` e são exercitados pelos
-testes de rota em `tests/api/`, que cobrem obrigatoriamente o caminho de corpo
-inválido. O RNF02.6 é atendido: a revisão de segurança de 12/11/2026
+O RNF02.5 e o RNF02.7 são atendidos pelos esquemas `zod` de `lib/schemas/`, que
+definem uma lista fechada de campos, e pelas rotas, que gravam o resultado
+validado campo a campo, como em `app/api/trips/[tripId]/route.ts`. São
+exercitados pelos testes de rota em `tests/api/`, que cobrem obrigatoriamente o
+caminho de corpo inválido, e por testes que conferem o descarte de `user_id` e
+`trip_id` enviados no corpo, como `tests/lib/expenses-route.test.ts`. O RNF02.6 é atendido: a revisão de segurança de 12/11/2026
 (`S10-F-revisao-seguranca`) não encontrou escrita no banco a partir de componente
 ou página; toda alteração passa por rota de API, e a Row Level Security nega as
 alterações de coluna que nenhuma rota faz. O RNF02.8 é atendido pela função `consumir_limite`, no
@@ -237,3 +229,48 @@ que elas foram feitas. O RNF06.4 é atendido: toda consulta de listagem leva
 limite explícito de 500 registros (`lib/listagem.ts`), com uma exceção
 deliberada — o acerto de contas e os totais de finanças somam despesas, e
 cortar a lista em silêncio produziria saldo errado.
+
+## RNF08 — Integridade e Privacidade dos Dados Financeiros
+
+| ID | Descrição | Status | Prioridade |
+|---|---|---|---|
+| RNF08.1 | O cálculo do rateio deve ser determinístico, e a soma das partes de `expense_shares` deve ser igual ao valor total da despesa, com diferença de zero centavo | Atendido | Alta |
+| RNF02.9 | Os dados de `expense_shares` e `settlements` de uma viagem só devem ser visíveis aos seus membros, via RLS | Atendido | Alta |
+
+**Detalhamento:** os dois requisitos pertencem ao domínio financeiro e mantêm os
+identificadores da versão 2.3 da Parte 00, já usados nas marcações do código e
+dos testes; o RNF02.9 conserva o prefixo do grupo de segurança por esse motivo.
+Até a versão anterior desta seção, ambos constavam como planejados, porque o
+rateio e as políticas de acesso financeiras ainda não estavam versionados.
+Revisamos o status após conferir as migrations e os testes atuais.
+
+O RNF08.1 é atendido em duas camadas. Na aplicação, `lib/finance/rateio.ts` faz
+todos os cálculos em centavos inteiros e distribui o centavo restante por uma
+ordem fixa, independente da ordem de entrada (RNE-013, seção 13); o servidor
+recalcula as partes em vez de aceitar as que o navegador calculou. No banco, o
+gatilho de restrição `expense_shares_soma_fecha`
+(`supabase/migrations/20260926102023_financeiro_rateio.sql`), verificado no fim
+da transação, recusa qualquer conjunto de partes cuja soma difira do valor da
+despesa. A verificação é feita por `tests/lib/finance-rateio.test.ts`, inclusive
+pelos testes de regressão da Issue #36, em que a criação e a edição atribuíam o
+centavo a pessoas diferentes; por `tests/lib/expenses-route.test.ts` e
+`tests/api/expense-item-route.test.ts`, que conferem as partes gravadas na criação
+e na alteração de valor; e por `tests/rls/02-rateio.test.ts`, que prova no banco
+real a recusa de um rateio que não fecha e a aceitação de um que fecha, inserido
+parte a parte.
+
+O RNF02.9 é atendido pelas políticas de RLS versionadas. Em `expense_shares`, a
+leitura é permitida a quem participa da viagem da despesa (`pode_acessar_despesa`),
+e a escrita, desde `20261112010000_plataforma_rls_participante.sql`, apenas ao
+autor da despesa ou ao dono da viagem, e somente para partes de membros. Em
+`settlements` (`20261111100000_financeiro_settlements.sql`), a leitura é
+restrita aos participantes da viagem, a inserção ao próprio pagador, e não há
+permissão de alteração nem de exclusão. O isolamento é provado com usuários
+reais por `tests/rls/02-rateio.test.ts`, no qual um usuário não lê, não cria e
+não apaga partes de viagem da qual não participa; por
+`tests/rls/07-settlements.test.ts`, que cobre a leitura por membro e por não
+membro, o visitante anônimo, o registro em nome de outra pessoa e a
+imutabilidade do pagamento; e por `tests/rls/13-participante.test.ts`, que
+impede o participante de marcar a própria parte como quitada ou de apagar as
+partes da despesa de outra pessoa. A rota de registro de pagamento repete essas
+restrições no servidor (`tests/api/acerto-transferencias-route.test.ts`).

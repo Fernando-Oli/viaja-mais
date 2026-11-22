@@ -1,0 +1,29 @@
+Checklist do Documento de Especificação — 7º período, Fase 02
+
+Seções preenchidas: 9/28 (obrigatórias: 26)
+
+Avisos (3) — não bloqueiam, mas revise:
+  ~ 00 Histórico de Versão do Projeto — pendência: as datas e descrições dos períodos anteriores (1º ao 6º) precisam
+  ~ 26 Extensões e Tecnologias Complementares — arquivo não existe (06-qualidade/26-extensoes.md)
+  ~ 27 Avaliação Geral do Projeto Integrador — arquivo não existe (06-qualidade/27-avaliacao-geral.md)
+
+Bloqueios (17):
+  x  1 Identificação do Produto — arquivo não existe (01-identificacao/1-produto.md)
+  x  2 Descrição Geral do Produto — arquivo não existe (01-identificacao/2-descricao.md)
+  x  3 Equipe do Projeto — arquivo não existe (01-identificacao/3-equipe.md)
+  x  4 Repositórios e Artefatos — arquivo não existe (01-identificacao/4-repositorios.md)
+  x  5 Situação Atual do Projeto — arquivo não existe (02-planejamento/5-situacao-atual.md)
+  x  6 Objetivos do Semestre — arquivo não existe (02-planejamento/6-objetivos.md)
+  x  7 Cronograma do Semestre — arquivo não existe (02-planejamento/7-cronograma.md)
+  x  8 Público-Alvo do Produto — arquivo não existe (03-publico/8-publico-alvo.md)
+  x  9 Contexto de Negócio — arquivo não existe (03-publico/9-contexto-negocio.md)
+  x 10 Soluções Existentes — arquivo não existe (03-publico/10-solucoes-existentes.md)
+  x 11 Pesquisa com Usuários — arquivo não existe (03-publico/11-pesquisa-usuarios.md)
+  x 12 Resultados de Pesquisa com Usuário — arquivo não existe (03-publico/12-resultados-pesquisa.md)
+  x 19 Solução Tecnológica e Experimentação — arquivo não existe (04-design/19-solucao-tecnologica.md)
+  x 20 Arquitetura Geral do Sistema — arquivo não existe (05-arquitetura/20-arquitetura-geral.md)
+  x 21 Tecnologias e Ferramentas do Projeto — arquivo não existe (05-arquitetura/21-tecnologias.md)
+  x 23 Organização do Código e Repositório — arquivo não existe (05-arquitetura/23-organizacao-codigo.md)
+  x 25 Segurança da Informação — arquivo não existe (06-qualidade/25-seguranca.md)
+
+O documento NÃO está pronto para entrega.
