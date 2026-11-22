@@ -10,7 +10,7 @@ secoes_doc: [22.3, 20, 21]
 branch: feat/S05-F-escopo-grupo
 tipo: [regra-de-negocio, route-handler]
 depende_de: [S02-Ab-despesas-via-api, S02-A-bugs-p0]
-status: em-revisao
+status: concluido
 ---
 # Escopo de grupo em todas as consultas
 

@@ -10,7 +10,7 @@ secoes_doc: [15, 20]
 branch: chore/S09-F-performance
 tipo: [infra, migration, route-handler]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Performance e observabilidade
 

@@ -10,7 +10,7 @@ secoes_doc: [25]
 branch: docs/S11-F-correcoes-seguranca
 tipo: [seguranca, documentacao]
 depende_de: [S10-F-revisao-seguranca]
-status: backlog
+status: concluido
 ---
 # Correções de segurança e evidências
 
@@ -56,3 +56,7 @@ critério combinado depois que já existe código para defender deixa de ser cri
 - [ ] Saida dos testes
 - [ ] Screenshot ou gravação do fluxo (se houver tela)
 - [ ] Delta de cobertura (se mexeu em `lib/`)
+
+## Encerramento
+
+Não foi aberta como atividade própria. As correções de segurança do período entraram por S10-F-revisao-seguranca (PR #58), S08-F-revisao-rls-social (PR #56), S14-F-marcacao-privada (PR #81) e S14-F-convidado-como-membro (PR #82), cada uma com o teste que prova a exploração bloqueada.

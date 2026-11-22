@@ -6,6 +6,9 @@ import { ErroHttp } from "@/lib/http"
  * Cliente falso com a mesma forma encadeada do Supabase. Não é mock de
  * biblioteca: é um objeto que devolve o que o banco devolveria, o que mantém o
  * teste legível e independente de versão do SDK.
+ *
+ * @RF04.9 toda operação sobre uma viagem verifica participação ou propriedade
+ * no servidor, antes de consultar o banco
  */
 function clienteFake(
   resposta: { data: { role: string } | null; error: { message: string } | null },

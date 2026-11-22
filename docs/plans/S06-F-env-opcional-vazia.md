@@ -10,7 +10,7 @@ secoes_doc: []
 branch: fix/S06-F-env-opcional-vazia
 tipo: [regra-de-negocio, correcao-de-bug]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 
 ## 1. Contexto

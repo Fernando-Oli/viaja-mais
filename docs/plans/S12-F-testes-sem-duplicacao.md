@@ -10,7 +10,7 @@ secoes_doc: [24]
 branch: chore/S12-F-testes-sem-duplicacao
 tipo: [infra]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Helpers de teste num lugar só (RLS e E2E)
 

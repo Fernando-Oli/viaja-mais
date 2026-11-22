@@ -35,6 +35,7 @@ test.describe("verificação de saúde", () => {
 })
 
 test.describe("proteção de rotas", () => {
+  // @RF01.6 barra o acesso não autenticado às rotas protegidas.
   // Regressão: o middleware precisa barrar o dashboard para quem não tem sessão.
   test("visitante anônimo é redirecionado do dashboard para o login", async ({ page }) => {
     await page.goto("/dashboard")
@@ -48,6 +49,35 @@ test.describe("proteção de rotas", () => {
     expect(resposta.status()).toBe(401)
     expect(resposta.headers()["content-type"]).toContain("application/json")
     expect(await resposta.json()).toMatchObject({ error: expect.any(String) })
+  })
+})
+
+test.describe("sessão", () => {
+  // @RF01.3 entra com e-mail e senha · @RF01.5 a sessão se mantém entre
+  // requisições · @RF01.4 encerra a sessão
+  test("entra com e-mail e senha, a sessão vale entre páginas e o Sair a encerra", async ({ page }) => {
+    await page.goto("/auth/login")
+    await page.fill("#email", "teste.a@viajamais.local")
+    await page.fill("#password", SENHA_TESTE)
+    await page.click('button[type="submit"]')
+    await page.waitForURL("/dashboard")
+
+    // Outra página protegida e um recarregamento completo: o cookie de sessão
+    // é lido e renovado pelo proxy a cada requisição, sem novo login.
+    await page.goto("/dashboard/trips")
+    await expect(page).toHaveURL(/\/dashboard\/trips/)
+    await page.reload()
+    await expect(page).toHaveURL(/\/dashboard\/trips/)
+
+    await page.getByRole("button", { name: /minha conta/i }).click()
+    await page.getByRole("menuitem", { name: "Sair" }).click()
+    // Sai da área logada: o painel, sem usuário, leva ao login antes de a
+    // navegação para a página inicial terminar; os dois destinos servem.
+    await page.waitForURL((url) => !url.pathname.startsWith("/dashboard"))
+
+    // Encerrada de fato: a área logada volta a exigir login.
+    await page.goto("/dashboard")
+    await expect(page).toHaveURL(/\/auth\/login/)
   })
 })
 

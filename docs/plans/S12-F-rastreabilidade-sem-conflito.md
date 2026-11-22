@@ -10,7 +10,7 @@ secoes_doc: [15, 23]
 branch: chore/S12-F-rastreabilidade-sem-conflito
 tipo: [infra, documentacao]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 
 ## 1. Contexto

@@ -10,7 +10,7 @@ secoes_doc: [15]
 branch: feat/S07-F-estados-erro
 tipo: [tela, componente]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Estados de erro, não encontrado e carregamento
 

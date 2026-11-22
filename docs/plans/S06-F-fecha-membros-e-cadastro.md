@@ -10,7 +10,7 @@ secoes_doc: [25, 22.1]
 branch: fix/S06-F-fecha-membros-e-cadastro
 tipo: [migration, rls, seguranca, correcao-de-bug, tela]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 
 ## 1. Contexto

@@ -10,7 +10,7 @@ secoes_doc: [25]
 branch: fix/S14-F-marcacao-privada
 tipo: [migration, rls, seguranca]
 depende_de: [S06-M-publicar-viagem]
-status: em-desenvolvimento
+status: concluido
 ---
 
 ## 1. Contexto

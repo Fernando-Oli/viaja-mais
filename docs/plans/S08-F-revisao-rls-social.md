@@ -10,7 +10,7 @@ secoes_doc: [22.3, 25]
 branch: fix/S08-F-revisao-rls-participante
 tipo: [seguranca, rls, migration]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Revisão da RLS do participante (issue #37)
 

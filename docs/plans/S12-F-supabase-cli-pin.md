@@ -10,7 +10,7 @@ secoes_doc: []
 branch: fix/S12-F-supabase-cli-pin
 tipo: [infra, correcao-de-bug]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 
 ## 1. Contexto

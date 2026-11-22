@@ -10,7 +10,7 @@ secoes_doc: [00, 5, 6, 7]
 branch: docs/S13-F-montar-documento
 tipo: [documentacao]
 depende_de: [S12-A-doc-24, S12-Ab-doc-req, S12-M-doc-16-26, S13-A-doc-17-22, S13-Ab-doc-8-12, S13-Ab-conferencia-req]
-status: backlog
+status: concluido
 ---
 # Montagem do documento e Partes 00 e 02
 
@@ -53,3 +53,7 @@ critério combinado depois que já existe código para defender deixa de ser cri
 - [ ] Saida dos testes
 - [ ] Screenshot ou gravação do fluxo (se houver tela)
 - [ ] Delta de cobertura (se mexeu em `lib/`)
+
+## Encerramento
+
+Cumprida pelo PR #83: documento montado por `npm run pfc:build`, com as Partes 00 e 02 atualizadas.

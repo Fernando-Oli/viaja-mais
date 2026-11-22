@@ -30,6 +30,7 @@ import { CONEXAO, logar } from "./apoio"
  * Ana é a dona, Bruno é membro, Carla é de fora (seed).
  *
  * @RNF02.4 isolamento · @RF04.3 entrar só por convite · @RF06.2 editar despesa
+ * @RF04.5 membro edita o itinerário · @RF04.6 membro registra despesa
  */
 
 
@@ -184,6 +185,18 @@ describe("H3 — despesa: só o autor ou o dono da viagem", () => {
   it("mover a própria despesa para outra viagem: recusado", async () => {
     const { error } = await bruno.from("expenses").update({ trip_id: viagemCarla }).eq("id", despesaBruno)
     expect(error?.code).toBe(VIOLA_GRANT)
+  })
+
+  it("o membro convidado registra despesa na viagem, e a dona a vê", async () => {
+    const { data, error } = await bruno
+      .from("expenses")
+      .insert({ trip_id: viagem, user_id: idBruno, paid_by: idBruno, title: "Café", amount: 12, category: "food", date: "2026-12-03", currency: "BRL", split_type: "equal" })
+      .select("id")
+      .single()
+    expect(error).toBeNull()
+    const { data: visto } = await ana.from("expenses").select("id").eq("id", data!.id)
+    expect(visto).toHaveLength(1)
+    await bruno.from("expenses").delete().eq("id", data!.id)
   })
 
   it("o autor edita a própria despesa", async () => {

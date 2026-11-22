@@ -10,7 +10,7 @@ secoes_doc: [15, 25]
 branch: feat/S06-F-rate-limit-csp
 tipo: [seguranca, migration, rls, route-handler]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Rate limiting e Content-Security-Policy
 
