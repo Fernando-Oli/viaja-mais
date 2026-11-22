@@ -27,6 +27,33 @@ const temConteudo = (txt) =>
     .filter((l) => l.trim() && !l.trim().startsWith("#") && !l.trim().startsWith(">"))
     .join("").length > 80
 
+const LIMITE_PARAGRAFO = 600
+
+// Blocos de texto corrido: linhas consecutivas que não são título, tabela,
+// lista, citação, figura nem bloco de código.
+const paragrafos = (txt) => {
+  const blocos = []
+  let atual = []
+  let emCodigo = false
+  const fechar = () => {
+    if (atual.length) blocos.push(atual.join(" "))
+    atual = []
+  }
+  for (const linha of txt.split(/\r?\n/)) {
+    const l = linha.trim()
+    if (l.startsWith("```")) {
+      emCodigo = !emCodigo
+      fechar()
+    } else if (emCodigo || !l || /^(#|\||>|!\[|:::|[-*+] |\d+[.)] )/.test(l)) {
+      fechar()
+    } else {
+      atual.push(l)
+    }
+  }
+  fechar()
+  return blocos
+}
+
 console.log("Checklist do Documento de Especificação — 7º período, Fase 02\n")
 
 /* 1. Seções obrigatórias presentes e preenchidas ------------------------- */
@@ -57,6 +84,17 @@ for (const s of SECOES) {
   for (const p of pendentes) {
     avisos.push(`${rotulo} — pendência: ${p[1].trim().slice(0, 90)}`)
   }
+  /* 3b. Parágrafo longo ---------------------------------------------------- */
+  // Comentário do professor na Fase 02: "não deixar parágrafos grandes". O
+  // limite equivale a umas seis linhas no PDF. A seção 1 é parágrafo único por
+  // regra do template, então tem teto próprio.
+  const limite = s.n === "1" ? 900 : LIMITE_PARAGRAFO
+  for (const par of paragrafos(txt)) {
+    if (par.length > limite) {
+      avisos.push(`${rotulo} — parágrafo com ${par.length} caracteres (limite ${limite}): "${par.slice(0, 50)}…"`)
+    }
+  }
+
   // Sem a flag `i` nos acrônimos, de propósito: "todo" é palavra corrente em
   // português ("todo corpo de requisição deve ser validado") e com /i qualquer
   // seção bem escrita era acusada de conter marcador de rascunho.
