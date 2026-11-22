@@ -4,6 +4,16 @@ O Viaja Mais é uma aplicação web organizada em três partes: a interface que 
 
 Descrevemos a arquitetura com o modelo C4, que representa o software em níveis sucessivos de detalhe: contexto, contêineres e componentes. A subseção 20.3 trata da implantação, a 20.4 confronta as decisões com os requisitos não funcionais da seção 15 e a 20.5 apresenta a migração planejada para um backend separado. A versão avaliada é a da branch `main`; a arquitetura-alvo da 20.5 não está em produção.
 
+As figuras desta seção usam nomes genéricos para os serviços externos e para a infraestrutura, porque o provedor de cada papel pode mudar sem que a arquitetura mude; a subseção 20.5 trata justamente de uma dessas trocas. O texto, por sua vez, nomeia o provedor atual. A correspondência é esta:
+
+| Nas figuras | Provedor atual |
+|---|---|
+| Serviço de dados e identidade | Supabase: autenticação (GoTrue), PostgreSQL e Storage |
+| Hospedagem da aplicação | Vercel: rede de distribuição e funções sob demanda |
+| Serviço de mapas | Google Maps Platform: Maps JavaScript API e Places |
+| Repositório e integração contínua | GitHub e GitHub Actions |
+| Banco e autenticação locais | Supabase local, em contêineres Docker |
+
 ### 20.1 Contexto e contêineres
 
 ![Figura 20.1 — Diagrama de contexto (C4, nível 1)](../diagramas/20-1-c4-contexto.png)
@@ -54,7 +64,7 @@ As leituras das telas seguem outro caminho: cinco páginas de `app/dashboard/**`
 
 O diagrama de implantação mostra onde cada contêiner executa. No dispositivo do usuário executa a interface. Na Vercel há dois nós: a rede de borda, que entrega os arquivos estáticos a partir do ponto mais próximo do usuário, e as funções sob demanda, que executam a aplicação Next.js sem guardar estado entre requisições. O projeto Supabase de produção hospeda o PostgreSQL, o Auth e o Storage.
 
-O GitHub guarda o repositório e executa a esteira no GitHub Actions. Dentro de cada execução, o Supabase CLI 2.104.0 sobe em Docker um Supabase local e efêmero, com PostgreSQL, Auth e Storage, aplica as migrations do zero e carrega os dois usuários de teste. É o mesmo ambiente que cada integrante sobe na própria máquina com `npm run setup`. Por isso nenhum teste toca o banco de produção e nenhuma credencial de banco é compartilhada.
+O GitHub guarda o repositório e executa a esteira no GitHub Actions. Dentro de cada execução, o Supabase CLI 2.104.0 sobe em Docker um Supabase local e efêmero, com PostgreSQL, Auth e Storage, aplica as migrations do zero e carrega os dois usuários de teste. É o mesmo ambiente que cada integrante sobe na própria máquina com `npm run setup`. Por isso nenhum teste toca o banco de produção e nenhuma credencial de banco é compartilhada. No mesmo serviço roda o monitor de disponibilidade (seção 24.2), que consulta a aplicação publicada a cada cinco minutos.
 
 Um commit chega à produção por este caminho:
 

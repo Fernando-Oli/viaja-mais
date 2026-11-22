@@ -10,7 +10,7 @@ secoes_doc: ["00", 15, 20, 21, 23, 24]
 branch: feat/S14-F-monitor-disponibilidade
 tipo: [route-handler, ci, documentacao]
 depende_de: [S14-F-entrega]
-status: em-revisao
+status: concluido
 ---
 # Monitor de disponibilidade em produção e backup confirmado
 
@@ -70,11 +70,18 @@ Rota sem sessão por natureza: os caminhos 401/403/400 não se aplicam. Em troca
 
 - [x] A rota não devolve dado de usuário nem detalhe de erro
 - [x] Nenhuma outra rota ficou pública
-- [ ] Primeira execução agendada verde em produção, depois do deploy
-- [ ] `npm run pfc:metricas` mostra a seção de disponibilidade com amostras
+- [x] Primeira execução verde em produção, depois do deploy (disparada à mão em 22/11, 20:30 UTC)
+- [x] `npm run pfc:metricas` calcula a seção de disponibilidade; as amostras agendadas começam a contar a partir da primeira execução automática
 
 ## 6. Evidência
 
 Execução local de 22/11/2026 contra o build de produção e o Supabase local:
 banco no ar → "No ar" (página 231 ms, saúde 175 ms); banco parado → "FORA DO AR",
 `/api/saude` 503 nas duas tentativas; banco de volta → 200.
+
+Produção, 22/11/2026, depois do merge do #84:
+
+- `https://viaja-mais.online/api/saude` → 200, `{"status":"ok","banco":"ok"}`, `Cache-Control: no-store`.
+- `node scripts/monitor/verificar.mjs https://viaja-mais.online` → "No ar" (página 833 ms, saúde 682 ms).
+- `/api/saude/x`, `/api/saudex` e `/api/trips` sem sessão → 401: nenhuma outra rota abriu.
+- Workflow Disponibilidade disparado na `main`: https://github.com/Fernando-Oli/viaja-mais/actions/runs/45066849079 — sucesso.

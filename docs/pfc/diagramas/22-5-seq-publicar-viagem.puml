@@ -8,7 +8,7 @@ participant "Route Handler" as rota
 participant "lib/authz/trip.ts" as authz
 participant "lib/social e\nlib/trips/publico.ts" as social
 database "PostgreSQL\n(RLS)" as db
-participant "Supabase Storage\n(chave de serviço)" as storage
+participant "Armazenamento\nde arquivos\n(chave de serviço)" as storage
 
 == Publicação: POST /api/social/viagens/{tripId}/post ==
 nav -> rota : { titulo, legenda, roteiro, lugares, marcados }

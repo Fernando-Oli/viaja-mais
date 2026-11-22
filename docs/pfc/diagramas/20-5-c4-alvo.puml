@@ -2,6 +2,9 @@
 !include _tema.puml
 !include <C4/C4_Container>
 
+' Arquitetura-alvo em termos de papéis. As bibliotecas da prova de conceito
+' (seção 20.5) aparecem no texto, não aqui: podem mudar até a implantação.
+
 top to bottom direction
 
 AddElementTag("futuro", $borderStyle = DashedLine(), $fontColor = "#555555")
@@ -10,15 +13,15 @@ AddRelTag("futuro", $lineStyle = DashedLine())
 Person(viajante, "Viajante")
 
 System_Boundary(alvo, "Viaja Mais: arquitetura-alvo") {
-  Container(web, "Aplicação web", "Next.js 16", "Telas. Repassa /api/* para a API (rewrites).")
+  Container(web, "Aplicação web", "Next.js 16", "Telas. Repassa /api/* para a API.")
   Container(movel1, "Aplicativo móvel 1 (etapa 3)", "a definir", "Consome a mesma API.", $tags = "futuro")
   Container(movel2, "Aplicativo móvel 2 (etapa 3)", "a definir", "Consome a mesma API.", $tags = "futuro")
   Container(lb, "Balanceador de carga (etapa 2)", "a definir", "Distribui entre instâncias da API.", $tags = "futuro")
   Container(graphql, "Camada GraphQL (etapa 2)", "a definir", "Consultas agregadas sobre os mesmos módulos.", $tags = "futuro")
-  Container(api, "API", "Hono 4, Node.js", "Monólito modular sem estado; autenticação com Better Auth.")
-  Container(api2, "Outras instâncias da API (etapa 2)", "Hono 4", "Réplicas idênticas.", $tags = "futuro")
-  ContainerDb(pg, "PostgreSQL", "PostgreSQL + RLS", "Mesmas políticas; sessões no schema auth.")
-  ContainerDb(s3, "Armazenamento de arquivos", "Protocolo S3", "Fotos de perfil, em URL assinada.")
+  Container(api, "API", "Node.js, HTTP", "Monólito modular sem estado; autenticação própria.")
+  Container(api2, "Outras instâncias da API (etapa 2)", "Node.js, HTTP", "Réplicas idênticas.", $tags = "futuro")
+  ContainerDb(pg, "Banco de dados", "PostgreSQL + RLS", "Mesmas políticas; sessões no banco.")
+  ContainerDb(s3, "Armazenamento de arquivos", "Compatível com S3", "Fotos de perfil, em URL assinada.")
 }
 
 System_Ext(smtp, "Servidor de e-mail", "SMTP")
@@ -33,9 +36,9 @@ Rel(lb, graphql, "Consultas GraphQL", $tags = "futuro")
 Rel(lb, api, "REST", $tags = "futuro")
 Rel(lb, api2, "REST", $tags = "futuro")
 Rel(graphql, api, "Reusa os módulos", $tags = "futuro")
-Rel(api, pg, "Transação como o usuário", "Kysely, pg")
+Rel(api, pg, "Transação como o usuário", "SQL")
 Rel(api2, pg, "Pool de conexões", $tags = "futuro")
-Rel(api, s3, "Grava e assina fotos de perfil", "AWS SDK")
-Rel(api, smtp, "Convite e recuperação de senha", "nodemailer")
+Rel(api, s3, "Grava e assina fotos de perfil", "HTTPS, protocolo S3")
+Rel(api, smtp, "Convite e recuperação de senha", "SMTP")
 
 @enduml
