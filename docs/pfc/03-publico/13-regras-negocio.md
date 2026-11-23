@@ -1,6 +1,6 @@
 ## 13 Regras de Negócio
 
-As regras abaixo pertencem ao domínio do problema e independem da tecnologia adotada. As regras RNE-001 a RNE-026 vêm da versão anterior deste documento, com os mesmos identificadores; quatro delas foram corrigidas porque o comportamento implementado as desmentia (RNE-003, RNE-017, RNE-020 e RNE-021). As regras RNE-027 a RNE-045 são novas e descrevem o que a rede social, o rateio, o acerto de contas e as avaliações passaram a exigir neste semestre.
+As regras abaixo pertencem ao domínio do problema e independem da tecnologia adotada. As regras RNE-001 a RNE-026 vêm do levantamento das entregas anteriores, com os mesmos identificadores; quatro delas foram corrigidas porque o comportamento implementado as desmentia (RNE-003, RNE-017, RNE-020 e RNE-021). As regras RNE-027 a RNE-045 são novas e descrevem o que a rede social, o rateio, o acerto de contas e as avaliações passaram a exigir neste semestre.
 
 As regras estão agrupadas por tema, e por isso a numeração não é contínua dentro de cada tabela. A coluna "Requisitos relacionados" aponta os requisitos funcionais da seção 14, e a coluna "Regras" daquela seção aponta de volta para cá. Uma regra cujo requisito ainda não foi implementado continua listada, porque descreve o comportamento acordado, e não o código.
 

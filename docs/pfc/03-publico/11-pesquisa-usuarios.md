@@ -8,7 +8,7 @@ A investigação deste projeto foi documental e de análise de soluções, e nã
 
 A essas fontes somamos a análise comparativa da seção 10, que examinou quais necessidades cada tipo de solução atende e quais deixa descobertas.
 
-Na versão anterior deste documento, previmos para a Fase 03 deste período uma pesquisa primária estruturada: questionário com roteiro definido, aplicado aos três perfis da seção 8, com foco no planejamento em grupo e no acerto de contas. Essa pesquisa não foi realizada: neste semestre não aplicamos questionário nem fizemos entrevistas com usuários.
+Nas entregas anteriores deste período, previmos uma pesquisa primária estruturada: questionário com roteiro definido, aplicado aos três perfis da seção 8, com foco no planejamento em grupo e no acerto de contas. Essa pesquisa não foi realizada: neste semestre não aplicamos questionário nem fizemos entrevistas com usuários.
 
 Essa limitação tem consequências que reconhecemos:
 

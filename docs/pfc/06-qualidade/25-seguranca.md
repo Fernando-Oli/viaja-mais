@@ -124,7 +124,7 @@ Probabilidade e impacto são estimativas qualitativas da equipe. A situação é
 | ID | Risco (categoria OWASP Top 10) | Prob. | Impacto | Medida adotada | Evidência | Situação |
 |---|---|---|---|---|---|---|
 | R01 | Autenticado lê ou altera viagem alheia (A01) | Média | Alto | `exigirMembro` e RLS por participação | `01-isolamento`, `03-escopo-grupo` | Mitigado |
-| R02 | Membro vira dono ou entra sem convite (A01) | Média | Alto | Políticas herdadas removidas; grant por coluna | `13-participante`: 17 falhas antes, 30 de 30 depois | Mitigado |
+| R02 | Membro vira dono ou entra sem convite (A01) | Média | Alto | Políticas herdadas removidas; grant por coluna | `13-participante`: 17 de 30 casos falhavam antes, 30 de 30 depois | Mitigado |
 | R03 | Membro altera despesa ou parte alheia (A01) | Média | Alto | Só autor ou dono escreve; parte só de membro | `13-participante`, `02-rateio` | Parcial |
 | R04 | Funções do banco revelam participação de terceiros (A01) | Baixa | Médio | Respondem só sobre a sessão; visitante sem execução | `06-plataforma-convite`, `04-social` | Mitigado |
 | R05 | Perfil privado exposto por publicação ou marcação (A01) | Média | Médio | Visibilidade pela rede; marcação exige vínculo | `12-trip-posts`, `17-post-tags` | Mitigado |
@@ -164,7 +164,7 @@ Corrigimos a falha na migration `20261122160000_plataforma_convidado_entra_como_
 
 O efeito era parcialmente contido pela segunda camada: no banco, dono é quem criou a viagem (`trips.user_id`), e as políticas de dono usam essa fonte. O achado mostra uma inconsistência que permanece: o sistema tem duas fontes para "dono", e as duas camadas consultam fontes diferentes.
 
-Parte dos riscos foi registrada como vulnerabilidade potencial na entrega de 18/10/2026. Três das quatro hipóteses daquela versão (participante virar dono, convite redirecionado para outra viagem e despesa alheia alterada) foram confirmadas por teste e corrigidas em 12/11 (R02 e R03). A quarta, convidado entrar como dono, foi confirmada e corrigida nesta versão (R23). O risco de foto não reprocessada foi eliminado (R13), e a CSP e o limite de requisições, então planejados, foram implementados.
+Parte dos riscos foi registrada como vulnerabilidade potencial na entrega de 18/10/2026. Três das quatro hipóteses daquela versão (participante virar dono, convite redirecionado para outra viagem e despesa alheia alterada) foram confirmadas por teste e corrigidas em 12/11 (R02 e R03). A quarta, convidado entrar como dono, foi confirmada e corrigida em 22/11/2026 (R23). O risco de foto não reprocessada foi eliminado (R13), e a CSP e o limite de requisições, então planejados, foram implementados.
 
 ### 25.6 Riscos residuais e próximos passos
 
@@ -173,9 +173,9 @@ O que continua em aberto, em ordem de prioridade:
 1. **Fonte única para o papel de dono.** Fazer `exigirDono` consultar a mesma fonte que o banco (`trips.user_id`), para que a falha corrigida em R23 não reapareça por outro caminho.
 2. **Direitos do titular.** Implementar a exclusão de conta (RF02.4) e publicar uma política de privacidade antes de receber usuários reais em escala.
 3. **Migrations em produção.** Automatizar a aplicação a partir da `main`, ou ao menos comparar o schema publicado com o do repositório na esteira.
-3. **Auditoria de dependências.** Nenhum dos workflows audita dependências, e `@supabase/ssr` está declarado como `latest` no `package.json`. Os próximos passos são fixar a versão e incluir a auditoria na esteira.
-4. **CSP com nonce.** Retirar `'unsafe-inline'` dos scripts, aceitando a renderização dinâmica das páginas.
-5. **Teste de intrusão externo.** Toda a análise desta seção foi feita pela própria equipe. Nenhuma pessoa de fora tentou atacar a aplicação.
-6. **Registro estruturado de erros**, com rota, usuário e causa, para que um incidente possa ser reconstruído.
+4. **Auditoria de dependências.** Nenhum dos workflows audita dependências, e `@supabase/ssr` está declarado como `latest` no `package.json`. Os próximos passos são fixar a versão e incluir a auditoria na esteira.
+5. **CSP com nonce.** Retirar `'unsafe-inline'` dos scripts, aceitando a renderização dinâmica das páginas.
+6. **Teste de intrusão externo.** Toda a análise desta seção foi feita pela própria equipe. Nenhuma pessoa de fora tentou atacar a aplicação.
+7. **Registro estruturado de erros**, com rota, usuário e causa, para que um incidente possa ser reconstruído.
 
 Uma decisão sustenta a postura de segurança mais do que qualquer medida isolada: tratar como não verificada toda afirmação sem evidência no repositório. A documentação herdada afirmava RLS em todas as tabelas sem nenhuma política versionada, e foi essa desconfiança que levou às falhas corrigidas na Fase 01, na revisão da camada social e na revisão de participantes de novembro.

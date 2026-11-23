@@ -35,7 +35,7 @@ A segunda, no início deste período, foi extrair o schema real do banco herdado
 
 A terceira é o conjunto de provas construídas para sustentar decisões técnicas. A principal é o teste de isolamento entre contas: cria dois usuários reais, autentica ambos e tenta, com o segundo, ler e escrever os dados do primeiro, verificando que toda tentativa falha. Ele revelou três falhas de isolamento que a documentação herdada dava como inexistentes, e a suíte que cresceu a partir dele soma hoje 475 testes contra banco real.
 
-O mesmo experimento foi estendido em duas direções neste semestre. A primeira olha para dentro do grupo: `tests/rls/13-participante.test.ts` verifica o que um membro consegue fazer além do devido. Ele encontrou cinco falhas, entre elas um membro que se tornava dono da viagem trocando um campo, corrigidas na migration `20261112010000_plataforma_rls_participante.sql`.
+O mesmo experimento foi estendido em duas direções neste semestre. A primeira olha para dentro do grupo: `tests/rls/13-participante.test.ts` verifica o que um membro consegue fazer além do devido. Ele confirmou cinco falhas, com 17 dos seus 30 casos falhando, entre elas um membro que se tornava dono da viagem trocando um campo, corrigidas na migration `20261112010000_plataforma_rls_participante.sql`.
 
 A segunda direção são os testes de mutação das políticas: alteramos deliberadamente uma proteção de cada vez, como desligar um gatilho ou ampliar uma permissão, e confirmamos que algum teste falha. Há nove registros desse experimento em `docs/pfc/evidencias/`. No primeiro, desligar o gatilho que define a situação inicial em `follows` fez falhar 3 dos 40 testes da suíte social.
 

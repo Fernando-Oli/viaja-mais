@@ -15,7 +15,7 @@ Duas regras protegem as fronteiras entre domínios. A primeira: nenhum integrant
 
 A segunda: toda migration e toda política de RLS (segurança em nível de linha do PostgreSQL), em qualquer domínio, são escritas ou revisadas pelo responsável pela plataforma. O motivo é o modo de falha: uma política errada não gera erro visível, ela expõe dados ou devolve resultado vazio sem aviso.
 
-O semestre foi dividido em 14 semanas (S01 a S14, de setembro a 1º de dezembro de 2026) e em cinco trilhas: consolidação e segurança do código herdado (T1), divisão de custos (T2), rede social (T3), IA de roteiros (T4) e qualidade e segurança, contínua (T5). O cronograma e o marco de cada semana estão em `docs/plans/00-plano-norte.md`.
+O semestre foi dividido em 14 semanas (S01 a S14, de 26 de agosto a 1º de dezembro de 2026) e em cinco trilhas: consolidação e segurança do código herdado (T1), divisão de custos (T2), rede social (T3), IA de roteiros (T4) e qualidade e segurança, contínua (T5). O cronograma e o marco de cada semana estão em `docs/plans/00-plano-norte.md`.
 
 A unidade de acompanhamento é a atividade, identificada por semana, inicial do responsável e assunto, como `S03-A-editar-viagem`. Cada atividade tem um plano em `docs/plans/` com seis blocos fixos: contexto, arquivos afetados, passos, o que testar, o que validar e evidência. Os blocos de teste e validação são preenchidos antes da implementação, e o tipo da atividade define os testes obrigatórios (seção 24).
 
@@ -47,7 +47,7 @@ A distribuição dos commits também é desigual: Fernando e Micael somam 140 do
 
 #### Casos de uso
 
-Os casos de uso foram divididos em três figuras por assunto: conta e viagem, grupo e finanças, e rede social. Só entram casos de uso implementados; as telas que são apenas prévia ficam de fora e são listadas ao fim desta subseção. Cada caso de uso tem um identificador (UC01 a UC32), usado na tabela que os liga aos requisitos.
+Os casos de uso foram divididos em três figuras por assunto: conta e viagem, grupo e finanças, e rede social. Só entram casos de uso com tela e rota em funcionamento, ainda que alguns realizem requisitos parciais, indicados na tabela; as telas que são apenas prévia ficam de fora e são listadas ao fim desta subseção. Cada caso de uso tem um identificador (UC01 a UC32), usado na tabela que os liga aos requisitos.
 
 São quatro atores. O **Visitante** ainda não tem sessão. O **Viajante** é qualquer pessoa autenticada. O **Membro da viagem** é o viajante que participa de uma viagem, por tê-la criado ou por ter aceitado um convite. O **Dono da viagem** é o membro que a criou. As setas de generalização indicam herança: o dono faz tudo o que o membro faz, e o membro tudo o que o viajante faz.
 
@@ -112,4 +112,4 @@ Ficam fora dos diagramas, por não estarem implementados: a lista do feed e as s
 
 #### Fluxo das operações
 
-O diagrama de sequência de uma operação de escrita, que constava desta subseção na versão anterior, passou para a seção 22.2, junto com os das demais rotas.
+Os diagramas de sequência das operações de escrita estão na seção 22.2, junto com o catálogo das rotas que seguem cada padrão.

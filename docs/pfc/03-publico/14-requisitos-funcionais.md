@@ -14,7 +14,7 @@ O status registra o estado verificado no repositório em 22/11/2026, e não inte
 
 A integração contínua confere o primeiro critério: o processo falha se um requisito marcado como implementado não tiver teste vinculado. Ela não confere se o teste exercita o comportamento descrito; isso foi feito na conferência de 22/11/2026, requisito a requisito.
 
-Na conferência, quando o requisito é uma ação do usuário e a tela existe sem teste que a exercite, o status passou a parcial, critério que o catálogo já aplicava ao RF03.3 e ao RF03.4. Sete requisitos mudaram: RF01.2, RF01.7, RF01.8, RF02.3, RF04.7, RF04.8 e RF09.7. Nesta versão, 54 dos 97 requisitos funcionais estão implementados, 30 parciais e 13 não iniciados.
+Na conferência, quando o requisito é uma ação do usuário e a tela existe sem teste que a exercite, o status passou a parcial, critério que o catálogo já aplicava ao RF03.3 e ao RF03.4. Sete requisitos mudaram: RF01.2, RF01.7, RF01.8, RF02.3, RF04.7, RF04.8 e RF09.7. Em 25/11/2026, 57 dos 97 requisitos funcionais estão implementados, 30 parciais e 10 não iniciados.
 
 ### 14.2 Autenticação e Acesso (RF01)
 
@@ -57,7 +57,7 @@ Na conferência, quando o requisito é uma ação do usuário e a tela existe se
 - **RF02.2** — A foto é conferida pelo conteúdo do arquivo e guardada em área privada; chega ao navegador apenas por endereço temporário, emitido a quem está autenticado.
 - **RF02.3** — Repete o RF01.8, com a mesma rota, a mesma tela e o mesmo teste de rota; por isso passou também a parcial na conferência.
 - **RF02.4** — Não há rota nem tela de exclusão de conta. Quando existir, deverá seguir a RNE-005.
-- **RF02.8** — O perfil de outra pessoa abre a partir da busca e mostra dados básicos, contadores e a situação do vínculo com quem visita. Passou de não iniciado a implementado nesta versão.
+- **RF02.8** — O perfil de outra pessoa abre a partir da busca e mostra dados básicos, contadores e a situação do vínculo com quem visita.
 
 ### 14.4 Gestão de Viagens (RF03)
 
@@ -75,10 +75,10 @@ Na conferência, quando o requisito é uma ação do usuário e a tela existe se
 **Detalhamento:**
 
 - **RF03.1 e RF03.2** — Criar e editar passam por rotas que validam as datas e restringem a edição ao dono. Ambos têm teste de integração e teste ponta a ponta em navegador de computador e de celular.
-- **RF03.5** — O teste da jornada completa cria uma viagem e abre o detalhe dela, o que o classifica como implementado nesta versão.
+- **RF03.5** — O teste da jornada completa cria uma viagem e abre o detalhe dela, o que o classifica como implementado.
 - **RF03.3 e RF03.4** — Excluir e listar têm a rota testada, mas a tela não é exercitada por teste.
 - **RF03.6 e RF03.8** — Orçamento e situação fazem parte do formulário e da rota de edição, sem teste que os verifique.
-- **RF03.7** — A tela exibe a capa quando ela existe, mas nenhuma tela ou rota permite defini-la; a versão anterior o dava como parcial.
+- **RF03.7** — A tela exibe a capa quando ela existe, mas nenhuma tela ou rota permite defini-la.
 
 ### 14.5 Viagens em Grupo (RF04)
 
@@ -98,7 +98,7 @@ Na conferência, quando o requisito é uma ação do usuário e a tela existe se
 
 - **RF04.1 e RF04.2** — O convite é gravado antes do envio do e-mail, para que uma falha de envio não desfaça um convite válido. O RF04.2 é parcial porque o e-mail só chega a quem ainda não tem conta; quem já tem encontra o convite na aplicação.
 - **RF04.3** — Aceitar ou recusar é ato do próprio convidado. Os testes de rota, de isolamento e ponta a ponta provam também que ninguém entra numa viagem sem convite pendente.
-- **RF04.4** — As telas consultam as viagens pela participação, e não pela autoria, por meio de um módulo único de escopo de grupo. Passou de parcial a implementado nesta versão.
+- **RF04.4** — As telas consultam as viagens pela participação, e não pela autoria, por meio de um módulo único de escopo de grupo.
 - **RF04.5 e RF04.6** — As rotas de itinerário e de despesas admitem qualquer participante. Os testes de RLS do participante provam que o membro convidado edita o itinerário e registra despesa que a dona vê.
 - **RF04.7** — Parcial desde a conferência. Implementação: rota `app/api/trips/[tripId]/members/route.ts` e botão Remover, com confirmação, em `components/trip-members.tsx`. Teste: `tests/api/members-route.test.ts` cobre sucesso, ausência de sessão, falta de permissão e corpo inválido. Motivo: a remoção pela tela não é exercitada por teste.
 - **RF04.8** — Parcial desde a conferência. A mesma rota e o mesmo teste cobrem a saída voluntária, mas nenhuma tela permite ao membro sair da viagem.
@@ -120,7 +120,7 @@ Na conferência, quando o requisito é uma ação do usuário e a tela existe se
 
 - **RF05.1 a RF05.3** — Incluir, editar, concluir e excluir atividade passam por rotas restritas aos participantes, com testes de integração e ponta a ponta. Concluir é tratado como edição da situação da atividade.
 - **RF05.4 e RF05.5** — A lista agrupa por data e exibe a categoria, mas nenhum teste verifica o agrupamento nem a recusa de categoria inválida.
-- **RF05.6 e RF05.7** — Os testes de rota recusam término anterior ao início, e o teste ponta a ponta altera o local, mas esses testes não estão vinculados aos dois requisitos; por isso voltaram a parciais.
+- **RF05.6 e RF05.7** — Os testes de rota recusam término anterior ao início, e o teste ponta a ponta altera o local, mas esses testes não estão vinculados aos dois requisitos; por isso ficam como parciais.
 
 ### 14.7 Controle Financeiro e Rateio (RF06)
 
@@ -207,7 +207,7 @@ Na conferência, quando o requisito é uma ação do usuário e a tela existe se
 | RF09.16 | O usuário deve ver, na aba Publicações de um perfil que pode ver, a grade das publicações desse perfil | Implementado | Alta | RNE-033 |
 | RF09.17 | O usuário deve poder abrir uma publicação que pode ver e, se for o autor, excluí-la | Implementado | Alta | RNE-033 |
 
-**Detalhamento:** é o grupo que mais avançou desde a versão anterior, que o dava inteiro como não iniciado ou parcial. Hoje 14 dos 17 requisitos têm rota, tela e testes de rota, de isolamento entre usuários e ponta a ponta; o RF09.7 tem rota e testes, sem a tela exercitada. As regras de visibilidade estão na seção 13.4; aqui ficam as decisões de comportamento.
+**Detalhamento:** 14 dos 17 requisitos do grupo têm rota, tela e testes de rota, de isolamento entre usuários e ponta a ponta; o RF09.7 tem rota e testes, sem a tela exercitada. As regras de visibilidade estão na seção 13.4; aqui ficam as decisões de comportamento.
 
 - **RF09.1 a RF09.5** — Repetir o pedido de seguir não cria um segundo vínculo, e qualquer das duas partes desfaz o vínculo.
 - **RF09.6 e RF09.9** — As listas abrem pelos contadores do perfil e mostram cada pessoa com os mesmos dados da busca, sem identificador interno nem data do vínculo.
@@ -247,9 +247,9 @@ Na conferência, quando o requisito é uma ação do usuário e a tela existe se
 
 | ID | Descrição | Status | Prioridade | Regras |
 |---|---|---|---|---|
-| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Existente | Alta | RNE-025 |
-| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Existente | Alta | RNE-025 |
-| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Existente | Média | RNE-025 |
+| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Implementado | Alta | RNE-025 |
+| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Implementado | Alta | RNE-025 |
+| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Implementado | Média | RNE-025 |
 
 **Detalhamento:**
 

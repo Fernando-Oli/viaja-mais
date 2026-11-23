@@ -64,13 +64,13 @@ O servidor é formado por 39 route handlers em `app/api/**`, com 67 operações 
 Toda rota de escrita segue o molde declarado em `app/api/trips/[tripId]/route.ts`, nesta ordem:
 
 1. Sessão: `supabase.auth.getUser()` valida o token no servidor de autenticação; sem usuário, 401. O `proxy.ts` já devolve 401 antes, mas a rota repete a verificação.
-2. Limite de requisições: nas rotas de convite, troca de senha, seguir, foto de perfil, criação de post e fotos do post, `exigirLimite()` conta a chamada no banco e devolve 429 com `Retry-After`.
-3. Autorização: em recurso de viagem, `exigirMembro()` ou `exigirDono()` de `lib/authz/trip.ts`; na rede social, a regra do domínio (só o próprio perfil, só a autora, ou a função `pode_ver_rede`).
+2. Autorização: em recurso de viagem, `exigirMembro()` ou `exigirDono()` de `lib/authz/trip.ts`; na rede social, a regra do domínio (só o próprio perfil, só a autora, ou a função `pode_ver_rede`).
+3. Limite de requisições: nas rotas de convite, troca de senha, seguir, foto de perfil, criação de post e fotos do post, `exigirLimite()` conta a chamada no banco e devolve 429 com `Retry-After`.
 4. Validação: o corpo passa por um esquema zod de `lib/schemas/`; se falhar, 400 com o detalhe por campo.
 5. Escrita campo a campo: os campos saem um a um do resultado validado; `trip_id` vem da URL já autorizada e `user_id` vem da sessão.
 6. Resposta: sucesso com o registro gravado; qualquer exceção passa por `respostaDeErro()`.
 
-Quando o identificador da viagem chega no corpo, como no convite, a validação vem antes da autorização, porque não há o que autorizar sem saber qual é a viagem. O limite vem depois da autorização, para que só conte a tentativa que de fato produziria efeito.
+Quando o identificador da viagem chega no corpo, como no convite, a validação vem antes da autorização, porque não há o que autorizar sem saber qual é a viagem. O limite vem sempre depois da autorização e antes da escrita, para que só conte a tentativa que de fato produziria efeito. Na criação de post ele vem também antes de ler o corpo, para que o servidor não processe fotos de quem já esgotou a janela.
 
 #### Contrato de erro
 
@@ -175,7 +175,7 @@ O módulo `lib/supabase/` tem quatro clientes. `server.ts` cria o cliente da ses
 
 `admin.ts` cria o cliente com a chave de serviço, que ignora toda a RLS. Ele só é chamado dentro de route handler, e falha se for executado no navegador.
 
-Usamos a chave em dois casos: enviar o e-mail de convite pela API administrativa do Supabase Auth, que a exige, e gravar, apagar ou assinar fotos nos buckets privados do Storage, que não têm política para usuário. A única tabela tocada com essa chave é `fotos_a_remover`, a fila de fotos órfãs, que nenhum usuário pode ler ou gravar; o tipo do cliente em `lib/social/fila-fotos.ts` só aceita o nome dela.
+Usamos a chave em três casos: enviar o e-mail de convite pela API administrativa do Supabase Auth, que a exige; gravar, apagar ou assinar fotos nos buckets privados do Storage, que não têm política para usuário; e esvaziar `fotos_a_remover`, a fila de fotos órfãs. É a única tabela tocada com essa chave, e nenhum usuário pode lê-la ou gravá-la; o tipo do cliente em `lib/social/fila-fotos.ts` só aceita o nome dela.
 
 Abaixo das rotas está o banco, com 22 migrations e 18 tabelas. As políticas de RLS repetem as regras das rotas: convidar exige ser dono nos dois lugares, ler dados de viagem exige participar, e `trip_members_insert` só aceita a própria pessoa com convite pendente.
 
@@ -262,4 +262,4 @@ O erro percorre o caminho inverso com o mesmo contrato. A rota converte qualquer
 
 A última linha tem cobertura parcial: a publicação é exercitada pela API, e o teste de interface só chega até a abertura do diálogo de publicar. Os testes de rota da seção 24 completam a prova com os caminhos 200, 401, 403 e 400, e os testes de RLS autenticam dois usuários reais para provar que um não alcança os dados do outro.
 
-A seção 20.5 descreve como esse caminho muda quando o servidor for separado da aplicação Next.js; nesta versão, telas e rotas são publicadas juntas na Vercel.
+A seção 20.5 descreve como esse caminho muda quando o servidor for separado da aplicação Next.js; na versão avaliada, telas e rotas são publicadas juntas na Vercel.

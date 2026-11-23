@@ -30,7 +30,7 @@ O diagrama de contêineres abre a caixa do sistema. Dentro do limite do Viaja Ma
 
 No limite do projeto Supabase ficam três contêineres operados pelo fornecedor. O Supabase Auth emite e valida a sessão e envia os e-mails de convite e de recuperação de senha. O PostgreSQL 17 guarda as 18 tabelas, com as políticas de RLS (Row Level Security, segurança em nível de linha), as funções e os gatilhos criados pelas 22 migrations. O Storage guarda dois buckets privados, `avatars` e `capas-posts`, sem nenhuma política de escrita para usuário.
 
-O navegador fala diretamente com dois serviços além da aplicação. O primeiro é o Supabase Auth, apenas nas três telas de autenticação, com a chave anônima: é o único uso do cliente Supabase no navegador. O segundo é o Google Maps. Nenhum dos dois caminhos grava em tabela da aplicação. A versão anterior deste documento registrava como exceção pendente a tela de lugares, que escrevia direto no banco; ela passou a usar as rotas de servidor.
+O navegador fala diretamente com dois serviços além da aplicação. O primeiro é o Supabase Auth, apenas nas três telas de autenticação, com a chave anônima: é o único uso do cliente Supabase no navegador. O segundo é o Google Maps. Nenhum dos dois caminhos grava em tabela da aplicação.
 
 Escolhemos manter páginas e rotas de dados em um único projeto porque isso dá uma linguagem, um build e uma publicação para uma equipe de quatro pessoas em um semestre. O custo dessa escolha é o acoplamento ao Next.js e ao Supabase, que tratamos na subseção 20.5.
 
@@ -48,11 +48,11 @@ A autorização acontece dentro de cada route handler. Toda rota segue o molde d
 4. **Gravar campo a campo**, extraindo cada campo do resultado validado. O corpo da requisição nunca é repassado ao banco, o que impede o cliente de reescrever `user_id` ou `trip_id`.
 5. **Converter o erro** com `respostaDeErro()`, de `lib/http.ts`: erro conhecido mantém o status; qualquer outro vira 500 com mensagem genérica e um código no cabeçalho `X-Codigo-Erro`, que localiza a linha no log.
 
-As rotas de convite, troca de senha, foto de perfil e seguir perfil acrescentam um passo entre a autorização e a escrita: `exigirLimite()`, de `lib/seguranca/limite.ts`, conta as chamadas do usuário em uma função do PostgreSQL e responde 429 quando a janela se esgota.
+As rotas de convite, troca de senha, seguir perfil e envio de fotos (de perfil, de publicação e da publicação de viagem) acrescentam um passo entre a autorização e a escrita: `exigirLimite()`, de `lib/seguranca/limite.ts`, conta as chamadas do usuário em uma função do PostgreSQL e responde 429 quando a janela se esgota.
 
 A aplicação tem dois clientes do Supabase, e a diferença entre eles é a decisão de segurança mais importante do diagrama. O cliente de sessão (`lib/supabase/server.ts`) usa a chave anônima e o cookie do usuário, de modo que a RLS vale também no servidor. Se uma rota errar a checagem de `lib/authz`, o banco ainda recusa o acesso: a regra está escrita duas vezes, em lugares com modos de falha diferentes.
 
-O cliente administrativo (`lib/supabase/admin.ts`) usa a chave de serviço, que ignora a RLS. Ele é usado em dois casos que a RLS não resolve: o envio do convite pela interface administrativa do Auth e a gravação, remoção e assinatura de fotos no Storage, feita só depois de a rota conferir os bytes do arquivo e regerar a imagem. O módulo lança erro se for chamado no navegador, e a chave nunca recebe o prefixo `NEXT_PUBLIC_`.
+O cliente administrativo (`lib/supabase/admin.ts`) usa a chave de serviço, que ignora a RLS. Ele é usado em três casos que a RLS não resolve: o envio do convite pela interface administrativa do Auth; a gravação, remoção e assinatura de fotos no Storage, feita só depois de a rota conferir os bytes do arquivo e regerar a imagem; e a fila interna de fotos a remover, que nenhum usuário lê ou grava. O módulo lança erro se for chamado no navegador, e a chave nunca recebe o prefixo `NEXT_PUBLIC_`.
 
 Os módulos `lib/finance` e `lib/social` concentram as regras de domínio em funções sem acesso ao banco, como o rateio calculado em centavos, os saldos, o acerto de contas e o cursor de paginação das publicações. Por não fazerem entrada e saída, são testados de forma unitária. O `lib/env.ts` valida as variáveis de ambiente com zod na inicialização e falha nomeando a variável ausente.
 
@@ -88,22 +88,22 @@ Para validar a arquitetura, confrontamos cada grupo de requisitos não funcionai
 | RNF01.4, RNF01.5 e RNF06.4 — paginação, índices e limite | Teto de 500 registros (`lib/listagem.ts`); índice em toda chave estrangeira | `tests/rls/15-indices.test.ts`; consulta de despesas de 12,2 ms para 0,49 ms; listas de viagem sem paginação | Parcial |
 | RNF02.4 e RNF02.9 — RLS | Políticas por operação, versionadas; cliente de sessão também no servidor | 475 testes de RLS e de integração com dois usuários, no `db.yml` | Atendido |
 | RNF02.5 a RNF02.7 — validação e escrita | Caminho único de escrita; zod; gravação campo a campo | Testes de rota com o caso 400 obrigatório; cliente Supabase do navegador só nas telas de autenticação | Atendido |
-| RNF02.8 — limite por usuário | Contador no PostgreSQL, por usuário | `tests/rls/12-rate-limit.test.ts`; falha aberta se o contador cair | Atendido |
+| RNF02.8 — limite por usuário | Contador no PostgreSQL, por usuário | `tests/rls/12-rate-limit.test.ts`; só nas rotas de maior custo; falha aberta se o contador cair | Parcial |
 | RNF02.10 — chave de serviço | Só em `lib/supabase/admin.ts`, que falha no navegador | Revisão `S10-F-revisao-seguranca.md` | Atendido |
 | RNF02.12 — CSP | Política aplicada pelo `proxy.ts` | `tests/lib/csp.test.ts` e `e2e/csp.spec.ts`; admite `'unsafe-inline'` | Parcial |
 | RNF03 — usabilidade | shadcn/ui sobre Radix; layout responsivo | E2E em computador e celular; axe-core em parte das telas; só Chromium | Parcial |
 | RNF04.1 e RNF04.2 — disponibilidade e backup | Monitor a cada 5 min sobre página e `/api/saude`; backup diário do Supabase | `disponibilidade.yml`, série desde 22/11; backup conferido no painel, sem teste de restauração | Parcial |
 | RNF04.3 a RNF04.6 — schema, falhas e ambiente | Migrations versionadas; páginas de erro; `lib/env.ts` | 22 migrations aplicadas do zero no CI; `tests/lib/env.test.ts`; produção aplicada à mão | Atendido, com ressalva |
 | RNF05 — manutenibilidade | TypeScript estrito, ESLint, rastreabilidade, regras em `lib/` | 1.532 testes; 98,21% das linhas cobertas; corte de 70% bloqueia o CI; sem log estruturado | Parcial |
-| RNF06.1 a RNF06.3 — escala horizontal | Funções sem estado; CDN; pool do Supabase | Sessão no cookie e limite no banco; um único banco, sem réplica | Parcial |
+| RNF06.1 a RNF06.3 — escala horizontal | Funções sem estado; CDN; pool do Supabase | Sessão no cookie e limite no banco; os três requisitos são atendidos como escritos, mas há um único banco, sem réplica | Atendido, com ressalva |
 | RNF07 — social e IA | Paginação por cursor nas publicações do perfil | Feed e roteiro por IA são prévias; limite `roteiro-ia` sem rota que o use | Não atendido |
-| RNF-08.1 — rateio determinístico | Cálculo em centavos em função pura; gatilho adiado confere a soma | `tests/lib/finance-rateio.test.ts` e `tests/rls/02-rateio.test.ts` | Atendido |
+| RNF08.1 — rateio determinístico | Cálculo em centavos em função pura; gatilho adiado confere a soma | `tests/lib/finance-rateio.test.ts` e `tests/rls/02-rateio.test.ts` | Atendido |
 
 A arquitetura atende bem aos requisitos de segurança e de reprodutibilidade, porque eles foram o critério das decisões centrais: o caminho único de escrita, a autorização em dois níveis e o banco recriado do zero a cada alteração. O ponto mais fraco é tudo o que depende de um único projeto gerenciado em plano gratuito. Há um banco, em uma região, sem réplica nem plano de recuperação verificado, e a camada de aplicação escala sozinha, mas o banco não acompanha.
 
 A latência confirma essa leitura. A escrita cumpre a meta com margem estreita porque cada uma percorre três vezes o caminho até o banco: validação da sessão, checagem de participação e escrita. O custo está na rede, e não no processamento.
 
-Dois achados desta validação merecem registro. O RNF05.4 exige bloqueio pela integração contínua, mas o passo de cobertura do `ci.yml` estava marcado para continuar em caso de erro; a marcação foi removida nesta versão, e uma queda abaixo de 70% passou a reprovar o pull request. Já o RNF04.3 é atendido no repositório, mas a aplicação manual em produção, descrita em 20.3, é uma intervenção que o requisito não previa.
+Dois achados desta validação merecem registro. O RNF05.4 exige bloqueio pela integração contínua, mas o passo de cobertura do `ci.yml` estava marcado para continuar em caso de erro; a marcação foi removida em 22/11/2026, e uma queda abaixo de 70% passou a reprovar o pull request. Já o RNF04.3 é atendido no repositório, mas a aplicação manual em produção, descrita em 20.3, é uma intervenção que o requisito não previa.
 
 ### 20.5 Portabilidade e evolução da arquitetura
 

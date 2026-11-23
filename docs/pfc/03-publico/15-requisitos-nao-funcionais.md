@@ -13,7 +13,7 @@ Valem os status definidos na seção 14.1, com um acréscimo próprio dos requis
 | Parcial | Satisfeito em parte do sistema, ou verificado só em parte |
 | Não iniciado | Sem implementação nem medição |
 
-Na conferência de 22/11/2026, cada requisito implementado foi confrontado com o teste vinculado, e cada atendido, com a configuração, as migrações, a esteira ou o registro de medição correspondente. Quando a evidência cobre só parte do enunciado, o status passou a parcial: RNF02.5, RNF04.2, RNF05.3 e RNF06.4. Nesta versão, 9 dos 43 requisitos não funcionais estão implementados, 15 atendidos, 12 parciais e 7 não iniciados.
+Na conferência de 22/11/2026, cada requisito implementado foi confrontado com o teste vinculado, e cada atendido, com a configuração, as migrações, a esteira ou o registro de medição correspondente. Quando a evidência cobre só parte do enunciado, o status passou a parcial: RNF02.5, RNF04.2, RNF05.3 e RNF06.4. Em 25/11/2026, 9 dos 43 requisitos não funcionais estão implementados, 16 atendidos, 13 parciais e 5 não iniciados.
 
 ### 15.2 Desempenho (RNF01)
 
@@ -115,8 +115,8 @@ Na conferência de 22/11/2026, cada requisito implementado foi confrontado com o
 
 - **RNF05.1** — O modo estrito está ligado na configuração do TypeScript, e a integração contínua verifica os tipos em todo pull request.
 - **RNF05.2** — Diálogos e campos vêm da biblioteca de componentes, e um único modal de confirmação substituiu as caixas nativas do navegador.
-- **RNF05.3** — Parcial desde a conferência. A matriz de rastreabilidade é gerada a partir das marcações e conferida em todo pull request; hoje, 140 requisitos estão no catálogo, 79 marcados no código e 83 com teste. Motivo: o verificador exige só a marcação no teste, e RF01.3 a RF01.6, RF04.5, RF04.9, RNF01.5, RNF02.10 e RNF03.1, implementados, não têm marcação no código.
-- **RNF05.4** — O corte de 70% nas quatro métricas está configurado desde a atividade S10-A-cobertura. Até 22/11/2026 o passo de cobertura da esteira não reprovava o pull request quando falhava; a marcação que o permitia foi removida nesta versão, e o corte passou a bloquear. Na execução de 22/11/2026, a cobertura foi de 98,21% das linhas, 95,88% das instruções, 91,03% dos desvios e 96,94% das funções, medida sobre `lib/` e `app/api/`; as telas são verificadas pelos testes ponta a ponta, que não entram nessa conta.
+- **RNF05.3** — Parcial desde a conferência. A matriz de rastreabilidade é gerada a partir das marcações e conferida em todo pull request; hoje, 140 requisitos estão no catálogo, 84 marcados no código e 88 com teste. Motivo: o verificador exige só a marcação no teste, e RF01.3 a RF01.6, RF04.5, RF04.9, RNF01.5, RNF02.10 e RNF03.1, implementados, não têm marcação no código.
+- **RNF05.4** — O corte de 70% nas quatro métricas, configurado na atividade S10-A-cobertura, reprova o pull request quando não é atingido; a seção 20.4 registra como esse bloqueio foi verificado. Na execução de 22/11/2026, a cobertura foi de 98,21% das linhas, 95,88% das instruções, 91,03% dos desvios e 96,94% das funções, medida sobre `lib/` e `app/api/`; as telas são verificadas pelos testes ponta a ponta, que não entram nessa conta.
 - **RNF05.5** — Os erros são registrados no console, sem estrutura.
 
 ### 15.7 Escalabilidade (RNF06)

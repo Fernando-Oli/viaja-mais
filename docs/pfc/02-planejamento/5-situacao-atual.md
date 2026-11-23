@@ -1,6 +1,6 @@
 ## 5 Situação Atual do Projeto
 
-Em 22/11/2026, a nove dias da entrega, o Viaja Mais está integrado na branch `main` e publicado no endereço da seção 4. O sistema tem 39 rotas de servidor e 22 migrations com 18 tabelas. A cada alteração, a esteira roda análise estática, verificação de tipos, 1.532 testes de unidade e de rota (98,21% das linhas cobertas), 475 testes de isolamento com banco real e 274 testes ponta a ponta em computador e celular.
+Em 22/11/2026, a nove dias da entrega, o Viaja Mais está integrado na branch `main` e publicado no endereço da seção 4. O sistema tem 39 rotas de servidor e 22 migrations com 18 tabelas. A cada alteração, a esteira roda análise estática, verificação de tipos, 1.532 testes de unidade e de rota (98,21% das linhas de `lib/` e `app/api/`; as telas ficam com os testes ponta a ponta), 475 testes de isolamento com banco real e 274 testes ponta a ponta em computador e celular.
 
 Funcionam, com rota de servidor e teste: autenticação e troca de senha; viagens, itinerário, reservas e lugares com avaliações; convite por e-mail; despesas com rateio, saldo por participante, transferências sugeridas e registro de pagamentos; gráfico de gastos por categoria; e a rede social com perfil público ou privado, seguir, solicitações, pesquisa de pessoas e publicações com fotos e marcação.
 

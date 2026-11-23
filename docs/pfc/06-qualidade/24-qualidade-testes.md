@@ -48,7 +48,7 @@ O diagrama se lê de cima para baixo. As barras horizontais marcam o início e o
 O que cada etapa faz:
 
 - **Lint, tipos e testes** (`ci.yml`). Roda o ESLint com teto de 79 avisos, que é a dívida herdada e só pode cair; a checagem de tipos do TypeScript; os 1.532 testes do Vitest; e a conferência de rastreabilidade (seção 24.5). Qualquer falha deixa o job vermelho.
-- **Cobertura**, no mesmo job. Mede a cobertura com corte de 70% configurado em `vitest.config.mts`; abaixo do corte, o job falha. Até 22/11/2026 o passo estava marcado com `continue-on-error` e não derrubava o job, o que corrigimos nesta versão. O relatório é arquivado por 30 dias.
+- **Cobertura**, no mesmo job. Mede a cobertura com corte de 70% configurado em `vitest.config.mts`; abaixo do corte, o job falha. O relatório é arquivado por 30 dias.
 - **Build de produção** (`ci.yml`). Executa `next build` com valores substitutos para as variáveis públicas. Prova que o projeto compila; o artefato não é publicado.
 - **O que mudou** (`ci.yml`). Compara o PR com a base. Se só mudaram `docs/` ou arquivos `.md`, ou se o PR é rascunho, o ponta a ponta é pulado.
 - **Playwright em 4 partes** (`ci.yml`). Cada parte sobe o próprio Supabase local, com as migrations e o seed aplicados do zero, gera o build contra ele e roda um quarto da suíte. Uma parte que falha não cancela as outras.
@@ -178,7 +178,7 @@ Em 22/11/2026, o catálogo tem 140 requisitos, 79 com implementação marcada e 
 
 A diferença entre as duas últimas colunas mostra onde há código sem teste próprio. Exemplos: os tipos de reserva hotel, carro e atividade (RF07.2 a RF07.4), que a rota aceita, mas só o voo é testado; e a busca de lugares do Google (RF08.1), que depende de chave real. Em RF01, RF04 e nos não funcionais o número de testes supera o de código, porque requisitos como a sessão (RF01.5) e o uso em celular (RNF03.1) são provados por teste sem um arquivo de implementação único.
 
-O comando `npm run pfc:rastreabilidade:check` roda em todo PR. Ele falha quando uma tag cita requisito que não existe no catálogo. Falha também quando um requisito marcado como "Implementado" não tem teste. Até esta versão o catálogo usava o rótulo "Existente", que o script não reconhecia, e essa segunda regra não conferia nada. O catálogo passou a usar "Implementado", e os 60 requisitos com esse status têm teste marcado.
+O comando `npm run pfc:rastreabilidade:check` roda em todo PR. Ele falha quando uma tag cita requisito que não existe no catálogo. Falha também quando um requisito marcado como "Implementado" não tem teste. Até 22/11/2026 o catálogo usava o rótulo "Existente", que o script não reconhecia, e essa segunda regra não conferia nada. Com o rótulo "Implementado", os 70 requisitos com esse status, 61 funcionais e 9 não funcionais, têm teste marcado.
 
 Para cada funcionalidade com tela, a ligação vai do requisito à rota e à interface. Alguns exemplos:
 
@@ -205,7 +205,7 @@ Os testes encontraram defeitos reais, e não apenas confirmaram o que funcionava
 |---|---|---|
 | Usuário autenticado lia viagens alheias | Teste de isolamento com dois usuários | Políticas reescritas; `01-isolamento` |
 | Convidado via zero despesas do grupo | Teste contra o banco local | Consultas pela participação; `03-escopo-grupo` |
-| Membro virava dono; qualquer conta entrava numa viagem cujo id conhecesse | Revisão das políticas e teste escrito para cada hipótese: 17 falhas antes | Migration de 12/11; `13-participante`, 30 de 30 depois |
+| Membro virava dono; qualquer conta entrava numa viagem cujo id conhecesse | Revisão das políticas e teste escrito para cada uma das cinco hipóteses: 17 dos 30 casos falhavam | Migration de 12/11; `13-participante`, 30 de 30 depois |
 | Criação de viagem gravava o corpo sem validar | Revisão de segurança das 31 rotas, em 12/11 | Esquema zod; `trips-post`, com 6 corpos inválidos |
 | Função da rede social executável por visitante | Teste de mutação | Permissão revogada; casos novos em `04-social` |
 | Contagem da rede incluía perfil sem nome de usuário | Mutação que nenhum teste percebeu | Teste de regressão em `11-exigir-username` |
@@ -221,10 +221,10 @@ O último caso é o mais instrutivo. O job dependia de credenciais que nunca for
 
 A suíte é mais forte onde o risco é maior. O isolamento entre contas, que não produz erro visível quando falha, é testado contra banco real, com dois usuários, e vigiado por mutação. As regras de dinheiro têm cobertura integral. A revisão adversarial, que reproduz o ataque em teste antes de corrigi-lo, achou as cinco falhas de participante da seção 25, entre elas a do membro que virava dono.
 
-Das limitações registradas em 18/10/2026, quatro foram resolvidas:
+Cinco limitações foram resolvidas. As quatro primeiras estavam registradas em 18/10/2026; a última foi achada na validação da seção 20.4.
 
 - **Ponta a ponta fora da esteira.** Roda desde 11/11 em todo PR com código, contra um banco recriado do zero.
-- **Rastreabilidade não verificada.** O modo de conferência roda em todo PR desde a S12 e, com o rótulo "Implementado" adotado nesta versão, barra requisito declarado sem teste.
+- **Rastreabilidade não verificada.** O modo de conferência roda em todo PR desde a S12 e, com o rótulo "Implementado" adotado em 22/11/2026, barra requisito declarado sem teste.
 - **Desempenho não medido.** O RNF01.1 e o RNF01.2 foram medidos em produção em 13/11: 623 ms e 865 ms no percentil 95.
 - **O que um participante faz além do devido.** Passou a ter suíte própria, `13-participante`.
 - **Corte de cobertura.** O limite de 70% existia, mas o passo rodava com `continue-on-error` e uma queda não seria barrada. A marcação foi removida, e o corte passou a bloquear.

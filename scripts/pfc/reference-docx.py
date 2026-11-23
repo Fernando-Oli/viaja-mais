@@ -111,6 +111,9 @@ E = WD_ALIGN_PARAGRAPH.LEFT
 # "Body Text" nos demais; aqui os dois são iguais, de propósito.
 estilo("Body Text", alinhamento=J)
 estilo("First Paragraph", alinhamento=J)
+# Lista de referências (NBR 6023): alinhada só à esquerda, espaço simples e uma
+# linha em branco entre as entradas. Justificada, a URL longa abria buracos.
+estilo("Referencia", alinhamento=E, depois=12, entrelinha=1.0)
 # Usado pelo pandoc nas células de tabela e nas listas compactas.
 estilo("Compact", tamanho=10, alinhamento=E, depois=2, entrelinha=1.1)
 estilo("Block Text", alinhamento=J, italico=True)

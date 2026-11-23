@@ -38,7 +38,7 @@ O protótipo cobre as telas em duas larguras, celular (390 px) e computador (144
 
 As telas atuais usam a tipografia Instrument Sans e quatro cores com proporção definida: Marfim nas superfícies (cerca de 60%), Floresta na identidade, na navegação e no botão principal (25%), Grafite no texto (10%) e Cítrico em destaques pontuais (5%), nunca como cor de texto sobre Marfim.
 
-O protótipo serviu de referência direta para a implementação: a navegação, as telas de conta, o detalhe da viagem e as telas de finanças seguem as pranchas correspondentes. Não fizemos, porém, uma revisão formal, tela a tela, do alinhamento entre o protótipo e o que foi implementado, que a versão anterior deste documento havia replanejado.
+O protótipo serviu de referência direta para a implementação: a navegação, as telas de conta, o detalhe da viagem e as telas de finanças seguem as pranchas correspondentes. Não fizemos, porém, uma revisão formal, tela a tela, do alinhamento entre o protótipo e o que foi implementado.
 
 Também não houve validação com usuários antes da implementação. A verificação que existe é técnica: os fluxos das telas são cobertos por testes ponta a ponta, e um deles aplica a checagem automática de acessibilidade do axe-core às telas principais, em computador e em celular.
 
