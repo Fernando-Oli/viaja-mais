@@ -1,0 +1,9 @@
+
+> viaja-mais@0.1.0 pfc:check
+> node scripts/pfc/check.mjs
+
+Checklist do Documento de Especificação — 7º período, Fase 02
+
+Seções preenchidas: 28/28 (obrigatórias: 26)
+
+Nenhum bloqueio. Revise os avisos e rode `npm run pfc:build`.
