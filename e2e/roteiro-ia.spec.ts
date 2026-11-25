@@ -13,6 +13,8 @@ import { zerarLimites } from "./fixtures/limite"
  * @RF12.3 descartar sem salvar
  */
 
+const BUSCA_NO_MAPA = "https://www.google.com/maps/search/?api=1&query="
+
 const URL_AVORI = "/dashboard/trips/criar/ia"
 
 /** Daqui a 30 dias, no formato do campo de data: sempre no futuro, rode quando rodar. */
@@ -82,6 +84,23 @@ test("a pessoa revisa, edita e cria a viagem com o roteiro da Avori", async ({ p
   await tituloDoCheckin.fill("Check-in na hospedagem")
 
   const total = await page.getByRole("textbox", { name: /^Título da atividade/ }).count()
+
+  // S14-F-ver-no-mapa: um "Ver no mapa" por atividade, abrindo a busca do Google
+  // Maps em nova aba. O gerador fake não informa o lugar, então a busca usa o
+  // título atual (inclusive o editado) e o destino. O link não é clicado: o teste
+  // não sai para o Google.
+  await expect(page.getByRole("link", { name: /^Ver no mapa: / })).toHaveCount(total)
+  const mapaDoCheckin = page.getByRole("link", { name: "Ver no mapa: Check-in na hospedagem (abre em nova aba)" })
+  await expect(mapaDoCheckin).toHaveAttribute("href", BUSCA_NO_MAPA + encodeURIComponent("Check-in na hospedagem, Lisboa"))
+  await expect(mapaDoCheckin).toHaveAttribute("target", "_blank")
+  await expect(mapaDoCheckin).toHaveAttribute("rel", /\bnoopener\b/)
+  await expect(mapaDoCheckin).toHaveAttribute("rel", /\bnoreferrer\b/)
+  await expect(page.getByRole("link", { name: `Ver no mapa: Caminhada editada ${sufixo} (abre em nova aba)` })).toHaveAttribute(
+    "href",
+    BUSCA_NO_MAPA + encodeURIComponent(`Caminhada editada ${sufixo}, Lisboa`),
+  )
+  await dia1.screenshot({ path: `docs/pfc/evidencias/S14-F-ver-no-mapa-${test.info().project.name}.png` })
+
   await evidencia(page, "01-revisao")
 
   await page.getByRole("button", { name: "Criar viagem" }).click()

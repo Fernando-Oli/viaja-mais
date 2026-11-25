@@ -21,3 +21,9 @@ A avaliação da Fase 02 pediu três etapas para o futuro. A versão avaliada co
 A ordem não é arbitrária. Os aplicativos móveis só fazem sentido depois que existe uma API que não dependa do navegador, e o balanceamento só tem o que distribuir depois que a API existe como serviço próprio. O limite de requisições já guarda o contador no banco, e não em memória, justamente para funcionar com mais de uma instância.
 
 Não há data de conclusão registrada no repositório para nenhuma das três etapas.
+
+### 26.3 Lugares do roteiro no mapa
+
+Na revisão do roteiro, cada atividade abre a busca do lugar no Google Maps, em nova aba (seção 14, RF12.2). O passo seguinte é trazer isso para dentro do app: localizar cada lugar sugerido pela IA com a API de lugares do Google, mostrar os pontos de cada dia num mapa, com foto e avaliação, e gravá-los na aba Lugares ao criar a viagem.
+
+Ficou fora desta entrega por dois motivos. A API de lugares exige conta de faturamento, e um roteiro de cinco dias faz até cerca de 35 buscas, mais as fotos, cada uma contada na cota. E a chamada real não pode ser testada na integração contínua, que não tem a chave; a busca teria de ficar atrás de uma interface com um substituto determinístico, como o gerador de roteiro.
