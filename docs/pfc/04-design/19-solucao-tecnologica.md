@@ -43,4 +43,6 @@ Também medimos o desempenho em produção, com o script `scripts/pfc/medir-dese
 
 Essa última medida não verifica o RNF01.3, que fala em 1.000 usuários simultâneos: é um indício, e a verificação exige um teste de carga distribuído, acima dos limites das camadas gratuitas da Vercel e do Supabase. No mesmo período, a consulta da aba de despesas, com 100 mil linhas sintéticas, caiu de 12,2 ms para 0,49 ms com o índice criado para ela.
 
-A geração de roteiros por IA não passou da tela de prévia, com dados de exemplo: não há provedor integrado nem o gerador determinístico planejado para testes. Por fim, construímos fora da `main`, na branch `develop`, uma prova de conceito de backend separado, que não faz parte desta entrega e é discutida na seção 20.5.
+A geração de roteiros por IA fica atrás de uma interface única (`lib/ai/provider.ts`), com um gerador determinístico para o desenvolvimento e os testes e o Gemini, na camada gratuita, como provedor real. Na medição com chave real, em 20/11/2026, roteiros de três dias saíram em cerca de 9 segundos e os de sete passaram dos 15 do RNF07.3; por isso a geração se limita a cinco dias.
+
+A camada gratuita recusou pedidos ao acaso com o código 503, e o gerador passou a tentar de novo, alternando dois modelos, dentro do mesmo prazo. Por fim, construímos fora da `main`, na branch `develop`, uma prova de conceito de backend separado, que não faz parte desta entrega e é discutida na seção 20.5.

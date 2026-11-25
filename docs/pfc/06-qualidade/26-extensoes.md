@@ -4,9 +4,9 @@ Esta seção é prevista para o 8º período. Nesta entrega, registramos a situa
 
 ### 26.1 Geração de roteiros por inteligência artificial
 
-A geração de roteiro por IA está especificada nos requisitos RF12.1 a RF12.3 e não foi implementada. Não há rota nem módulo de geração no repositório. Existe apenas a tela de prévia, com dados de exemplo e identificação explícita de que não grava nada.
+A geração de roteiro por IA (RF12.1 a RF12.3) foi integrada em 25/11/2026 e está descrita nas seções 14, 19 e 22. A rota `POST /api/roteiros/gerar` chama o provedor atrás da interface de `lib/ai/provider.ts`, e a tela mostra o roteiro para revisão antes de criar a viagem; nada gerado pela IA é gravado sem essa revisão.
 
-O que está preparado é periférico: a variável de ambiente que escolheria o provedor de IA, validada em `lib/env.ts`, e a regra de limite de 10 gerações por hora por usuário, já declarada em `lib/seguranca/limite.ts`. Por isso não descrevemos a IA como extensão entregue.
+Trocar de provedor é escrever um arquivo em `lib/ai/` e um caso em `provider.ts`; a variável `AI_PROVIDER` já prevê um terceiro provedor, ainda sem implementação. Os limites da extensão são o prazo de 15 segundos, que restringe o roteiro a cinco dias, e a cota da camada gratuita, protegida pelo limite de 10 gerações por hora por usuário.
 
 ### 26.2 Roteiro de evolução da arquitetura
 

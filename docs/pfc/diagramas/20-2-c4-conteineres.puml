@@ -11,7 +11,7 @@ Person(viajante, "Viajante", "Pessoa autenticada; o visitante e o convidado usam
 
 System_Boundary(viajamais, "Viaja Mais") {
   Container(navegador, "Interface no navegador", "React 19, Tailwind CSS 4, shadcn/ui", "Componentes de cliente: formulários, listas, mapa. Não escreve no banco.")
-  Container(app, "Aplicação web", "Next.js 16 (App Router), Node.js", "proxy.ts, Server Components e 39 route handlers em app/api/**. Única porta de escrita.")
+  Container(app, "Aplicação web", "Next.js 16 (App Router), Node.js", "proxy.ts, Server Components e 41 route handlers em app/api/**. Única porta de escrita.")
 }
 
 System_Boundary(servicos, "Serviço de dados e identidade (gerenciado)") {
@@ -21,6 +21,7 @@ System_Boundary(servicos, "Serviço de dados e identidade (gerenciado)") {
 }
 
 System_Ext(mapas, "Serviço de mapas", "Busca de lugares e mapa")
+System_Ext(ia, "Serviço de IA", "Geração do roteiro")
 
 Rel(viajante, navegador, "Usa", "HTTPS")
 Rel(navegador, app, "Páginas e fetch('/api/...')", "HTTPS + cookie de sessão")
@@ -29,6 +30,7 @@ Rel(navegador, mapas, "Busca de lugares", "HTTPS, chave pública")
 Rel(app, auth, "Valida o token e envia convite", "HTTPS")
 Rel(app, pg, "Lê e grava com a sessão do usuário: a RLS vale", "HTTPS")
 Rel(app, arquivos, "Grava e assina fotos com a chave de serviço", "HTTPS")
+Rel(app, ia, "Pede o roteiro; a chave fica no servidor", "HTTPS")
 Rel(auth, pg, "Identidade do usuário usada nas políticas")
 
 @enduml

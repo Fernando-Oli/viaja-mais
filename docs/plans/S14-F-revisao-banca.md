@@ -6,7 +6,7 @@ responsavel: fernando
 revisor: audrey
 semana: S14
 requisitos: [RNF05.3]
-secoes_doc: ["00", 5, 11, 13, 14, 15, 16, 17, 19, 20, 22, 24, 25]
+secoes_doc: ["00", 5, 6, 7, 11, 13, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25, 26]
 branch: docs/S14-F-revisao-banca
 tipo: [documentacao]
 depende_de: [S14-F-entrega]
@@ -48,6 +48,13 @@ entre seções e de forma:
   página saía em branco. Sem número de página, o sumário também não serviria.
 - **Legenda da figura embaixo e sem fonte.** A NBR 14724 pede a identificação
   acima da ilustração e a fonte abaixo, mesmo quando é produção dos autores.
+- **Documento desatualizado pelos PRs de 25/11.** O #93 integrou a geração de
+  roteiro por IA, mas marcou RF12.1 a RF12.3 com o rótulo antigo "Existente" e
+  não atualizou as contagens; cerca de dez trechos, nas seções 5 a 7, 16, 17,
+  19, 20, 22, 24 e 26, ainda a chamavam de prévia. O #90 rebaixou sete RF e
+  quatro RNF a parciais sem refletir isso nas seções 20.4 e 24.5, e a linha 4.0
+  da Parte 00 dava RF01.7, RF01.8 e RF02.3 como implementados. O #90 também
+  mostrou que o UC14 "Sair da viagem" não tem tela, contra a regra da seção 17.
 
 ## 2. Arquivos afetados
 
@@ -62,6 +69,10 @@ entre seções e de forma:
 - `scripts/pfc/figuras.lua` (novo) — legenda acima, fonte abaixo
 - `scripts/pfc/reference-docx.py` — número de página no cabeçalho, capa sem
   número, estilos de legenda e de fonte
+- Conciliação: seções 5, 6, 7, 13 a 17, 19 a 22, 24 a 26 e a Parte 00;
+  diagramas 16.1, 17.2, 17.3, 20.1 e 20.2 (`.puml` e `.png`); planos
+  `S10-M-ia-adapter`, `S11-M-tela-roteiro-ia` e `S12-Ab-doc-req`; remoção de 19
+  SVG soltos em `docs/pfc/diagramas/C:/...`, gerados por engano na 4.0
 
 Nenhuma migration e nenhum código de aplicação.
 
@@ -89,15 +100,25 @@ Nenhuma migration e nenhum código de aplicação.
    abaixo. A altura máxima da figura cai de 18,5 para 17,5 cm para caber com as
    duas linhas: com 18,5, três figuras iam sozinhas para a página seguinte e
    deixavam meia página em branco.
+9. Conciliação depois dos PRs #90 a #93: rótulo e contagens recalculados das
+   tabelas das seções 14 e 15 e da matriz; a IA descrita como funcionalidade
+   em todas as seções; caso de uso UC08 "Montar viagem com a Avori" e o antigo
+   UC14 retirado, com a renumeração de UC08 a UC14 (de UC15 em diante, nada
+   muda); Gemini como terceiro sistema externo no C4; R24 (injeção de instrução
+   na IA) e o contorno do limite pela janela no R12 da seção 25.
+10. Linha de tabela não se parte entre páginas (`IsSplitAllowed`, aplicado pelo
+    `exportar-pdf.py`): o fim de uma rota longa ficava sozinho no alto da
+    página seguinte.
 
 ## 4. O que testar
 
 Obrigatórios pelo tipo (`documentacao`):
 
 - [x] `npm run pfc:check` sem bloqueio
-- [x] `npm run verify` verde — lint sem erro (39 avisos, teto 79), tipos, 1.532
-  testes em 86 arquivos; o build, que neste worktree não tem `.env.local`, passou
-  com os mesmos valores substitutos que o `ci.yml` usa
+- [x] `npm run verify` verde — lint sem erro (39 avisos, teto 79), tipos, 1.675
+  testes em 93 arquivos (eram 1.532 em 86 antes dos PRs #92 e #93); o build, que
+  neste worktree não tem `.env.local`, passou com os mesmos valores substitutos
+  que o `ci.yml` usa
 - [x] `npm run pfc:rastreabilidade:check` sem inconsistência
 
 **Roteiro de teste manual**
@@ -115,6 +136,9 @@ Obrigatórios pelo tipo (`documentacao`):
    nele nem no texto.
 6. Cada uma das 20 figuras com a legenda acima e a fonte abaixo, na mesma
    página da imagem.
+7. `git grep` pelos termos que marcavam a IA como prévia e pelas contagens
+   antigas (39 rotas, 61 funcionais, 70 requisitos, 79 e 83 marcados) fora das
+   seções datadas de 22/11 (17.1 e 24): nenhuma ocorrência.
 
 ## 5. O que validar
 
@@ -130,6 +154,12 @@ Obrigatórios pelo tipo (`documentacao`):
   certo e sem tocar no logo nem no texto
 - [x] Toda figura com legenda acima e fonte abaixo (NBR 14724): as 20 com os
   três elementos na mesma página
+- [x] Contagens das seções 14.1, 15.1 e 24.5 iguais às tabelas e à matriz
+  (57, 30 e 10 RF; 9, 16, 13 e 5 RNF; 66 implementados; 84 no código e 88 com
+  teste)
+- [x] Nenhuma seção descreve a IA de roteiros como prévia ou não implementada
+- [x] Todo caso de uso da seção 17 tem tela e rota; a Avori aparece como UC08
+- [x] Status dos RNF iguais nas seções 15 e 20.4 depois do #90 e do #93
 
 ## 6. Evidência
 
@@ -142,3 +172,8 @@ Obrigatórios pelo tipo (`documentacao`):
 - Com sumário (páginas 2 a 4), 110 páginas. Páginas com mais de metade em
   branco: 4, contra 5 no PDF entregue: as Referências e as que antecedem as
   figuras 16.1, 20.2 e 20.5, que não cabem depois do texto.
+- Depois da conciliação, 112 páginas: sumário com 101 entradas, todas na
+  página certa; as 20 figuras com legenda e fonte; 8 quebras em ponto de
+  leitura; só duas páginas com mais de metade em branco (a de abertura da
+  PARTE 04, antes da Figura 16.1, e as Referências). Os 32 casos de uso da
+  tabela batem com os três diagramas.

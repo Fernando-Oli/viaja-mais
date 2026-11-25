@@ -146,13 +146,14 @@ Probabilidade e impacto são estimativas qualitativas da equipe. A situação é
 | R21 | Incidente sem registro rastreável (A09) | Média | Médio | Código de erro no log e na resposta | `lib/http.ts` | Parcial |
 | R22 | Titular não consegue eliminar os próprios dados (LGPD) | Alta | Médio | Cascata no banco | `04-social`, exclusão de conta | Em aberto |
 | R23 | Convidado se inclui na viagem com papel de dono (A01) | Baixa | Médio | Política de inclusão só aceita o papel de membro | `06-plataforma-convite` | Mitigado |
+| R24 | Instrução maliciosa no pedido à IA ou resposta fora do formato (LLM01) | Média | Baixo | Pedido enviado como dado; resposta validada por esquema e revisada pela pessoa antes de gravar | `ai-gemini.test`, `ai-roteiro.test`, `roteiro-ia.spec` | Mitigado |
 
 O que falta em cada risco parcial:
 
 - **R03.** O autor de uma despesa ainda escolhe quem deve e pode mover uma parte entre despesas suas. É regra do produto, e a defesa é social: a despesa aparece para todo o grupo.
 - **R06.** O comentário de `lib/supabase/admin.ts` diz que a chave serve só ao Auth administrativo, mas ela é usada também no Storage e na fila de fotos. A regra é cumprida pela revisão de cada rota, sem teste que impeça um uso novo.
 - **R10.** A CSP admite `'unsafe-inline'` em `script-src`. A alternativa, CSP com nonce, obrigaria todas as páginas a renderizar dinamicamente; o risco de quebrar telas a poucos dias da entrega foi maior que o ganho.
-- **R12.** O limitador libera a requisição se a contagem falhar, por decisão: ele não pode ser o motivo de um convite legítimo falhar. A janela é fixa, e permite até o dobro do limite na virada.
+- **R12.** O limitador libera a requisição se a contagem falhar, por decisão: ele não pode ser o motivo de um convite legítimo falhar. A janela é fixa, e permite até o dobro do limite na virada. A função aceita a janela informada por quem chama, e quem a chama direto pela API com outra janela zera o próprio contador (achado da revisão de 20/11, reproduzido no banco local); a correção, que fixa a janela de cada regra no banco, está planejada.
 - **R15.** Quando a própria consulta de participação falha, `papelNaViagem` devolve a mensagem do banco num 500, sem passar pela mensagem genérica.
 - **R18.** O limite de tentativas de login em produção é o do provedor, configurado fora do repositório. O envio de e-mail usa o servidor padrão do Supabase, com cota baixa por hora.
 - **R20.** As migrations são aplicadas manualmente em produção. Nada prova automaticamente que o banco publicado está igual ao do repositório.

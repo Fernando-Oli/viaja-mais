@@ -10,7 +10,7 @@ secoes_doc: [26]
 branch: feat/S11-M-tela-roteiro-ia
 tipo: [tela, regra-de-negocio]
 depende_de: [S10-M-ia-adapter]
-status: em-revisao
+status: concluido
 ---
 # Tela de roteiro por IA
 

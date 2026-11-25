@@ -10,7 +10,7 @@ secoes_doc: [26]
 branch: feat/S10-M-ia-adapter
 tipo: [route-handler, regra-de-negocio]
 depende_de: []
-status: em-revisao
+status: concluido
 ---
 # Adapter de IA e rota de geração de roteiro
 

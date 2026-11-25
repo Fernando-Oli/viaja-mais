@@ -1,6 +1,6 @@
 ## 22 Implementação por Camadas do Sistema
 
-Esta seção descreve como cada camada foi efetivamente implementada na versão avaliada, a da branch `main`. Tratamos primeiro a interface, depois o servidor, com o catálogo das 39 rotas e os diagramas de sequência dos padrões que elas seguem, e por fim o caminho completo do usuário até o dado. Desde 13/11/2026 a interface exibe o nome Avori, identidade visual do produto; o projeto continua sendo o Viaja Mais.
+Esta seção descreve como cada camada foi efetivamente implementada na versão avaliada, a da branch `main`. Tratamos primeiro a interface, depois o servidor, com o catálogo das 41 rotas e os diagramas de sequência dos padrões que elas seguem, e por fim o caminho completo do usuário até o dado. Desde 13/11/2026 a interface exibe o nome Avori, identidade visual do produto; o projeto continua sendo o Viaja Mais.
 
 ### 22.1 Frontend
 
@@ -13,14 +13,15 @@ As telas se dividem em uma área pública, com a página inicial e a autenticaç
 | Área | Telas | Requisitos |
 |---|---|---|
 | Autenticação | `/auth/login`, `/auth/sign-up`, `/auth/sign-up-success`, `/auth/reset-password` | RF01.1 a RF01.3, RF01.7 |
-| Painel e viagens | `/dashboard`, `/dashboard/trips`, `/dashboard/trips/criar`, `/dashboard/trips/new`, `/dashboard/trips/[id]`, `/dashboard/trips/[id]/edit` | RF03.1 a RF03.5; RF04.1, RF04.3, RF04.7, RF04.8 |
+| Painel e viagens | `/dashboard`, `/dashboard/trips`, `/dashboard/trips/criar`, `/dashboard/trips/new`, `/dashboard/trips/[id]`, `/dashboard/trips/[id]/edit` | RF03.1 a RF03.5; RF04.1, RF04.3, RF04.7 |
+| Roteiro por IA | `/dashboard/trips/criar/ia` | RF12.1 a RF12.3 |
 | Itinerário | `/dashboard/trips/[id]/itinerary/new`, `.../itinerary/[itemId]/edit`, `/dashboard/itinerary` | RF05.1 a RF05.4 |
 | Reservas | `/dashboard/trips/[id]/bookings/new`, `.../bookings/[bookingId]/edit`, `/dashboard/bookings` | RF07.1 a RF07.7 |
 | Lugares e avaliações | `/dashboard/trips/[id]/places`, `/dashboard/places` | RF08.1 a RF08.4, RF08.6; RF11.1 a RF11.3 |
 | Financeiro | `/dashboard/trips/[id]/expenses/new`, `.../expenses/[expenseId]/edit`, `/dashboard/trips/[id]/acerto`, `/dashboard/finances` | RF06.1 a RF06.3, RF06.5, RF06.9 a RF06.13 |
 | Perfil e conta | `/dashboard/perfil`, `/dashboard/perfil/editar`, `/dashboard/settings` | RF01.8; RF02.1, RF02.2, RF02.5 a RF02.7 |
 | Rede social | `/u/[username]`, `/u/[username]/seguidores`, `/u/[username]/seguindo`, `/pesquisar`, `/notificacoes`, `/feed/[postId]` | RF02.8; RF09.1 a RF09.7, RF09.9, RF09.10, RF09.12 a RF09.17; RF13.2, RF13.4 |
-| Prévias visuais | `/feed`, `/dashboard/trips/criar/ia`, `/dashboard/reservar/voos`, `/dashboard/reservar/hoteis` | nenhum requisito atendido |
+| Prévias visuais | `/feed`, `/dashboard/reservar/voos`, `/dashboard/reservar/hoteis` | nenhum requisito atendido |
 
 A tela central é o detalhe da viagem, que reúne capa, resumo, membros e as abas Itinerário, Despesas, Lugares e Reservas. As ações de concluir, reabrir e excluir atividade, excluir reserva e marcar lugar como visitado não têm tela própria: ficam nos componentes de lista de cada aba (`itinerary-list.tsx`, `booking-list.tsx`, `place-list.tsx`). O botão de publicar a viagem na rede social também fica nessa tela.
 
@@ -53,11 +54,11 @@ O teste `e2e/acessibilidade.spec.ts` passa as telas principais pelo axe-core com
 
 #### O que é apenas prévia
 
-Quatro telas têm o desenho final, mas funcionam com dados de exemplo e não gravam nada: o feed, a criação de roteiro por IA e a compra de voos e de hotéis. Cada uma exibe o selo "Prévia com dados de exemplo". Não existe geração de roteiro por IA nem integração com fornecedor de passagens no código; os requisitos correspondentes continuam não iniciados na seção 14.
+Três telas têm o desenho final, mas funcionam com dados de exemplo e não gravam nada: o feed e a compra de voos e de hotéis. Cada uma exibe o selo "Prévia com dados de exemplo". Não existe integração com fornecedor de passagens no código, e o feed (RF09.8) continua não iniciado na seção 14.
 
 ### 22.2 Backend
 
-O servidor é formado por 39 route handlers em `app/api/**`, com 67 operações HTTP no total. Route handler é o arquivo `route.ts` que o Next.js expõe como endpoint e que exporta uma função por método. Não há servidor separado: as rotas rodam no mesmo projeto Next.js, publicado na Vercel, e falam com o Supabase.
+O servidor é formado por 41 route handlers em `app/api/**`, com 69 operações HTTP no total. Route handler é o arquivo `route.ts` que o Next.js expõe como endpoint e que exporta uma função por método. Não há servidor separado: as rotas rodam no mesmo projeto Next.js, publicado na Vercel, e falam com o Supabase.
 
 #### Padrão único das rotas
 
@@ -65,12 +66,14 @@ Toda rota de escrita segue o molde declarado em `app/api/trips/[tripId]/route.ts
 
 1. Sessão: `supabase.auth.getUser()` valida o token no servidor de autenticação; sem usuário, 401. O `proxy.ts` já devolve 401 antes, mas a rota repete a verificação.
 2. Autorização: em recurso de viagem, `exigirMembro()` ou `exigirDono()` de `lib/authz/trip.ts`; na rede social, a regra do domínio (só o próprio perfil, só a autora, ou a função `pode_ver_rede`).
-3. Limite de requisições: nas rotas de convite, troca de senha, seguir, foto de perfil, criação de post e fotos do post, `exigirLimite()` conta a chamada no banco e devolve 429 com `Retry-After`.
+3. Limite de requisições: nas rotas de convite, troca de senha, seguir, foto de perfil, criação de post, fotos do post e geração de roteiro, `exigirLimite()` conta a chamada no banco e devolve 429 com `Retry-After`.
 4. Validação: o corpo passa por um esquema zod de `lib/schemas/`; se falhar, 400 com o detalhe por campo.
 5. Escrita campo a campo: os campos saem um a um do resultado validado; `trip_id` vem da URL já autorizada e `user_id` vem da sessão.
 6. Resposta: sucesso com o registro gravado; qualquer exceção passa por `respostaDeErro()`.
 
 Quando o identificador da viagem chega no corpo, como no convite, a validação vem antes da autorização, porque não há o que autorizar sem saber qual é a viagem. O limite vem sempre depois da autorização e antes da escrita, para que só conte a tentativa que de fato produziria efeito. Na criação de post ele vem também antes de ler o corpo, para que o servidor não processe fotos de quem já esgotou a janela.
+
+A geração de roteiro não grava nada, e nela o limite vem depois da validação, para que um pedido inválido não gaste uma das dez gerações da hora.
 
 #### Contrato de erro
 
@@ -92,7 +95,7 @@ As rotas de post usam ainda `lib/social/post-http.ts`, que acrescenta um campo `
 
 #### Catálogo das rotas
 
-As tabelas a seguir listam as 39 rotas por domínio. A coluna Figura indica o diagrama de sequência que descreve o padrão da rota. Todas, exceto a de recusar convite, têm teste de integração em `tests/api/` ou `tests/lib/`.
+As tabelas a seguir listam as 41 rotas por domínio. A coluna Figura indica o diagrama de sequência que descreve o padrão da rota. Todas, exceto a de recusar convite, têm teste de integração em `tests/api/` ou `tests/lib/`.
 
 **Tabela 22.1 — Autenticação e convites**
 
@@ -152,6 +155,13 @@ As tabelas a seguir listam as 39 rotas por domínio. A coluna Figura indica o di
 | `/api/social/viagens/[tripId]/post` | GET, POST, PATCH, DELETE | `exigirMembro` e username; DELETE só a autora | `pedidoPostSchema` | RF09.7, RF09.13 | 22.5 |
 | `/api/social/viagens/[tripId]/post/fotos` | PUT | `exigirMembro`; limite de envios | bytes das fotos e regeração | RF09.7, RNF02.8 | 22.5 |
 
+**Tabela 22.5 — Plataforma e IA**
+
+| Rota | Métodos | Autorização | Validação | Requisitos | Figura |
+|---|---|---|---|---|---|
+| `/api/saude` | GET | pública | nenhuma | RNF04.1 | — |
+| `/api/roteiros/gerar` | POST | sessão; limite de 10 por hora | `gerarRoteiroSchema` | RF12.1, RNF07.3, RNF07.4 | — |
+
 Três rotas ainda fogem ao molde, e as registramos como dívida. A de recusar convite não usa `respostaDeErro` nem tem teste. A de troca de senha valida o formulário manualmente, sem zod. A de dados básicos do perfil confere o UUID por expressão regular. Nenhuma delas devolve a mensagem crua do banco.
 
 #### Regras de negócio em `lib/`
@@ -183,7 +193,7 @@ Funções SQL como `is_trip_member`, `pode_ver_rede` e `consumir_limite` concent
 
 #### Diagramas de sequência
 
-Desenhamos um diagrama por padrão de rota, e não um por rota, porque as 39 rotas seguem cinco percursos. Cada diagrama reproduz a ordem das chamadas no código da rota escolhida e mostra os desvios de erro em blocos `alt`.
+Desenhamos um diagrama por padrão de rota, e não um por rota, porque as rotas de escrita seguem cinco percursos. Cada diagrama reproduz a ordem das chamadas no código da rota escolhida e mostra os desvios de erro em blocos `alt`.
 
 ![Figura 22.1 — Escrita em recurso de viagem](../diagramas/22-1-seq-escrita-membro.png)
 
@@ -258,8 +268,11 @@ O erro percorre o caminho inverso com o mesmo contrato. A rota converte qualquer
 | Seguir e aprovar | `/u/[username]`, `/notificacoes` | `.../seguir`, `/api/social/solicitacoes` | `follows` | `seguir.spec.ts`, `solicitacoes.spec.ts` |
 | Foto de perfil | `/dashboard/perfil/editar` | `/api/social/perfil/foto` | `profiles` e Storage | `foto-perfil.spec.ts` |
 | Criar post com fotos | `/feed`, `/feed/[postId]` | `/api/social/posts`, `.../posts/[postId]` | `posts`, `post_tags` e Storage | `posts.spec.ts` |
+| Montar viagem com a Avori | `/dashboard/trips/criar/ia` | `/api/roteiros/gerar`, `/api/trips`, `.../itinerary` | `trips`, `trip_members`, `itinerary_items` | `roteiro-ia.spec.ts` |
 | Publicar viagem | detalhe da viagem | `/api/social/viagens/[tripId]/post` | `posts`, `post_tags` | `marcacoes.spec.ts` (pela API) e `jornada-completa.spec.ts` (até o diálogo) |
 
 A última linha tem cobertura parcial: a publicação é exercitada pela API, e o teste de interface só chega até a abertura do diálogo de publicar. Os testes de rota da seção 24 completam a prova com os caminhos 200, 401, 403 e 400, e os testes de RLS autenticam dois usuários reais para provar que um não alcança os dados do outro.
+
+O fluxo da Avori roda com o gerador determinístico: o teste prova a revisão e a criação da viagem, e o provedor real fica fora da esteira, que não tem a chave.
 
 A seção 20.5 descreve como esse caminho muda quando o servidor for separado da aplicação Next.js; na versão avaliada, telas e rotas são publicadas juntas na Vercel.

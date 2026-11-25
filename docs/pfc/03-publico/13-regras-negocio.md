@@ -13,7 +13,7 @@ As regras estão agrupadas por tema, e por isso a numeração não é contínua 
 | RNE-003 | Política de senha | A senha tem no mínimo oito caracteres, com ao menos uma letra minúscula, uma maiúscula, um número e um símbolo. | RF01.1, RF01.7, RF01.8, RF02.3 |
 | RNE-004 | Sessão autenticada | Só usuário autenticado acessa as áreas privadas; requisição de dados sem sessão recebe resposta de não autenticado. | RF01.5, RF01.6 |
 | RNE-005 | Exclusão de conta | Excluir a conta remove perfil, vínculos de seguir, publicações e histórico de pesquisa, mas não apaga despesas pagas nem pagamentos registrados, que pertencem ao acerto do grupo. | RF02.4 |
-| RNE-044 | Limite de tentativas | Ações que disparam e-mail, conferem senha, gravam fotos ou avisam outra pessoa têm teto por usuário: 10 convites ou 10 envios de foto a cada 10 minutos, 5 trocas de senha a cada 15 minutos e 30 pedidos de seguir por minuto. | RF01.8, RF02.2, RF04.1, RF09.1, RF09.2, RF09.7, RF09.15 |
+| RNE-044 | Limite de tentativas | Ações que disparam e-mail, conferem senha, gravam fotos, avisam outra pessoa ou consomem a cota do provedor de IA têm teto por usuário: 10 convites ou 10 envios de foto a cada 10 minutos, 5 trocas de senha a cada 15 minutos, 30 pedidos de seguir por minuto e 10 roteiros por hora. | RF01.8, RF02.2, RF04.1, RF09.1, RF09.2, RF09.7, RF09.15, RF12.1 |
 
 ### 13.2 Viagem, grupo e itinerário
 

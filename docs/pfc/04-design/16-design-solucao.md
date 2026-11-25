@@ -12,7 +12,7 @@ O visitante entra pela página inicial e só alcança as telas de autenticação
 
 A figura está dividida em três blocos, ligados pelo retorno à barra de navegação. O usuário não percorre as áreas em sequência: termina o que foi fazer em uma e escolhe outra pela barra. Dentro de cada coluna, a seta indica a tela alcançável a partir da anterior. Escolhemos essa forma vertical, e não um mapa com todas as telas lado a lado, para que a figura caiba na página sem reduzir o texto.
 
-O primeiro bloco reúne as viagens, objeto central do sistema. Nova viagem oferece dois caminhos: o formulário, que grava a viagem, e Montar com a Avori, que abre uma prévia de roteiro por IA com dados de exemplo e não grava nada. O detalhe da viagem traz as abas de itinerário, despesas, lugares e reservas, a lista de participantes, o botão Editar, visível só ao dono, e o botão Publicar viagem. Da aba de despesas parte o acerto de contas.
+O primeiro bloco reúne as viagens, objeto central do sistema. Nova viagem oferece dois caminhos: o formulário, que grava a viagem, e Montar com a Avori, que gera um roteiro por IA, mostra-o para revisão e só cria a viagem depois que a pessoa o aprova. O detalhe da viagem traz as abas de itinerário, despesas, lugares e reservas, a lista de participantes, o botão Editar, visível só ao dono, e o botão Publicar viagem. Da aba de despesas parte o acerto de contas.
 
 Ao lado das viagens ficam as visões gerais, que juntam os dados de todas as viagens do usuário: Agenda, Finanças, Reservas e Lugares. Elas existem porque o usuário nem sempre entra pensando em uma viagem: às vezes quer saber quanto já gastou ou o que tem marcado para amanhã. A partir de Reservas, ele chega à busca de voos e hotéis, que é prévia.
 
@@ -24,7 +24,6 @@ A tabela separa as telas que são apenas prévia visual, sem gravação nem inte
 
 | Tela | Endereço | O que é prévia |
 |---|---|---|
-| Montar com a Avori | `/dashboard/trips/criar/ia` | Roteiro por IA (RF12), com dados de exemplo |
 | Voos e hotéis | `/dashboard/reservar/voos` e `/hoteis` | Busca e compra, sem fornecedor nem cobrança |
 | Feed | `/feed` | Lista de publicações (RF09.8 e RF09.11) |
 
@@ -51,7 +50,7 @@ A tabela relaciona as áreas das telas aos grupos de requisitos e indica a situa
 | Grupo e finanças | RF04, RF06 | Implementada |
 | Pesquisa, perfis, seguir e publicações | RF09, RF13 | Implementada, exceto a lista do feed |
 | Curtidas e comentários | RF10 | Não implementada |
-| Roteiro por IA | RF12 | Prévia visual |
+| Roteiro por IA | RF12 | Implementada |
 | Compra de voos e hotéis | Sem requisito no catálogo | Prévia visual |
 
 A compra de passagens e de hospedagem aparece nas telas, mas não consta do catálogo de requisitos. Ela depende de parceria com um provedor de reservas e fica registrada como evolução do projeto.

@@ -156,7 +156,7 @@ O número mais importante da cobertura é o de `lib/finance/`, com 100% das linh
 
 A ligação é feita por marcação no código. Todo requisito implementado leva uma tag no formato `@RF03.2` em comentário, no arquivo que o implementa e no teste que o verifica. O script `scripts/pfc/rastreabilidade.mjs` cruza as tags com o catálogo das seções 14 e 15 e gera a matriz em `docs/pfc/rastreabilidade.md`.
 
-Em 22/11/2026, o catálogo tem 140 requisitos, 79 com implementação marcada e 83 com teste marcado.
+Em 25/11/2026, o catálogo tem 140 requisitos, 84 com implementação marcada e 88 com teste marcado.
 
 | Grupo | No catálogo | Marcados no código | Com teste |
 |---|---|---|---|
@@ -171,14 +171,14 @@ Em 22/11/2026, o catálogo tem 140 requisitos, 79 com implementação marcada e 
 | RF09 Rede social | 17 | 15 | 15 |
 | RF10 Interação social | 4 | 0 | 0 |
 | RF11 Avaliações de lugares | 3 | 3 | 3 |
-| RF12 IA de roteiros | 3 | 0 | 0 |
+| RF12 IA de roteiros | 3 | 3 | 3 |
 | RF13 Notificações | 4 | 2 | 1 |
-| RNF01 a RNF08 | 43 | 12 | 15 |
-| **Total** | **140** | **79** | **83** |
+| RNF01 a RNF08 | 43 | 14 | 17 |
+| **Total** | **140** | **84** | **88** |
 
 A diferença entre as duas últimas colunas mostra onde há código sem teste próprio. Exemplos: os tipos de reserva hotel, carro e atividade (RF07.2 a RF07.4), que a rota aceita, mas só o voo é testado; e a busca de lugares do Google (RF08.1), que depende de chave real. Em RF01, RF04 e nos não funcionais o número de testes supera o de código, porque requisitos como a sessão (RF01.5) e o uso em celular (RNF03.1) são provados por teste sem um arquivo de implementação único.
 
-O comando `npm run pfc:rastreabilidade:check` roda em todo PR. Ele falha quando uma tag cita requisito que não existe no catálogo. Falha também quando um requisito marcado como "Implementado" não tem teste. Até 22/11/2026 o catálogo usava o rótulo "Existente", que o script não reconhecia, e essa segunda regra não conferia nada. Com o rótulo "Implementado", os 70 requisitos com esse status, 61 funcionais e 9 não funcionais, têm teste marcado.
+O comando `npm run pfc:rastreabilidade:check` roda em todo PR. Ele falha quando uma tag cita requisito que não existe no catálogo. Falha também quando um requisito marcado como "Implementado" não tem teste. Até 22/11/2026 o catálogo usava o rótulo "Existente", que o script não reconhecia, e essa segunda regra não conferia nada. Com o rótulo "Implementado", os 66 requisitos com esse status, 57 funcionais e 9 não funcionais, têm teste marcado.
 
 Para cada funcionalidade com tela, a ligação vai do requisito à rota e à interface. Alguns exemplos:
 
@@ -236,5 +236,5 @@ Continuam em aberto:
 - **Sem teste com pessoas.** Não houve teste de usabilidade com o público-alvo nem pesquisa primária neste semestre; a avaliação de usabilidade se limita à verificação automática.
 - **Sem teste de carga.** A medição com 50 requisições simultâneas, de uma máquina, mostrou degradação de 135% na mediana. É indício, não verificação do RNF01.3.
 - **Testes provam função, não aparência.** Na coleta de 13/11, a revisão manual das capturas achou três defeitos de leiaute que nenhum teste acusou.
-- **Serviços externos e prévias.** A busca do Google Places fica fora dos testes. As telas de roteiro por IA e de compra de passagens são prévias com dados de exemplo; seus testes provam a interface, não uma funcionalidade.
+- **Serviços externos e prévias.** A busca do Google Places e o provedor de IA ficam fora da esteira: o roteiro é testado com o gerador determinístico e com o Gemini simulado, e a chamada real só foi feita à mão, em 20/11. A tela de compra de passagens é prévia com dados de exemplo; seus testes provam a interface, não uma funcionalidade.
 - **Revisão formal baixa.** Só 19 dos 84 PRs têm revisão registrada; parte dos defeitos achados por revisão poderia ter sido achada antes.

@@ -15,6 +15,7 @@ System(viajamais, "Viaja Mais", "Aplicação web de planejamento de viagens em g
 
 System_Ext(backend, "Serviço de dados e identidade", "Autenticação, banco PostgreSQL e armazenamento de arquivos. Envia os e-mails de convite e de recuperação de senha.")
 System_Ext(mapas, "Serviço de mapas", "Busca de lugares e exibição no mapa.")
+System_Ext(ia, "Serviço de IA", "Gera o roteiro dia a dia que o viajante revisa antes de criar a viagem.")
 
 Rel(visitante, viajamais, "Cadastra-se e entra", "HTTPS")
 Rel(viajante, viajamais, "Planeja viagens e registra despesas", "HTTPS")
@@ -22,6 +23,7 @@ Rel(convidado, viajamais, "Aceita ou recusa o convite", "HTTPS")
 
 Rel(viajamais, backend, "Autentica, lê e grava dados e arquivos", "HTTPS")
 Rel(viajamais, mapas, "Busca lugares (a partir do navegador)", "HTTPS")
+Rel(viajamais, ia, "Pede o roteiro (a partir do servidor)", "HTTPS")
 Rel(backend, convidado, "Envia o convite", "e-mail")
 
 @enduml

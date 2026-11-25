@@ -4,7 +4,7 @@ Os requisitos estão agrupados por domínio, em tabelas de RF01 a RF13. Os ident
 
 ### 14.1 Critério de status
 
-O status registra o estado verificado no repositório em 22/11/2026, e não intenção. O critério vale para todos os grupos:
+O status registra o estado verificado no repositório em 25/11/2026, e não intenção. O critério vale para todos os grupos:
 
 | Status | Critério |
 |---|---|

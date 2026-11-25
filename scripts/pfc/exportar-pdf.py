@@ -62,6 +62,14 @@ desktop = contexto.ServiceManager.createInstanceWithContext("com.sun.star.frame.
 try:
     doc = desktop.loadComponentFromURL(uno.systemPathToFileUrl(str(docx)), "_blank", 0,
                                        (propriedade("Hidden", True),))
+    # Linha de tabela não se parte entre páginas: sem isso, o fim de uma rota
+    # longa ("…/post/" e "fotos") ficava sozinho no alto da página seguinte. O
+    # pandoc não grava essa opção no DOCX, por isso ela é aplicada aqui.
+    tabelas = doc.getTextTables()
+    for t in range(tabelas.getCount()):
+        linhas = tabelas.getByIndex(t).getRows()
+        for i in range(linhas.getCount()):
+            linhas.getByIndex(i).IsSplitAllowed = False
     indices = doc.getDocumentIndexes()
     total = indices.getCount()
     for _ in range(2):
