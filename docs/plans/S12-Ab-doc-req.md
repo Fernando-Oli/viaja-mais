@@ -10,7 +10,7 @@ secoes_doc: [22.2, 13, 14, 15]
 branch: docs/S12-Ab-doc-req
 tipo: [documentacao]
 depende_de: []
-status: backlog
+status: concluido
 ---
 # Seções 22.2, 13, 14 e 15
 
@@ -18,7 +18,17 @@ status: backlog
 
 ## 1. Contexto
 
-_A preencher por quem assumir a atividade._
+**Encerrada em 25/11/2026 sem merge próprio.** O PR #89, desta atividade, partiu
+de uma `main` anterior à versão 4.0, e o PR #83 (S14-F-entrega) já tinha
+reconstruído as seções 13, 14, 15 e 22 nesse intervalo. A seção 13 do PR usava
+outra numeração de regras, e a 22.2 já existia com outra estrutura. A
+conferência S13-Ab-conferencia-req (PR #90), do próprio Abner, validou o
+conteúdo que está na `main`, inclusive os status do RF06. O PR #89 foi fechado
+com essa explicação, e o trabalho desta atividade está coberto pelo #83 e pelo
+#90.
+
+Os blocos abaixo ficaram como estavam no modelo, porque a entrega veio por
+aquelas duas atividades.
 
 ## 2. Arquivos afetados
 

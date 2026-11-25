@@ -16,6 +16,7 @@ Organizamos as tecnologias pelos contêineres do diagrama C4 da Figura 20.2, de 
 | Autenticação | GoTrue, operado pelo Supabase | Cadastro, sessão, recuperação de senha, convite por e-mail | Autenticação por serviço maduro; hash de senha e token escritos por nós seriam vulnerabilidade |
 | Banco de dados | PostgreSQL 17 com RLS, no Supabase | 18 tabelas, políticas, funções e gatilhos | Modelo relacional forte e segurança por linha: o requisito central é de acesso, e resolvê-lo no banco evita que uma falha de código vire vazamento |
 | Armazenamento de arquivos | Supabase Storage, buckets privados `avatars` e `capas-posts` | Fotos de perfil e de publicação | Mesmo provedor do banco e da autenticação; a foto de perfil é entregue por URL assinada que expira em 10 minutos |
+| Serviço de IA | Google Gemini, modelos `gemini-3.1-flash-lite` e `gemini-3.5-flash-lite`, camada gratuita, por `fetch` | Geração do roteiro dia a dia | Resposta em JSON com esquema e camada gratuita; atrás de uma interface única, trocar de provedor é escrever um arquivo em `lib/ai/` |
 | Serviço de mapas | Google Maps Platform: Maps JavaScript API e Places | Busca de lugares e exibição no mapa | Base de lugares que a equipe não teria como manter; consumida só no navegador, em dois componentes |
 | Hospedagem da aplicação | Vercel | Rede de borda e funções sem estado | Publicação a cada merge na `main`, HTTPS e distribuição de conteúdo estático sem servidor para administrar |
 
@@ -25,7 +26,7 @@ A tabela seguinte reúne as ferramentas de desenvolvimento e de qualidade. Os re
 
 | Ferramenta e versão | Uso no projeto | Por que foi escolhida |
 |---|---|---|
-| Vitest ^4.1.11, com @vitest/coverage-v8 | Testes unitários, de rota e de RLS; cobertura com corte de 70% | Executa TypeScript sem etapa de compilação separada; o job de lint, tipos e os 1.532 testes leva cerca de dois minutos no CI |
+| Vitest ^4.1.11, com @vitest/coverage-v8 | Testes unitários, de rota e de RLS; cobertura com corte de 70% | Executa TypeScript sem etapa de compilação separada; o job de lint, tipos e os 1.675 testes leva cerca de dois minutos no CI |
 | Testing Library (@testing-library/react ^16.3.2) e jsdom ^29.1.1 | Testes de componentes | Testa o componente pelo que o usuário vê, e não pela estrutura interna |
 | pg ^8.23.0 | Conexão direta ao banco nos testes de RLS | Permite preparar dados e conferir o banco sem passar pela RLS que está sob teste |
 | Playwright ^1.62.1 | Testes ponta a ponta em navegador real | Executa cada fluxo nos perfis de computador e de celular, com dois usuários, e arquiva captura de tela como evidência |

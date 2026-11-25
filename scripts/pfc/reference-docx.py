@@ -53,6 +53,100 @@ for secao in doc.sections:
             if nome.startswith("wrap") and nome != "wrapNone":
                 ancora.replace(filho, parse_xml(f'<wp:wrapNone xmlns:wp="{WP}"/>'))
 
+# Número de página. A NBR 14724 o põe no canto superior direito, que no template
+# é do logo do curso; ele fica logo abaixo do logo. A capa não é numerada: a
+# seção ganha cabeçalho e rodapé de primeira página, cópias dos comuns, e o
+# número entra só no cabeçalho comum.
+R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+
+
+def copiar(origem, destino):
+    """Copia o conteúdo de um cabeçalho ou rodapé, com as imagens que ele usa."""
+    destino.is_linked_to_previous = False
+    alvo = destino._element
+    for filho in list(alvo):
+        alvo.remove(filho)
+    for filho in origem._element:
+        alvo.append(copy.deepcopy(filho))
+    # Id de desenho repetido no documento faz o Word acusar conteúdo ilegível.
+    for desenho in alvo.iter(f"{{{WP}}}docPr"):
+        desenho.set("id", str(int(desenho.get("id")) + 1000))
+    # As imagens são referenciadas por id de relação, que é de cada parte.
+    novos = {}
+    for el in alvo.iter():
+        for atributo, valor in list(el.attrib.items()):
+            if not atributo.startswith(f"{{{R}}}"):
+                continue
+            if valor not in novos:
+                rel = origem.part.rels[valor]
+                alvo_rel = rel.target_ref if rel.is_external else rel.target_part
+                novos[valor] = destino.part.relate_to(alvo_rel, rel.reltype, rel.is_external)
+            el.set(atributo, novos[valor])
+
+
+secao = doc.sections[0]
+secao.different_first_page_header_footer = True
+copiar(secao.header, secao.first_page_header)
+copiar(secao.footer, secao.first_page_footer)
+
+# O número vai numa caixa de texto ancorada, posicionada pela página como os
+# logos, e não num parágrafo novo do cabeçalho: parágrafo (mesmo em quadro, com
+# w:framePr) aumenta o cabeçalho no LibreOffice e empurra o texto de todas as
+# páginas. A caixa fica alinhada à margem direita, com o topo a 2,8 cm da borda:
+# entre o fim do logo (2,6 cm) e a primeira linha do texto (3,5 cm).
+EMU_CM = 360000
+WPS = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+proximo_id = 1 + max(int(d.get("id")) for parte in (secao.header, secao.footer, secao.first_page_header,
+                                                     secao.first_page_footer)
+                     for d in parte._element.iter(f"{{{WP}}}docPr"))
+FONTE_NUMERO = '<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="20"/></w:rPr>'
+numero = parse_xml(f"""
+<w:r {nsdecls('w', 'wp', 'a')} xmlns:wps="{WPS}">
+  <w:drawing>
+    <wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251900000" behindDoc="0"
+               locked="0" layoutInCell="1" allowOverlap="1">
+      <wp:simplePos x="0" y="0"/>
+      <wp:positionH relativeFrom="margin"><wp:align>right</wp:align></wp:positionH>
+      <wp:positionV relativeFrom="page"><wp:posOffset>{int(2.8 * EMU_CM)}</wp:posOffset></wp:positionV>
+      <wp:extent cx="{int(1.5 * EMU_CM)}" cy="{int(0.55 * EMU_CM)}"/>
+      <wp:effectExtent l="0" t="0" r="0" b="0"/>
+      <wp:wrapNone/>
+      <wp:docPr id="{proximo_id}" name="Numero de pagina"/>
+      <wp:cNvGraphicFramePr/>
+      <a:graphic>
+        <a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">
+          <wps:wsp>
+            <wps:cNvSpPr txBox="1"/>
+            <wps:spPr>
+              <a:xfrm><a:off x="0" y="0"/><a:ext cx="{int(1.5 * EMU_CM)}" cy="{int(0.55 * EMU_CM)}"/></a:xfrm>
+              <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+              <a:noFill/>
+              <a:ln><a:noFill/></a:ln>
+            </wps:spPr>
+            <wps:txbx>
+              <w:txbxContent>
+                <w:p>
+                  <w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/></w:pPr>
+                  <w:r>{FONTE_NUMERO}<w:fldChar w:fldCharType="begin"/></w:r>
+                  <w:r>{FONTE_NUMERO}<w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>
+                  <w:r>{FONTE_NUMERO}<w:fldChar w:fldCharType="separate"/></w:r>
+                  <w:r>{FONTE_NUMERO}<w:t>2</w:t></w:r>
+                  <w:r>{FONTE_NUMERO}<w:fldChar w:fldCharType="end"/></w:r>
+                </w:p>
+              </w:txbxContent>
+            </wps:txbx>
+            <wps:bodyPr rot="0" vert="horz" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0">
+              <a:noAutofit/>
+            </wps:bodyPr>
+          </wps:wsp>
+        </a:graphicData>
+      </a:graphic>
+    </wp:anchor>
+  </w:drawing>
+</w:r>""")
+# No primeiro parágrafo do cabeçalho, onde já estão os logos.
+secao.header._element.find(qn("w:p")).append(numero)
+
 # O "Normal" do template vem preso a uma lista numerada; herdada pelos estilos
 # novos, ela numeraria todo parágrafo do documento.
 normal = doc.styles["Normal"]
@@ -111,6 +205,9 @@ E = WD_ALIGN_PARAGRAPH.LEFT
 # "Body Text" nos demais; aqui os dois são iguais, de propósito.
 estilo("Body Text", alinhamento=J)
 estilo("First Paragraph", alinhamento=J)
+# Lista de referências (NBR 6023): alinhada só à esquerda, espaço simples e uma
+# linha em branco entre as entradas. Justificada, a URL longa abria buracos.
+estilo("Referencia", alinhamento=E, depois=12, entrelinha=1.0)
 # Usado pelo pandoc nas células de tabela e nas listas compactas.
 estilo("Compact", tamanho=10, alinhamento=E, depois=2, entrelinha=1.1)
 estilo("Block Text", alinhamento=J, italico=True)
@@ -123,10 +220,13 @@ estilo("Heading 2", tamanho=13, negrito=True, alinhamento=E, antes=18, depois=8,
 estilo("Heading 3", tamanho=12, negrito=True, alinhamento=E, antes=14, depois=6, cor=TINTA, com_proximo=True)
 estilo("Heading 4", tamanho=11, negrito=True, alinhamento=E, antes=10, depois=4, cor=TINTA, com_proximo=True)
 
-# Figuras e código.
-estilo("Captioned Figure", alinhamento=C, antes=8, depois=2, com_proximo=True)
+# Figuras e código. A figura sai como legenda, imagem e fonte, nessa ordem (NBR
+# 14724; quem reordena é scripts/pfc/figuras.lua), presas uma à outra para a
+# legenda não ficar sozinha no pé da página.
+estilo("Image Caption", tamanho=9, italico=True, alinhamento=C, antes=10, depois=4, com_proximo=True)
+estilo("Captioned Figure", alinhamento=C, antes=0, depois=2, com_proximo=True)
+estilo("Fonte", tamanho=9, alinhamento=C, depois=12)
 estilo("Figure", alinhamento=C, antes=8, depois=2)
-estilo("Image Caption", tamanho=9, italico=True, alinhamento=C, depois=10)
 estilo("Table Caption", tamanho=9, italico=True, alinhamento=C, depois=4, com_proximo=True)
 estilo("Source Code", tamanho=8.5, alinhamento=E, depois=0, entrelinha=1.0, fonte="Consolas")
 

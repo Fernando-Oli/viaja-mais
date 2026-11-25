@@ -40,6 +40,10 @@ export const SECOES = [
   { n: "25",   titulo: "Segurança da Informação",                     arquivo: "06-qualidade/25-seguranca.md",                       obrigatoria: true },
   { n: "26",   titulo: "Extensões e Tecnologias Complementares",      arquivo: "06-qualidade/26-extensoes.md",                       obrigatoria: false },
   { n: "27",   titulo: "Avaliação Geral do Projeto Integrador",       arquivo: "06-qualidade/27-avaliacao-geral.md",                 obrigatoria: false },
+
+  // Elemento pós-textual, sem número. O "#" do arquivo abre página nova, como
+  // os títulos de PARTE. Obrigatória porque as seções 11 e 12 citam fontes.
+  { n: "ref",  titulo: "Referências",                                 arquivo: "referencias.md",                                     obrigatoria: true },
 ]
 
 /**

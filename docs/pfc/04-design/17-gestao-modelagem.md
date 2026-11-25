@@ -15,7 +15,7 @@ Duas regras protegem as fronteiras entre domínios. A primeira: nenhum integrant
 
 A segunda: toda migration e toda política de RLS (segurança em nível de linha do PostgreSQL), em qualquer domínio, são escritas ou revisadas pelo responsável pela plataforma. O motivo é o modo de falha: uma política errada não gera erro visível, ela expõe dados ou devolve resultado vazio sem aviso.
 
-O semestre foi dividido em 14 semanas (S01 a S14, de setembro a 1º de dezembro de 2026) e em cinco trilhas: consolidação e segurança do código herdado (T1), divisão de custos (T2), rede social (T3), IA de roteiros (T4) e qualidade e segurança, contínua (T5). O cronograma e o marco de cada semana estão em `docs/plans/00-plano-norte.md`.
+O semestre foi dividido em 14 semanas (S01 a S14, de 26 de agosto a 1º de dezembro de 2026) e em cinco trilhas: consolidação e segurança do código herdado (T1), divisão de custos (T2), rede social (T3), IA de roteiros (T4) e qualidade e segurança, contínua (T5). O cronograma e o marco de cada semana estão em `docs/plans/00-plano-norte.md`.
 
 A unidade de acompanhamento é a atividade, identificada por semana, inicial do responsável e assunto, como `S03-A-editar-viagem`. Cada atividade tem um plano em `docs/plans/` com seis blocos fixos: contexto, arquivos afetados, passos, o que testar, o que validar e evidência. Os blocos de teste e validação são preenchidos antes da implementação, e o tipo da atividade define os testes obrigatórios (seção 24).
 
@@ -47,19 +47,19 @@ A distribuição dos commits também é desigual: Fernando e Micael somam 140 do
 
 #### Casos de uso
 
-Os casos de uso foram divididos em três figuras por assunto: conta e viagem, grupo e finanças, e rede social. Só entram casos de uso implementados; as telas que são apenas prévia ficam de fora e são listadas ao fim desta subseção. Cada caso de uso tem um identificador (UC01 a UC32), usado na tabela que os liga aos requisitos.
+Os casos de uso foram divididos em três figuras por assunto: conta e viagem, grupo e finanças, e rede social. Só entram casos de uso com tela e rota em funcionamento, ainda que alguns realizem requisitos parciais, cujo status está na seção 14; as telas que são apenas prévia ficam de fora e são listadas ao fim desta subseção. Cada caso de uso tem um identificador (UC01 a UC32), usado na tabela que os liga aos requisitos.
 
 São quatro atores. O **Visitante** ainda não tem sessão. O **Viajante** é qualquer pessoa autenticada. O **Membro da viagem** é o viajante que participa de uma viagem, por tê-la criado ou por ter aceitado um convite. O **Dono da viagem** é o membro que a criou. As setas de generalização indicam herança: o dono faz tudo o que o membro faz, e o membro tudo o que o viajante faz.
 
 ![Figura 17.2 — Casos de uso de conta e viagem](../diagramas/17-2-uc-conta-e-viagem.png)
 
-Na Figura 17.2, o Visitante alcança apenas os casos de identidade: cadastrar-se, entrar e redefinir a senha esquecida (UC01 a UC03). O Viajante cuida da própria conta (UC04 a UC06), cria viagens e consulta a lista delas e as visões gerais de agenda, reservas e lugares (UC07 e UC08).
+Na Figura 17.2, o Visitante alcança apenas os casos de identidade: cadastrar-se, entrar e redefinir a senha esquecida (UC01 a UC03). O Viajante cuida da própria conta (UC04 a UC06), cria viagens pelo formulário ou com a Avori e consulta a lista delas e as visões gerais de agenda, reservas e lugares (UC07 a UC09). Com a Avori, o roteiro gerado por IA só vira viagem depois que a pessoa o revisa (RNE-025).
 
-Ver o detalhe de uma viagem (UC09) exige ser membro, e editá-la (UC10) exige ser o dono. A rota de exclusão de viagem existe e é testada, mas nenhuma tela a chama; por isso a exclusão não aparece como caso de uso.
+Ver o detalhe de uma viagem (UC10) exige ser membro, e editá-la (UC11) exige ser o dono. A rota de exclusão de viagem existe e é testada, mas nenhuma tela a chama; por isso a exclusão não aparece como caso de uso.
 
 ![Figura 17.3 — Casos de uso de grupo e finanças](../diagramas/17-3-uc-grupo-e-financas.png)
 
-Na Figura 17.3, o Dono convida pessoas por e-mail e remove membros (UC11 e UC13). O convite é respondido pelo Viajante convidado (UC12), que ainda não é membro: aceitar é o que o torna membro. O Membro pode sair da viagem (UC14) e trabalha no conteúdo dela: itinerário, reservas, lugares e avaliações de lugares (UC15 a UC18).
+Na Figura 17.3, o Dono convida pessoas por e-mail e remove membros (UC12 e UC14). O convite é respondido pelo Viajante convidado (UC13), que ainda não é membro: aceitar é o que o torna membro. O Membro trabalha no conteúdo da viagem: itinerário, reservas, lugares e avaliações de lugares (UC15 a UC18). A saída voluntária tem rota e teste, mas nenhuma tela a oferece; por isso, como a exclusão de viagem, não aparece como caso de uso.
 
 Ainda na Figura 17.3, o Membro registra despesas com rateio (UC19) e participa do acerto de contas (UC21), em que vê o saldo de cada um e registra os pagamentos que fez. Editar ou excluir uma despesa (UC20) cabe ao autor dela ou ao dono da viagem. Ver gastos por categoria (UC22) é do Viajante porque a tela Finanças soma as despesas de todas as viagens de que ele participa.
 
@@ -82,13 +82,13 @@ A tabela liga cada caso de uso aos requisitos funcionais da seção 14 que ele r
 | UC05 | Sair do sistema | Viajante | RF01.4 |
 | UC06 | Ver e editar o próprio perfil | Viajante | RF02.1, RF02.2, RF02.5, RF02.6, RF02.7 |
 | UC07 | Criar viagem | Viajante | RF03.1, RF03.6 |
-| UC08 | Consultar viagens e visões gerais | Viajante | RF03.4, RF07.7 |
-| UC09 | Ver o detalhe da viagem | Membro | RF03.5, RF04.4 |
-| UC10 | Editar viagem | Dono | RF03.2, RF03.8 |
-| UC11 | Convidar pessoa por e-mail | Dono | RF04.1, RF04.2 |
-| UC12 | Aceitar ou recusar convite | Viajante | RF04.3 |
-| UC13 | Remover membro | Dono | RF04.7 |
-| UC14 | Sair da viagem | Membro | RF04.8 |
+| UC08 | Montar viagem com a Avori | Viajante | RF12.1, RF12.2, RF12.3 |
+| UC09 | Consultar viagens e visões gerais | Viajante | RF03.4, RF07.7 |
+| UC10 | Ver o detalhe da viagem | Membro | RF03.5, RF04.4 |
+| UC11 | Editar viagem | Dono | RF03.2, RF03.8 |
+| UC12 | Convidar pessoa por e-mail | Dono | RF04.1, RF04.2 |
+| UC13 | Aceitar ou recusar convite | Viajante | RF04.3 |
+| UC14 | Remover membro | Dono | RF04.7 |
 | UC15 | Gerenciar o itinerário | Membro | RF04.5, RF05.1 a RF05.7 |
 | UC16 | Gerenciar reservas | Membro | RF07.1 a RF07.6 |
 | UC17 | Gerenciar lugares no mapa | Membro | RF08.1 a RF08.6 |
@@ -108,8 +108,8 @@ A tabela liga cada caso de uso aos requisitos funcionais da seção 14 que ele r
 | UC31 | Abrir, editar ou excluir publicação | Viajante | RF09.13, RF09.17 |
 | UC32 | Remover a própria marcação | Viajante | RF09.14 |
 
-Ficam fora dos diagramas, por não estarem implementados: a lista do feed e as sugestões (RF09.8 e RF09.11), que hoje são prévia; curtidas e comentários (RF10); a geração de roteiro por IA (RF12), que é prévia; a escolha de quem pagou a despesa (RF06.8), que o banco suporta mas o formulário não oferece; a quitação de parcela (RF06.12); e a compra de voos e hotéis, que é prévia e não tem requisito no catálogo.
+Ficam fora dos diagramas, por não estarem implementados: a lista do feed e as sugestões (RF09.8 e RF09.11), que hoje são prévia; curtidas e comentários (RF10); a saída voluntária da viagem (RF04.8), que não tem tela; a escolha de quem pagou a despesa (RF06.8), que o banco suporta mas o formulário não oferece; a quitação de parcela (RF06.12); e a compra de voos e hotéis, que é prévia e não tem requisito no catálogo.
 
 #### Fluxo das operações
 
-O diagrama de sequência de uma operação de escrita, que constava desta subseção na versão anterior, passou para a seção 22.2, junto com os das demais rotas.
+Os diagramas de sequência das operações de escrita estão na seção 22.2, junto com o catálogo das rotas que seguem cada padrão.

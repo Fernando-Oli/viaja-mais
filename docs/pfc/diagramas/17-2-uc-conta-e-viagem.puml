@@ -18,9 +18,10 @@ rectangle "Viaja Mais" {
   usecase "UC05 Sair do sistema" as UC05
   usecase "UC06 Ver e editar o próprio perfil" as UC06
   usecase "UC07 Criar viagem" as UC07
-  usecase "UC08 Consultar viagens e visões gerais" as UC08
-  usecase "UC09 Ver o detalhe da viagem" as UC09
-  usecase "UC10 Editar viagem" as UC10
+  usecase "UC08 Montar viagem com a Avori" as UC08
+  usecase "UC09 Consultar viagens e visões gerais" as UC09
+  usecase "UC10 Ver o detalhe da viagem" as UC10
+  usecase "UC11 Editar viagem" as UC11
 }
 
 Visitante --> UC01
@@ -32,8 +33,9 @@ Viajante --> UC05
 Viajante --> UC06
 Viajante --> UC07
 Viajante --> UC08
+Viajante --> UC09
 
-Membro --> UC09
+Membro --> UC10
 
-Dono --> UC10
+Dono --> UC11
 @enduml

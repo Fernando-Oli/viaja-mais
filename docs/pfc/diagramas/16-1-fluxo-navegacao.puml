@@ -12,7 +12,7 @@ end note
 
 split
   :Viagens\n(/dashboard/trips);
-  :Nova viagem: formulário\nou prévia com a Avori;
+  :Nova viagem: formulário\nou roteiro com a Avori;
   :Detalhe da viagem\n(/dashboard/trips/[id]);
   :Abas: itinerário, despesas,\nlugares e reservas;
   :Acerto de contas\n(.../[id]/acerto);
