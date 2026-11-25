@@ -12,27 +12,31 @@ O status registra o estado verificado no repositório em 22/11/2026, e não inte
 | Parcial | O comportamento existe em parte: falta tela, operação ou teste vinculado ao requisito |
 | Não iniciado | Não há código que atenda ao requisito; tela de prévia com dados de exemplo não conta |
 
-A integração contínua confere o primeiro critério: o processo falha se um requisito marcado como implementado não tiver teste vinculado. Nesta versão, 61 dos 97 requisitos funcionais estão implementados, 23 parciais e 13 não iniciados.
+A integração contínua confere o primeiro critério: o processo falha se um requisito marcado como implementado não tiver teste vinculado. Ela não confere se o teste exercita o comportamento descrito; isso foi feito na conferência de 22/11/2026, requisito a requisito.
+
+Na conferência, quando o requisito é uma ação do usuário e a tela existe sem teste que a exercite, o status passou a parcial, critério que o catálogo já aplicava ao RF03.3 e ao RF03.4. Sete requisitos mudaram: RF01.2, RF01.7, RF01.8, RF02.3, RF04.7, RF04.8 e RF09.7. Nesta versão, 54 dos 97 requisitos funcionais estão implementados, 30 parciais e 13 não iniciados.
 
 ### 14.2 Autenticação e Acesso (RF01)
 
 | ID | Descrição | Status | Prioridade | Regras |
 |---|---|---|---|---|
 | RF01.1 | O usuário deve poder registrar-se com e-mail e senha | Implementado | Alta | RNE-001, RNE-003 |
-| RF01.2 | O sistema deve enviar e-mail de confirmação após o registro | Implementado | Alta | RNE-002 |
+| RF01.2 | O sistema deve enviar e-mail de confirmação após o registro | Parcial | Alta | RNE-002 |
 | RF01.3 | O usuário deve poder autenticar-se com e-mail e senha | Implementado | Alta | RNE-002 |
 | RF01.4 | O usuário deve poder encerrar a sessão | Implementado | Alta | — |
 | RF01.5 | O sistema deve manter e renovar a sessão entre requisições | Implementado | Alta | RNE-004 |
 | RF01.6 | O sistema deve barrar o acesso não autenticado às rotas protegidas | Implementado | Alta | RNE-004 |
-| RF01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Implementado | Média | RNE-003 |
-| RF01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Implementado | Média | RNE-003, RNE-044 |
+| RF01.7 | O usuário deve poder redefinir por e-mail a senha esquecida | Parcial | Média | RNE-003 |
+| RF01.8 | O usuário autenticado deve poder alterar a própria senha, confirmando a senha atual | Parcial | Média | RNE-003, RNE-044 |
 
 **Detalhamento:**
 
-- **RF01.1 e RF01.2** — A tela de cadastro aplica a política de senha antes de enviar e decide o destino pela resposta do serviço de autenticação, de modo que funciona com a confirmação de e-mail ligada ou desligada.
+- **RF01.1** — A tela de cadastro aplica a política de senha antes de enviar e decide o destino pela resposta do serviço de autenticação, de modo que funciona com a confirmação de e-mail ligada ou desligada. O teste de unidade da tela e o teste ponta a ponta da jornada completa, que cria a conta pela tela, o comprovam.
+- **RF01.2** — Parcial desde a conferência. Implementação: sem sessão na resposta do cadastro, a tela leva à página de aguardo da confirmação (`app/auth/sign-up/page.tsx`). Teste: `tests/auth/sign-up.test.tsx` prova esse desvio com o serviço de autenticação simulado. Motivo: o envio cabe ao serviço de autenticação, com a confirmação desligada em `supabase/config.toml`, e nenhum teste comprova que o e-mail sai.
 - **RF01.3 e RF01.4** — Entrar e sair têm tela e rota. O teste ponta a ponta de sessão entra com e-mail e senha, usa o menu Sair e confere que a área logada volta a exigir login.
 - **RF01.5 e RF01.6** — A camada que intercepta as requisições renova a sessão e barra o acesso: rota de dados sem sessão recebe 401, e página é redirecionada ao login. O teste ponta a ponta de sessão navega e recarrega sem novo login, e os testes de proteção de rotas cobrem os dois bloqueios.
-- **RF01.7 e RF01.8** — A redefinição tem teste de regressão da tela e do pedido do e-mail de recuperação; a troca de senha tem teste de rota com os caminhos 200, 401, 400 e 429. A troca exige a senha atual, para que uma sessão sequestrada não altere a credencial.
+- **RF01.7** — Parcial desde a conferência. Implementação: `app/auth/reset-password/page.tsx` pede o e-mail de recuperação e, com a sessão de recuperação, grava a nova senha. Teste: `tests/auth/reset-password.test.tsx` cobre a tela sem token e o pedido do e-mail. Motivo: a gravação da nova senha não é exercitada por teste.
+- **RF01.8** — Parcial desde a conferência. Implementação: rota `app/api/auth/change-password/route.ts`, que exige a senha atual para que uma sessão sequestrada não altere a credencial, e formulário em `app/dashboard/settings/page.tsx`. Teste: `tests/api/change-password-route.test.ts`, caminhos 200, 401, 400 e 429. Motivo: a tela não é exercitada por teste.
 
 ### 14.3 Gestão de Perfil (RF02)
 
@@ -40,7 +44,7 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 |---|---|---|---|---|
 | RF02.1 | O usuário deve poder visualizar seu perfil | Implementado | Alta | — |
 | RF02.2 | O usuário deve poder editar nome e avatar | Implementado | Alta | RNE-044 |
-| RF02.3 | O usuário deve poder alterar a senha | Implementado | Média | RNE-003 |
+| RF02.3 | O usuário deve poder alterar a senha | Parcial | Média | RNE-003 |
 | RF02.4 | O usuário deve poder excluir a conta | Não iniciado | Baixa | RNE-005 |
 | RF02.5 | O usuário deve poder definir um nome de usuário (username) único | Implementado | Alta | RNE-027 |
 | RF02.6 | O usuário deve poder escrever uma biografia | Implementado | Média | — |
@@ -51,7 +55,7 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 
 - **RF02.1, RF02.2 e RF02.5 a RF02.7** — O perfil é lido e gravado por rota própria, que aceita só os campos previstos e toma o identificador da sessão; ninguém edita o perfil de outra pessoa.
 - **RF02.2** — A foto é conferida pelo conteúdo do arquivo e guardada em área privada; chega ao navegador apenas por endereço temporário, emitido a quem está autenticado.
-- **RF02.3** — Repete o RF01.8 e é provado pelo mesmo teste de rota.
+- **RF02.3** — Repete o RF01.8, com a mesma rota, a mesma tela e o mesmo teste de rota; por isso passou também a parcial na conferência.
 - **RF02.4** — Não há rota nem tela de exclusão de conta. Quando existir, deverá seguir a RNE-005.
 - **RF02.8** — O perfil de outra pessoa abre a partir da busca e mostra dados básicos, contadores e a situação do vínculo com quem visita. Passou de não iniciado a implementado nesta versão.
 
@@ -86,8 +90,8 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 | RF04.4 | Os membros devem poder visualizar a viagem e seus dados | Implementado | Alta | RNE-011, RNE-015 |
 | RF04.5 | Os membros devem poder editar o itinerário da viagem | Implementado | Alta | RNE-007, RNE-015 |
 | RF04.6 | Os membros devem poder adicionar despesas à viagem | Implementado | Alta | RNE-007, RNE-015 |
-| RF04.7 | O dono deve poder remover membros da viagem | Implementado | Média | RNE-012, RNE-017 |
-| RF04.8 | O membro deve poder sair da viagem por vontade própria | Implementado | Média | RNE-012, RNE-042 |
+| RF04.7 | O dono deve poder remover membros da viagem | Parcial | Média | RNE-012, RNE-017 |
+| RF04.8 | O membro deve poder sair da viagem por vontade própria | Parcial | Média | RNE-012, RNE-042 |
 | RF04.9 | Toda operação sobre uma viagem deve verificar participação ou propriedade no servidor, antes de consultar o banco | Implementado | Alta | RNE-015 |
 
 **Detalhamento:**
@@ -96,7 +100,8 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 - **RF04.3** — Aceitar ou recusar é ato do próprio convidado. Os testes de rota, de isolamento e ponta a ponta provam também que ninguém entra numa viagem sem convite pendente.
 - **RF04.4** — As telas consultam as viagens pela participação, e não pela autoria, por meio de um módulo único de escopo de grupo. Passou de parcial a implementado nesta versão.
 - **RF04.5 e RF04.6** — As rotas de itinerário e de despesas admitem qualquer participante. Os testes de RLS do participante provam que o membro convidado edita o itinerário e registra despesa que a dona vê.
-- **RF04.7 e RF04.8** — O teste da rota de participação cobre sucesso, ausência de sessão, falta de permissão e corpo inválido.
+- **RF04.7** — Parcial desde a conferência. Implementação: rota `app/api/trips/[tripId]/members/route.ts` e botão Remover, com confirmação, em `components/trip-members.tsx`. Teste: `tests/api/members-route.test.ts` cobre sucesso, ausência de sessão, falta de permissão e corpo inválido. Motivo: a remoção pela tela não é exercitada por teste.
+- **RF04.8** — Parcial desde a conferência. A mesma rota e o mesmo teste cobrem a saída voluntária, mas nenhuma tela permite ao membro sair da viagem.
 - **RF04.9** — Não consta do levantamento herdado; registramo-lo porque sustenta a distinção entre dono e membro em todo o grupo e é a medida discutida na seção 25. As funções `exigirMembro` e `exigirDono` têm teste de unidade com os caminhos 401, 403 e falha do banco.
 
 ### 14.6 Itinerário (RF05)
@@ -190,7 +195,7 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 | RF09.4 | O dono deve poder aprovar ou recusar uma solicitação | Implementado | Alta | RNE-029 |
 | RF09.5 | O usuário deve poder deixar de seguir, ou cancelar uma solicitação ainda pendente | Implementado | Média | RNE-030 |
 | RF09.6 | O usuário deve poder visualizar a lista de quem segue e de quem o segue | Implementado | Média | RNE-028, RNE-031 |
-| RF09.7 | O usuário deve poder publicar uma viagem no feed | Implementado | Alta | RNE-023, RNE-028, RNE-032, RNE-044 |
+| RF09.7 | O usuário deve poder publicar uma viagem no feed | Parcial | Alta | RNE-023, RNE-028, RNE-032, RNE-044 |
 | RF09.8 | O usuário deve poder ver no feed as publicações de quem segue, com acesso concedido | Não iniciado | Alta | RNE-033 |
 | RF09.9 | O usuário deve poder remover um seguidor do próprio perfil, público ou privado | Implementado | Média | RNE-030 |
 | RF09.10 | O usuário deve poder buscar outros usuários por nome ou username | Implementado | Alta | RNE-037 |
@@ -202,11 +207,12 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 | RF09.16 | O usuário deve ver, na aba Publicações de um perfil que pode ver, a grade das publicações desse perfil | Implementado | Alta | RNE-033 |
 | RF09.17 | O usuário deve poder abrir uma publicação que pode ver e, se for o autor, excluí-la | Implementado | Alta | RNE-033 |
 
-**Detalhamento:** é o grupo que mais avançou desde a versão anterior, que o dava inteiro como não iniciado ou parcial. Hoje 15 dos 17 requisitos têm rota, tela e testes de rota, de isolamento entre usuários e ponta a ponta. As regras de visibilidade estão na seção 13.4; aqui ficam as decisões de comportamento.
+**Detalhamento:** é o grupo que mais avançou desde a versão anterior, que o dava inteiro como não iniciado ou parcial. Hoje 14 dos 17 requisitos têm rota, tela e testes de rota, de isolamento entre usuários e ponta a ponta; o RF09.7 tem rota e testes, sem a tela exercitada. As regras de visibilidade estão na seção 13.4; aqui ficam as decisões de comportamento.
 
 - **RF09.1 a RF09.5** — Repetir o pedido de seguir não cria um segundo vínculo, e qualquer das duas partes desfaz o vínculo.
 - **RF09.6 e RF09.9** — As listas abrem pelos contadores do perfil e mostram cada pessoa com os mesmos dados da busca, sem identificador interno nem data do vínculo.
 - **RF09.7 e RF09.15** — Publicação é um conceito único: fotos, legenda e marcações. A publicação de viagem leva, além disso, uma cópia da viagem, que não muda quando a viagem é editada. As fotos são reprocessadas no servidor antes de publicadas.
+- **RF09.7** — Parcial desde a conferência. Implementação: rotas `app/api/social/viagens/[tripId]/post` e `post/fotos` e diálogo `components/social/publicar-viagem.tsx`. Teste: `tests/api/social-post-route.test.ts` e `tests/rls/12-trip-posts.test.ts`; o ponta a ponta da jornada só abre o diálogo. Motivo: a publicação pela tela não é exercitada, e o feed ainda é prévia (RF09.8).
 - **RF09.8 e RF09.11** — O feed ainda é tela de prévia com dados de exemplo: nem as publicações de quem se segue nem as sugestões foram implementadas.
 - **RF09.10 e RF09.12** — A busca exige sessão e encontra também perfis privados. O histórico acompanha a conta em qualquer dispositivo e pode ser apagado entrada a entrada ou por inteiro.
 - **RF09.13 e RF09.14** — Os participantes da viagem aparecem como sugestão de marcação. A marcação permanece se a pessoa sai da viagem e é apagada com a publicação; a restrição para perfis privados entrou após a revisão de segurança de 22/11/2026.
@@ -241,14 +247,16 @@ A integração contínua confere o primeiro critério: o processo falha se um re
 
 | ID | Descrição | Status | Prioridade | Regras |
 |---|---|---|---|---|
-| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Não iniciado | Alta | RNE-025 |
-| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Não iniciado | Alta | RNE-025 |
-| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Não iniciado | Média | RNE-025 |
+| RF12.1 | O usuário deve poder gerar um roteiro por IA a partir de destino, datas e interesses | Existente | Alta | RNE-025 |
+| RF12.2 | O usuário deve poder revisar e editar o roteiro gerado antes de gravá-lo | Existente | Alta | RNE-025 |
+| RF12.3 | O usuário deve poder descartar o roteiro gerado sem salvar nada | Existente | Média | RNE-025 |
 
 **Detalhamento:**
 
-- **RF12.1 a RF12.3** — Não há integração com modelo de inteligência artificial nem rota de geração. A tela "Nova viagem com a Avori" é uma prévia: conduz a conversa, mas monta o roteiro a partir de um modelo fixo e não grava nada.
-- **Condições para implementar** — A chave do provedor deverá ficar só no servidor, a saída do modelo deverá ser validada antes de virar itinerário, e o limite de 10 gerações por usuário por hora já está declarado no módulo de limites, à espera da rota.
+- **RF12.1** — A geração está em `POST /api/roteiros/gerar`, atrás da interface `GeradorDeRoteiro` (`lib/ai/provider.ts`): um gerador determinístico para desenvolvimento e integração contínua (`lib/ai/fake.ts`) e o Gemini, na camada gratuita, como provedor real (`lib/ai/gemini.ts`). A saída do modelo é normalizada e validada por esquema (`lib/ai/roteiro.ts`) antes de chegar à tela, e a rota não grava nada. A geração se limita a cinco dias por viagem, para caber no tempo do RNF07.3.
+- **RF12.2** — A tela "Nova viagem com a Avori" (`app/dashboard/trips/criar/ia/page.tsx`) mostra o roteiro gerado para revisão: a pessoa edita o título da viagem e o título e o horário de cada atividade, remove o que não quiser e só então cria a viagem, pelas rotas de viagem e de itinerário, que validam tudo novamente. Descrição e local sugeridos pela IA não são editáveis na revisão, só removíveis junto com a atividade.
+- **RF12.3** — "Refazer" descarta o roteiro sem nenhuma escrita. O fluxo inteiro é coberto por `e2e/roteiro-ia.spec.ts`, que confere pela API que a viagem criada tem exatamente o roteiro editado, e por `tests/lib/ai-salvar.test.ts`.
+- **Condições atendidas pela rota** — A chave do provedor fica só no servidor, no cabeçalho da chamada; a saída do modelo é validada antes de virar itinerário; e a rota consome o limite de 10 gerações por usuário por hora (RNF07.4).
 
 ### 14.14 Notificações (RF13)
 

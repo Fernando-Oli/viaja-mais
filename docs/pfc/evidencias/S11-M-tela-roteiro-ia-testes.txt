@@ -1,0 +1,70 @@
+S11-M-tela-roteiro-ia — evidência de testes (2026-11-23)
+Base: 67c0078 (S10) sobre origin/main 2e77c31
+
+== E2E: e2e/roteiro-ia.spec.ts + regressão (acessibilidade, fumaça, viagem, itinerário, estados de erro, CSP) ==
+Servidor: npm run start com AI_PROVIDER=fake forçado (não depende do Google)
+  ✓   1 [chromium] › e2e\00-fumaca.spec.ts:10:7 › páginas públicas › a landing page carrega e leva ao cadastro
+  ✓   2 [chromium] › e2e\00-fumaca.spec.ts:20:7 › páginas públicas › o login está acessível e pede e-mail e senha
+  ✓   3 [chromium] › e2e\00-fumaca.spec.ts:29:7 › verificação de saúde › responde 200 sem sessão, com o banco ok e sem cache
+  ✓   4 [chromium] › e2e\00-fumaca.spec.ts:40:7 › proteção de rotas › visitante anônimo é redirecionado do dashboard para o login
+  ✓   5 [chromium] › e2e\00-fumaca.spec.ts:47:7 › proteção de rotas › a API responde 401 em JSON, não redireciona para HTML
+  ✓   6 [chromium] › e2e\00-fumaca.spec.ts:58:7 › sessão › entra com e-mail e senha, a sessão vale entre páginas e o Sair a encerra
+  ✓   7 [chromium] › e2e\00-fumaca.spec.ts:91:9 › rotas removidas › /login não existe mais
+  ✓   8 [chromium] › e2e\00-fumaca.spec.ts:91:9 › rotas removidas › /register não existe mais
+  ✓   9 [chromium] › e2e\acessibilidade.spec.ts:35:5 › telas públicas: login e cadastro
+  ✓  10 [chromium] › e2e\acessibilidade.spec.ts:45:5 › telas logadas: dashboard, viagem, avaliações e nova atividade
+  ✓  11 [chromium] › e2e\acessibilidade.spec.ts:89:5 › telas novas da Avori: landing, criar viagem, prévias e compra
+  ✓  12 [chromium] › e2e\adicionar-atividade.spec.ts:6:5 › membro adiciona atividade ao itinerário da viagem
+  ✓  13 [chromium] › e2e\csp.spec.ts:26:5 › o cabeçalho CSP chega e fecha as saídas
+  ✓  14 [chromium] › e2e\csp.spec.ts:36:5 › login, dashboard e viagem carregam sem violação de CSP
+  ✓  15 [chromium] › e2e\editar-viagem.spec.ts:6:5 › dono edita título e destino da viagem
+  ✓  16 [chromium] › e2e\estados-erro.spec.ts:18:5 › sem sessão, endereço que não existe vai para o login (lista branca do proxy)
+  ✓  17 [chromium] › e2e\estados-erro.spec.ts:24:5 › com sessão, endereço que não existe: 404 em português, com caminho de volta
+  ✓  18 [chromium] › e2e\estados-erro.spec.ts:36:5 › viagem que não existe: 404 dentro do dashboard, sem perder a navegação
+  ✓  19 [chromium] › e2e\estados-erro.spec.ts:50:5 › viagem de outra pessoa: o mesmo 404, sem revelar que ela existe
+  ✓  20 [chromium] › e2e\itinerario-crud.spec.ts:6:5 › membro conclui, edita e exclui atividade do itinerário
+  ✓  21 [chromium] › e2e\roteiro-ia.spec.ts:54:5 › a pessoa revisa, edita e cria a viagem com o roteiro da Avori
+  ✓  22 [chromium] › e2e\roteiro-ia.spec.ts:114:5 › conversa e roteiro rolam por dentro, sem barra visível e com indicador, e o roteiro tem o maior espaço (desktop)
+  ✓  23 [chromium] › e2e\roteiro-ia.spec.ts:166:5 › Refazer descarta o roteiro sem gravar nada
+  ✓  24 [chromium] › e2e\roteiro-ia.spec.ts:186:5 › erro da Avori aparece com a mensagem e 'Tentar de novo' gera
+  ✓  25 [mobile] › e2e\00-fumaca.spec.ts:10:7 › páginas públicas › a landing page carrega e leva ao cadastro
+  ✓  26 [mobile] › e2e\00-fumaca.spec.ts:20:7 › páginas públicas › o login está acessível e pede e-mail e senha
+  ✓  27 [mobile] › e2e\00-fumaca.spec.ts:29:7 › verificação de saúde › responde 200 sem sessão, com o banco ok e sem cache
+  ✓  28 [mobile] › e2e\00-fumaca.spec.ts:40:7 › proteção de rotas › visitante anônimo é redirecionado do dashboard para o login
+  ✓  29 [mobile] › e2e\00-fumaca.spec.ts:47:7 › proteção de rotas › a API responde 401 em JSON, não redireciona para HTML
+  ✓  30 [mobile] › e2e\00-fumaca.spec.ts:58:7 › sessão › entra com e-mail e senha, a sessão vale entre páginas e o Sair a encerra
+  ✓  31 [mobile] › e2e\00-fumaca.spec.ts:91:9 › rotas removidas › /login não existe mais
+  ✓  32 [mobile] › e2e\00-fumaca.spec.ts:91:9 › rotas removidas › /register não existe mais
+  ✓  33 [mobile] › e2e\acessibilidade.spec.ts:35:5 › telas públicas: login e cadastro
+  ✓  34 [mobile] › e2e\acessibilidade.spec.ts:45:5 › telas logadas: dashboard, viagem, avaliações e nova atividade
+  ✓  35 [mobile] › e2e\acessibilidade.spec.ts:89:5 › telas novas da Avori: landing, criar viagem, prévias e compra
+  ✓  36 [mobile] › e2e\adicionar-atividade.spec.ts:6:5 › membro adiciona atividade ao itinerário da viagem
+  ✓  37 [mobile] › e2e\csp.spec.ts:26:5 › o cabeçalho CSP chega e fecha as saídas
+  ✓  38 [mobile] › e2e\csp.spec.ts:36:5 › login, dashboard e viagem carregam sem violação de CSP
+  ✓  39 [mobile] › e2e\editar-viagem.spec.ts:6:5 › dono edita título e destino da viagem
+  ✓  40 [mobile] › e2e\estados-erro.spec.ts:18:5 › sem sessão, endereço que não existe vai para o login (lista branca do proxy)
+  ✓  41 [mobile] › e2e\estados-erro.spec.ts:24:5 › com sessão, endereço que não existe: 404 em português, com caminho de volta
+  ✓  42 [mobile] › e2e\estados-erro.spec.ts:36:5 › viagem que não existe: 404 dentro do dashboard, sem perder a navegação
+  ✓  43 [mobile] › e2e\estados-erro.spec.ts:50:5 › viagem de outra pessoa: o mesmo 404, sem revelar que ela existe
+  ✓  44 [mobile] › e2e\itinerario-crud.spec.ts:6:5 › membro conclui, edita e exclui atividade do itinerário
+  ✓  45 [mobile] › e2e\roteiro-ia.spec.ts:54:5 › a pessoa revisa, edita e cria a viagem com o roteiro da Avori
+  -  46 [mobile] › e2e\roteiro-ia.spec.ts:114:5 › conversa e roteiro rolam por dentro, sem barra visível e com indicador, e o roteiro tem o maior espaço (desktop)
+  ✓  47 [mobile] › e2e\roteiro-ia.spec.ts:166:5 › Refazer descarta o roteiro sem gravar nada
+  ✓  48 [mobile] › e2e\roteiro-ia.spec.ts:186:5 › erro da Avori aparece com a mensagem e 'Tentar de novo' gera
+  1 skipped
+  47 passed (3.4m)
+
+== Unit de lib/ai/salvar.ts, com cobertura ==
+      Tests  23 passed (23)
+
+== Suíte vitest completa (sobre a main de 23/11) ==
+Test Files 92 passed (92) · Tests 1663 passed (1663)
+
+== Regressões provadas (falham antes, passam agora) ==
+página esticava: 1480px numa janela de 720px -> cabe na janela
+espaço do roteiro: 267px -> >= 50% da janela; campo de hora 92px (cortava '14:00') -> >= 100px
+barra de rolagem: scrollbar-width auto -> none, com esmaecido e setinha
+dia vazio da IA deslocava as datas seguintes -> dia fica no lugar (revisão seguranca, 20/11)
+
+Lint: 0 erros. tsc: 0 erros. Rastreabilidade: sem inconsistências.
+Teste manual: aprovado pelo Micael no app local em 20/11, com o Gemini real.

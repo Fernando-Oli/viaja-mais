@@ -1,0 +1,167 @@
+S10-M-ia-adapter — evidência de testes (2026-11-20)
+Base: origin/main (f511b59) + alterações da atividade
+
+== Testes da atividade, com cobertura de lib/ai/, lib/schemas/roteiro.ts e app/api/roteiros/ ==
+ ✓ tests/lib/ai-provider.test.ts > escolherGerador > padrão é o fake 403ms
+ ✓ tests/lib/ai-provider.test.ts > escolherGerador > gemini com chave devolve o gerador real 7ms
+ ✓ tests/lib/ai-provider.test.ts > escolherGerador > 503: gemini sem chave, e a mensagem não fala de configuração 6ms
+ ✓ tests/lib/ai-provider.test.ts > escolherGerador > 503: anthropic ainda não tem implementação 5ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 200: gera o roteiro, consome o limite da IA e não deixa a resposta em cache 49ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 200: o gerador recebe só os campos do schema, já normalizados, e um sinal de tempo 3ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 200: o teto de dias é aceito (decisão de 20/11: até 5 dias) 3ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 200: sem interesses vale lista vazia 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 401: sem sessão, nada é gerado nem contado 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: dias zero — não gasta tentativa nem chama o provedor 6ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: dias acima do teto (5) — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: dias fracionado — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: destino vazio — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: destino longo — não gasta tentativa nem chama o provedor 1ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: ritmo fora da lista — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: orçamento fora da lista — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: interesses demais — não gasta tentativa nem chama o provedor 5ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: interesse longo — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: chave extra (mass-assignment) — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: corpo vazio — não gasta tentativa nem chama o provedor 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 400: JSON quebrado — não gasta tentativa nem chama o provedor 1ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 429: com o limite estourado, o provedor nem é chamado 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 502: saída do modelo inválida, com mensagem em português 1ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 503: provedor indisponível, com mensagem em português 1ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 504: tempo esgotado (RNF07.3), com mensagem em português 1ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 503: provedor não configurado é decidido antes de gerar 2ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > mesmo pedido, mesmo roteiro 27ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > devolve exatamente 1 dia(s), no schema 3ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > devolve exatamente 2 dia(s), no schema 1ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > devolve exatamente 5 dia(s), no schema 2ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > o primeiro dia tem check-in e o último, check-out 3ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > viagem de um dia não tem check-out 1ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > o ritmo muda a quantidade de itens do dia do meio 2ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > no último dia o check-out não conta no corte do ritmo 1ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > o orçamento aparece nas refeições 2ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > os interesses escolhem a atividade da tarde, sem ligar para acento ou maiúscula 4ms
+ ✓ tests/lib/ai-fake.test.ts > gerador fake > destino longo não estoura o limite do título 2ms
+ ✓ tests/api/roteiros-gerar-route.test.ts > POST /api/roteiros/gerar > 500 genérico para erro inesperado, sem a mensagem interna 6ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > aceita um roteiro bem formado e devolve exatamente o formato do schema 11ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 para resposta que não é um roteiro (null) 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 para resposta que não é um roteiro (undefined) 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 para resposta que não é um roteiro ("texto") 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 para resposta que não é um roteiro (42) 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 para resposta que não é um roteiro ([]) 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 para resposta que não é um roteiro ({}) 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 para resposta que não é um roteiro ({"dias":"não é lista"}) 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > 502 quando nenhum item é aproveitável 2ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > só os dias pedidos contam: o 'bônus' do modelo é cortado 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > diasPedidos zero ou negativo não aproveita nada 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descarta item sem título, com título só de espaços ou que não é objeto 3ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > normaliza o horário "9:05" para "09:05" 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > normaliza o horário "09:05:00" para "09:05" 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > normaliza o horário " 23:59 " para "23:59" 0ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descarta horário inválido ("24:00") 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descarta horário inválido ("12:60") 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descarta horário inválido ("manhã") 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descarta horário inválido ("1200") 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descarta horário inválido (900) 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descarta horário inválido (null) 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > categoria desconhecida vira activity; conhecida fica 22ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > ordena por horário e mantém a ordem do modelo no empate 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > no máximo 8 itens por dia, os primeiros do dia 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > corta textos no limite, por caractere, e colapsa espaços 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > descrição e local ausentes, vazios ou de outro tipo viram null 2ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > dia sem item aproveitável some; dia sem título ganha 'Dia N' 1ms
+ ✓ tests/lib/ai-roteiro.test.ts > normalizarRoteiro > chaves extras do modelo não passam adiante 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 200: devolve o roteiro normalizado 17ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > a chave vai no cabeçalho, nunca na URL nem no corpo 2ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > manda a instrução de sistema, o pedido delimitado e o schema do número de dias pedido 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 504: tempo esgotado no fetch 2ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 504: tempo esgotado lendo o corpo 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 503: falha de rede 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 503: Google responde HTTP 429, sem repassar o corpo 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 503: Google responde HTTP 401, sem repassar o corpo 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 503: Google responde HTTP 403, sem repassar o corpo 0ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 503: Google responde HTTP 500, sem repassar o corpo 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 503: Google responde HTTP 503, sem repassar o corpo 0ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 502: Google responde HTTP 400 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 502: Google responde HTTP 404 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 502: corpo da resposta não é JSON 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 502: sem candidato (bloqueado) 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 502: resposta vazia 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 502: o texto do modelo não é JSON 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > 502: JSON fora do formato do roteiro 1ms
+ ✓ tests/lib/ai-gemini.test.ts > gerador Gemini > junta o texto quando o modelo o divide em várias partes 2ms
+ ✓ tests/lib/ai-gemini.test.ts > prompt > o texto livre vai como JSON delimitado e não fecha a marcação 1ms
+ ✓ tests/lib/ai-gemini.test.ts > prompt > a instrução diz que o pedido é dado, não instrução 0ms
+ ✓ tests/lib/ai-gemini.test.ts > prompt > a quantidade de dias vai por escrito no pedido, fora da marcação 1ms
+ ✓ tests/lib/ai-gemini.test.ts > prompt > o schema não tem limite de tamanho de lista, em nenhum nível 1ms
+ ✓ tests/lib/ai-gemini.test.ts > prompt > sem o limite no schema, dias e itens a mais são cortados no servidor 21ms
+ Test Files  5 passed (5)
+      Tests  90 passed (90)
+   Start at  12:43:44
+   Duration  2.53s (transform 515ms, setup 3.33s, import 1.26s, tests 720ms, environment 1ms)
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |     100 |    97.64 |     100 |     100 |                   
+ lib/ai            |     100 |    97.53 |     100 |     100 |                   
+  gemini.ts        |     100 |     90.9 |     100 |     100 | 57,76             
+-------------------|---------|----------|---------|---------|-------------------
+=============================== Coverage summary ===============================
+Statements   : 100% ( 153/153 )
+Branches     : 97.64% ( 83/85 )
+Functions    : 100% ( 31/31 )
+Lines        : 100% ( 131/131 )
+================================================================================
+
+== Suíte completa ==
+ Test Files  64 passed (64)
+      Tests  1018 passed (1018)
+
+== Mutação (sabotar cada proteção e conferir que algum teste falha) ==
+pega  sem limite (LIMITES.roteiroIa)
+pega  sem sessão
+VIVA  repassa o objeto do parse inteiro — mutante equivalente: o schema é .strict(),
+      então o objeto do parse já tem só os seis campos; nenhum teste tem como distinguir
+pega  sem corte de tempo (AbortSignal.timeout)
+pega  cache público na resposta
+pega  schema de entrada não estrito (chave extra passaria)
+pega  sem teto de dias
+pega  chave do Gemini na URL
+pega  tempo esgotado vira 503
+pega  saída do modelo sem normalizar
+pega  sinal de tempo não repassado ao fetch
+pega  aceita dias a mais do que o pedido
+pega  sem teto de itens por dia
+pega  categoria inventada passa
+pega  sem corte de texto
+pega  texto livre fecha a marcação <pedido> (sem escapar "<")
+pega  gemini sem chave segue
+Resultado: 16 de 17 pegas; a única viva é equivalente.
+
+== Outras verificações ==
+npm run lint (com --ignore-pattern ".micael/**", arquivo pessoal fora do git): 0 erros
+tsc --noEmit: 0 erros
+npm run build: ok, rota ƒ /api/roteiros/gerar
+npm run pfc:rastreabilidade:check: sem inconsistências
+Fumaça contra o banco local: NÃO executada (Supabase local fora do ar em 20/11); fica para o teste da tela (S11).
+
+== Fumaça com o Gemini real (gemini-3.5-flash-lite; chave só em variável de ambiente) ==
+3 dias, equilibrado .......... HTTP 200, 8,8 s, 3 dias normalizados (Lisboa: Castelo de São Jorge, Belém...)
+14 dias, intenso ............. HTTP 400 "schema ... too many states for serving" -> 502 (BUG; corrigido)
+14 dias, intenso (corrigido) . 504 aos 15,0 s (RNF07.3 cortou)
+7 dias, equilibrado .......... 504 aos 15,0 s
+3, 5, 7 e 14 dias (depois) ... HTTP 503 do Google (free tier indisponível) -> 503 com mensagem clara
+Decisão do Micael: teto de 5 dias (DIAS_MAXIMOS). Tempo real de 5 dias: ainda não medido (Google em 503).
+
+== Atualização de 20/11 (noite): direcionamento real, novas tentativas e teto por tentativa ==
+tests/lib/ai-gemini.test.ts: 41 testes (eram 24), incluindo 503→200, 429→200, rede→200,
+alternância de modelos, 401/400 sem nova tentativa, tentativa pendurada cortada no teto,
+prazo da rota estourando no meio da chamada, na pausa e lendo o corpo.
+Mutação da lógica nova: 16 de 17 pegas (a viva é equivalente).
+Gemini real: Xangai 10,5 s (1ª tentativa pendurou, 2ª entregou), Lisboa 3,0 s; títulos com lugares
+reais ("Explore o Jardim Yu e o Bazar da Cidade Velha", "Suba ao Castelo de São Jorge").
+
+== Revisão adversarial independente (agente seguranca, 20/11) ==
+ALTO (domínio do Fernando, reproduzido, não corrigido aqui): consumir_limite aceita a janela de quem chama;
+  limite 1 -> 2ª negada -> chamada com janela de 7 s -> a seguinte volta a ser permitida.
+MÉDIO (corrigido): dia vazio deslocava as datas dos seguintes. Regressões falham antes, passam depois.
+BAIXO (corrigido): prazo de 15 s passa a contar desde o início da rota. Regressão de ordem.
+Testes de IA depois das correções: 131 verdes. Mutação da correção do dia vazio: 2 de 2 pegas.
