@@ -2,9 +2,10 @@
 /**
  * Monta o documento único a partir das seções e gera DOCX e PDF.
  *
- * Caminho: seções em Markdown → um Markdown único (capa, títulos de PARTE,
- * figuras dimensionadas) → DOCX pelo pandoc, com a formatação de
- * `_template/reference.docx` → PDF pelo LibreOffice.
+ * Caminho: seções em Markdown → um Markdown único (capa, sumário, títulos de
+ * PARTE, figuras dimensionadas) → DOCX pelo pandoc, com a formatação de
+ * `_template/reference.docx` → PDF pelo LibreOffice, que preenche o sumário
+ * (`exportar-pdf.py`).
  *
  * O PDF gerado é para conferência. A versão que sobe no AVA deve ser aberta e
  * revisada página a página antes: lá não há reenvio.
@@ -66,11 +67,30 @@ const capa = [
   estilo("Capa Texto", CAPA.ano),
 ].join("\n")
 
+/* Sumário ---------------------------------------------------------------- */
+// Campo de sumário com os níveis 1 a 3, como no template da disciplina, logo
+// depois da capa. O pandoc só sabe pôr o sumário antes de todo o conteúdo, que
+// aqui começa pela capa; por isso o campo vai em XML. Ele sai vazio: o Word o
+// preenche ao abrir o DOCX (w:dirty), e o exportar-pdf.py antes de gerar o PDF.
+// "CabealhodoSumrio" é o id do estilo "TOC Heading" no template, que já abre
+// página nova e não entra no próprio sumário.
+const sumario = [
+  "```{=openxml}",
+  '<w:sdt><w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/><w:docPartUnique/></w:docPartObj></w:sdtPr><w:sdtContent>' +
+    '<w:p><w:pPr><w:pStyle w:val="CabealhodoSumrio"/></w:pPr><w:r><w:t>Sumário</w:t></w:r></w:p>' +
+    '<w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r>' +
+    '<w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>' +
+    "</w:sdtContent></w:sdt>",
+  "```",
+  "",
+].join("\n")
+
 /* Figuras ---------------------------------------------------------------- */
 // Área útil da página do template: 15,75 cm de largura. A altura é limitada
-// para a figura não ser empurrada sozinha para a página seguinte.
+// para a figura não ser empurrada sozinha para a página seguinte; o limite
+// desconta a legenda acima e a fonte abaixo (figuras.lua), que vão juntas.
 const LARGURA_MAX = 15.5
-const ALTURA_MAX = 18.5
+const ALTURA_MAX = 17.5
 const DPI = 160 // o mesmo de scripts/pfc/diagramas.mjs
 
 const dimensoesPng = (arquivo) => {
@@ -99,7 +119,7 @@ const ajustarFiguras = (md, pastaDaSecao) =>
   })
 
 /* Montagem --------------------------------------------------------------- */
-const partes = [capa]
+const partes = [capa, sumario]
 const faltando = []
 
 for (const s of SECOES) {
@@ -165,12 +185,15 @@ if (!pandoc) {
   process.exit(0)
 }
 
+const SCRIPTS = path.dirname(fileURLToPath(import.meta.url))
 const referencia = path.join(RAIZ_PFC, "_template", "reference.docx")
 const args = [
   md, "-o", docx,
   "--from", "gfm+attributes+fenced_divs+raw_attribute+implicit_figures",
   // Largura das colunas proporcional ao conteúdo; sem o filtro saem todas iguais.
-  "--lua-filter", path.join(path.dirname(fileURLToPath(import.meta.url)), "tabelas.lua"),
+  "--lua-filter", path.join(SCRIPTS, "tabelas.lua"),
+  // Legenda acima da figura e fonte abaixo (NBR 14724).
+  "--lua-filter", path.join(SCRIPTS, "figuras.lua"),
   "--metadata", "lang=pt-BR",
 ]
 if (fs.existsSync(referencia)) args.push(`--reference-doc=${referencia}`)
@@ -182,6 +205,27 @@ if (!soffice) {
   console.log("LibreOffice não encontrado — abra o DOCX e exporte o PDF à mão.")
   process.exit(0)
 }
-execFileSync(soffice, ["--headless", "--convert-to", "pdf", "--outdir", DESTINO, docx], { stdio: "ignore", timeout: 300_000 })
-console.log(`PDF:  ${path.join(DESTINO, `${BASE}.pdf`)}`)
+// O sumário só é preenchido pelo Python que acompanha o LibreOffice (no Linux,
+// o do sistema com o pacote python3-uno). Sem ele o PDF sai, mas com o sumário
+// vazio, e o build avisa.
+const pdf = path.join(DESTINO, `${BASE}.pdf`)
+const python = [
+  path.join(path.dirname(soffice), "python.exe"),
+  path.join(path.dirname(soffice), "python"),
+  "/usr/bin/python3",
+].find((c) => path.isAbsolute(c) && fs.existsSync(c))
+let comSumario = false
+if (python) {
+  try {
+    execFileSync(python, [path.join(SCRIPTS, "exportar-pdf.py"), soffice, docx, pdf], { stdio: "inherit", timeout: 300_000 })
+    comSumario = true
+  } catch {
+    console.log("Aviso: a exportação com sumário falhou; o PDF sai pelo caminho simples.")
+  }
+}
+if (!comSumario) {
+  execFileSync(soffice, ["--headless", "--convert-to", "pdf", "--outdir", DESTINO, docx], { stdio: "ignore", timeout: 300_000 })
+  console.log("Aviso: o sumário do PDF saiu vazio. Abra o DOCX no Word, atualize o sumário e exporte o PDF por lá.")
+}
+console.log(`PDF:  ${pdf}`)
 console.log("\nConfira capa, tabelas e figuras página a página antes de subir no AVA.")

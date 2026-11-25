@@ -43,6 +43,11 @@ entre seções e de forma:
   nesta versão", "a versão anterior o dava como parcial").
 - **Cobertura de 98,21% na seção 5 sem a ressalva** de que mede só `lib/` e
   `app/api/`.
+- **Sem número de página e sem sumário.** O template da disciplina traz o
+  sumário (níveis 1 a 3), e o `soffice --convert-to` não preenche o campo: a
+  página saía em branco. Sem número de página, o sumário também não serviria.
+- **Legenda da figura embaixo e sem fonte.** A NBR 14724 pede a identificação
+  acima da ilustração e a fonte abaixo, mesmo quando é produção dos autores.
 
 ## 2. Arquivos afetados
 
@@ -52,6 +57,11 @@ entre seções e de forma:
 - `scripts/pfc/tabelas.lua` — largura das colunas em centímetros
 - `docs/pfc/00-historico-versao.md` e as seções 5, 11, 13, 14, 15, 16, 17, 19,
   20, 22, 24 e 25
+- `scripts/pfc/build.mjs` — sumário depois da capa e exportação do PDF por
+  `scripts/pfc/exportar-pdf.py` (novo), que atualiza o sumário antes
+- `scripts/pfc/figuras.lua` (novo) — legenda acima, fonte abaixo
+- `scripts/pfc/reference-docx.py` — número de página no cabeçalho, capa sem
+  número, estilos de legenda e de fonte
 
 Nenhuma migration e nenhum código de aplicação.
 
@@ -67,6 +77,18 @@ Nenhuma migration e nenhum código de aplicação.
 4. Tirar a narração de versão do corpo; achados que são resultado (20.4, 24.7,
    25.5) ficam, com a data no lugar de "nesta versão".
 5. `pfc:check`, `pfc:build` e conferência do PDF.
+6. Número de página no canto superior direito, abaixo do logo, a partir da
+   página 2; a capa usa cabeçalho de primeira página, igual ao das demais e sem
+   o número. O número vai numa caixa de texto ancorada, como os logos: em
+   parágrafo novo do cabeçalho (mesmo com `w:framePr`), o LibreOffice aumentava
+   o cabeçalho e descia o texto de todas as páginas em 7 pt.
+7. Sumário com os níveis 1 a 3, como no template, logo depois da capa. O PDF
+   passa a ser exportado pelo LibreOffice via UNO, que atualiza o índice duas
+   vezes (o próprio sumário empurra as páginas) antes de exportar.
+8. Figuras: legenda acima, imagem, e "Fonte: elaborado pelos autores (2026)."
+   abaixo. A altura máxima da figura cai de 18,5 para 17,5 cm para caber com as
+   duas linhas: com 18,5, três figuras iam sozinhas para a página seguinte e
+   deixavam meia página em branco.
 
 ## 4. O que testar
 
@@ -87,6 +109,12 @@ Obrigatórios pelo tipo (`documentacao`):
    ("atualizarItemItinerario|Schema", "rateio-despesa|.spec.ts").
 3. Abrir o PDF: referências na última página; Parte 00, cronograma, seções 13,
    14 e 25.5 sem palavra partida; nenhuma página quase vazia nova.
+4. Conferir, pelo texto extraído do PDF, que cada entrada do sumário aponta a
+   página onde o título de fato está.
+5. Capa sem número; da página 2 em diante, número abaixo do logo, sem encostar
+   nele nem no texto.
+6. Cada uma das 20 figuras com a legenda acima e a fonte abaixo, na mesma
+   página da imagem.
 
 ## 5. O que validar
 
@@ -95,6 +123,13 @@ Obrigatórios pelo tipo (`documentacao`):
 - [x] Contagem de implementados igual nas seções 14.1, 15.1 e 24.5 e na matriz
 - [x] Nenhum "nesta versão" ou "versão anterior" narrando mudança de status no corpo
 - [x] Parte 00 registra o que mudou
+- [x] Sumário com as 7 PARTES, as 27 seções, as subseções de nível 3 e as
+  Referências, e número de página certo em todas as entradas (101 entradas
+  conferidas contra os marcadores do PDF, nenhuma divergente)
+- [x] Capa sem número de página; páginas 2 a 110 numeradas, todas com o número
+  certo e sem tocar no logo nem no texto
+- [x] Toda figura com legenda acima e fonte abaixo (NBR 14724): as 20 com os
+  três elementos na mesma página
 
 ## 6. Evidência
 
@@ -104,3 +139,6 @@ Obrigatórios pelo tipo (`documentacao`):
 ## Andamento
 
 - PDF com 107 páginas (eram 108), montado a partir desta branch.
+- Com sumário (páginas 2 a 4), 110 páginas. Páginas com mais de metade em
+  branco: 4, contra 5 no PDF entregue: as Referências e as que antecedem as
+  figuras 16.1, 20.2 e 20.5, que não cabem depois do texto.
