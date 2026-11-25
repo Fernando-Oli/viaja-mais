@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { RolagemComIndicador } from "@/components/ia/rolagem-com-indicador"
+import { VerNoMapa } from "@/components/ia/ver-no-mapa"
 import { DIAS_MAXIMOS, type GerarRoteiro } from "@/lib/schemas/roteiro"
 import type { DiaDoRoteiro, ItemDoRoteiro } from "@/lib/ai/roteiro"
 import {
@@ -667,6 +668,7 @@ export default function CriarComAvoriPage() {
                                   {[it.local, it.descricao].filter(Boolean).join(" · ")}
                                 </p>
                               ) : null}
+                              <VerNoMapa local={it.local} titulo={it.titulo} destino={respostas.destino ?? ""} />
                             </div>
                             <Button
                               type="button"
