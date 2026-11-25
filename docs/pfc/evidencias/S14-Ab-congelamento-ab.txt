@@ -1,0 +1,52 @@
+S14-Ab-congelamento-ab — correção de bug com teste de regressão
+Data: 22/11/2026 · base: main em 2e77c31 · branch: fix/S14-Ab-congelamento-ab
+
+BUG
+O valor da despesa aceitava mais de duas casas decimais. O schema
+(lib/schemas/despesa.ts) só exigia número positivo, e a rota levava o total a
+centavos com Math.round(amount * 100). Resultado:
+  - amount 0.004 passava no positive() e era gravado como R$ 0,00 (expenses.amount
+    não tem CHECK no banco): despesa de valor zero, que o schema diz recusar;
+  - amount 10.005 era gravado como 10,01 e 10.999 como 11,00, sem aviso.
+Vale para a criação (POST /api/trips/[tripId]/expenses) e para a edição
+(PATCH .../expenses/[expenseId]), que usam o mesmo campo base.amount.
+O valor exato do rateio e o pagamento do acerto já recusavam mais de duas casas.
+
+ANTES (sem a correção)
+Comando: npx vitest run tests/lib/despesa-valor-centavos.test.ts
+Resultado: Test Files 1 failed (1) · Tests 6 failed | 6 passed (12)
+  × 0.004 responde 400 e não grava uma despesa de R$ 0,00
+      AssertionError: expected 200 to be 400
+  × 10.005 responde 400 em vez de gravar outro valor
+      AssertionError: expected 200 to be 400
+  × recusa 0.004 (número e texto) · recusa 10.005 · recusa 10.999
+      AssertionError: expected true to be false
+Motivo: a rota respondeu 200 e chamou o insert, e os schemas de criação e de
+edição aceitaram o valor. Conferência do arredondamento antigo (node):
+  0.004 -> 0 | 10.005 -> 10.01 | 10.999 -> 11
+
+CORREÇÃO
+lib/schemas/despesa.ts: base.amount ganha
+  .refine((v) => reaisParaCentavos(v) !== null, "informe o valor com até duas casas decimais")
+a mesma regra do valor exato do rateio. Nenhuma outra linha mudou.
+
+DEPOIS (mesmo comando, mesmas expectativas)
+Comando: npx vitest run tests/lib/despesa-valor-centavos.test.ts
+Resultado: Test Files 1 passed (1) · Tests 12 passed (12)
+
+REGRESSÃO
+npx vitest run tests/lib/despesa-schema.test.ts tests/lib/expenses-route.test.ts
+  tests/api/expense-item-route.test.ts tests/lib/finance-rateio.test.ts
+  tests/components/expense-split.test.tsx tests/lib/despesa-valor-centavos.test.ts
+  -> Test Files 6 passed (6) · Tests 169 passed (169)
+npm run test (suíte unitária e de integração completa)
+  -> Test Files 87 passed (87) · Tests 1544 passed (1544)
+Sem mudança de SQL: os testes de RLS (Postgres local) não foram executados.
+
+VALIDAÇÃO
+npm run typecheck            -> sem erros (exit 0)
+npm run lint                 -> 0 erros, 39 avisos já existentes (exit 0);
+                                nenhum aviso nos arquivos alterados
+npm run pfc:check            -> 28/28 seções, nenhum bloqueio
+npm run pfc:rastreabilidade:check -> catálogo 140 · código 79 · testes 83, sem inconsistências
+git diff --check             -> limpo

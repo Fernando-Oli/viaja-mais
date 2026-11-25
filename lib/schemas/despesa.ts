@@ -93,7 +93,10 @@ const base = {
     .number()
     .finite("informe um valor numérico")
     .positive("o valor deve ser maior que zero")
-    .max(99_999_999.99, "valor acima do limite"),
+    .max(99_999_999.99, "valor acima do limite")
+    // Até duas casas, como o valor exato do rateio: a rota leva o total a
+    // centavos, e com mais casas `0.004` virava R$ 0,00 e `10.005`, outro valor.
+    .refine((v) => reaisParaCentavos(v) !== null, "informe o valor com até duas casas decimais"),
 
   currency: z.string().trim().length(3, "use o código ISO de 3 letras").toUpperCase(),
 
